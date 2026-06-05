@@ -54,32 +54,29 @@ type PrintHandoutTarget = { mod: string; file: string; ext?: string };
 
 const sourcePath = path.join(process.cwd(), "kompendium.html");
 
+async function loadJsonIndexFile(
+  filePath: string,
+  cache: Record<string, string> | null
+): Promise<Record<string, string>> {
+  if (cache) return cache;
+
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const data = JSON.parse(raw) as { index?: Record<string, string> };
+    return data.index ?? {};
+  } catch {
+    return {};
+  }
+}
+
 async function loadSosFileIndex(): Promise<Record<string, string>> {
   if (sosFileIndexCache) return sosFileIndexCache;
 
-  const index: Record<string, string> = {};
-  const sosRoot = path.join(process.cwd(), "public/sos");
-
-  try {
-    const moduleDirs = await fs.readdir(sosRoot);
-    for (const mod of moduleDirs) {
-      const modDir = path.join(sosRoot, mod);
-      const stat = await fs.stat(modDir);
-      if (!stat.isDirectory()) continue;
-
-      const files = await fs.readdir(modDir);
-      for (const file of files) {
-        if (file.endsWith(".html")) {
-          index[file.slice(0, -5)] = mod;
-        }
-      }
-    }
-  } catch {
-    // Brak folderu public/sos — SOS-y jeszcze niewycięte z masterów.
-  }
-
-  sosFileIndexCache = index;
-  return index;
+  sosFileIndexCache = await loadJsonIndexFile(
+    path.join(process.cwd(), "public/sos/sos-file-index.json"),
+    sosFileIndexCache
+  );
+  return sosFileIndexCache;
 }
 
 function buildHandoutIndexExtensionScript(fileIndex: Record<string, string>) {
@@ -136,30 +133,11 @@ async function loadPrintHandoutResolver(): Promise<Record<string, PrintHandoutTa
 async function loadHandoutFileIndex(): Promise<Record<string, string>> {
   if (handoutFileIndexCache) return handoutFileIndexCache;
 
-  const index: Record<string, string> = {};
-  const printRoot = path.join(process.cwd(), "public/handouts/print");
-
-  try {
-    const moduleDirs = await fs.readdir(printRoot);
-    for (const mod of moduleDirs) {
-      const modDir = path.join(printRoot, mod);
-      const stat = await fs.stat(modDir);
-      if (!stat.isDirectory()) continue;
-
-      const files = await fs.readdir(modDir);
-      for (const file of files) {
-        if (file.startsWith("_")) continue;
-        if (file.endsWith(".html") || file.endsWith(".pdf")) {
-          index[file.replace(/\.(html|pdf)$/, "")] = mod;
-        }
-      }
-    }
-  } catch {
-    // Brak folderu public/handouts/print.
-  }
-
-  handoutFileIndexCache = index;
-  return index;
+  handoutFileIndexCache = await loadJsonIndexFile(
+    path.join(process.cwd(), "public/handouts/handout-file-index.json"),
+    handoutFileIndexCache
+  );
+  return handoutFileIndexCache;
 }
 
 function buildSosIndexExtensionScript(fileIndex: Record<string, string>) {

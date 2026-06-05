@@ -344,3 +344,60 @@ for (const id of checkIds) {
   const hit = resolver[id];
   console.log(`  ${id} ->`, hit ? `${hit.mod}/${hit.file}.${hit.ext} (${hit.score})` : "MISSING");
 }
+
+function buildFileIndexFromDir(rootDir, { skipUnderscore = false, extensions = [".html"] } = {}) {
+  const index = {};
+  if (!fs.existsSync(rootDir)) return index;
+
+  for (const mod of fs.readdirSync(rootDir)) {
+    const modDir = path.join(rootDir, mod);
+    if (!fs.statSync(modDir).isDirectory()) continue;
+
+    for (const file of fs.readdirSync(modDir)) {
+      if (skipUnderscore && file.startsWith("_")) continue;
+      const ext = path.extname(file);
+      if (!extensions.includes(ext)) continue;
+      index[file.slice(0, -ext.length)] = mod;
+    }
+  }
+
+  return index;
+}
+
+const handoutIndexPath = path.join(root, "public/handouts/handout-file-index.json");
+const handoutFileIndex = buildFileIndexFromDir(printRoot, {
+  skipUnderscore: true,
+  extensions: [".html", ".pdf"]
+});
+fs.writeFileSync(
+  handoutIndexPath,
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      count: Object.keys(handoutFileIndex).length,
+      index: handoutFileIndex
+    },
+    null,
+    2
+  )
+);
+console.log("\nHandout file index:", Object.keys(handoutFileIndex).length, "entries");
+console.log("Written:", handoutIndexPath);
+
+const sosRoot = path.join(root, "public/sos");
+const sosIndexPath = path.join(root, "public/sos/sos-file-index.json");
+const sosFileIndex = buildFileIndexFromDir(sosRoot, { extensions: [".html"] });
+fs.writeFileSync(
+  sosIndexPath,
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      count: Object.keys(sosFileIndex).length,
+      index: sosFileIndex
+    },
+    null,
+    2
+  )
+);
+console.log("SOS file index:", Object.keys(sosFileIndex).length, "entries");
+console.log("Written:", sosIndexPath);
