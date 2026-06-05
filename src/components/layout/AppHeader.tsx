@@ -26,6 +26,11 @@ export function AppHeader() {
           </Link>
           {mounted ? (
             <>
+              <Show when="signed-in">
+                <Link href="/account" className="text-gray-600 hover:text-gray-900">
+                  Konto
+                </Link>
+              </Show>
               <Show when="signed-out">
                 <SignInButton mode="modal">
                   <button className="rounded-lg border border-[var(--card-border)] px-3 py-1.5 text-gray-700">
@@ -39,7 +44,7 @@ export function AppHeader() {
                 </SignUpButton>
               </Show>
               <Show when="signed-in">
-                <UserButton />
+                <UserButton userProfileUrl="/account/profile" />
               </Show>
             </>
           ) : (

@@ -39,8 +39,8 @@ export async function POST(req: Request) {
           quantity: 1
         }
       ],
-      success_url: `${origin}/pricing?success=true`,
-      cancel_url: `${origin}/pricing?canceled=true`,
+      success_url: `${origin}/account/subscription?success=true`,
+      cancel_url: `${origin}/account/subscription?canceled=true`,
       allow_promotion_codes: true,
       metadata: {
         clerkUserId: user.id,
