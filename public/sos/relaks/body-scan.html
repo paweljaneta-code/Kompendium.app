@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Skan ciała</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.tldr-box { background: rgba(184,197,168,0.18); border-left: 3px solid var(--warm); padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); margin: 12px 0; }
+.tldr-h { font-weight: 700; color: var(--ink); display: block; margin-bottom: 4px; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.path-row { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.4); align-items: start; }
+.path-row:first-of-type { border-top: none; }
+.path-num { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.path-text { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.path-text strong { color: var(--ink); }
+.diff-vs { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px; margin: 10px 0; }
+.diff-vs-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); margin-bottom: 8px; }
+.diff-vs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.4); font-size: 12.5px; }
+.diff-vs-row:first-of-type { border-top: none; }
+.diff-vs-col { line-height: 1.45; color: var(--ink-soft); }
+.diff-vs-col strong { color: var(--ink); display: block; margin-bottom: 2px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Skan ciała</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============ KROK 1 ============ -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Skan <em>ciała</em> — uważność bez napinania</h1>
+  <p class="card-detail">Skan ciała (body scan) to fundament <strong>MBSR — redukcji stresu opartej na uważności</strong> (mindfulness-based stress reduction), opracowanej przez <strong>Jona Kabat-Zinna</strong> w 1979 roku w Massachusetts Medical Center. W przeciwieństwie do PMR — gdzie napinasz mięśnie — w skanie ciała tylko <em>kierujesz uwagę</em> kolejno na poszczególne okolice ciała i zauważasz, co się tam dzieje. Bez ocen, bez prób zmiany.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery zasady skanu (Kabat-Zinn 1990)</div>
+    <div class="element-row">
+      <span class="element-icon">👁️</span>
+      <span class="element-text"><strong>Tylko zauważanie</strong> — nie zmieniasz, nie poprawiasz, nie rozluźniasz na siłę. Zauważasz, co JEST: ciepło, mrowienie, ból, drętwienie, brak czucia.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌊</span>
+      <span class="element-text"><strong>Bez oceniania</strong> — żadne doznanie nie jest „dobre" ani „złe". Ból w plecach jest po prostu „bólem w plecach", a nie „katastrofą", „znakiem choroby" ani „czymś do naprawienia".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔁</span>
+      <span class="element-text"><strong>Powracanie uwagi</strong> — uwaga ucieka, ucieka i ucieka. Zauważasz, że uciekła, i wracasz do okolicy, na której byłeś/aś. Tysiąc powrotów = tysiąc treningów.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⏳</span>
+      <span class="element-text"><strong>Cierpliwość</strong> — pierwszy skan może wydawać się nudny lub frustrujący. Po 7–14 sesjach zaczyna się coś dziać: ciało ujawnia rzeczy ukryte, mózg uczy się ich nie tłumić.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Skan ciała to nie ćwiczenie relaksacyjne w sensie wymuszania spokoju. To ćwiczenie bycia obecnym z tym, co jest — także z dyskomfortem. Paradoksalnie właśnie to przynosi pogłębione rozluźnienie, którego nie można zaplanować."
+    <span class="frame-quote-attr">— Jon Kabat-Zinn (1990, „Full Catastrophe Living", parafraza)</span>
+  </div>
+
+  <div class="diff-vs">
+    <div class="diff-vs-h">PMR vs Skan ciała — czym się różnią</div>
+    <div class="diff-vs-row">
+      <div class="diff-vs-col"><strong>PMR (Jacobson)</strong>napinasz → rozluźniasz; cel: rozluźnienie mięśni; z oczekiwaniem efektu</div>
+      <div class="diff-vs-col"><strong>Skan ciała (Kabat-Zinn)</strong>tylko zauważasz; cel: świadomość ciała; bez oczekiwania efektu</div>
+    </div>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: skan ciała <em>nie ma redukować</em> dyskomfortu. Ma <em>uświadamiać</em>. Paradoks polega na tym, że samo uważne zauważanie — bez prób zmieniania — pogłębia rozluźnienie głębsze niż wymuszone metody. Ale to skutek uboczny, nie cel.</div>
+
+  <div class="tldr-box">
+    <span class="tldr-h">W skrócie</span>
+    20–45 minut. Uwaga przesuwa się od stóp do czubka głowy. Nie napinasz — tylko zauważasz. MBSR (8-tygodniowy kurs) ma to jako pierwszą umiejętność. Po 8 tygodniach: wymierny spadek lęku, depresji, bólu przewlekłego.
+  </div>
+
+  <div class="src">Kabat-Zinn J. (1990, „Full Catastrophe Living", Delta) · Kabat-Zinn J. (1982, General Hospital Psychiatry — pierwsze RCT — randomizowane badanie kontrolowane MBSR w bólu przewlekłym) · Khoury B. i in. (2013, Clinical Psychology Review — meta-analiza MBSR) · Goyal M. i in. (2014, JAMA Internal Medicine — meta-analiza programów medytacyjnych)</div>
+</section>
+
+<!-- ============ KROK 2 ============ -->
+<section class="card" data-z="case" data-step="2">
+  <div class="card-eyebrow">🎯 Twój kontekst</div>
+  <h1 class="card-prompt">Określ <em>punkt wyjścia</em> i intencję</h1>
+  <p class="card-detail">Skan ciała różni się efektem w zależności od stanu wyjściowego. Inaczej działa przy chronicznym bólu, inaczej przy lęku, inaczej przy „braku czucia ciała".</p>
+
+  <p class="card-detail"><strong>Co cię tu sprowadza?</strong></p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+    <button type="button" class="rel-btn" id="celA" onclick="pickCel('A');">
+      <span class="rel-name">A · Stres przewlekły / pobudzenie tła</span>
+      <span class="rel-desc">Ogólne napięcie, „nie ma czego rozluźniać", a jednak nie potrafisz odpocząć. Skan ujawni, gdzie tkwi napięcie, którego nie zauważasz.</span>
+    </button>
+    <button type="button" class="rel-btn" id="celB" onclick="pickCel('B');">
+      <span class="rel-name">B · Ból przewlekły</span>
+      <span class="rel-desc">Plecy, kark, głowa. Skan uczy „bycia z" bólem zamiast walki z nim. Klasyczne wskazanie MBSR — Kabat-Zinn rozpoczynał od pacjentów z bólem opornym na leki.</span>
+    </button>
+    <button type="button" class="rel-btn" id="celC" onclick="pickCel('C');">
+      <span class="rel-name">C · Lęk + somatyzacja</span>
+      <span class="rel-desc">Lęk objawia się w ciele (kołatania, ucisk w klatce, ścisk żołądka). Skan uczy zauważać te objawy bez katastrofizacji — etap kluczowy w terapii lęku.</span>
+    </button>
+    <button type="button" class="rel-btn" id="celD" onclick="pickCel('D');">
+      <span class="rel-name">D · Brak kontaktu z ciałem / dysocjacja</span>
+      <span class="rel-desc">Czujesz się „odcięty/a od ciała", jak gdyby ciało nie należało do ciebie. Skan przywraca propriocepcję — ostrożnie, krótko, bez „na siłę".</span>
+    </button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość ciała ogólna (0 — żadna, 10 — bardzo wyraźna)</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="swiadStart" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>Świadomość</span><span id="swiadStartVal">4</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Napięcie/dyskomfort cielesny (0 — brak, 10 — silny)</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="dyskStart" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Dyskomfort</span><span id="dyskStartVal">5</span></div>
+  </div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Twoja intencja na ten skan</strong> — jedno zdanie:</p>
+  <textarea class="thought-input" id="intencja" placeholder="np. „Chcę zauważyć, gdzie tkwi napięcie, którego nie czuję na co dzień. Bez prób naprawiania."" rows="2"></textarea>
+
+  <div class="term-note"><strong>Reguła pomiaru</strong>: jeśli wybrałeś/aś D (dysocjacja) — zacznij od krótkiego skanu (5 min) i tylko stopy + dłonie. Pełen skan u osób po traumie może odsłonić więcej, niż jesteś w stanie unieść w jednej sesji. Ostrożnie i etapami.</div>
+</section>
+
+<!-- ============ KROK 3 ============ -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Mapa skanu</div>
+  <h1 class="card-prompt">Poznaj <em>trasę</em> uwagi</h1>
+  <p class="card-detail">Klasyczna mapa MBSR — 13 stacji od stóp do głowy. W każdej stacji zostajesz 1–3 minuty i zauważasz wszystko, co się tam dzieje (lub nie dzieje).</p>
+
+  <div style="background:rgba(184,197,168,0.18);padding:12px;border-radius:8px;margin:10px 0">
+    <div class="path-row"><span class="path-num">1.</span><span class="path-text"><strong>Lewa stopa</strong> — palce, podeszwa, podbicie, pięta, kostka.</span></div>
+    <div class="path-row"><span class="path-num">2.</span><span class="path-text"><strong>Lewa łydka i kolano</strong>.</span></div>
+    <div class="path-row"><span class="path-num">3.</span><span class="path-text"><strong>Lewe udo</strong> — z przodu, z tyłu, biodro lewe.</span></div>
+    <div class="path-row"><span class="path-num">4.</span><span class="path-text"><strong>Prawa stopa</strong> — analogicznie.</span></div>
+    <div class="path-row"><span class="path-num">5.</span><span class="path-text"><strong>Prawa łydka i kolano</strong>.</span></div>
+    <div class="path-row"><span class="path-num">6.</span><span class="path-text"><strong>Prawe udo i biodro</strong>.</span></div>
+    <div class="path-row"><span class="path-num">7.</span><span class="path-text"><strong>Miednica i krocze</strong> — kontakt z podłożem, ciężar.</span></div>
+    <div class="path-row"><span class="path-num">8.</span><span class="path-text"><strong>Dolne plecy + brzuch</strong> — ruch oddechu w brzuchu, kontakt pleców z podłożem.</span></div>
+    <div class="path-row"><span class="path-num">9.</span><span class="path-text"><strong>Górne plecy + klatka piersiowa</strong> — żebra, mostek, łopatki.</span></div>
+    <div class="path-row"><span class="path-num">10.</span><span class="path-text"><strong>Lewa ręka</strong> — palce, dłoń, przedramię, biceps, bark.</span></div>
+    <div class="path-row"><span class="path-num">11.</span><span class="path-text"><strong>Prawa ręka</strong> — analogicznie.</span></div>
+    <div class="path-row"><span class="path-num">12.</span><span class="path-text"><strong>Kark i twarz</strong> — szczęka, język, oczy, czoło, skronie.</span></div>
+    <div class="path-row"><span class="path-num">13.</span><span class="path-text"><strong>Czubek głowy</strong> + skan całego ciała na koniec (wdech wciąga ciało, wydech wypuszcza).</span></div>
+  </div>
+
+  <p class="card-detail"><strong>Twój czas na sesję</strong>:</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+    <button type="button" class="rel-btn" id="czas1" onclick="this.classList.toggle('picked');save();">
+      <span class="rel-name">⏱️ 10 min — start</span>
+      <span class="rel-desc">Po 60–90 sek na każdy z głównych rejonów (stopy, nogi, miednica, brzuch+plecy, klatka, ręce, głowa). Dla pierwszej sesji.</span>
+    </button>
+    <button type="button" class="rel-btn" id="czas2" onclick="this.classList.toggle('picked');save();">
+      <span class="rel-name">⏱️ 20 min — standard</span>
+      <span class="rel-desc">Klasyczny czas MBSR. Około 1–2 minuty na każdą z 13 stacji. Optymalny stosunek głębokości do wykonalności na co dzień.</span>
+    </button>
+    <button type="button" class="rel-btn" id="czas3" onclick="this.classList.toggle('picked');save();">
+      <span class="rel-name">⏱️ 45 min — pełny MBSR</span>
+      <span class="rel-desc">Oryginalny format Kabat-Zinna. 3–5 min na stację. Tylko spokojne dni, kiedy masz pewność, że nie zaśniesz (a jeśli zaśniesz — to też jest informacja).</span>
+    </button>
+  </div>
+
+  <div class="term-note"><strong>Klucz wyboru czasu</strong>: <em>krótszy a regularny</em> bije <em>długi a sporadyczny</em>. 10 min codziennie przez 30 dni > 45 min raz w tygodniu. Z czasem naturalnie wydłuży się — nie wymuszaj.</div>
+</section>
+
+<!-- ============ KROK 4 ============ -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — sesja</div>
+  <h1 class="card-prompt">Wykonaj <em>skan</em> teraz</h1>
+  <p class="card-detail">Połóż się na plecach (lub usiądź wygodnie). Telefon w trybie nie przeszkadzać. Włącz timer. Zamknij oczy. Po sesji wróć tutaj — krok 5.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Sekwencja w każdej stacji</div>
+    <div class="element-row">
+      <span class="element-icon">①</span>
+      <span class="element-text"><strong>Wdech do okolicy</strong> — wyobraź sobie, że oddychasz „przez" tę okolicę (lewą stopę, brzuch, kark). To pomaga skupić uwagę.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">②</span>
+      <span class="element-text"><strong>Zauważanie 30–60 sek</strong> — co tu się dzieje? Ciepło? Zimno? Ucisk? Mrowienie? Pulsowanie? Ciężar? <em>Nic</em>? Każda odpowiedź jest właściwa.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">③</span>
+      <span class="element-text"><strong>Bez zmiany</strong> — nie próbuj rozluźniać. Nie próbuj zwiększać czucia. Tylko bądź obecny/a z tym, co jest.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">④</span>
+      <span class="element-text"><strong>Wydech zostawia</strong> — wyobraź sobie, że wydech „zostawia" tę okolicę. Uwaga przechodzi do następnej.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⑤</span>
+      <span class="element-text"><strong>Powrót po odpłynięciu</strong> — uwaga ucieka. Zauważ, że uciekła, powiedz w głowie „myśl", i wróć do okolicy, na której byłeś/aś. Bez frustracji.</span>
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Pułapki — co nie jest skanem ciała</strong>:</p>
+  <div class="frame-card">
+    <div class="frame-h">Klasyczne błędy początkujących</div>
+    <div class="element-row">
+      <span class="element-icon">⚠️</span>
+      <span class="element-text"><strong>Wymuszanie rozluźnienia</strong> — „muszę poczuć rozluźnienie w stopie". Nie. Tylko zauważasz, co JEST. Stopa może być sztywna, mrowić, drętwieć.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚠️</span>
+      <span class="element-text"><strong>Ocenianie doznań</strong> — „to dobre uczucie, to złe". Wszystko, co jest, JEST — bez etykiet. Nawet ból bez „uciążliwy" — sam ból.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚠️</span>
+      <span class="element-text"><strong>Karanie się za odpłynięcia</strong> — uwaga uciekła 50 razy w 20-minutowej sesji. To jest NORMA, nie porażka. Każdy powrót to trening.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚠️</span>
+      <span class="element-text"><strong>Skanowanie analityczne</strong> — myślenie „o" stopie zamiast czucia stopy. To dwie różne rzeczy. Czucie = doznanie zmysłowe; myślenie = etykieta.</span>
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Notatka po sesji</strong>:</p>
+  <textarea class="thought-input" id="notatka" placeholder="np. „Lewa stopa — czuję pulsowanie, którego nie zauważałam wcześniej. W brzuchu — ucisk po lunchu. Twarz — szczęka zaciśnięta cały czas, próbowałam rozluźnić — wraca."" rows="3"></textarea>
+
+  <div class="term-note"><strong>Mechanizm</strong>: nie chodzi o to, by „nic nie myśleć". Chodzi o to, by <em>zauważać</em> myśli i wracać do ciała. Każdy powrót buduje zdolność świadomej regulacji uwagi (executive control), kluczową dla regulacji emocji.</div>
+</section>
+
+<!-- ============ KROK 5 ============ -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po sesji</div>
+  <h1 class="card-prompt">Sprawdź <em>świadomość</em> i zaplanuj 8 tygodni</h1>
+  <p class="card-detail">Zmierz świadomość ciała i dyskomfort po skanowaniu. Pamiętaj: skan nie ma „uspokoić" — ma „uświadomić". Czasem dyskomfort wzrasta, bo zauważasz to, co tłumiłeś/aś. To <em>też</em> jest pożądany efekt.</p>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość ciała po skanie</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="swiadEnd" min="0" max="10" step="1" value="7" data-default="7">
+    <div class="scale-readout"><span>Świadomość</span><span id="swiadEndVal">7</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Dyskomfort po skanie</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="dyskEnd" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Dyskomfort</span><span id="dyskEndVal">3</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Wprowadź pomiary po skanie — pokażę zmianę.</div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Plan 8-tygodniowy</strong> (klasyczny MBSR — codziennie 6 dni w tygodniu):</p>
+  <textarea class="thought-input" id="plan8" placeholder="np. „Codziennie po obudzeniu, 20 min, w sypialni przed wstaniem. 6 dni w tygodniu (niedziela wolna). Cel: 8 tygodni = 48 sesji."" rows="3"></textarea>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: pierwsze 10 sesji często są <em>frustrujące</em>. Uwaga ucieka co 30 sek, ciało wydaje się „nieczułe" lub przeciwnie — bolesne. Po 14–21 dniach zaczyna się przesuwać próg: ciało odpowiada na uwagę, a uwaga zaczyna stabilizować się dłużej. Po 8 tygodniach RCT pokazują wymierne zmiany w kortyzolu, ciśnieniu, gęstości szarej istoty w korze przedczołowej (Hölzel i in. 2011).</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Skan ciała to <strong>nie metoda relaksacyjna</strong> — to metoda uważności. Cel: <em>być z tym, co jest</em>, bez prób zmieniania. Paradoks: właśnie to przynosi najgłębsze rozluźnienie. <em>Zauważ. Nie zmieniaj. Wróć po odpłynięciu.</em></div>
+  </div>
+
+  <div class="src">Kabat-Zinn J. (1990, „Full Catastrophe Living") · Kabat-Zinn J., Lipworth L., Burney R. (1985, Journal of Behavioral Medicine — RCT bólu) · Hölzel B.K. i in. (2011, Psychiatry Research: Neuroimaging — zmiany strukturalne w mózgu po MBSR) · Goyal M. i in. (2014, JAMA Internal Medicine) · Khoury B. i in. (2013, Clinical Psychology Review) · Segal Z., Williams M., Teasdale J. (2002, „Mindfulness-Based Cognitive Therapy")</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateScales() {
+  ['swiadStart','dyskStart','swiadEnd','dyskEnd'].forEach(function(id){
+    var el = document.getElementById(id);
+    var val = document.getElementById(id+'Val');
+    if (el && val) val.textContent = el.value;
+  });
+}
+
+function pickCel(letter) {
+  ['celA','celB','celC','celD'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var picked = document.getElementById('cel'+letter);
+  if (picked) picked.classList.add('picked');
+  save();
+}
+
+function calcDiff() {
+  var ss = parseInt(document.getElementById('swiadStart').value, 10);
+  var se = parseInt(document.getElementById('swiadEnd').value, 10);
+  var ds = parseInt(document.getElementById('dyskStart').value, 10);
+  var de = parseInt(document.getElementById('dyskEnd').value, 10);
+  var dSw = se - ss;
+  var dDysk = ds - de;
+  
+  var msg;
+  if (dSw >= 3 && dDysk >= 2) msg = '<strong>Klasyczna pierwsza sesja.</strong> Świadomość ↑'+dSw+', dyskomfort ↓'+dDysk+'. To wskaźnik, że skan zadziałał właściwie — uwaga znalazła ciało, a uważne zauważanie obniżyło napięcie.';
+  else if (dSw >= 3 && dDysk < 0) msg = '<strong>Świadomość rośnie, dyskomfort też.</strong> ↑'+dSw+' świadomości, ale dyskomfort wzrósł o '+Math.abs(dDysk)+' pkt. To <em>również</em> efekt poprawny — odsłaniasz to, co było tłumione. Po 5–7 sesjach krzywa się odwróci.';
+  else if (dSw >= 2) msg = '<strong>Wzrost świadomości.</strong> ↑'+dSw+' pkt. Niezależnie od dyskomfortu, sama poprawa świadomości to efekt podstawowy. Cel długoterminowy: świadomość 7+/10 jako norma.';
+  else if (dSw === 0 && dDysk >= 1) msg = '<strong>Spadek dyskomfortu bez wzrostu świadomości.</strong> Możliwe że pomyliłeś/aś skan z PMR i wymuszałeś/aś rozluźnienie. Skan nie ma redukować — ma uświadamiać. Następnym razem tylko zauważaj.';
+  else if (dSw === 0 && dDysk === 0) msg = '<strong>Bez zmian.</strong> Pierwsza sesja często wygląda właśnie tak — uwaga jest jak małpka, ucieka. To jest TO ćwiczenie, nie jego brak. Wróć jutro.';
+  else msg = '<strong>Spadek świadomości?</strong> Mogłeś/aś zasnąć (to często) albo myślałeś/aś o ciele zamiast je czuć. Spróbuj jutro w pozycji siedzącej i krótszym 10-minutowym formacie.';
+  document.getElementById('finalMsg').innerHTML = msg;
+}
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    updateScales();
+    if (curStep === 5) calcDiff();
+  }
+});
+
+function onStepChange(s) {
+  updateScales();
+  if (s === 5) calcDiff();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_body_scan — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_body_scan";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+updateScales();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

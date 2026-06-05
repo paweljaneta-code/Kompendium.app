@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Kalendarz wartości</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === VALUES-PICK (krok 2) === */
+.values-pick { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.value-slot { padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; border-left: 3px solid var(--sage-deep); }
+.value-slot-h { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+
+/* === WEEK-GRID (krok 3) === */
+.week-grid { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 14px; }
+.day-row { display: flex; gap: 10px; align-items: stretch; padding: 10px 12px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; }
+.day-label { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 700; color: var(--sage-deep); width: 64px; flex-shrink: 0; padding-top: 4px; letter-spacing: 0.04em; }
+.day-input { flex: 1; }
+.day-input textarea { margin-bottom: 0; min-height: 38px; padding: 8px 12px; font-size: 13.5px; }
+
+/* === REVIEW-CARD (krok 5) === */
+.review-card { background: linear-gradient(135deg, rgba(122,146,112,0.08), rgba(216,225,205,0.4)); border: 1px solid var(--sage-soft); border-radius: 14px; padding: 14px 16px; margin: 6px 0 12px; }
+.review-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Kalendarz <em>wartości</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Kalendarz <em>wartości</em></h1>
+    <p class="card-detail"><strong>Values-Based Calendar</strong> (Harris 2019; adaptacja Covey 1989; integracja z Behavioral Activation Martella) — narzędzie planowania wartościowego w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). <em>Tygodniowy harmonogram, w którym KAŻDY dzień zawiera minimum jedno konkretne działanie zakotwiczone w wartości. Nie kalendarz obowiązków — kalendarz wartościowego życia. Klient z chaosem zaangażowania zyskuje strukturę, klient z wypaleniem zyskuje sens</em>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy kalendarza</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">💎</span>
+          <span class="element-text"><strong>3–4 wartości</strong> tygodnia (nie wszystkie życiowe — te aktywne teraz)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📅</span>
+          <span class="element-text"><strong>Zasada 7×1</strong> = jedno mikrodziałanie dziennie wartościowe</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">⏰</span>
+          <span class="element-text"><strong>Konkretna godzina</strong> = bez „kiedyś", tylko „wtorek 19:30"</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔁</span>
+          <span class="element-text"><strong>Niedzielny przegląd</strong> = ile dni z 7 zaliczonych, co dalej</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Chaos zaangażowania nie jest brakiem motywacji. Jest <em>brakiem struktury</em>."
+        <span class="frame-quote-attr">— Russ Harris (2019, ACT Questions and Answers)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: lepsza zasada <em>3–4 wartości aktywnie</em> niż <em>10 wartości w tle</em>. Skoncentrowanie zwiększa intensywność. Reszta wartości czeka — wrócisz do nich w innym tygodniu.</div>
+    
+    <div class="src">Harris (2019, ACT Questions and Answers) · Covey (1989, 7 Habits) · Martell, Dimidjian, Herman-Dunn (2010, Behavioral Activation)</div>
+  </section>
+  <!-- 2: 4 WARTOŚCI TYGODNIA -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">4 wartości tygodnia</div>
+    <h1 class="card-prompt">Czym <em>żyjesz</em> w tym tygodniu?</h1>
+    <p class="card-detail">Wybierz <strong>3–4 wartości</strong>, które chcesz aktywnie realizować w nadchodzących 7 dniach. Nie wszystkie życiowe — <em>te, których chcesz dotknąć teraz</em>. Mogą być różne wartości w różne tygodnie.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: jeśli czujesz, że <em>wszystkie</em> twoje wartości są ważne <em>w każdym tygodniu</em> — to znak chaosu, nie głębi. Świadomy wybór 3–4 to akt zaangażowania, nie redukcji.</div>
+    
+    <div class="values-pick">
+      <div class="value-slot">
+        <div class="value-slot-h">Wartość 1</div>
+        <textarea class="thought-input" id="val1" placeholder="np. „bliskość rodzinna"" rows="2" style="margin-bottom:0"></textarea>
+      </div>
+      <div class="value-slot">
+        <div class="value-slot-h">Wartość 2</div>
+        <textarea class="thought-input" id="val2" placeholder="np. „twórcza ekspresja"" rows="2" style="margin-bottom:0"></textarea>
+      </div>
+      <div class="value-slot">
+        <div class="value-slot-h">Wartość 3</div>
+        <textarea class="thought-input" id="val3" placeholder="np. „zdrowie ciała"" rows="2" style="margin-bottom:0"></textarea>
+      </div>
+      <div class="value-slot">
+        <div class="value-slot-h">Wartość 4 (opcjonalnie)</div>
+        <textarea class="thought-input" id="val4" placeholder="np. „odpoczynek bez wyrzutów"" rows="2" style="margin-bottom:0"></textarea>
+      </div>
+    </div>
+  </section>
+  <!-- 3: ZASADA 7×1 -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Zasada 7×1</div>
+    <h1 class="card-prompt">Po jednym <em>kroku</em> dziennie</h1>
+    <p class="card-detail">Każdego dnia tygodnia <strong>jedno konkretne mikrodziałanie</strong> realizujące którąś z wybranych wartości. Tylko jedno. Małe. Nie cały rytuał. <em>Jedno działanie = jeden dzień zaliczony</em>.</p>
+    
+    <div class="term-note"><strong>Reguła</strong>: jeśli czujesz, że dzień ci się <em>rozsypał</em> i niczego nie zrobiłeś/aś — sprawdź, czy wykonałeś/aś tę <strong>jedną zaplanowaną rzecz</strong>. Jeśli tak — <em>dzień zaliczony</em>. Jeden mikrokrok bije zero mikrokroków o nieskończoność.</div>
+    
+    <div class="week-grid">
+      <div class="day-row">
+        <div class="day-label">PON</div>
+        <div class="day-input"><textarea class="thought-input" id="mon" placeholder="np. „bliskość: 30 min z dzieckiem przed snem (20:30, książka)"" rows="2"></textarea></div>
+      </div>
+      <div class="day-row">
+        <div class="day-label">WT</div>
+        <div class="day-input"><textarea class="thought-input" id="tue" placeholder="np. „twórczość: 30 min pisania (16:00–16:30, telefon w drugim pokoju)"" rows="2"></textarea></div>
+      </div>
+      <div class="day-row">
+        <div class="day-label">ŚR</div>
+        <div class="day-input"><textarea class="thought-input" id="wed" placeholder="np. „zdrowie: 20-min spacer po obiedzie"" rows="2"></textarea></div>
+      </div>
+      <div class="day-row">
+        <div class="day-label">CZW</div>
+        <div class="day-input"><textarea class="thought-input" id="thu" placeholder="np. „odpoczynek: 1h książki bez telefonu (21:00–22:00)"" rows="2"></textarea></div>
+      </div>
+      <div class="day-row">
+        <div class="day-label">PT</div>
+        <div class="day-input"><textarea class="thought-input" id="fri" placeholder="np. „bliskość: telefon do brata po pracy (17:00, 15 min)"" rows="2"></textarea></div>
+      </div>
+      <div class="day-row">
+        <div class="day-label">SOB</div>
+        <div class="day-input"><textarea class="thought-input" id="sat" placeholder="np. „twórczość: 2h pracy nad książką (10:00–12:00, kawiarnia)"" rows="2"></textarea></div>
+      </div>
+      <div class="day-row">
+        <div class="day-label">NDZ</div>
+        <div class="day-input"><textarea class="thought-input" id="sun" placeholder="np. „bliskość: spacer z rodziną w parku (15:00, bez telefonów)"" rows="2"></textarea></div>
+      </div>
+    </div>
+  </section>
+  <!-- 4: FILTR REALNOŚCI -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Filtr realności</div>
+    <h1 class="card-prompt">Czy to <em>realne</em>?</h1>
+    <p class="card-detail">Spójrz na wszystkie 7 wpisów. <strong>Czy każdy ma konkretną godzinę?</strong> Czy każdy mieści się w 30 min? Czy żaden nie wymaga rezygnacji ze snu lub kosztu zdrowia? Tnij ambicję — buduj <em>nawyk obecności</em>, nie wyczerpania.</p>
+    
+    <div class="term-note"><strong>Pułapka</strong>: 7 mikrodziałań tygodniowo (po 15–30 min każde, łącznie 2–3,5 godziny) <em>wydaje się mało</em>. W praktyce — to ogromna zmiana. Większość ludzi nie ma <strong>nawet jednej godziny tygodniowo świadomie zaplanowanej z wartością</strong>. Twój tydzień jest realnie ambitny.</div>
+    
+    <div class="examples-h">Co tnę / koryguję?</div>
+    <textarea class="thought-input" id="cuts" placeholder="np. „wtorek 30 min pisania → tylko 15 min, bo wracam wykończony. Czwartek książka — przeniosę na piątek wieczór, bo czwartek mam pracę do późna"" rows="5"></textarea>
+    
+    <div class="examples-h">Co dodaję? (jeśli za mało ambitne)</div>
+    <textarea class="thought-input" id="adds" placeholder="np. „weekend dopisuję drugie mikrodziałanie — sobota popołudnie z dziećmi"" rows="3"></textarea>
+  </section>
+  <!-- 5: NIEDZIELNY PRZEGLĄD -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Niedzielny przegląd</div>
+    <h1 class="card-prompt">W <em>niedzielę</em> wracam</h1>
+    <p class="card-detail"><strong>W niedzielę wieczór</strong> — 10 minut. Sprawdź, ile dni z 7 udało się zrealizować mikrodziałanie. <em>Bez wyrzutów</em>. To dane, nie wyrok. 3? 5? 7? — wszystko jest informacją.</p>
+    
+    <div class="term-note"><strong>Klucz konsekwencji</strong>: jeden tydzień nie zmienia życia. <em>52 tygodnie z konsekwentnym kalendarzem</em> — transformacja. Konsekwencja > intensywność. Lepsza skromna struktura tygodniowa niż ambitny plan na 2 tygodnie i kapitulacja.</div>
+    
+    <div class="review-card">
+      <div class="review-h">Plan rytuału niedzielnego</div>
+      <textarea class="thought-input" id="ritual" placeholder="np. „niedziela 20:00, 10 min, kawa, kalendarz w ręce. Liczę zaliczone dni (✓ vs ✗), planuję następny tydzień"" rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="review-h" style="margin-top:8px">Plan przy 4–7/7 dni zaliczonych</div>
+      <textarea class="thought-input" id="planA" placeholder="np. „zostaję przy tym samym formacie, może lekka korekta którego dnia"" rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="review-h" style="margin-top:8px">Plan przy 0–3/7 dni zaliczonych</div>
+      <textarea class="thought-input" id="planB" placeholder="np. „tnę plany na pół. Zamiast 30 min pisania — 10 min. Buduję nawyk wykonalności"" rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Kalendarz wartości <em>nie jest</em> kalendarzem obowiązków. To <strong>obietnica dana sobie</strong>: w tym tygodniu będę żyć tym, co dla mnie ważne. <em>Nie wszystkim</em> — wybranymi 3–4.</div>
+    </div>
+    
+    <div class="src">Harris (2019, ACT Questions and Answers) · Covey (1989) · Martell i in. (2010, Behavioral Activation)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    { const el = document.getElementById('val1'); if (el) el.value = ''; }
+    { const el = document.getElementById('val2'); if (el) el.value = ''; }
+    { const el = document.getElementById('val3'); if (el) el.value = ''; }
+    { const el = document.getElementById('val4'); if (el) el.value = ''; }
+    { const el = document.getElementById('mon'); if (el) el.value = ''; }
+    { const el = document.getElementById('tue'); if (el) el.value = ''; }
+    { const el = document.getElementById('wed'); if (el) el.value = ''; }
+    { const el = document.getElementById('thu'); if (el) el.value = ''; }
+    { const el = document.getElementById('fri'); if (el) el.value = ''; }
+    { const el = document.getElementById('sat'); if (el) el.value = ''; }
+    { const el = document.getElementById('sun'); if (el) el.value = ''; }
+    { const el = document.getElementById('cuts'); if (el) el.value = ''; }
+    { const el = document.getElementById('adds'); if (el) el.value = ''; }
+    { const el = document.getElementById('ritual'); if (el) el.value = ''; }
+    { const el = document.getElementById('planA'); if (el) el.value = ''; }
+    { const el = document.getElementById('planB'); if (el) el.value = ''; }
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  // Brak cross-step dynamicznych aktualizacji
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_kalendarz_wart";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

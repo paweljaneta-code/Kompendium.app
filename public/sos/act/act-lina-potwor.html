@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Lina z potworem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — abyss === */
+.frame-card { 
+  background: linear-gradient(180deg, #2a2530 0%, #15101a 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ PRZECIĄGANIE LINY"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "👹"; position: absolute; bottom: 8px; right: 16px;
+  font-size: 56px; opacity: 0.07; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.elements-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; position: relative; z-index: 1; }
+.element-row {
+  display: grid; grid-template-columns: 22px 1fr;
+  gap: 10px; align-items: center;
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 7px 12px;
+}
+.element-icon { font-size: 14px; text-align: center; }
+.element-text { font-size: 11.5px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === MONSTER + ROPES INPUT === */
+.monster-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warm);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.monster-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 6px; }
+.monster-q { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; margin-bottom: 6px; }
+
+/* === ROPES (chips) === */
+.ropes-list { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; }
+.rope-row {
+  display: grid; grid-template-columns: 26px 1fr;
+  gap: 10px; align-items: center;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rope-row:hover { background: var(--warm-soft); }
+.rope-row.active { background: rgba(201,122,82,0.15); border-color: var(--warm); border-left: 3px solid var(--warm); padding-left: 9px; }
+.rope-icon { font-size: 16px; text-align: center; }
+.rope-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); line-height: 1.35; }
+.rope-row.active .rope-text { color: var(--ink); }
+.rope-text strong { font-style: normal; font-weight: 700; }
+
+/* === EXPERIMENT === */
+.exp-card {
+  background: linear-gradient(135deg, rgba(122,146,112,0.12), rgba(216,225,205,0.4));
+  border: 2px solid var(--sage-soft);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 4px 0 12px;
+}
+.exp-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.exp-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+/* === BLOCK CONCERNS === */
+.concerns-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.concern-block {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warm);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.concern-fear { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; }
+.concern-fear::before { content: '"'; color: var(--warm); font-weight: 700; margin-right: 2px; }
+.concern-fear::after { content: '"'; color: var(--warm); font-weight: 700; margin-left: 2px; }
+.concern-truth { font-size: 12px; color: var(--ink); line-height: 1.4; padding-top: 4px; border-top: 1px solid var(--line); margin-top: 4px; }
+.concern-truth strong { color: var(--sage-deep); font-weight: 700; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Lina z potworem</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: METAPHOR FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Metafora akceptacji</div>
+    <h1 class="card-prompt">Puścić <em>linę</em></h1>
+    <p class="card-detail"><strong>Tug-of-War with a Monster</strong> (Hayes, Strosahl, Wilson 1999) — kluczowa metafora akceptacji w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). <em>Stoisz na krawędzi przepaści, przeciągasz linę z ogromnym potworem (twoim bólem). Im mocniej ciągniesz, tym mocniej on. Jedyne wyjście: puścić linę. Potwór nadal tam jest — ale przestajesz tracić energię na walkę</em>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy metafory</div>
+      
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">👹</span>
+          <span class="element-text"><strong>Potwór</strong> = trudna emocja, wspomnienie, myśl</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🪢</span>
+          <span class="element-text"><strong>Lina</strong> = strategie walki (unikanie, tłumienie, zamartwianie)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🕳</span>
+          <span class="element-text"><strong>Przepaść</strong> = ryzyko, że walka pochłonie życie</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">✋</span>
+          <span class="element-text"><strong>Puszczenie</strong> = akceptacja — nie rezygnacja, mądry wybór</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Puszczenie liny nie oznacza, że potwór znika. Oznacza, że ty <em>odzyskujesz ręce</em>."
+      <span class="frame-quote-attr">— Hayes, Strosahl, Wilson (1999)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: większość ludzi przychodzi do terapii z pytaniem „<em>jak pokonać potwora?</em>". Metafora odwraca pytanie: <strong>nie chodzi o pokonanie — chodzi o puszczenie liny</strong>. Dopóki ciągniesz, potwór ciągnie z drugiej strony. Puszczenie nie jest porażką — jest <em>zmianą reguł gry</em>.</div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999, ACT)</div>
+  </section>
+
+  <!-- 2: MONSTER + ROPES -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Twój potwór i twoje liny</div>
+    <h1 class="card-prompt">Z czym <em>walczę</em>?</h1>
+    <p class="card-detail">Pierwsza para: <strong>nazwij potwora</strong> (z czym walczysz od dawna) i <strong>zidentyfikuj swoje liny</strong> (jakie strategie walki używasz).</p>
+    
+    <div class="monster-card">
+      <div class="monster-h">👹 Mój potwór (z czym walczę od dawna)</div>
+      <div class="monster-q">Konkretna emocja, myśl, doświadczenie. Im uczciwsza nazwa, tym łatwiejsza praca.</div>
+      <textarea class="thought-input" id="monster" placeholder="np. „poczucie bycia niewystarczającym" / „lęk przed odrzuceniem" / „wstyd po wydarzeniu z 2018" / „zamartwianie się o przyszłość"..." rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Moje liny — jakie strategie walki używam</div>
+    
+    <div class="ropes-list">
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">🔄</span>
+        <span class="rope-text"><strong>Zamartwianie</strong> — godziny analizy „a co jeśli", „dlaczego ja"</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">⚡</span>
+        <span class="rope-text"><strong>Perfekcjonizm</strong> — żeby potwór nie miał żadnego pretekstu</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">🚪</span>
+        <span class="rope-text"><strong>Izolacja</strong> — ucieczka przed ludźmi, którzy mogliby coś zauważyć</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">🍷</span>
+        <span class="rope-text"><strong>Otępianie</strong> — alkohol, jedzenie, ekrany, praca po godzinach</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">📵</span>
+        <span class="rope-text"><strong>Rozproszenie</strong> — scrollowanie, seriale, ciągła aktywność</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">🎯</span>
+        <span class="rope-text"><strong>Kontrola otoczenia</strong> — żeby trigger się nie pojawił</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">😤</span>
+        <span class="rope-text"><strong>Walka mentalna</strong> — „muszę przestać tak myśleć / czuć"</span>
+      </div>
+      <div class="rope-row" onclick="toggleRope(this)">
+        <span class="rope-icon">🆘</span>
+        <span class="rope-text"><strong>Szukanie potwierdzeń</strong> — ciągłe pytanie bliskich „czy jestem OK?"</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Co bym robił/a, gdybym puścił/a wszystkie liny — co byłoby możliwe</div>
+    <textarea class="thought-input" id="ifLetGo" placeholder="np. „spędzałbym czas z bliskimi bez ciągłego myślenia o swojej wartości" / „mogłabym pisać, podróżować, realizować pasje" / „nie wycieńczałbym się walką"..." rows="3"></textarea>
+    
+    <div class="term-note"><strong>Pytanie testowe</strong>: ile <em>godzin tygodniowo</em> tracisz na trzymaniu lin? (zamartwianie + perfekcjonizm + izolacja + …) Większość osób odkrywa: 20-40 godzin tygodniowo. To <strong>drugi etat</strong> — pełen, niewidzialny, niewynagradzany.</div>
+  </section>
+
+  <!-- 3: WHICH ROPE TO LET GO -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Eksperyment puszczania</div>
+    <h1 class="card-prompt">Jedna <em>lina</em></h1>
+    <p class="card-detail">Nie wszystkie naraz. <strong>Wybierz JEDNĄ linę</strong> z poprzedniego kroku — tę, którą trzymasz najdłużej, najmocniej. To z nią eksperymentujemy w tym tygodniu.</p>
+    
+    <div class="exp-card">
+      <div class="exp-h">Mój eksperyment puszczenia</div>
+      
+      <div class="exp-prompt-label">Lina, którą puszczam</div>
+      <textarea class="thought-input" id="ropeToLetGo" placeholder="np. „zamartwianie się o przyszłość finansową" / „kontrola otoczenia, żeby nie spotkać byłej partnerki"..." rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="exp-prompt-label">Sygnał: kiedy zauważam, że ciągnę linę</div>
+      <textarea class="thought-input" id="pullSignal" placeholder='np. "kiedy o 23 leżę w łóżku i robię w głowie tabelę excelową budżetu" / "gdy sprawdzam Instagram byłej co godzinę"..."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="exp-prompt-label">Co robię w momencie puszczenia liny (małe, konkretne)</div>
+      <textarea class="thought-input" id="letGoAction" placeholder='np. "powiem »puszczam linę« na głos, oddychnę 3x, przeniesie uwagę na coś, co chcę robić" / "zamknę aplikację, zrobię herbatę, otworzę książkę"..."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="exp-prompt-label">Co zrobię z odzyskanymi rękami (uwolnioną energią)</div>
+      <textarea class="thought-input" id="freedHands" placeholder='np. "spędzę czas z dziećmi, które normalnie zaniedbuję" / "zacznę pisać blog, którego nie zaczynałem od 3 lat" / "zacznę chodzić na grupę wsparcia"..."' rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Kluczowe</strong>: puszczenie liny <em>nie jest pasywne</em>. To <strong>aktywne przeniesienie energii</strong> z walki na życie. Wolne ręce ≠ nuda. Wolne ręce = robisz coś, co dotychczas było niemożliwe, bo trzymały liny.</div>
+  </section>
+
+  <!-- 4: WHAT MONSTER DOES -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Co zrobi potwór</div>
+    <h1 class="card-prompt">Bunt <em>potwora</em></h1>
+    <p class="card-detail">Po puszczeniu liny <strong>potwór często ryczy głośniej</strong> przez chwilę — to klasyczny wzorzec. Lista poniżej to typowe „grożby potwora", gdy puszczasz linę. <em>Wszystkie wyglądają groźnie. Żadna z nich nie jest powodem, żeby chwycić linę z powrotem</em>.</p>
+    
+    <div class="day-h">Typowe groźby potwora — i prawda</div>
+    
+    <div class="concerns-list">
+      <div class="concern-block">
+        <div class="concern-fear">Jeśli puszczę, potwór wygra</div>
+        <div class="concern-truth"><strong>Prawda</strong>: potwór wygrywa wtedy, gdy ciągniesz. Im mocniej ciągniesz, tym mocniej potwór ciągnie z drugiej strony. Bez liny — nie ma walki, nie ma wygrywania ani przegrywania.</div>
+      </div>
+      
+      <div class="concern-block">
+        <div class="concern-fear">Muszę kontrolować myśli, bo zwariuję</div>
+        <div class="concern-truth"><strong>Prawda</strong>: kontrola myśli to lina. Im mocniej kontrolujesz, tym intensywniejsze myśli (efekt białego niedźwiedzia, Wegner 1987). Puszczenie kontroli — <em>paradoks</em> — często uspokaja.</div>
+      </div>
+      
+      <div class="concern-block">
+        <div class="concern-fear">Bez walki jestem słaby</div>
+        <div class="concern-truth"><strong>Prawda</strong>: puszczenie liny <em>wymaga większej siły</em> niż trzymanie. Trzymać uczy nas instynkt. Puścić — to świadoma decyzja przeciw odruchowi.</div>
+      </div>
+      
+      <div class="concern-block">
+        <div class="concern-fear">Już tyle zainwestowałem w walkę</div>
+        <div class="concern-truth"><strong>Prawda</strong>: koszty utopione. Lata walki nie zobowiązują cię do kolejnych. Puszczenie dziś jest niezależne od historii liny.</div>
+      </div>
+      
+      <div class="concern-block">
+        <div class="concern-fear">Co jeśli potwór zrobi coś okropnego, gdy puszczę?</div>
+        <div class="concern-truth"><strong>Prawda</strong>: emocje, myśli, wspomnienia <em>nie krzywdzą fizycznie</em>. Potwór jest groźny tylko poprzez twoje wyobrażenia o nim. Bez liny on… <em>tylko jest</em>.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Która groźba potwora najmocniej trzyma mnie przy linie?</div>
+    <textarea class="thought-input" id="strongestThreat" placeholder='np. "muszę kontrolować lęk, bo zwariuję" / "jeśli puszczę myślenie o niej, zapomnę o niej, a tego nie chcę" / "moja walka definiuje mnie — bez niej jestem nikim"..."' rows="3"></textarea>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: potwór często grozi <em>najgłośniej tuż po puszczeniu</em>. Pierwsze 5-10 minut. Potem cisza. Pierwszy raz odkrywasz, że <strong>najgorsze groźby były pustymi słowami</strong>. To kluczowe doświadczenie korekcyjne — nie da się go nauczyć słowem, tylko wykonaniem.</div>
+  </section>
+
+  <!-- 5: WEEK OBSERVATION + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Po tygodniu</div>
+    <h1 class="card-prompt">Co <em>zauważyłem/am</em>?</h1>
+    <p class="card-detail">Po tygodniu eksperymentu wróć tu. <strong>Celem nie jest pokonanie potwora</strong>. Celem jest zobaczenie, co się dzieje w twoim życiu, gdy ręce są wolne.</p>
+    
+    <div class="examples-h">Ile razy dziennie udało mi się puścić linę (uczciwie)</div>
+    <textarea class="thought-input" id="howOften" placeholder='np. "1-2 razy dziennie świadomie, reszta dnia łapałem się jak zwykle" / "5 dni z 7 nawet nie zauważyłem, że ciągnę" / "raz puściłem na 30 min, to było ogromne"..."' rows="2"></textarea>
+    
+    <div class="examples-h">Co potwór zrobił po puszczeniu</div>
+    <textarea class="thought-input" id="monsterDid" placeholder='np. "ryczał strasznie pierwsze 10 minut, potem był cichszy" / "nie zniknął — ale przestał mnie wykończać" / "w jednym momencie zauważyłem, że nawet o nim zapomniałem"..."' rows="3"></textarea>
+    
+    <div class="examples-h">Co zrobiłem/am uwolnionymi rękami</div>
+    <textarea class="thought-input" id="withFreeHands" placeholder='np. "napisałem trzy strony tekstu, którego nie pisałem od miesięcy" / "spędziłam wieczór z mężem bez sprawdzania telefonu" / "po prostu odpoczęłam"..."' rows="2"></textarea>
+    
+    <div class="day-h">Codzienny gest puszczenia</div>
+    <div class="term-note">
+      <strong>Rano</strong> — „której liny dziś nie chwytam?"<br>
+      <strong>W trudnym momencie</strong> — gest fizyczny: rozluźnij dłonie, rozłóż ręce. Powiedz: „<em>puszczam linę</em>"<br>
+      <strong>Wieczorem</strong> — bez krytyki: „ile razy dziś zauważyłem, że ciągnę?"<br>
+      <strong>Tygodniowo</strong> — czy pojawiły się nowe rzeczy w życiu, gdy ręce były wolne?
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Hayesa</div>
+      <div class="repeat-body">Potwór <strong>nie znika</strong>. Ale puszczenie liny <em>zmienia całą grę</em>. Bez liny: potwór tylko jest. Ty masz wolne ręce — możesz nimi <strong>budować życie zamiast walczyć z bólem</strong>. To jest esencja akceptacji w ACT — nie pokora wobec cierpienia, lecz <em>świadome odzyskanie energii</em>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.rope-row.active').forEach(b => b.classList.remove('active'));
+    ['monster','ifLetGo','ropeToLetGo','pullSignal','letGoAction','freedHands','strongestThreat','howOften','monsterDid','withFreeHands'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleRope(el) { el.classList.toggle('active'); }
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_lina_potwor";
+  var clickSel0 = '.rope-row';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.rope-row')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

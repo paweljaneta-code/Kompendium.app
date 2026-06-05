@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Ekspozycja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === Exposure specific === */
+.suds-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.suds-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.suds-num {
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--sage-deep); color: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.suds-name { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--ink); }
+.suds-trigger {
+  width: 100%; padding: 8px 10px; min-height: 40px;
+  border: 1px solid var(--sage); border-radius: 8px;
+  background: rgba(255,255,255,0.5); font-family: inherit;
+  font-size: 12.5px; line-height: 1.5; color: var(--ink); resize: vertical;
+}
+.suds-trigger:focus { outline: none; border-color: var(--sage-deep); background: white; }
+.suds-row {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px;
+  font-size: 12px; color: var(--ink-mute);
+}
+.suds-readout {
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px;
+  color: var(--sage-deep); min-width: 32px; text-align: center;
+}
+.suds-input {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 6px; background: linear-gradient(to right, var(--sage), #c99a8c, #a64a3a);
+  border-radius: 3px; outline: none;
+}
+.suds-input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ink); cursor: pointer;
+  border: 2px solid var(--bg);
+}
+.suds-input::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ink); cursor: pointer; border: 2px solid var(--bg);
+}
+
+.curve-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.curve-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.curve-svg { display: block; margin: 8px auto; max-width: 100%; }
+.curve-row { padding: 4px 0; font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.curve-row strong { color: var(--bg); }
+.curve-row em { color: var(--sage); font-style: italic; }
+
+.timer-card {
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin: 8px 0;
+  text-align: center;
+}
+.timer-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--ink); margin-bottom: 6px; }
+.timer-t { font-family: 'Fraunces', serif; font-weight: 700; font-size: 32px; color: var(--sage-deep); margin: 6px 0; }
+.timer-status { font-size: 11.5px; color: var(--ink-mute); font-style: italic; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Ekspozycja</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============ KROK 1 — Wprowadzenie ============ -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Dyskomfort <em>opada sam</em> — bez aktu</h1>
+    <p class="card-detail">Edna Foa i Michael Kozak (1986) opisali w teorii przetwarzania emocjonalnego mechanizm <strong>habituacji</strong>: gdy organizm pozostaje <em>w sytuacji wywołującej dyskomfort</em>, nie wykonując zachowania uciecznego, dyskomfort opada w ciągu 10—45 minut <em>sam z siebie</em>. W problematycznym używaniu pornografii (PPU) chronicznie unikamy ekspozycji — gdy pojawi się urge, sięgamy po pornografię (lub po inną dystrakcję). Mózg nigdy nie uczy się, że <em>można przeżyć dyskomfort</em>. Ekspozycja prowadzi to nowe uczenie.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Krzywa impulsu — co odkrywa ekspozycja</div>
+      <div class="element-row">
+        <span class="element-icon">📈</span>
+        <span class="element-text"><strong>Wzrost</strong> — w pierwszych 5—10 min impuls rośnie szybko; intuicja podpowiada, że "tylko się pogorszy".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Szczyt</strong> — między 10. a 20. minutą pojawia się szczyt; powyżej zwykle nie idzie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📉</span>
+        <span class="element-text"><strong>Spadek</strong> — po szczycie impuls <em>opada sam</em>, jeśli nie podejmiesz działania (PPU, dystrakcja). Spadek widoczny do 30—45 min.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Nowe uczenie</strong> — po 3—5 powtórzeniach mózg uczy się: <em>"mogę być w sytuacji bez aktu — nic złego się nie stanie"</em>. Vulnerability spada.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Lęk i pożądanie nie znikają, gdy walczysz. Znikają, gdy w nich siedzisz wystarczająco długo, by mózg mógł zauważyć: nic złego się nie dzieje."
+      <span class="frame-quote-attr">— parafraza po Edninie Foa &amp; Kozaku, „Emotional Processing of Fear" (1986)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ekspozycja w PPU to <em>nie zaciskanie zębów</em>. Różnica jest w <strong>nastawieniu</strong>: to obserwacja ciała i emocji, nie walka z nimi. Walka karmi mechanizm; obserwacja go rozbraja. Ekspozycja działa szczególnie dobrze w połączeniu z <em>defuzją</em> (myśli przepływają) i <em>akceptacją</em> (sensacje przepływają).</div>
+
+    <div class="src">Foa &amp; Kozak (1986, „Emotional processing of fear: Exposure to corrective information"); Marlatt &amp; Donovan (2005, „Relapse Prevention" — exposure jako element RP); Witkiewitz &amp; Marlatt (2004); Hayes, Strosahl &amp; Wilson (2012, ACT — acceptance-based exposure); zastosowanie do PPU: Hall (2013); Marlatt (1985, urge surfing — wczesna forma ekspozycji w uzależnieniach).</div>
+  </section>
+
+  <!-- ============ KROK 2 — Hierarchia SUDS ============ -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoja hierarchia</div>
+    <h1 class="card-prompt">Zbuduj <em>hierarchię ekspozycji</em></h1>
+    <p class="card-detail">Ekspozycja zaczyna się od <strong>najsłabszych</strong> wyzwalaczy, by mózg zbudował poczucie kompetencji. Stopniowo idziesz w górę. Skala SUDS (Subjective Units of Distress, 0—100): 0 = brak dyskomfortu, 100 = maksymalny.</p>
+
+    <div class="suds-card">
+      <div class="suds-h">
+        <span class="suds-num">1</span>
+        <span class="suds-name">Niski poziom — SUDS 30—40</span>
+      </div>
+      <textarea class="suds-trigger" id="trig1" placeholder='np. „Bycie sam w mieszkaniu wieczorem (bez telefonu w sypialni). Krótki kontakt z social media bez stories.”' rows="2"></textarea>
+      <div class="suds-row">
+        <span>SUDS:</span>
+        <input type="range" class="suds-input" id="s1" min="0" max="100" step="5" value="35" data-default="35">
+        <span class="suds-readout" id="s1val">35</span>
+      </div>
+    </div>
+
+    <div class="suds-card">
+      <div class="suds-h">
+        <span class="suds-num">2</span>
+        <span class="suds-name">Niski-średni — SUDS 40—50</span>
+      </div>
+      <textarea class="suds-trigger" id="trig2" placeholder='np. „Wieczór sam z telefonem w pokoju (bloker włączony). Scrollowanie Insta z reklamami stylu fitness.”' rows="2"></textarea>
+      <div class="suds-row">
+        <span>SUDS:</span>
+        <input type="range" class="suds-input" id="s2" min="0" max="100" step="5" value="45" data-default="45">
+        <span class="suds-readout" id="s2val">45</span>
+      </div>
+    </div>
+
+    <div class="suds-card">
+      <div class="suds-h">
+        <span class="suds-num">3</span>
+        <span class="suds-name">Średni — SUDS 55—65</span>
+      </div>
+      <textarea class="suds-trigger" id="trig3" placeholder='np. „Nocowanie sam, partnerka u rodziców. Łóżko + telefon. Brak blokera. Konflikt w pracy w tym dniu.”' rows="2"></textarea>
+      <div class="suds-row">
+        <span>SUDS:</span>
+        <input type="range" class="suds-input" id="s3" min="0" max="100" step="5" value="60" data-default="60">
+        <span class="suds-readout" id="s3val">60</span>
+      </div>
+    </div>
+
+    <div class="suds-card">
+      <div class="suds-h">
+        <span class="suds-num">4</span>
+        <span class="suds-name">Średni-wysoki — SUDS 70—80</span>
+      </div>
+      <textarea class="suds-trigger" id="trig4" placeholder='np. „Niedospanie + kłótnia + alkohol + sam w domu. Pełen koktajl. Szczyt vulnerability.”' rows="2"></textarea>
+      <div class="suds-row">
+        <span>SUDS:</span>
+        <input type="range" class="suds-input" id="s4" min="0" max="100" step="5" value="75" data-default="75">
+        <span class="suds-readout" id="s4val">75</span>
+      </div>
+    </div>
+
+    <div class="suds-card">
+      <div class="suds-h">
+        <span class="suds-num">5</span>
+        <span class="suds-name">Wysoki — SUDS 85—95</span>
+      </div>
+      <textarea class="suds-trigger" id="trig5" placeholder='np. „Wszystkie czynniki podatności + bezpośredni bodziec wizualny + rozpoczęta sekwencja motoryczna. Poziom, w którym najczęściej upadasz.”' rows="2"></textarea>
+      <div class="suds-row">
+        <span>SUDS:</span>
+        <input type="range" class="suds-input" id="s5" min="0" max="100" step="5" value="90" data-default="90">
+        <span class="suds-readout" id="s5val">90</span>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>Reguła doboru</strong>: zaczynasz od <strong>poziomu 1—2</strong> (SUDS 30—50). Powyżej 65 ekspozycja często kończy się porażką, jeśli nie masz wcześniej praktyki na niższych poziomach. Po opanowaniu poziomu 1 (3—5 udanych ekspozycji), wchodzisz na poziom 2. Tempo: jeden poziom na 1—2 tygodnie.</div>
+  </section>
+
+  <!-- ============ KROK 3 — Wybór ekspozycji ============ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — który poziom dziś</div>
+    <h1 class="card-prompt">Wybierz <em>jeden poziom</em> do ekspozycji</h1>
+    <p class="card-detail">Ekspozycja działa, gdy dopasowana jest do <em>obecnych zasobów</em>. Na początku wybierz <strong>najniższy</strong> poziom z hierarchii — zbuduj tam serię sukcesów (3—5 udanych ekspozycji), zanim pójdziesz wyżej.</p>
+
+    <div class="examples-h">Wybierz poziom z kroku 2</div>
+    <button type="button" class="rel-btn" id="lv1" onclick="pickLv('1')">
+      <span class="rel-name">1️⃣ Poziom 1 — SUDS 30—40 (start)</span>
+      <span class="rel-desc">Najlepszy na początek. Buduje poczucie kompetencji. 3—5 ekspozycji, zanim wchodzisz wyżej.</span>
+    </button>
+    <button type="button" class="rel-btn" id="lv2" onclick="pickLv('2')">
+      <span class="rel-name">2️⃣ Poziom 2 — SUDS 40—50</span>
+      <span class="rel-desc">Po opanowaniu poziomu 1. Wciąż w bezpiecznej strefie — zaczynasz testować, że krzywa opada.</span>
+    </button>
+    <button type="button" class="rel-btn" id="lv3" onclick="pickLv('3')">
+      <span class="rel-name">3️⃣ Poziom 3 — SUDS 55—65</span>
+      <span class="rel-desc">Po 2—3 tygodniach praktyki. Realistyczne sytuacje codziennego życia. Habituacja widoczna.</span>
+    </button>
+    <button type="button" class="rel-btn" id="lv4" onclick="pickLv('4')">
+      <span class="rel-name">4️⃣ Poziom 4 — SUDS 70—80</span>
+      <span class="rel-desc">Tylko po solidnej bazie z poziomów 1—3. Wymaga obecności narzędzi (urge surfing, oddech, plan).</span>
+    </button>
+
+    <div class="curve-card">
+      <div class="curve-h">Twoja oczekiwana krzywa SUDS</div>
+      <svg class="curve-svg" viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+        <line x1="20" y1="120" x2="300" y2="120" stroke="rgba(244,241,234,0.3)" stroke-width="1"/>
+        <line x1="20" y1="20" x2="20" y2="120" stroke="rgba(244,241,234,0.3)" stroke-width="1"/>
+        <text x="10" y="25" fill="#b8c5a8" font-family="Fraunces" font-size="10">100</text>
+        <text x="10" y="125" fill="#b8c5a8" font-family="Fraunces" font-size="10">0</text>
+        <text x="20" y="138" fill="#b8c5a8" font-family="Fraunces" font-size="10">0</text>
+        <text x="100" y="138" fill="#b8c5a8" font-family="Fraunces" font-size="10">10 min</text>
+        <text x="180" y="138" fill="#b8c5a8" font-family="Fraunces" font-size="10">20 min</text>
+        <text x="265" y="138" fill="#b8c5a8" font-family="Fraunces" font-size="10">35 min</text>
+        <path d="M 20 100 Q 60 50, 110 35 T 200 70 Q 250 95, 300 105" stroke="#b8c5a8" stroke-width="2.5" fill="none"/>
+        <circle cx="110" cy="35" r="4" fill="#c99a8c"/>
+        <text x="115" y="32" fill="#c99a8c" font-family="Fraunces" font-size="11" font-weight="700">szczyt</text>
+        <circle cx="300" cy="105" r="4" fill="#b8c5a8"/>
+        <text x="225" y="102" fill="#b8c5a8" font-family="Fraunces" font-size="10">spadek</text>
+      </svg>
+      <div class="curve-row"><strong>Co zauważysz</strong>: szczyt w 10—15 min, spadek do 35 min. <em>Bez działania na PPU</em>.</div>
+      <div class="curve-row"><strong>Co czuje się odwrotnie</strong>: w pierwszych 5 min impuls rośnie — intuicja "musi się pogorszyć". Krzywa pokazuje, że <em>dochodzi do szczytu i opada</em>.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła progresji</strong>: <em>nie skacz po poziomach</em>. Solidna baza na 1—2 (5 udanych ekspozycji każda) buduje pewność, którą później wykorzystasz na 3—4. Skok od razu na 4 zwykle kończy się upadkiem i utratą zaufania do metody. Wolniej = trwalej.</div>
+  </section>
+
+  <!-- ============ KROK 4 — Praktyka ============ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — sesja ekspozycji</div>
+    <h1 class="card-prompt">Wykonaj <em>15—45 minut</em> obecności</h1>
+    <p class="card-detail">Sesja ekspozycji to <strong>celowe siedzenie w wyzwalaczu</strong> — bez akcji PPU, bez dystrakcji. Możesz mieć przy sobie narzędzia (oddech, urge surfing), ale celem jest <em>zauważanie</em>, nie odwracanie uwagi.</p>
+
+    <div class="examples-h">A. Plan sesji</div>
+    <textarea class="thought-input" id="planSession" placeholder='np. „Wieczór wtorek 21:30. Sam w pokoju, telefon obok (z blokerem). Cel: 30 minut bez sięgnięcia. Co 5 minut zapis SUDS. Po sesji — wpis do dziennika.”' rows="3"></textarea>
+
+    <div class="timer-card">
+      <div class="timer-h">Sesja: minuta po minucie</div>
+      <div class="timer-t" id="timerT">00:00</div>
+      <div class="timer-status" id="timerS">Kliknij start</div>
+      <div style="margin-top:8px; display:flex; gap:6px; justify-content:center;">
+        <button type="button" onclick="startTimer()" style="padding:6px 14px; background:var(--sage-deep); color:var(--bg); border:none; border-radius:6px; font-family:inherit; font-size:12px; cursor:pointer;">▶ Start</button>
+        <button type="button" onclick="pauseTimer()" style="padding:6px 14px; background:var(--ink-mute); color:var(--bg); border:none; border-radius:6px; font-family:inherit; font-size:12px; cursor:pointer;">⏸ Pauza</button>
+        <button type="button" onclick="resetTimer()" style="padding:6px 14px; background:rgba(184,197,168,0.18); color:var(--ink); border:1px solid var(--sage); border-radius:6px; font-family:inherit; font-size:12px; cursor:pointer;">↻ Reset</button>
+      </div>
+    </div>
+
+    <div class="examples-h">B. Pomiar SUDS co 5 minut</div>
+    <p class="card-detail" style="margin-top:0; margin-bottom:6px;">Zapisuj w pamięci lub na kartce. Cel: zobaczyć krzywą.</p>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="m0" onclick="this.classList.toggle('picked')">0 min: pomiar startowy</button>
+      <button type="button" class="example-chip" id="m5" onclick="this.classList.toggle('picked')">5 min</button>
+      <button type="button" class="example-chip" id="m10" onclick="this.classList.toggle('picked')">10 min (szczyt?)</button>
+      <button type="button" class="example-chip" id="m15" onclick="this.classList.toggle('picked')">15 min</button>
+      <button type="button" class="example-chip" id="m20" onclick="this.classList.toggle('picked')">20 min</button>
+      <button type="button" class="example-chip" id="m25" onclick="this.classList.toggle('picked')">25 min</button>
+      <button type="button" class="example-chip" id="m30" onclick="this.classList.toggle('picked')">30 min</button>
+    </div>
+
+    <div class="examples-h">C. Postawa w sesji — co robisz</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="aObs" onclick="this.classList.toggle('picked')">Obserwuj sensacje w ciele</button>
+      <button type="button" class="example-chip" id="aBreath" onclick="this.classList.toggle('picked')">Powolny oddech 4-7-8</button>
+      <button type="button" class="example-chip" id="aDef" onclick="this.classList.toggle('picked')">Defuzja: "mam myśl, że…"</button>
+      <button type="button" class="example-chip" id="aLab" onclick="this.classList.toggle('picked')">Labelowanie: "to jest urge"</button>
+      <button type="button" class="example-chip" id="aAcc" onclick="this.classList.toggle('picked')">Akceptacja: "robię miejsce"</button>
+      <button type="button" class="example-chip" id="aWalk" onclick="this.classList.toggle('picked')">Spacer w sesji (jeśli rośnie >75)</button>
+    </div>
+
+    <div class="examples-h">D. Czego unikać</div>
+    <div class="example-chips" style="opacity:0.85;">
+      <button type="button" class="example-chip" id="xWalk" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Walka z myślą / sensacją</button>
+      <button type="button" class="example-chip" id="xDistr" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Dystrakcja w celu uniknięcia</button>
+      <button type="button" class="example-chip" id="xJud" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Ocenianie się ("nie powinienem")</button>
+      <button type="button" class="example-chip" id="xCheck" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Sprawdzanie SUDS co minutę</button>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: ekspozycja działa na <em>pamięć emocjonalną</em>. Każda udana sesja (sesja, w której doczekałeś/aś spadku krzywej) zapisuje informację: <strong>"przeżyłem ten poziom dyskomfortu, nie wykonując akcji PPU"</strong>. Po 5 takich zapisach mózg traktuje ten poziom jako <em>oswojony</em>. To paradoksalnie redukuje przyszłe vulnerability na ten poziom.</div>
+  </section>
+
+  <!-- ============ KROK 5 — Po ============ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>krzywa opadła</em>?</h1>
+    <p class="card-detail">Wróć tu po sesji ekspozycji — najlepiej w ciągu godziny po, gdy pamiętasz przebieg. Każda sesja, nawet częściowo udana, jest <em>danymi</em> dla mózgu.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Najwyższe SUDS w sesji (szczyt)</span><span></span></div>
+      <input type="range" class="scale-input" id="postPeak" min="0" max="100" step="5" value="60" data-default="60">
+      <div class="scale-readout"><span>0 = brak</span><span id="postPeakval">60</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>SUDS na końcu sesji</span><span></span></div>
+      <input type="range" class="scale-input" id="postEnd" min="0" max="100" step="5" value="35" data-default="35">
+      <div class="scale-readout"><span>0 = brak</span><span id="postEndval">35</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Ile minut sesji wytrwałeś/aś?</span><span></span></div>
+      <input type="range" class="scale-input" id="postMin" min="0" max="60" step="5" value="20" data-default="20">
+      <div class="scale-readout"><span>0 min</span><span id="postMinval">20</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy doszło do PPU w trakcie / po sesji?</span><span></span></div>
+      <input type="range" class="scale-input" id="postPPU" min="0" max="10" step="1" value="2" data-default="2">
+      <div class="scale-readout"><span>0 = nie</span><span id="postPPUval">2</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: udana sesja = <em>spadek o ≥20 punktów SUDS</em> + <em>czas ≥15 minut</em> + <em>brak PPU</em>. Częściowa udana = spadek o 10—20. <em>Brak spadku</em> oznacza najczęściej: poziom za wysoki dla obecnych zasobów (zejdź niżej w hierarchii) lub sesja przerwana przed habituacją (>15 min wymagane).</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Ekspozycja jest <em>najmocniejszym narzędziem</em> przeciwko nawykowi unikania, ale wymaga <strong>powtarzalności</strong>. Pojedyncza sesja jest informacją; <em>5 sesji na tym samym poziomie</em> zmienia tor pamięci emocjonalnej. Po opanowaniu jednego poziomu (3—5 udanych ekspozycji), wchodzisz na następny — krok po kroku przez całą hierarchię. Po przejściu pełnej hierarchii (zwykle 8—12 tygodni) <strong>vulnerability spada strukturalnie</strong>; PPU traci łatwy dostęp do twojego ciała.</div>
+    </div>
+
+    <div class="src">Foa &amp; Kozak (1986); Marlatt &amp; Donovan (2005); Witkiewitz &amp; Marlatt (2004); Hayes, Strosahl &amp; Wilson (2012, ACT — acceptance-based exposure); meta-analizy: Norton &amp; Price (2007); zastosowanie do PPU i compulsive sexual behavior: Hall (2013); Marlatt (1985, urge surfing).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['s1','s2','s3','s4','s5'].forEach(function(id){ bindRange(id, id+'val'); });
+['postPeak','postEnd','postMin','postPPU'].forEach(function(id){ bindRange(id, id+'val'); });
+
+window.pickedLv = null;
+function pickLv(code) {
+  window.pickedLv = code;
+  ['lv1','lv2','lv3','lv4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('lv' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+/* Timer */
+window.timerSec = 0;
+window.timerInt = null;
+function fmtT(s) {
+  var m = Math.floor(s / 60);
+  var ss = s % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (ss < 10 ? '0' : '') + ss;
+}
+function tick() {
+  window.timerSec = (window.timerSec || 0) + 1;
+  var el = document.getElementById('timerT');
+  if (el) el.textContent = fmtT(window.timerSec);
+  var st = document.getElementById('timerS');
+  if (st) {
+    if (window.timerSec < 300) st.textContent = 'Faza wzrostu — sensacje rosną. Obserwuj.';
+    else if (window.timerSec < 900) st.textContent = 'Okolice szczytu — najtrudniejsze 5—10 min.';
+    else if (window.timerSec < 1500) st.textContent = 'Spadek — krzywa opada. Zauważaj.';
+    else st.textContent = 'Pełna habituacja. Sesja może się kończyć.';
+  }
+}
+function startTimer() {
+  if (window.timerInt) clearInterval(window.timerInt);
+  window.timerInt = setInterval(tick, 1000);
+  var st = document.getElementById('timerS');
+  if (st) st.textContent = 'Sesja w toku — obserwuj';
+}
+function pauseTimer() {
+  if (window.timerInt) clearInterval(window.timerInt);
+  window.timerInt = null;
+  var st = document.getElementById('timerS');
+  if (st) st.textContent = 'Pauza';
+}
+function resetTimer() {
+  if (window.timerInt) clearInterval(window.timerInt);
+  window.timerInt = null;
+  window.timerSec = 0;
+  var el = document.getElementById('timerT');
+  if (el) el.textContent = '00:00';
+  var st = document.getElementById('timerS');
+  if (st) st.textContent = 'Kliknij start';
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var peak = parseInt(document.getElementById('postPeak').value, 10);
+  var end = parseInt(document.getElementById('postEnd').value, 10);
+  var min = parseInt(document.getElementById('postMin').value, 10);
+  var ppu = parseInt(document.getElementById('postPPU').value, 10);
+  var drop = peak - end;
+
+  var rows = [];
+  rows.push('<div class="diff-row"><strong>Szczyt SUDS</strong><span class="diff-delta">' + peak + '</span></div>');
+  rows.push('<div class="diff-row"><strong>Koniec SUDS</strong><span class="diff-delta">' + end + '</span></div>');
+  var dropSign = drop > 0 ? '−' : '+';
+  rows.push('<div class="diff-row"><strong>Spadek</strong><span class="diff-delta">' + dropSign + Math.abs(drop) + ' punktów</span></div>');
+  rows.push('<div class="diff-row"><strong>Czas sesji</strong><span class="diff-delta">' + min + ' min</span></div>');
+  var ppuW = ppu <= 3 ? 'nie' : (ppu <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>PPU w sesji</strong><span class="diff-delta">' + ppu + '/10 — ' + ppuW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (drop >= 20 && min >= 15 && ppu <= 3) {
+      msg = '<strong>Pełna udana ekspozycja.</strong> Krzywa opadła, czas wystarczający, brak PPU. <em>Powtórz na tym samym poziomie 4 razy</em> w kolejnych dniach — zbudujesz solidną bazę.';
+    } else if (drop >= 10 && min >= 15) {
+      msg = '<strong>Częściowo udana.</strong> Krzywa zaczyna opadać, sesja wystarczająca. Powtórz <em>na tym samym poziomie</em> — drugie powtórzenie często daje pełniejszą habituację.';
+    } else if (min < 15) {
+      msg = '<strong>Sesja za krótka dla habituacji.</strong> Habituacja wymaga <em>minimum 15 minut</em>. Spróbuj ponownie z timerem ustawionym na 20 min — to chroni przed wcześniejszym sięgnięciem.';
+    } else if (peak >= 80 && ppu >= 6) {
+      msg = '<strong>Poziom za wysoki dla obecnych zasobów.</strong> Wróć do <em>niższego poziomu</em> z hierarchii (krok 2). Buduj kompetencję od dołu — to nie cofanie się, to <em>strategia</em>.';
+    } else if (drop <= 5) {
+      msg = '<strong>Brak spadku.</strong> Najczęściej: za wysoki poziom + brak praktyki. Wróć do hierarchii i zacznij od poziomu 1—2; tam zbuduj 3—5 udanych ekspozycji, zanim wrócisz wyżej.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Każda sesja jest informacją. Powtarzaj systematycznie — efekt skumulowany widać po 5—10 sesjach.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['lv1','lv2','lv3','lv4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['m0','m5','m10','m15','m20','m25','m30'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['aObs','aBreath','aDef','aLab','aAcc','aWalk','xWalk','xDistr','xJud','xCheck'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedLv = null;
+  resetTimer();
+}
+
+['postPeak','postEnd','postMin','postPPU'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_exposure — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_exposure";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['1','2','3','4'].forEach(function(code){
+    var el = document.getElementById('lv' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedLv = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

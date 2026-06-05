@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Top-down vs bottom-up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.path-card { border: 1px solid var(--sage); border-radius: 8px; padding: 11px 14px; margin: 7px 0; cursor: pointer; transition: all 0.2s; font-size: 13px; line-height: 1.55; background: rgba(184,197,168,0.16); }
+.path-card:hover, .path-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.path-card .pc-h { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); margin-bottom: 4px; font-size: 14px; }
+.path-card:hover .pc-h, .path-card.picked .pc-h { color: var(--bg); }
+.tool-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.tool-chip { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); color: var(--ink); padding: 5px 10px; border-radius: 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.tool-chip:hover, .tool-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.matrix-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 13px; line-height: 1.55; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Top-down vs bottom-up</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Dwa kierunki regulacji — <em>z umysłu i z ciała</em></h1>
+  <p class="card-detail">Współczesna nauka o regulacji emocji rozróżnia dwa kierunki: <em>top-down</em> (z góry w dół) — z kory przedczołowej w stronę struktur podkorowych (ciała migdałowatego); <em>bottom-up</em> (z dołu do góry) — z ciała i pnia mózgu w stronę kory. Ochsner i Gross (2005) opisali top-down (reappraisal, przekierowanie uwagi); Stephen Porges (2011, polivagal theory — teoria poliwagalna) — bottom-up (oddech, ciało, kontakt społeczny przez nerw błędny).</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery kluczowe różnice</div>
+    <div class="element-row">
+      <span class="element-icon">⬇️</span>
+      <span class="element-text"><strong>Top-down</strong> używa kory przedczołowej (PFC). Włącza się, gdy umiesz <em>przemyśleć</em>: reappraisal („to nie tak straszne, jak się wydaje"), planowanie, problem solving, dziennik, dialog wewnętrzny.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⬆️</span>
+      <span class="element-text"><strong>Bottom-up</strong> używa pnia mózgu i nerwu błędnego. Włącza się, gdy <em>działasz na ciele</em>: oddech, ruch, kontakt skórny, dźwięk (humming, śpiew), kontakt wzrokowy z kimś bezpiecznym, kontakt z naturą.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📊</span>
+      <span class="element-text"><strong>Próg dostępności</strong> — przy intensywności 4—6/10 obie ścieżki działają. Powyżej ~7/10 PFC spada w aktywności (Arnsten 2009, „PFC offline"); top-down staje się nieskuteczny. Bottom-up przejmuje pierwszeństwo.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🤝</span>
+      <span class="element-text"><strong>Komplementarność</strong> — najlepsza regulacja łączy obie ścieżki sekwencyjnie: najpierw bottom-up (obniżenie pobudzenia), potem top-down (reframing, planowanie). Nigdy odwrotnie.</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Nie możesz pomyśleć drogi wyjścia z reakcji, której twoje ciało jeszcze nie opuściło."
+    <span class="frame-quote-attr">— Bessel van der Kolk (2014, The Body Keeps the Score)</span>
+  </div>
+  
+  <div class="term-note"><strong>🔑 Klucz</strong>: częsty błąd — próba „przemyślenia" silnej emocji. Próba reappraisalu (top-down) przy panice nie działa, bo PFC ma mały dostęp do limbicznego pobudzenia. Najpierw schłodź ciało (bottom-up), potem wracaj do umysłu. Sekwencja, nie wybór jednego.</div>
+  
+  <div class="term-note"><strong>📐 Polivagal — trzy stany</strong> (Porges 2011): brzuszna gałąź nerwu błędnego (ventral vagal — kontakt społeczny, bezpieczeństwo); sympatyk (mobilizacja, walka/ucieczka); grzbietowa gałąź (dorsal vagal — zamrożenie, dysocjacja). Każdy stan wymaga innego narzędzia bottom-up: kontakt z drugą osobą wzmacnia ventral; oddech wydłużony obniża sympatyk; łagodne kołysanie / kontakt skórny aktywuje z dorsal.</div>
+  
+  <div class="src">Ochsner & Gross (2005), <em>The cognitive control of emotion</em> · Gross (2015), <em>Emotion Regulation</em> · Porges (2011), <em>The Polyvagal Theory</em> · Arnsten (2009), <em>Stress signalling pathways</em> · van der Kolk (2014), <em>The Body Keeps the Score</em></div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Mapowanie sytuacji</div>
+  <h1 class="card-prompt">Co teraz <em>chcesz uregulować</em>?</h1>
+  <p class="card-detail">Wybierz konkretną emocję z teraz lub z ostatnich 24 godzin. Zauważ jej intensywność — ten pomiar zdecyduje, którą ścieżkę wybrać jako pierwszą.</p>
+  
+  <textarea class="thought-input" id="emoA" placeholder="Jaka emocja? np. „Lęk przed jutrzejszą rozmową kwalifikacyjną", „Złość na siebie po wczorajszej kłótni", „Smutek po stracie kontaktu z X"" rows="2"></textarea>
+  
+  <textarea class="thought-input" id="kontekstA" placeholder="W jakim kontekście (1—2 zdania, fakty)" rows="2"></textarea>
+  
+  <div class="scale">
+    <div class="scale-title">Intensywność emocji teraz</div>
+    <div class="scale-bounds"><span>(0 — neutralnie)</span><span>(10 — przytłaczająco)</span></div>
+    <input type="range" class="scale-input" id="intensA" min="0" max="10" step="1" value="7" data-default="7">
+    <div class="scale-readout"><span>Skala</span><span id="intensAval">7</span></div>
+  </div>
+  
+  <div class="matrix-card">
+    <strong>📊 Reguła wyboru ścieżki według intensywności</strong><br>
+    <strong>0—4</strong> (łagodna): top-down lub bottom-up — obie skuteczne, wybierz wygodniejszą.<br>
+    <strong>5—7</strong> (umiarkowana): zacznij od krótkiego bottom-up (1—2 minuty), potem top-down.<br>
+    <strong>8—10</strong> (silna / przeciążająca): wyłącznie bottom-up. PFC niedostępne — reappraisal nasili objawy. Pełne uregulowanie ciała → dopiero potem refleksja.
+  </div>
+  
+  <div class="term-note"><strong>📌 Reguła kontaktu z PFC</strong>: sygnałem, że PFC wraca do pracy, jest pojawienie się <em>świadomej obserwacji</em> („zauważam, że oddycham" zamiast „panikuję"). Gdy widzisz siebie z dystansem — top-down jest dostępny. Gdy jesteś tylko w reakcji — zostań przy bottom-up.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór ścieżki</div>
+  <h1 class="card-prompt">Którą ścieżką <em>zacząć</em>?</h1>
+  <p class="card-detail">Wybierz ścieżkę zgodnie z intensywnością. Pamiętaj — nie jest to wybór „albo-albo", tylko kolejność. Często najlepsza regulacja zaczyna się od bottom-up i przechodzi w top-down po ustabilizowaniu.</p>
+  
+  <div class="path-card" id="pBU" onclick="pickPath('BU')">
+    <div class="pc-h">⬆️ Bottom-up — najpierw ciało</div>
+    <div>Dla intensywności 6—10. Pracujesz na pniu mózgu i nerwie błędnym. Cel: obniżyć pobudzenie do poziomu, w którym kora przedczołowa odzyska dostęp.</div>
+    <div class="tool-row">
+      <button class="tool-chip" id="tA" onclick="event.stopPropagation();pickTool('A')">oddech 4-7-8</button>
+      <button class="tool-chip" id="tB" onclick="event.stopPropagation();pickTool('B')">koherentny 5,5/min</button>
+      <button class="tool-chip" id="tC" onclick="event.stopPropagation();pickTool('C')">zimna woda</button>
+      <button class="tool-chip" id="tD" onclick="event.stopPropagation();pickTool('D')">humming / głos</button>
+      <button class="tool-chip" id="tE" onclick="event.stopPropagation();pickTool('E')">ruch</button>
+      <button class="tool-chip" id="tF" onclick="event.stopPropagation();pickTool('F')">kontakt skórny</button>
+      <button class="tool-chip" id="tG" onclick="event.stopPropagation();pickTool('G')">5-4-3-2-1 zmysły</button>
+    </div>
+  </div>
+  
+  <div class="path-card" id="pTD" onclick="pickPath('TD')">
+    <div class="pc-h">⬇️ Top-down — najpierw umysł</div>
+    <div>Dla intensywności 0—5. Pracujesz korą przedczołową. Cel: zmienić ocenę sytuacji lub przekierować uwagę.</div>
+    <div class="tool-row">
+      <button class="tool-chip" id="tH" onclick="event.stopPropagation();pickTool('H')">reappraisal</button>
+      <button class="tool-chip" id="tI" onclick="event.stopPropagation();pickTool('I')">dystansowanie</button>
+      <button class="tool-chip" id="tJ" onclick="event.stopPropagation();pickTool('J')">test dowodów</button>
+      <button class="tool-chip" id="tK" onclick="event.stopPropagation();pickTool('K')">dziennik emocji</button>
+      <button class="tool-chip" id="tL" onclick="event.stopPropagation();pickTool('L')">planowanie kroków</button>
+      <button class="tool-chip" id="tM" onclick="event.stopPropagation();pickTool('M')">defuzja (ACT)</button>
+    </div>
+  </div>
+  
+  <div class="path-card" id="pSEQ" onclick="pickPath('SEQ')">
+    <div class="pc-h">🔄 Sekwencja BU → TD</div>
+    <div>Dla intensywności 6—10 z planem przejścia. Najpierw 5—10 minut bottom-up; gdy intensywność spada do 3—4, włączasz top-down (np. dziennik, reappraisal).</div>
+  </div>
+  
+  <textarea class="thought-input" id="wyborA" placeholder="Wybrana ścieżka + dlaczego. np. „Bottom-up (oddech 4-7-8) — bo intensywność 8/10, PFC offline, reappraisal nie zadziała."" rows="2"></textarea>
+  
+  <div class="term-note"><strong>🔑 Reguła sekwencji</strong>: większość praktyk jest błędnie nauczana jako „albo-albo". W rzeczywistości profesjonalna regulacja emocji to niemal zawsze sekwencja: bottom-up obniża pobudzenie do okna tolerancji → top-down wykonuje pracę poznawczą. Próba odwrotnej kolejności (najpierw reappraisal, potem oddech) nie działa, bo umysł nie ma dostępu do swoich narzędzi przy wysokim pobudzeniu.</div>
+  
+  <div class="term-note"><strong>💡 Kontakt społeczny jako regulator</strong>: rozmowa z bezpieczną osobą jest bardzo silnym narzędziem bottom-up — aktywuje brzuszną gałąź nerwu błędnego, najszybszą drogę powrotu do okna. Jeśli masz kogoś takiego — zadzwoń, napisz, spotkaj się. To często skuteczniejsze niż samodzielna praktyka.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — 10—20 minut</div>
+  <h1 class="card-prompt">Wykonaj <em>wybraną sekwencję</em></h1>
+  <p class="card-detail">Daj sobie 10—20 minut. Jeśli wybrałeś/aś sekwencję BU → TD, na pierwsze 5—10 minut zostań tylko przy ciele, dopiero potem przejdź do umysłu.</p>
+  
+  <div class="matrix-card">
+    <strong>1. Bottom-up — 5—10 minut</strong><br>
+    Wybierz 1 narzędzie. Wykonaj je z pełną uwagą. Sprawdzaj co minutę: czy oddech wydłuża się? Czy mięśnie rozluźniają? Czy myśli zwalniają?
+  </div>
+  
+  <textarea class="thought-input" id="buA" placeholder="Co się działo w ciele w trakcie bottom-up? np. „Po 3 minutach oddychania serce zwolniło, ramiona opadły. Po 7 minutach myśli zaczęły się formować."" rows="3"></textarea>
+  
+  <div class="matrix-card">
+    <strong>2. Top-down — 5—10 minut (jeśli intensywność spadła do ≤4)</strong><br>
+    Włącz refleksję: <em>reappraisal</em> („jak inaczej mogę spojrzeć na to?"), <em>dystansowanie</em> („co powiedział/aby mądry przyjaciel?"), <em>test dowodów</em> („co świadczy za, co przeciw?"), <em>planowanie</em> („jaki mały krok mogę zrobić teraz?").
+  </div>
+  
+  <textarea class="thought-input" id="tdA" placeholder="Co się pojawiło na poziomie umysłu? Reframing, plan, nowa myśl?" rows="3"></textarea>
+  
+  <div class="term-note"><strong>📌 Reguła zauważania przejścia</strong>: nie wszystkie sytuacje wymagają top-down. Czasem samo bottom-up wystarcza — ciało wraca do okna i emocja sama się rozkłada. Dopiero gdy zostają niedokończone myśli lub potrzeba decyzji, włącz top-down. To umiejętność rozróżnienia: kiedy działać dalej, kiedy zostawić.</div>
+  
+  <div class="term-note"><strong>💡 Najczęstszy błąd początkujących</strong>: zatrzymanie się tuż przed celem. Bottom-up obniża pobudzenie po 5—7 minutach, ale efekt strukturalny (Porges: trening wagal tone) wymaga 10—15 minut. Jeśli przerwiesz po 2 minutach, mózg nie nauczy się nowego wzorca. Daj sobie pełen czas.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po sekwencji — pomiar</div>
+  <h1 class="card-prompt">Co się <em>zmieniło</em>?</h1>
+  <p class="card-detail">Sprawdź dwa wymiary: pobudzenie (ciało) i dostęp do refleksji (umysł). To dwa różne pomiary, choć powiązane.</p>
+  
+  <div class="scale">
+    <div class="scale-title">Intensywność emocji — teraz</div>
+    <div class="scale-bounds"><span>(0 — neutralnie)</span><span>(10 — przytłaczająco)</span></div>
+    <input type="range" class="scale-input" id="intensP" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>Skala</span><span id="intensPval">4</span></div>
+  </div>
+  
+  <div class="scale">
+    <div class="scale-title">Dostęp do refleksji (kora przedczołowa „online")</div>
+    <div class="scale-bounds"><span>(0 — tylko reakcja)</span><span>(10 — pełen dostęp)</span></div>
+    <input type="range" class="scale-input" id="dostP" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Skala</span><span id="dostPval">6</span></div>
+  </div>
+  
+  <div class="final-msg" id="finalMsg">
+    Ustaw suwaki, by zobaczyć analizę.
+  </div>
+  
+  <div class="term-note"><strong>📌 Reguła praktyki</strong>: wybór ścieżki to umiejętność, która automatyzuje się po 6—8 tygodniach świadomych prób. Z czasem mózg uczy się: silna emocja → najpierw ciało; łagodna → bezpośrednio refleksja. Wagal tone (siła reakcji parasympatycznej) rośnie wraz z regularną praktyką oddechową — to mierzalna zmiana w HRV (heart rate variability — zmienność rytmu serca).</div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>Dwie ścieżki regulacji</strong>: top-down (umysł) i bottom-up (ciało). Reguła kolejności: <em>silne emocje → najpierw ciało, potem umysł</em>. Top-down nie działa przy 8—10/10 — PFC offline. Bottom-up zawsze ma dostęp. Profesjonalna regulacja to sekwencja, nie wybór. Komplementarność — nie konkurencja.</div>
+  </div>
+  
+  <div class="src">Ochsner & Gross (2005), <em>The cognitive control of emotion</em>, TICS · Gross (2015), <em>Emotion regulation: current status and future prospects</em> · Porges (2011), <em>The Polyvagal Theory</em> · Arnsten (2009), <em>Stress signalling pathways</em>, Nature Reviews Neuroscience · Dana (2018), <em>The Polyvagal Theory in Therapy</em> · Lehrer & Gevirtz (2014), HRV biofeedback</div>
+</section>
+
+<script>
+['intensA','intensP','dostP'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => {
+    const out = document.getElementById(id + 'val');
+    if (out) out.textContent = el.value;
+  });
+});
+</script>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickPath(letter) {
+  document.querySelectorAll('.path-card').forEach(el => el.classList.remove('picked'));
+  const el = document.getElementById('p' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function pickTool(letter) {
+  const el = document.getElementById('t' + letter);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_emo_regulacja_typy — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_emo_regulacja_typy";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+function onStepChange(step) {
+  if (step === 5) {
+    const before = parseInt(document.getElementById('intensA').value) || 7;
+    const after = parseInt(document.getElementById('intensP').value) || 4;
+    const dostep = parseInt(document.getElementById('dostP').value) || 5;
+    const delta = before - after;
+    const msg = document.getElementById('finalMsg');
+    if (msg) {
+      let dKom = '';
+      if (dostep >= 7) dKom = 'Wysoki dostęp do refleksji (' + dostep + '/10) — kora przedczołowa pracuje. Możesz teraz przeprowadzić bardziej zaawansowane interwencje (reappraisal, planowanie).';
+      else if (dostep >= 4) dKom = 'Średni dostęp (' + dostep + '/10) — wracasz, ale jeszcze nie w pełni. Bottom-up często potrzebuje 5—15 minut, by PFC „włączyło się" z powrotem.';
+      else dKom = 'Niski dostęp (' + dostep + '/10) — to znak, że bottom-up trzeba kontynuować dłużej, albo intensywność emocji była zbyt wysoka na samodzielną pracę. Czasem potrzebny kontakt z drugą osobą.';
+      let text;
+      if (delta >= 3) text = '<strong>Spadek o ' + delta + '.</strong> Sekwencja zadziałała — pobudzenie obniżone. ' + dKom;
+      else if (delta >= 1) text = '<strong>Spadek o ' + delta + '.</strong> Łagodny opad. ' + dKom;
+      else if (delta === 0) text = '<strong>Bez zmiany.</strong> Sprawdź, czy pasująca ścieżka została wybrana — silne emocje (8—10) zwykle wymagają najpierw bottom-up. ' + dKom;
+      else text = '<strong>Wzrost o ' + Math.abs(delta) + '.</strong> Czasem narzędzie nie pasuje do stanu — silne emocje przy próbie reappraisalu (top-down) bywają wzmacniane. Zacznij od bottom-up. ' + dKom;
+      msg.innerHTML = text;
+    }
+  }
+}
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

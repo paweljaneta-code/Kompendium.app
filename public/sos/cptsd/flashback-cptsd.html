@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Praca z flashbackami</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.fb-form { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.fb-form .fb-h { font-size: 12px; font-weight: 700; color: var(--ink); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.fb-form .fb-emoji { font-size: 18px; }
+.fb-form .fb-desc { font-size: 13px; color: var(--ink); line-height: 1.55; margin-bottom: 4px; }
+.fb-form .fb-trig { font-size: 12px; color: var(--ink-mute); line-height: 1.45; font-style: italic; }
+
+.step13 { background: var(--bg); border: 1px solid var(--sage-deep); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 10px; }
+.step13:hover, .step13.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.step13.picked .s13-num, .step13.picked .s13-name, .step13.picked .s13-how { color: var(--bg) !important; }
+.step13.picked .s13-how { color: rgba(244,241,234,0.9) !important; }
+.s13-num { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 800; color: var(--sage-deep); flex-shrink: 0; min-width: 28px; line-height: 1.1; }
+.s13-body { flex: 1; }
+.s13-name { font-size: 13px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 3px; }
+.s13-how { font-size: 12px; color: var(--ink); line-height: 1.5; display: block; }
+
+.now-card { background: rgba(168,138,90,0.18); border: 2px solid rgba(168,138,90,0.7); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+.now-h { font-size: 14px; font-weight: 800; color: rgba(122,79,30,1); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; }
+.now-input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; line-height: 1.55; color: var(--ink); background: var(--bg); border: 1px solid var(--sage-deep); border-radius: 6px; padding: 8px 10px; resize: vertical; min-height: 40px; }
+.now-input:focus { outline: none; border-color: rgba(122,79,30,1); }
+.now-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.now-row label { flex: 0 0 90px; font-size: 12px; font-weight: 700; color: var(--ink); align-self: center; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Praca z flashbackami</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ====== KROK 1 — WPROWADZENIE ====== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Gdy <em>przeszłość</em> wdziera się w teraźniejszość</h1>
+    <p class="card-detail">Flashback to nie wspomnienie — to ponowne przeżywanie. Ciało i emocje reagują, jakby trauma działa się teraz. W złożonym PTSD często bez wizualnego komponentu: nagle ogarnia terror lub wstyd, klient czuje się jak 5-latek, mimo że ma 35 lat. Walker (2013) nazwał to emocjonalnym flashbackiem i zaproponował 13-krokowy protokół wyjścia.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery fakty o flashbackach</div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>To nie pamięć — to doświadczenie</strong> — flashback aktywuje sensoryczną reprezentację (S-rep) bez kontekstualnej (C-rep), Brewin (2014). Klient jest w emocji, nie ją pamięta. Stąd uczucie „dzieje się teraz”.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎭</span>
+        <span class="element-text"><strong>Cztery formy</strong> — wzrokowe (sceny), somatyczne (ból, nudności bez obrazu), emocjonalne (terror/wstyd bez powodu), zmysłowe (zapach, dźwięk wyzwalają kaskadę). Walker (2013) najczęściej opisuje formę emocjonalną w C-PTSD.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔁</span>
+        <span class="element-text"><strong>W C-PTSD są chroniczne</strong> — częstsze i dłuższe niż w prostym PTSD, bo trauma była wielokrotna i wczesna. Mózg nie ma jednego wspomnienia do przetworzenia, ma wzorzec utrwalany latami.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛑</span>
+        <span class="element-text"><strong>Tłumienie pogłębia</strong> — Ehlers &amp; Clark (2000): walka z flashbackiem („nie myśl o tym”) podtrzymuje go przez paradoks ironicznych procesów. Wyjście prowadzi przez nazwanie i kontekstualizację, nie przez wypieranie.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Flashback to chwila, w której jesteś jednocześnie dorosłym i dzieckiem. Twoja praca: być tym dorosłym, który wreszcie obejmuje to dziecko — i przypomina mu, że jest rok 2026, że jest bezpiecznie, że jest w domu.”
+      <span class="frame-quote-attr">— parafraza Pete'a Walkera (2013)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: protokół Walkera trzeba przećwiczyć poza kryzysem. W kryzysie kora przedczołowa jest hipoaktywna i nie da się „wymyślić” 13 kroków. Karteczka w portfelu, w telefonie, na lodówce — to nie infantylne, to neurologicznie konieczne.</div>
+
+    <div class="src">Walker (2013, Complex PTSD: From Surviving to Thriving); Ehlers &amp; Clark (2000, A cognitive model of PTSD); Brewin (2014, dual representation theory); van der Kolk (2014, interocepcja); Hopper i in. (2007, neuroobrazowanie dysocjacji)</div>
+  </section>
+
+  <!-- ====== KROK 2 — TWÓJ FLASHBACK ====== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Mapa Twojego flashbacku</div>
+    <h1 class="card-prompt">Co <em>zwykle</em> się dzieje</h1>
+    <p class="card-detail">Zanim wejdziesz w protokół, zmapuj, jak flashback wygląda u Ciebie. Każda osoba ma inną „sygnaturę”. Im wcześniej rozpoznasz, że to flashback, tym szybciej możesz odpalić procedurę. Nazwanie własnego wzorca w spokoju jest częścią treningu.</p>
+
+    <div class="fb-form">
+      <div class="fb-h"><span class="fb-emoji">🚪</span>FORMA — co się aktywuje?</div>
+      <div class="fb-desc">Czy to obraz, doznanie w ciele, fala emocji, zapach lub dźwięk? Najczęstsza forma u Ciebie?</div>
+      <textarea class="thought-input" id="fbForm" placeholder="np. „Najczęściej fala wstydu i mała postać w klatce piersiowej, bez konkretnego obrazu. Czasem zapach starego dymu — wtedy wracam do kuchni z dzieciństwa.”" rows="3"></textarea>
+    </div>
+
+    <div class="fb-form">
+      <div class="fb-h"><span class="fb-emoji">🎯</span>WYZWALACZE — co zwykle to uruchamia?</div>
+      <div class="fb-desc">Sytuacje, ludzie, dźwięki, momenty dnia — co najczęściej startuje kaskadę?</div>
+      <textarea class="thought-input" id="fbTrig" placeholder="np. „Podniesiony głos szefa. Niedzielny wieczór. Krytyka, nawet drobna. Sytuacja, w której ktoś jest na mnie zły, a ja nie wiem dlaczego.”" rows="3"></textarea>
+    </div>
+
+    <div class="fb-form">
+      <div class="fb-h"><span class="fb-emoji">👶</span>WIEK — w jakim wieku się wtedy czujesz?</div>
+      <div class="fb-desc">Walker: w emocjonalnym flashbacku często czujemy się jak konkretny wiek z dzieciństwa. Jaki to wiek u Ciebie?</div>
+      <textarea class="thought-input" id="fbAge" placeholder="np. „Najczęściej 6–7 lat. Mała, wstyd, nie wiem, co zrobiłam źle, oczekuję krzyku.”" rows="2"></textarea>
+    </div>
+
+    <div class="fb-form">
+      <div class="fb-h"><span class="fb-emoji">⏱️</span>CZAS TRWANIA — ile zwykle trwa?</div>
+      <div class="fb-desc">Bez interwencji — minuty, godziny, dni? To pomaga oszacować, jak agresywnie protokół musi pracować.</div>
+      <textarea class="thought-input" id="fbDur" placeholder="np. „2–3 godziny, zanim sam się rozpłynie. Z protokołem — 20 minut, jeśli rozpoznam wcześnie.”" rows="2"></textarea>
+    </div>
+
+    <div class="term-note"><strong>🧭 Wczesne sygnały</strong>: zanim flashback rozwinie się w pełni, ciało zwykle daje sygnały — ucisk w klatce, zimno w brzuchu, nagłe pragnienie zniknięcia, „mała ja/mały ja”. Im wcześniej je rozpoznasz, tym szybciej odpalisz protokół, tym mniej intensywny przebieg. Trening w spokoju = szybsze rozpoznanie pod stresem.</div>
+  </section>
+
+  <!-- ====== KROK 3 — 13 KROKÓW WALKER ====== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 13 kroków Walkera</div>
+    <h1 class="card-prompt">Pełen <em>protokół</em> — wybierz, których nauczysz się w pierwszej kolejności</h1>
+    <p class="card-detail">Walker (2013) zbudował 13-krokową procedurę wychodzenia z emocjonalnego flashbacku. Nie wszystkie są równie ważne na początku — pierwsze 4 są ratunkowe i muszą być automatyczne. Stuknij te, które wybierasz do pierwszego treningu.</p>
+
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">1</span>
+      <span class="s13-body">
+        <span class="s13-name">Powiedz sobie: „Mam flashback”</span>
+        <span class="s13-how">Nazwij to. Bez nazwania protokół nie startuje. „To jest flashback, nie teraz.”</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">2</span>
+      <span class="s13-body">
+        <span class="s13-name">Czuję strach, ale nie ma niebezpieczeństwa</span>
+        <span class="s13-how">Oddziel emocję od oceny rzeczywistości. „Czuję terror. Tu jest bezpiecznie.” Dwa zdania, na głos.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">3</span>
+      <span class="s13-body">
+        <span class="s13-name">Odzyskaj ciało — grounding</span>
+        <span class="s13-how">Stopy na podłodze, dłonie w ciepłej wodzie albo na czymś chłodnym. Oddech 4-7-8. Orienting: rozejrzyj się, wymień 5 rzeczy, które widzisz.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">4</span>
+      <span class="s13-body">
+        <span class="s13-name">Powiedz: „Jestem bezpieczny/a teraz”</span>
+        <span class="s13-how">Pełna formuła: „Jestem [imię]. Jest [rok]. Jestem w [miejsce]. Jestem dorosły/a. Jestem bezpieczny/a.”</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">5</span>
+      <span class="s13-body">
+        <span class="s13-name">Pozwól sobie żałować</span>
+        <span class="s13-how">Nie każ sobie być silnym/ą. Smutek, że to się stało dziecku, którym byłeś/aś, jest częścią uzdrowienia. „Mam prawo żałować.”</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">6</span>
+      <span class="s13-body">
+        <span class="s13-name">Zwiększ samowspółczucie</span>
+        <span class="s13-how">Mów do siebie tak, jak mówiłbyś/abyś do dziecka, które się boi. „Wiem, że jest Ci ciężko. Jestem tu z Tobą. Nie jesteś sam/a.”</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">7</span>
+      <span class="s13-body">
+        <span class="s13-name">Pamiętaj: masz prawo do granic</span>
+        <span class="s13-how">Jeśli flashback wybuchnie w sytuacji społecznej — masz prawo wyjść. „Muszę chwilę odejść.” Bez tłumaczenia. Bez przepraszania.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">8</span>
+      <span class="s13-body">
+        <span class="s13-name">Otoczenie bezpieczeństwa</span>
+        <span class="s13-how">Wyjdź do miejsca, w którym nikt Cię nie ocenia — toaleta, samochód, park. Daj sobie 10–15 minut samotności w bezpiecznym kontekście.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">9</span>
+      <span class="s13-body">
+        <span class="s13-name">Zauważ wewnętrznego krytyka</span>
+        <span class="s13-how">Krytyk powie: „znowu się rozsypujesz”, „jesteś żałosny/a”. Powiedz mu: „dziękuję, słyszę cię, ale teraz nie pomagasz”. Nie walcz, oddziel.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">10</span>
+      <span class="s13-body">
+        <span class="s13-name">Powolne, świadome czynności</span>
+        <span class="s13-how">Zrób herbatę. Umyj ręce. Pogłaszcz psa. Konkretna, prosta czynność uziemia układ nerwowy lepiej niż każdy „spokój”.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">11</span>
+      <span class="s13-body">
+        <span class="s13-name">Sięgnij do bezpiecznego kontaktu</span>
+        <span class="s13-how">Telefon do osoby zaufanej, terapeuta, grupa wsparcia. Nie musisz wyjaśniać wszystkiego — wystarczy „jest mi trudno, posiedź ze mną”.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">12</span>
+      <span class="s13-body">
+        <span class="s13-name">Pozwól sobie odpocząć</span>
+        <span class="s13-how">Po flashbacku ciało jest wyczerpane. Drzemka, koc, ulubiony serial. Nie wracaj do „produktywności” w ciągu pierwszej godziny.</span>
+      </span>
+    </div>
+    <div class="step13" onclick="this.classList.toggle('picked')">
+      <span class="s13-num">13</span>
+      <span class="s13-body">
+        <span class="s13-name">Zapisz, co się wydarzyło</span>
+        <span class="s13-how">Po wyjściu — kilka zdań w dzienniku: co było wyzwalaczem, jakie kroki zadziałały, co następnym razem zrobisz wcześniej. Pamięć protokołu rośnie z tej refleksji.</span>
+      </span>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: kroki 1–4 są ratunkowe — aktywują korę przedczołową i hipokamp, kontekstualizują czas. Kroki 5–8 dodają samowspółczucie i granice. Kroki 9–13 to integracja po flashbacku. W kryzysie wystarczą 1–4. Reszta jest dla regeneracji i nauki.</div>
+  </section>
+
+  <!-- ====== KROK 4 — TERAZ ====== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Karta &bdquo;teraz&rdquo;</div>
+    <h1 class="card-prompt">Wypełnij <em>w spokoju</em> — będzie czekać na kryzys</h1>
+    <p class="card-detail">To Twoja karta ratunkowa. Wypełnij ją teraz, w spokoju. Wydrukuj albo zachowaj w telefonie. Kiedy nadejdzie flashback, mózg nie będzie w stanie wymyślić tych odpowiedzi — będzie potrzebował gotowych.</p>
+
+    <div class="now-card">
+      <div class="now-h">📛 Moje imię i fakty teraz</div>
+      <div class="now-row">
+        <label>Imię:</label>
+        <input class="now-input" id="nowName" placeholder="Imię i nazwisko" type="text">
+      </div>
+      <div class="now-row">
+        <label>Rok:</label>
+        <input class="now-input" id="nowYear" placeholder="np. 2026" type="text">
+      </div>
+      <div class="now-row">
+        <label>Wiek:</label>
+        <input class="now-input" id="nowAge" placeholder="Mam … lat" type="text">
+      </div>
+      <div class="now-row">
+        <label>Adres:</label>
+        <input class="now-input" id="nowAddr" placeholder="Mieszkam w …" type="text">
+      </div>
+    </div>
+
+    <div class="now-card">
+      <div class="now-h">🛟 Trzy rzeczy, które mnie uziemiają</div>
+      <textarea class="now-input" id="nowGround" placeholder="np. „Zimna woda na nadgarstki. Pies na kolanach. Lista 5 rzeczy, które widzę.”" rows="3"></textarea>
+    </div>
+
+    <div class="now-card">
+      <div class="now-h">📞 Trzy osoby, do których mogę zadzwonić</div>
+      <textarea class="now-input" id="nowPpl" placeholder="np. „Asia (siostra) — 600…, Marek (przyjaciel) — 600…, terapeutka Anna — 600…”" rows="3"></textarea>
+    </div>
+
+    <div class="now-card">
+      <div class="now-h">💬 Co mówię sobie</div>
+      <textarea class="now-input" id="nowMsg" placeholder="np. „To jest flashback. Czuję strach, ale tu jest bezpiecznie. Mam 35 lat, jestem w domu, mam pieniądze, mam klucze. Nie jestem już dzieckiem.”" rows="3"></textarea>
+    </div>
+
+    <div class="term-note"><strong>📐 Praktyczne</strong>: wydrukuj tę kartę po wypełnieniu, włóż do portfela. Drugi egzemplarz w telefonie (zdjęcie, notatka). Trzeci — w samochodzie. Walker (2013): w 60% przypadków sama obecność karty, nawet bez czytania, zmniejsza nasilenie flashbacku — bo daje sygnał „mam plan”.</div>
+
+    <div class="term-note"><strong>🤝 Współregulacja</strong>: jeśli masz osobę zaufaną, pokaż jej tę kartę zawczasu. Powiedz, co najlepiej pomaga, gdy jesteś we flashbacku — najczęściej nie rozmowa, ale obecność i konkretne zdania („jest 2026, jesteś u siebie”). Wyjście z flashbacku z bezpieczną osobą trwa średnio 3× krócej niż w samotności.</div>
+  </section>
+
+  <!-- ====== KROK 5 — TRENING ====== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Plan treningu</div>
+    <h1 class="card-prompt">Procedura, <em>która ma być pod ręką</em></h1>
+    <p class="card-detail">Karteczka w portfelu nie wystarcza, jeśli nigdy nie przećwiczyłeś/aś protokołu. Trening polega na tym, że w spokoju, raz dziennie przez 4 tygodnie, idziesz przez kroki 1–4 jakby flashback się działał. Mózg uczy się ścieżki — pod stresem znajduje ją automatycznie.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Plan 4-tygodniowy</div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 1</strong> — codziennie 5 minut: wypowiedz na głos kroki 1–4. „Mam flashback. Czuję strach, ale tu jest bezpiecznie. Stopy na podłodze. Jestem [imię], [rok], [miejsce].” Nie ma kryzysu — ćwiczysz drogę.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 2</strong> — dodaj wczesne sygnały. Zauważ przez dzień, kiedy ciało dało Ci znak (ucisk, zimno, „mała ja”). Nie musisz wtedy odpalać protokołu, wystarczy zauważyć. Buduje rozpoznanie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 3</strong> — przy lekkim wyzwalaczu (krytyka, niedzielny wieczór) odpal kroki 1–4. Ciało jeszcze nie jest we flashbacku, ale ścieżka już działa. Zauważ, że krótszy wzrost napięcia.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 4</strong> — z terapeutą: kontrolowana ekspozycja na średni wyzwalacz + pełen protokół. Sprawdzenie, czy 13 kroków utrzymuje się pod realnym ciężarem. Po tym tygodniu protokół jest „Twój”.</span>
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Twoja decyzja</strong> — kiedy i jak będziesz ćwiczyć w pierwszym tygodniu?</p>
+    <textarea class="thought-input" id="planTydz" placeholder="np. „Codziennie po pracy, 5 minut, na ławce w parku, na głos. Karteczka w portfelu od jutra rano.”" rows="3"></textarea>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Flashback = <strong>ponowne przeżywanie, nie wspomnienie</strong>. Walker: 13 kroków, ratunkowe są pierwsze 4 (nazwij, oddziel, ground, kontekstualizuj). <em>Karta &bdquo;teraz&rdquo;</em> w portfelu — wypełniona w spokoju, dostępna w kryzysie. Trening 4 tygodnie codziennie, dopiero potem działa pod stresem. Współregulacja z bezpieczną osobą skraca czas wyjścia 3-krotnie.</div>
+    </div>
+
+    <div class="src">Walker (2013); Ehlers &amp; Clark (2000); Brewin (2014); van der Kolk (2014); Hopper i in. (2007); Cloitre i in. (2010, STAIR — protokoły wsparcia); Ogden i in. (2006)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_flashback_cptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_flashback_cptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

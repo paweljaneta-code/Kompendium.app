@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Randki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === LEVEL-LIST === */
+.level-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.level-btn { padding: 14px; background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left; font-family: inherit; }
+.level-btn:hover, .level-btn:active { background: rgba(122,146,112,0.06); }
+.level-btn.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.level-h { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.level-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 28px; }
+.level-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--ink); }
+.level-tick { font-size: 16px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.level-btn.picked .level-tick { opacity: 1; }
+.level-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 40px; }
+.level-desc strong { color: var(--ink); }
+
+/* === TRAP-LIST (krok 3) === */
+.trap-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.trap-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.trap-item:hover, .trap-item:active { background: rgba(201,122,82,0.06); }
+.trap-item.checked { background: rgba(201,122,82,0.12); border-color: var(--warm); border-left: 3px solid var(--warm); }
+.trap-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.trap-item.checked .trap-tick { background: var(--warm); border-color: var(--warm); }
+.trap-item.checked .trap-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.trap-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.trap-text strong { color: var(--ink); font-weight: 700; }
+.trap-mech { display: block; font-size: 11px; color: var(--ink-mute); margin-top: 3px; font-style: italic; }
+
+/* === CHALLENGE-CARD (krok 4) === */
+.challenge-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.challenge-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.challenge-list { display: flex; flex-direction: column; gap: 8px; }
+.challenge-row { padding: 10px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.challenge-row strong { color: var(--bg); }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.diff-block { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 14px; background: rgba(122,146,112,0.06); border-radius: 12px; margin: 8px 0 10px; }
+.diff-side { text-align: center; flex: 1; }
+.diff-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.diff-num.before { color: var(--warm); }
+.diff-num.after { color: var(--sage-deep); }
+.diff-lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; font-weight: 600; }
+.diff-arrow { font-size: 22px; color: var(--ink-mute); }
+
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Randki</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Randki <em>z lękiem społecznym</em></h1>
+    <p class="card-detail"><strong>SAD a randki</strong> — kombinacja, która generuje najwyższy poziom lęku w klinicznym SAD (Hofmann i Otto 2008). Sytuacja randkowa łączy <em>wszystkie</em> wymiary lęku społecznego: ekspozycja siebie, ocena, możliwość odrzucenia, intymność. <strong>Hierarchia ekspozycji</strong> (Hope, Heimberg, Turk 2010) pokazuje, że randki należy ćwiczyć <em>stopniowo</em> — od najmniejszej ekspozycji do największej. Skok w głęboką wodę = panika i unikanie. Stopniowe budowanie = realna zmiana.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy pracy z lękiem randkowym</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🪜</span>
+          <span class="element-text"><strong>Hierarchia</strong> = 5 poziomów od „pierwszy kontakt” do „intymność emocjonalna”</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🪤</span>
+          <span class="element-text"><strong>Pułapki</strong> = klasyczne wzorce SAD w randkach (nadanaliza, czytanie myśli, zachowania zabezpieczające)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Wyzwanie</strong> = jeden konkretny ruch w tym tygodniu — nie „w przyszłym miesiącu”</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📊</span>
+          <span class="element-text"><strong>Pomiar</strong> = SUDS (Subjective Units of Distress, subiektywna skala dyskomfortu) przed i po, dane do rekalibracji „katastrofy”</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Lęk przed odrzuceniem zniknie tylko przez <em>wielokrotną ekspozycję</em> na sytuacje randkowe — nie przez zrozumienie.”
+        <span class="frame-quote-attr">— Hofmann i Otto (2008, CBT for Social Anxiety)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w SAD randkowym łatwo wpaść w pułapkę: „aż lęk minie sam”. <strong>Nie minie.</strong> Lęk randkowy <em>słabnie tylko poprzez ekspozycję</em> na rzeczywiste sytuacje — pierwsza wiadomość, pierwsza randka, pierwsza odmowa. Każda z nich uczy mózg, że <em>można przeżyć</em>. Bez tych doświadczeń lęk pozostaje w pełnej sile latami.</div>
+    
+    <div class="src">Hofmann i Otto (2008) · Heimberg i Becker (2002) · Hope, Heimberg, Turk (2010, MASTER OF YOUR ANXIETY) · Greist i Jefferson (2015)</div>
+  </section>
+  <!-- 2: TWÓJ POZIOM -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twój poziom</div>
+    <h1 class="card-prompt">Gdzie <em>jesteś teraz</em>?</h1>
+    <p class="card-detail">5-stopniowa hierarchia od <em>pierwszego kontaktu</em> do <em>pełnej intymności</em>. Wybierz <strong>poziom, na którym aktualnie utykasz</strong> — to twój punkt startu. Praca odbywa się <em>na tym poziomie</em>, nie skacząc na wyższy.</p>
+    
+    <div class="term-note"><strong>Reguła hierarchii</strong>: <em>nie skacz</em> z poziomu 1 na 4. Każdy poziom buduje fundamenty dla następnego. Mózg potrzebuje <strong>pełnej ekspozycji</strong> na poziomie obecnym, zanim podejmie kolejny. Pominięcie = panika i regresja do poziomu 0.</div>
+    
+    <div class="level-list">
+      <button class="level-btn" onclick="pickLevel(this)">
+        <div class="level-h">
+          <span class="level-num">1.</span>
+          <span class="level-name">Pierwszy kontakt</span>
+          <span class="level-tick">✓</span>
+        </div>
+        <div class="level-desc">Pierwsza wiadomość na aplikacji, like na Instagramie, krótkie „cześć” na imprezie. <strong>Lęk typowy</strong>: 7-9/10. <em>Bez tej fazy</em> żadna inna się nie zacznie.</div>
+      </button>
+      
+      <button class="level-btn" onclick="pickLevel(this)">
+        <div class="level-h">
+          <span class="level-num">2.</span>
+          <span class="level-name">Wymiana — wiadomości / rozmowy</span>
+          <span class="level-tick">✓</span>
+        </div>
+        <div class="level-desc">Ciągła konwersacja — wiadomości przez kilka dni, krótkie rozmowy w grupie znajomych. <strong>Lęk</strong>: 5-7/10. Ryzyko: utknięcie w „bezpiecznej” wymianie wiadomości bez przejścia dalej.</div>
+      </button>
+      
+      <button class="level-btn" onclick="pickLevel(this)">
+        <div class="level-h">
+          <span class="level-num">3.</span>
+          <span class="level-name">Pierwsza randka — kontakt twarzą w twarz</span>
+          <span class="level-tick">✓</span>
+        </div>
+        <div class="level-desc">Spotkanie 1:1 (kawa, drink, spacer). 30-90 minut. <strong>Lęk</strong>: 8-10/10 przed, spada do 5-6 w trakcie. <em>Najtrudniejszy próg</em> w hierarchii.</div>
+      </button>
+      
+      <button class="level-btn" onclick="pickLevel(this)">
+        <div class="level-h">
+          <span class="level-num">4.</span>
+          <span class="level-name">Eskalacja — bliższy kontakt fizyczny i emocjonalny</span>
+          <span class="level-tick">✓</span>
+        </div>
+        <div class="level-desc">Druga, trzecia randka. Pocałunek, dotyk, dłuższe rozmowy o sobie. <strong>Lęk</strong>: 7-9/10 (eskalacja, wystawienie się na ocenę intymną).</div>
+      </button>
+      
+      <button class="level-btn" onclick="pickLevel(this)">
+        <div class="level-h">
+          <span class="level-num">5.</span>
+          <span class="level-name">Intymność emocjonalna i seksualna</span>
+          <span class="level-tick">✓</span>
+        </div>
+        <div class="level-desc">Wyrażanie uczuć, podatność, seksualność, plany długoterminowe. <strong>Lęk</strong>: zmienny — może wracać silnie po okresach niskiego. <em>Najgłębszy poziom ekspozycji siebie</em>.</div>
+      </button>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Twoja sytuacja — gdzie konkretnie utykasz?</div>
+    <textarea class="thought-input" id="stuckPoint" placeholder="np. „Mam matche w aplikacji, ale nie wysyłam pierwszej wiadomości — nie wiem, jak zacząć” / „Wysyłam wiadomości, ale nie umiem zaproponować spotkania — od miesięcy zostaję na pisaniu wiadomości”..." rows="3"></textarea>
+  </section>
+  <!-- 3: PUŁAPKI SAD-RANDKOWE -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Pułapki SAD-randkowe</div>
+    <h1 class="card-prompt">Co cię <em>blokuje</em> najczęściej?</h1>
+    <p class="card-detail">Klasyczne wzorce SAD w kontekście randkowym. Zaznacz te, które rozpoznajesz <strong>u siebie</strong>. 3+ pozycje = silny wzorzec — to dobra wiadomość: konkretne dźwignie do pracy.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: 3+ zaznaczonych pułapek = <em>standardowy obraz SAD-randkowego</em>. Nie znaczy to, że jesteś „beznadziejny” — znaczy, że masz <strong>konkretne dźwignie</strong>. Każda pułapka to <em>znana w literaturze</em> klinicznej, ze sprawdzonymi narzędziami zmiany.</div>
+    
+    <div class="trap-list">
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Czytanie myśli</strong> — wymyślam, co druga osoba myśli, zanim odpowie
+          <span class="trap-mech">„Pewnie myśli, że jestem nudny” — bez żadnych dowodów</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Wyprzedzające odrzucenie</strong> — odrzucam siebie, zanim ktoś mnie odrzuci
+          <span class="trap-mech">„Nie wyślę wiadomości — i tak nie odpowie”</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Nadanaliza wiadomości</strong> — godziny układania jednego SMS-a
+          <span class="trap-mech">Każde słowo pod lupą — ironia: brzmi sztywniej, niż gdybyś napisał odruchowo</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Tekstowanie zamiast spotkania</strong> — utknięcie w bezpiecznej fazie
+          <span class="trap-mech">Mogę pisać tygodniami, byle nie spotkać się na żywo</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Uwaga skierowana na siebie na randce</strong> — monitoruję siebie zamiast słuchać
+          <span class="trap-mech">„Jak wyglądam? Co mówię? Czy mam pot pod pachami?” — drugie osoby ledwo się słyszę</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Skrypty i ćwiczone zdania</strong> — sztywność zamiast naturalności
+          <span class="trap-mech">Powtarzasz w głowie „idealny tekst”, brzmisz jak robot</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Wczesne wycofanie</strong> — kończysz randkę po 30 min, „bo coś mam”
+          <span class="trap-mech">Szanse na drugą randkę spadają o 70% (Hope i in. 2010) — sygnał braku zainteresowania</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Ruminacja po sytuacji</strong> — odgrywasz randkę 50 razy w głowie po fakcie
+          <span class="trap-mech">Każda runda dodaje deficytów, pamięć zapisuje porażkę zamiast neutralności</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Katastrofizacja odrzucenia</strong> — „odmowa = jestem niewart kochania”
+          <span class="trap-mech">Mózg generalizuje jedno „nie” na całość siebie — typowa pułapka SAD</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- 4: WYZWANIE TYGODNIA -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Wyzwanie tygodnia</div>
+    <h1 class="card-prompt">Twój <em>następny krok</em></h1>
+    <p class="card-detail">Konkretne wyzwanie <strong>na tym poziomie hierarchii</strong>, na którym jesteś (z kroku 2). Reguła: <em>wykonalne w 7 dni</em>, generujące lęk 4-7/10. Niżej — za łatwe; wyżej — paraliż.</p>
+    
+    <div class="term-note"><strong>Reguła wyzwania</strong>: jeśli twoje wyzwanie ma SUDS &gt; 8/10 — <em>za duże</em>. Zejdź na mniejsze. Cel: 4-7/10. To <em>strefa rozwoju</em> (Vygotsky) — mózg się uczy. Powyżej 8 = panika i unikanie. Poniżej 4 = za mało dyskomfortu, brak postępu.</div>
+    
+    <div class="challenge-card">
+      <div class="challenge-h">Przykładowe wyzwania per poziom</div>
+      <div class="challenge-list">
+        <div class="challenge-row"><strong>Poziom 1</strong> (pierwszy kontakt): wyślij <em>3 pierwsze wiadomości</em> w tym tygodniu. Bez doskonalenia — krótko, ciekawie. Zlicz odpowiedzi.</div>
+        <div class="challenge-row"><strong>Poziom 2</strong> (wymiana): zaproponuj <em>spotkanie</em> osobie, z którą piszesz minimum 5 dni. Przejście z text na real.</div>
+        <div class="challenge-row"><strong>Poziom 3</strong> (pierwsza randka): umów <em>jedno spotkanie na żywo</em>. Spróbuj <strong>nie wycofać się</strong> wcześniej niż po 60 min, nawet jeśli lęk jest 7+/10.</div>
+        <div class="challenge-row"><strong>Poziom 4</strong> (eskalacja): zaproponuj <em>drugą randkę</em>, jeśli pierwsza poszła OK. Lub: powiedz coś osobistego o sobie podczas randki.</div>
+        <div class="challenge-row"><strong>Poziom 5</strong> (intymność): wyraź <em>jedną emocję</em> wprost („zależy mi na tobie”, „boję się odrzucenia”). Małe wyznanie buduje bliskość.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoje konkretne wyzwanie na ten tydzień</div>
+    <textarea class="thought-input" id="planWhat" placeholder="np. „Wyślę pierwszą wiadomość do 3 osób w aplikacji do soboty wieczór. Nie będę przepisywać 5 wersji — wyślę pierwszą, którą napiszę”..." rows="3"></textarea>
+    
+    <div class="examples-h">Kiedy konkretnie?</div>
+    <input type="text" class="thought-input" id="planWhen" placeholder="np. „Wtorek, czwartek, sobota — między 19:00 a 21:00”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="examples-h" style="margin-top:10px">SUDS przed wyzwaniem (skala lęku przewidywanego)</div>
+    <div class="scale-card">
+      <div class="scale-label"><span>Spokój</span><span>Maksimum</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="sudsBefore" oninput="updateB(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="sudsBeforeVal">7</span><span> / 10</span></div>
+    </div>
+  </section>
+  <!-- 5: PO PRÓBIE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po próbie</div>
+    <h1 class="card-prompt">Sprawdź <em>spadek lęku</em></h1>
+    <p class="card-detail">Po wykonaniu wyzwania — sprawdź <strong>realny SUDS</strong>. <em>Habituacja</em> (Foa i Kozak 1986) — typowo lęk maksymalny 6-8/10, spada do 3-4/10 po 20-30 minutach. Każdy taki cykl uczy mózg: „przeżyłem”. Po 5-10 takich cyklach lęk przed analogicznymi sytuacjami obniża się o ~40%.</p>
+    
+    <div class="term-note"><strong>Reguła progresu</strong>: postęp w randkach z SAD nie jest liniowy. Tygodnie sukcesów + tygodnie regresji = <em>normalny przebieg</em>. Mierz <strong>średnio kwartalnie</strong>, nie tygodniowo. Po 3 miesiącach pracy z hierarchią większość osób zauważa: „rzeczy, które rok temu były niemożliwe, dziś są trudne ale wykonalne”.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">SUDS faktyczny — szczyt podczas wyzwania</div>
+      <div class="scale-label"><span>Spokój</span><span>Maksimum</span></div>
+      <input type="range" min="0" max="10" value="6" class="scale-input" id="sudsAfter" oninput="updateA(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="sudsAfterVal">6</span><span> / 10</span></div>
+    </div>
+    
+    <div class="diff-block">
+      <div class="diff-side">
+        <div class="diff-num before" id="diffBefore">—</div>
+        <div class="diff-lbl">Przewidywany</div>
+      </div>
+      <div class="diff-arrow">→</div>
+      <div class="diff-side">
+        <div class="diff-num after" id="diffAfter">—</div>
+        <div class="diff-lbl">Faktyczny</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Co się wydarzyło — fakty (bez interpretacji)</div>
+    <textarea class="thought-input" id="facts" placeholder="np. „Wysłałem 3 wiadomości w środę. 1 osoba odpowiedziała. 2 nie. Lęk maks 6/10, spadł do 3/10 po godzinie. Brak katastrofy”..." rows="3"></textarea>
+    
+    <div class="examples-h">Wniosek — co się sprawdziło, co nie</div>
+    <textarea class="thought-input" id="lesson" placeholder="np. „Lęk przewidywany 8/10, faktyczny 6/10. Brak katastrofy z 2 brakami odpowiedzi. Dane: nie każda wysłana wiadomość = sukces, ale wysłanie = krok. Następne wyzwanie: 3 wiadomości + 1 propozycja spotkania”..." rows="4"></textarea>
+    
+    <div class="examples-h">Następne wyzwanie</div>
+    <input type="text" class="thought-input" id="nextChallenge" placeholder="np. „Następny tydzień: 3 wiadomości + zaproponować kawę osobie A”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Lęk randkowy słabnie <strong>tylko</strong> przez wielokrotną ekspozycję. Nie zrozumieniem, nie czytaniem, nie planowaniem — <em>realnym kontaktem</em>. Każde odrzucenie to <strong>dane</strong>, nie diagnoza twojej wartości. Po 10-20 podejściach mózg uczy się, że <em>„brak odpowiedzi nie kończy świata”</em>. To krok w stronę życia, w którym romans i bliskość są możliwe.</div>
+    </div>
+    
+    <div class="src">Hofmann i Otto (2008) · Heimberg i Becker (2002) · Hope, Heimberg, Turk (2010) · Greist i Jefferson (2015) · Foa i Kozak (1986, habituacja)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('stuckPoint'); if (el) el.value = ''; }
+    { const el = document.getElementById('planWhat'); if (el) el.value = ''; }
+    { const el = document.getElementById('planWhen'); if (el) el.value = ''; }
+    { const el = document.getElementById('facts'); if (el) el.value = ''; }
+    { const el = document.getElementById('lesson'); if (el) el.value = ''; }
+    { const el = document.getElementById('nextChallenge'); if (el) el.value = ''; }
+    { const el = document.getElementById('sudsBefore'); if (el) el.value = 7; }
+    { const el = document.getElementById('sudsAfter'); if (el) el.value = 6; }
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('picked'));
+    document.querySelectorAll('.trap-item').forEach(b => b.classList.remove('checked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) {
+    document.getElementById('diffBefore').textContent = document.getElementById('sudsBefore').value + '/10';
+    document.getElementById('diffAfter').textContent = document.getElementById('sudsAfter').value + '/10';
+  }
+}
+
+function pickLevel(el) {
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function toggleTrap(el) { el.classList.toggle('checked'); }
+
+function updateB(v) { document.getElementById('sudsBeforeVal').textContent = v; }
+function updateA(v) {
+  document.getElementById('sudsAfterVal').textContent = v;
+  document.getElementById('diffBefore').textContent = document.getElementById('sudsBefore').value + '/10';
+  document.getElementById('diffAfter').textContent = v + '/10';
+}
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.trap-item';
+  var clickSel1 = '.level-btn';
+  var KEY = "sos-dating-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {}, c1: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.trap-item, .level-btn')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

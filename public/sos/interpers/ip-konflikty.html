@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Konflikty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.style-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 12px 0; }
+.style-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 11px 13px; cursor: pointer; transition: all 0.2s; text-align: left; font-family: inherit; width: 100%; }
+.style-card:hover, .style-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.style-card.picked .stl-name, .style-card.picked .stl-desc, .style-card.picked .stl-when { color: var(--bg); }
+.style-card.picked .stl-when { color: rgba(244,241,234,0.75); }
+.stl-name { font-weight: 600; font-size: 13.5px; color: var(--ink); margin-bottom: 3px; }
+.stl-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 4px; }
+.stl-when { font-size: 11.5px; color: var(--ink); font-style: italic; }
+.compare-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13px; line-height: 1.55; }
+.compare-bad { color: var(--ink-soft); margin-bottom: 6px; }
+.compare-bad strong { color: #b85a3a; }
+.compare-good { color: var(--ink); }
+.compare-good strong { color: var(--sage-deep); }
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-rule { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: flex-start; }
+.proto-rule:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); flex-shrink: 0; min-width: 18px; }
+.proto-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.proto-text strong { color: var(--bg); font-weight: 600; }
+.final-summary { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; margin: 12px 0; border: 1px solid var(--sage); font-size: 13.5px; line-height: 1.6; color: var(--ink); }
+.final-summary strong { color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Konflikty</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — Wprowadzenie ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Konflikt — <em>nieunikniony</em>, ale do zarządzania</h1>
+    <p class="card-detail">Konflikty w bliskich relacjach są nieuniknione. Pytanie nie brzmi „czy się kłócić", tylko <em>jak</em>. John Gottman po 40 latach badań nad parami pokazał, że 69% konfliktów to „perpetual problems" — różnice nierozwiązywalne (osobowość, wartości, styl życia), które wracają przez całe lata. Cel zdrowej pary to <em>nie</em> rozwiązać tych konfliktów, tylko nauczyć się z nimi żyć z szacunkiem. Drugi przełom Gottmana: cztery zachowania, które niemal pewnie kończą relację — krytyka, pogarda, obronność, stonewalling (cztery jeźdźcy Apokalipsy). Pogarda jest najsilniejszym pojedynczym predyktorem rozwodu.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery jeźdźcy Apokalipsy (Gottman 1994)</div>
+      <div class="element-row">
+        <span class="element-icon">🗡️</span>
+        <span class="element-text"><strong>Krytyka.</strong> Atak na charakter („jesteś leniwy") zamiast na zachowanie („wczoraj nie wyniosłeś śmieci"). Antidotum: łagodny początek, „ja"-komunikat.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">😤</span>
+        <span class="element-text"><strong>Pogarda.</strong> Sarkazm, wyśmiewanie, przewracanie oczami, ton wyższości. Najsilniejszy predyktor końca relacji. Antidotum: kultura uznania.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛡️</span>
+        <span class="element-text"><strong>Obronność.</strong> „To nie moja wina, ty zacząłeś". Odrzucanie jakiejkolwiek odpowiedzialności. Antidotum: „masz rację co do tej części...".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧱</span>
+        <span class="element-text"><strong>Stonewalling.</strong> Wycofanie, milczenie, kamienna twarz. Zwykle reakcja na pobudzenie >100 BPM. Antidotum: pauza fizjologiczna 20 minut.</span>
+      </div>
+    </div>
+    
+    <div class="frame-quote">„Pary, które dobrze się kłócą, robią to z poczuciem, że są po tej samej stronie. Pary toksyczne — z poczuciem, że są przeciwnikami."
+      <span class="frame-quote-attr">— John M. Gottman (1999), Seven Principles for Making Marriage Work</span>
+    </div>
+    
+    <div class="term-note"><strong>🔑 Klucz</strong>: pobudzenie fizjologiczne >100 uderzeń na minutę (Gottman: „diffuse physiological arousal") wyłącza zdolność do empatii i rozwiązywania problemów. W tym stanie każda rozmowa pogarsza sytuację. Pauza minimum 20 minut na fizjologiczne uspokojenie — przed wznowieniem rozmowy. Bez tego — eskalacja.</div>
+    
+    <div class="term-note"><strong>📌 Częsty mit</strong>: „dobre pary się nie kłócą". Fałsz. Gottman: dobre pary kłócą się <em>tyle samo</em>, co złe. Różnica — w <em>jak</em>. Pięć pozytywnych interakcji na każdą negatywną (5:1) w czasie konfliktu = stabilna relacja. Mniej — ryzyko rozpadu.</div>
+    
+    <div class="src">Gottman (1994), Why Marriages Succeed or Fail · Gottman (1999), Seven Principles · Thomas, Kilmann (1974), conflict modes · Fisher, Ury (1981), Getting to Yes · Rosenberg (2003), NVC</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twój styl</div>
+    <h1 class="card-prompt">Pięć stylów <em>Thomas-Kilmann</em></h1>
+    <p class="card-detail">Thomas i Kilmann (1974) opisali pięć stylów konfliktu. Każdy ma swoje miejsce — żaden nie jest „zły". Problem zaczyna się, gdy używasz jednego stylu we wszystkich sytuacjach. Wybierz swój dominujący.</p>
+    
+    <div class="style-grid">
+      <button class="style-card" id="kf1" onclick="this.classList.toggle('picked')">
+        <div class="stl-name">⚔️ Rywalizacja (wysokie ja, niskie ty)</div>
+        <div class="stl-desc">„Muszę wygrać." Stawiasz na swoim, nie ustępujesz. Brak troski o potrzeby drugiej strony.</div>
+        <div class="stl-when">Przydatne: sytuacje awaryjne, gdy znasz fakty. Niszczące: w bliskich relacjach.</div>
+      </button>
+      <button class="style-card" id="kf2" onclick="this.classList.toggle('picked')">
+        <div class="stl-name">🙈 Unikanie (niskie ja, niskie ty)</div>
+        <div class="stl-desc">„Daj spokój, nie ma o czym gadać." Pomijasz konflikt — ale nie znika, narasta pod powierzchnią.</div>
+        <div class="stl-when">Przydatne: trywialne sprawy, gdy emocje są zbyt silne. Niszczące: jako domyślny styl.</div>
+      </button>
+      <button class="style-card" id="kf3" onclick="this.classList.toggle('picked')">
+        <div class="stl-name">🤐 Dostosowanie (niskie ja, wysokie ty)</div>
+        <div class="stl-desc">„Zrobię, jak chcesz." Ustępujesz, by uniknąć napięcia. Twoje potrzeby pozostają niezaspokojone.</div>
+        <div class="stl-when">Przydatne: gdy sprawa ważniejsza dla drugiej strony. Niszczące: chronicznie — narasta resentyment.</div>
+      </button>
+      <button class="style-card" id="kf4" onclick="this.classList.toggle('picked')">
+        <div class="stl-name">⚖️ Kompromis (średnie ja, średnie ty)</div>
+        <div class="stl-desc">„Każdy ustępuje połowicznie." Praktyczne, ale obie strony zostają z poczuciem niedosytu.</div>
+        <div class="stl-when">Przydatne: gdy czas nagli i potrzebne szybkie rozwiązanie. Ograniczone: rzadko najlepsze.</div>
+      </button>
+      <button class="style-card" id="kf5" onclick="this.classList.toggle('picked')">
+        <div class="stl-name">🤝 Współpraca (wysokie ja, wysokie ty)</div>
+        <div class="stl-desc">„Co możemy razem stworzyć?" Szukacie rozwiązania, które zaspokoi potrzeby obu stron.</div>
+        <div class="stl-when">Najlepsze w bliskich relacjach. Wymaga czasu, energii i otwartości — ale daje najtrwalsze ustalenia.</div>
+      </button>
+    </div>
+    
+    <textarea class="thought-input" id="kfStyle" placeholder="Jaki styl dominuje u ciebie w konfliktach z bliskimi? A jaki w pracy? Czy się różnią? np. „Z mężem unikam — boję się jego reakcji, więc milczę. W pracy rywalizuję — łatwiej mi z kolegami stawiać twardo. To pokazuje, że unikanie jest specyficzne dla tej relacji."" rows="3"></textarea>
+    
+    <div class="term-note"><strong>Reguła stylu</strong>: zdrowy człowiek elastycznie używa wszystkich pięciu stylów — dopasowuje do sytuacji. Sztywne trzymanie się jednego (najczęściej unikania lub dostosowania) jest objawem niskiego poczucia własnej wartości lub strachu przed konfliktem. Cel: rozszerzyć repertuar, nie zmienić styl raz na zawsze.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Pauza fizjologiczna</div>
+    <h1 class="card-prompt">Kiedy <em>przerwać</em></h1>
+    <p class="card-detail">Gottman pokazał, że gdy puls przekracza 100 uderzeń na minutę (u kobiet często niżej, ~95), zdolność do empatii i rozwiązywania problemów spada drastycznie. Kontynuowanie rozmowy w tym stanie pogłębia konflikt. Pauza 20 minut to fizjologiczne minimum — krócej nie wystarcza.</p>
+    
+    <div class="proto-card">
+      <div class="proto-h">Sygnały, że potrzebujesz pauzy</div>
+      <div class="proto-rule">
+        <span class="proto-num">1</span>
+        <span class="proto-text"><strong>Puls.</strong> Czujesz serce w klatce, gardle, uszach. >100 BPM to sygnał. Można sprawdzić smartwatchem — wielu klientów się dziwi, jak szybko bije.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">2</span>
+        <span class="proto-text"><strong>Tunelowy umysł.</strong> Słyszysz drugą osobę, ale rozumiesz mniej. Skupiasz się na tym, co odpowiedzieć — nie na tym, co usłyszałaś/eś.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">3</span>
+        <span class="proto-text"><strong>Ciało napięte.</strong> Szczęka zaciśnięta, ramiona uniesione, dłonie zwinięte. Ciało już jest w trybie walki — mózg za chwilę dołączy.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">4</span>
+        <span class="proto-text"><strong>Język uniwersalny.</strong> Zaczynasz słów „zawsze", „nigdy", „ty zawsze tak robisz". Te słowa są niemal zawsze nieprawdziwe — i są diagnostyką pobudzenia.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">5</span>
+        <span class="proto-text"><strong>Pojawiają się jeźdźcy.</strong> Słyszysz w sobie pogardę, krytykę charakteru, obronność. To sygnał, że konflikt już eskaluje destrukcyjnie.</span>
+      </div>
+    </div>
+    
+    <div class="compare-card">
+      <div class="compare-bad">❌ <strong>Brzydka pauza</strong>: „Nie chcę z tobą gadać. Idę." (trzaśnięcie drzwiami)</div>
+      <div class="compare-good">✅ <strong>Strukturyzowana pauza</strong>: „Czuję, że tracę kontakt. Potrzebuję 20 minut, żeby się uspokoić. Wracamy o [konkretna godzina]."</div>
+    </div>
+    
+    <textarea class="thought-input" id="kfPause" placeholder="Po jakich sygnałach najczęściej rozpoznajesz, że jesteś w eskalacji? Co cię wtedy pcha do dalszego mówienia mimo to? np. „Zaciskanie szczęki + »ty zawsze«. Pchłem mnie strach, że jeśli przerwę, on/a wygra. Ale faktycznie kontynuując — przegrywam relację, nie rozmowę."" rows="3"></textarea>
+    
+    <div class="term-note"><strong>Klucz pauzy</strong>: pauza musi mieć trzy elementy — uznanie potrzeby („potrzebuję pauzy"), konkretny czas powrotu („20 minut") i obietnicę powrotu („wrócimy do tego"). Bez tych elementów druga osoba odbiera pauzę jako porzucenie. W trakcie pauzy: oddech, spacer, prysznic — coś fizycznego. Nie scrollowanie myśli o konflikcie.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Protokół</div>
+    <h1 class="card-prompt">Pięć kroków <em>konstruktywnego konfliktu</em></h1>
+    <p class="card-detail">Po pauzie i uspokojeniu — protokół rozmowy. Kolejność jest kluczowa. Większość par przeskakuje od razu do kroku 4 (rozwiązanie), pomijając kroki 1–3 — i konflikt wraca, bo emocje nie zostały usłyszane.</p>
+    
+    <div class="proto-card">
+      <div class="proto-h">Pięć kroków rozmowy po pauzie</div>
+      <div class="proto-rule">
+        <span class="proto-num">1</span>
+        <span class="proto-text"><strong>Łagodny początek (Gottman).</strong> „Ja"-komunikat o sytuacji, nie o charakterze. „Czułam się samotna wczoraj, gdy pracowałeś do północy" — nie „jesteś egoistą".</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">2</span>
+        <span class="proto-text"><strong>Słuchanie bez przerywania.</strong> Druga strona mówi do końca. Nie przygotowujesz odpowiedzi — naprawdę słuchasz. Możesz powtarzać: „rozumiem, że..."</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">3</span>
+        <span class="proto-text"><strong>Walidacja emocji.</strong> „To, co czujesz, ma sens, biorąc pod uwagę..." Bez zgody na każdą interpretację — uznanie samej emocji.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">4</span>
+        <span class="proto-text"><strong>Burza rozwiązań razem.</strong> „Co my razem możemy zrobić?" — nie „co ty masz zmienić". Wspólne autorstwo rozwiązania.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">5</span>
+        <span class="proto-text"><strong>Naprawa.</strong> „Przepraszam za to, co było za ostro. Kocham cię nawet, gdy się nie zgadzamy." Pożegnanie na pojednawczej nucie.</span>
+      </div>
+    </div>
+    
+    <textarea class="thought-input" id="kfPlan" placeholder="Wybierz konkretny, powtarzający się konflikt z bliską osobą. Zaplanuj, jak chcesz przeprowadzić następną rozmowę używając 5 kroków. np. „Konflikt o dzielenie obowiązków. Łagodny początek: »czuję się sama z gotowaniem w tygodniu«. Słucham. Waliduję jego pracę. Razem szukamy: kto, kiedy, co. Naprawa."" rows="4"></textarea>
+    
+    <div class="term-note"><strong>Reguła 5:1</strong>: Gottman pokazał, że stabilne pary mają 5 pozytywnych interakcji na każdą negatywną podczas konfliktu. „Pozytywne" to: humor, dotyk, uznanie, ciekawość, walidacja, wspólna pamięć. Nawet w trudnej rozmowie — 5 razy więcej dobra niż napaści. To nie kalkulacja — to <em>postawa</em>: jesteśmy po tej samej stronie, problem jest po drugiej.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po konflikcie</div>
+    <h1 class="card-prompt">Co się <em>zmieniło</em></h1>
+    <p class="card-detail">Po świadomej próbie konstruktywnego konfliktu wróć i porównaj. Najsilniejszą informacją zwrotną jest to, czy obie osoby kończą rozmowę z poczuciem, że są <em>razem</em> — niezależnie od ustaleń.</p>
+    
+    <div class="scale">
+      <div class="scale-title">Bliskość po konflikcie (0/10) — przy zwykłym sposobie</div>
+      <div class="scale-bounds"><span>(0 — daleko)</span><span>(10 — blisko)</span></div>
+      <input type="range" class="scale-input" id="kfBliskBefore" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Poziom</span><span id="kfBliskBeforeVal">3</span></div>
+    </div>
+    
+    <div class="scale">
+      <div class="scale-title">Bliskość po konflikcie (0/10) — przy protokole</div>
+      <div class="scale-bounds"><span>(0 — daleko)</span><span>(10 — blisko)</span></div>
+      <input type="range" class="scale-input" id="kfBliskAfter" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Poziom</span><span id="kfBliskAfterVal">6</span></div>
+    </div>
+    
+    <textarea class="thought-input" id="kfReflect" placeholder="Co zauważyłaś/eś? Czy konflikt zakończył się ustaleniem, czy zarządzaniem? Czy oboje czuliście się usłyszani? np. „Po pauzie wróciliśmy spokojni. Mąż opowiedział, dlaczego pracował tak długo — pierwszy raz słuchałam bez przerywania. Nic nie ustaliliśmy konkretnie, ale szliśmy spać przytuleni."" rows="4"></textarea>
+    
+    <div class="final-summary" id="kfSummary">
+      Wypełnij oba suwaki — zobaczysz tutaj <strong>różnicę bliskości</strong> po konstruktywnym vs zwykłym konflikcie.
+    </div>
+    
+    <div class="term-note"><strong>Reguła kalibracji</strong>: konstruktywny konflikt zwykle utrzymuje lub <em>zwiększa</em> bliskość — paradoksalnie. Bo druga osoba widzi: „mogę się różnić, mogę być zła, a ty mnie nadal wybierasz". To buduje zaufanie. Destrukcyjny konflikt zawsze obniża bliskość — nawet gdy „wygrasz" rozmowę.</div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body"><strong>69% konfliktów w bliskich relacjach jest nierozwiązywalnych.</strong> <em>Cel: zarządzać różnicą z szacunkiem.</em> Pauza przy >100 BPM (20 minut). Łagodny początek bez „ty zawsze". Cztery jeźdźcy (krytyka, pogarda, obronność, stonewalling) niszczą — pięć pozytywnych interakcji na jedną negatywną buduje.</div>
+    </div>
+    
+    <div class="src">Gottman (1994), Why Marriages Succeed or Fail · Gottman (1999), Seven Principles · Thomas, Kilmann (1974), conflict modes · Fisher, Ury (1981), Getting to Yes · Rosenberg (2003), NVC · Linehan (2015), DBT</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateScaleReadout(id) {
+  var el = document.getElementById(id);
+  var out = document.getElementById(id + 'Val');
+  if (el && out) out.textContent = el.value;
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.type === 'range') {
+    updateScaleReadout(e.target.id);
+    updateSummary();
+  }
+});
+
+function updateSummary() {
+  var before = parseInt(document.getElementById('kfBliskBefore').value, 10);
+  var after = parseInt(document.getElementById('kfBliskAfter').value, 10);
+  var diff = after - before;
+  var msg;
+  if (diff >= 3) msg = 'Wzrost bliskości o <strong>' + diff + ' punktów</strong>. Konflikt został przekształcony w okazję pogłębienia kontaktu. Powtórz strukturę — staje się drugą naturą.';
+  else if (diff >= 1) msg = 'Wzrost bliskości o <strong>' + diff + ' pkt</strong>. Pierwsze próby protokołu zwykle dają taki efekt. Z czasem staje się to naturalnym wzorcem rozmowy.';
+  else if (diff === 0) msg = 'Bez zmiany bliskości. Sprawdź, czy nie pominęłaś/eś walidacji (krok 3) — bez niej rozwiązanie wydaje się drugiej stronie wymuszone.';
+  else msg = 'Spadek bliskości — możliwe, że któryś z czterech jeźdźców pojawił się mimo struktury. Wróć do nagrania w głowie: czy nie było pogardy w tonie?';
+  document.getElementById('kfSummary').innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) {
+    setTimeout(updateSummary, 50);
+    setTimeout(function(){ ['kfBliskBefore','kfBliskAfter'].forEach(updateScaleReadout); }, 50);
+  }
+}
+
+function onReset() {
+  document.getElementById('kfSummary').innerHTML = 'Wypełnij oba suwaki — zobaczysz tutaj <strong>różnicę bliskości</strong> po konstruktywnym vs zwykłym konflikcie.';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ip_konflikty — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ip_konflikty";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['kfBliskBefore','kfBliskAfter'].forEach(updateScaleReadout);
+}, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

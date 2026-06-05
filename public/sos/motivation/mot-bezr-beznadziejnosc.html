@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Bezradność vs beznadziejność</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.q-grid { display: grid; gap: 6px; margin: 12px 0; }
+.q-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: left; line-height: 1.45; font-size: 13px; }
+.q-card:hover, .q-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.q-tag { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); margin-bottom: 3px; }
+.q-card.picked .q-tag { color: rgba(244,241,234,0.7); }
+
+.alarm-box { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); border-left-width: 4px; border-radius: 8px; padding: 12px 14px; margin: 12px 0; }
+.alarm-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 6px; }
+.alarm-text { font-size: 13px; line-height: 1.55; color: var(--ink); }
+.alarm-text strong { color: var(--ink); font-weight: 600; }
+
+.compare-table { background: rgba(184,197,168,0.10); border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(122,138,130,0.15); font-size: 12.5px; line-height: 1.5; }
+.compare-row:first-child { border-top: none; font-weight: 700; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); }
+.compare-row strong { color: var(--ink); font-weight: 600; }
+
+.plan-box { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.plan-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.plan-body { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.plan-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Bezradność vs beznadziejność</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Bezradność i beznadziejność — <em>różne</em> mechanizmy</h1>
+    <p class="card-detail">Bezradność (helplessness; Seligman, 1967) i beznadziejność (hopelessness; Abramson i wsp., 1989) są klinicznie odrębnymi konstruktami, choć w mowie potocznej często mylonymi. Bezradność dotyczy <em>siebie</em>: „moje działania nie mają wpływu". Beznadziejność dotyczy <em>przyszłości</em>: „negatywne wyniki są pewne, niezależnie ode mnie". Abramson, Metalsky i Alloy (1989) wykazali, że tzw. depresja beznadziejnościowa (hopelessness depression) to odrębny podtyp z charakterystycznym profilem: retardacja psychomotoryczna, apatia, brak inicjatywy. Beck i wsp. (1990) — w badaniu prospektywnym z siedmiozygodnym follow-upem — pokazali, że to <em>beznadziejność</em>, nie sama depresja, jest najsilniejszym psychologicznym predyktorem ryzyka samobójstwa. Skala BHS (Beck Hopelessness Scale) z odcięciem ≥9 punktów pozostaje używanym narzędziem klinicznej oceny ryzyka.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery różnice kliniczne</div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Obiekt przekonania</strong> — bezradność: „ja" („nic nie mogę"); beznadziejność: „przyszłość" („nic się nie zmieni").</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⏰</span>
+        <span class="element-text"><strong>Czas</strong> — bezradność jest tu i teraz, w sytuacji bieżącej; beznadziejność rozciąga się daleko w przyszłość — „nigdy".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Mechanizm pierwotny</strong> — bezradność: deficyt poczucia sprawczości (kontroli); beznadziejność: pesymistyczne oczekiwania + zawężona wizja możliwości.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛠️</span>
+        <span class="element-text"><strong>Interwencja</strong> — bezradność: eksperymenty behawioralne + restrukturyzacja atrybucji; beznadziejność: praca z wartościami (ACT) + restrukturyzacja oczekiwań + ocena ryzyka.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Bezradność mówi: nie mogę. Beznadziejność mówi: nie ma po co. To fundamentalnie różne problemy wymagające fundamentalnie różnych interwencji."
+      <span class="frame-quote-attr">— Abramson, Metalsky i Alloy (1989, Psychological Review, hopelessness depression)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: większość pacjentów doświadcza obu jednocześnie — ale <em>proporcja</em> wskazuje punkt wejścia terapeutycznego. Pomylenie konstruktów prowadzi do interwencji niedopasowanej: eksperymenty behawioralne nie pomagają w czystej beznadziejności, a praca z wartościami w czystej bezradności mija się z mechanizmem.</div>
+
+    <div class="term-note"><strong>📌 Sygnał kliniczny</strong>: gdy beznadziejność dominuje i jest wysoka (BHS ≥ 9), oprócz pracy psychoterapeutycznej wskazana jest <em>klinicystyczna ocena ryzyka</em> (np. C-SSRS — Columbia Suicide Severity Rating Scale) i ustalenie planu bezpieczeństwa. Beznadziejność jest empirycznie silniejszym predyktorem niż samo nasilenie depresji (Beck i wsp., 1990; Brown i wsp., 2000, follow-up 7 lat).</div>
+
+    <div class="src">Abramson, Metalsky i Alloy (1989, Psychological Review, hopelessness depression) · Beck i wsp. (1974, BHS) · Beck i wsp. (1990, American Journal of Psychiatry, hopelessness as suicide predictor) · Brown i wsp. (2000, Journal of Consulting and Clinical Psychology, 7-letni follow-up) · Liu i wsp. (2015, przegląd 25-letni)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Pytania różnicujące</div>
+    <h1 class="card-prompt">Zaznacz <em>zdania</em>, które rezonują z osobą (lub z Tobą)</h1>
+    <p class="card-detail">Sześć krótkich zdań — trzy diagnostyczne dla bezradności, trzy dla beznadziejności. Zaznacz te, które pasują do tego, co mówi lub myśli osoba, którą oceniasz (lub Ty sam/a, jeśli pracujesz nad sobą). Im więcej zaznaczonych w jednym kolorze, tym wyraźniejszy mechanizm dominujący.</p>
+
+    <div class="q-grid">
+      <button type="button" class="q-card" id="qA" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="q-tag">B — bezradność</span>
+        „Cokolwiek zrobię, nic z tego nie wyjdzie. Próbowałem/am już tyle razy."
+      </button>
+      <button type="button" class="q-card" id="qB" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="q-tag">B — bezradność</span>
+        „Nie mam wpływu na tę sytuację — to ode mnie nie zależy."
+      </button>
+      <button type="button" class="q-card" id="qC" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="q-tag">B — bezradność</span>
+        „Inni mogą, ja nie potrafię. Nie umiem tego zrobić."
+      </button>
+      <button type="button" class="q-card" id="qD" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="q-tag">BN — beznadziejność</span>
+        „Przyszłość jest pusta. Nie widzę powodu, by się starać."
+      </button>
+      <button type="button" class="q-card" id="qE" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="q-tag">BN — beznadziejność</span>
+        „Nic się nie zmieni — będzie tylko gorzej. Nigdy nie zobaczę poprawy."
+      </button>
+      <button type="button" class="q-card" id="qF" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="q-tag">BN — beznadziejność</span>
+        „Nie ma sensu cokolwiek planować — i tak to nie nadejdzie."
+      </button>
+    </div>
+
+    <div class="compare-table">
+      <div class="compare-row">
+        <div>Bezradność</div>
+        <div>Beznadziejność</div>
+      </div>
+      <div class="compare-row">
+        <div>O <strong>sobie</strong></div>
+        <div>O <strong>przyszłości</strong></div>
+      </div>
+      <div class="compare-row">
+        <div><em>„Nie umiem"</em></div>
+        <div><em>„Nie ma po co"</em></div>
+      </div>
+      <div class="compare-row">
+        <div>Reaguje na <strong>eksperymenty</strong></div>
+        <div>Reaguje na <strong>wartości + restrukturyzację</strong></div>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>📊 Reguła obserwacji</strong>: zwróć uwagę nie tylko na <em>treść</em> zdania, ale na <em>obiekt</em> — czego dotyczy. „Nie potrafię" = ja jako podmiot (bezradność). „Nic z tego nie wyjdzie, niezależnie ode mnie" = świat/przyszłość jako podmiot (beznadziejność). Ta sama frustracja może mieć dwa różne źródła.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Pomiar dwóch wymiarów</div>
+    <h1 class="card-prompt">Oszacuj <em>siłę</em> obu mechanizmów</h1>
+    <p class="card-detail">Dwie skale, niezależne. Im rzetelniej ocenisz obecny stan, tym lepsza będzie diagnoza punktu wejścia. Pomiar nie zastępuje narzędzia walidowanego (BHS, ATQ) — daje orientację dla doboru pierwszej interwencji.</p>
+
+    <div class="scale">
+      <div class="scale-title">Bezradność („nie mogę nic zrobić")</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="bSila" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wartość</span><span id="bSilaVal">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Beznadziejność („nic się nie zmieni — nigdy")</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="bnSila" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wartość</span><span id="bnSilaVal">5</span></div>
+    </div>
+
+    <div id="profilWrap"></div>
+
+    <div class="term-note"><strong>⚠️ Próg kliniczny</strong>: gdy beznadziejność wynosi 7 lub więcej i utrzymuje się ponad dwa tygodnie, wskazana jest formalna ocena (BHS, C-SSRS) i ustalenie planu bezpieczeństwa we współpracy klinicystycznej. Beznadziejność wysoka jest <em>najsilniejszym</em> psychologicznym predyktorem ryzyka samobójstwa (Beck i wsp., 1990).</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Plan interwencji</div>
+    <h1 class="card-prompt">Dobierz <em>pierwszą</em> interwencję do dominującego mechanizmu</h1>
+    <p class="card-detail">Punkt wejścia decyduje o tempie zmiany. Dla dominującej bezradności — eksperymenty dostarczające dowodów sprawczości. Dla dominującej beznadziejności — najpierw wartości i restrukturyzacja oczekiwań, dopiero potem eksperymenty. Próba odwrotnej kolejności w beznadziejności kończy się porzuceniem terapii.</p>
+
+    <div class="plan-box">
+      <div class="plan-h">Plan A — przy dominującej bezradności</div>
+      <div class="plan-body"><strong>Cel:</strong> dostarczyć dowodów sprawczości. <strong>Narzędzia:</strong> mikrosukcesy, eksperymenty behawioralne, mastery & pleasure (Beck), aktywizacja behawioralna (BA), restrukturyzacja atrybucji (Seligman). <strong>Pierwsze 2 tygodnie:</strong> jedna mała aktywność dziennie, wykonana niezależnie od nastroju, z zapisem.</div>
+    </div>
+
+    <div class="plan-box" style="border-left-color: var(--warm); background: rgba(201,165,114,0.12);">
+      <div class="plan-h" style="color: var(--warm);">Plan B — przy dominującej beznadziejności</div>
+      <div class="plan-body"><strong>Cel:</strong> przywrócić wizję możliwej przyszłości. <strong>Narzędzia:</strong> praca z wartościami (ACT — Hayes), terapia skoncentrowana na rozwiązaniach (identyfikacja „pozytywnych wyjątków"), Hope Theory (Snyder, 1994 — pathways + agency), restrukturyzacja oczekiwań pesymistycznych (Beck). <strong>Przy BHS ≥ 9:</strong> ocena ryzyka klinicystyczna + plan bezpieczeństwa + wsparcie systemowe.</div>
+    </div>
+
+    <textarea class="thought-input" id="pierwszyKrok" placeholder="Pierwszy krok dopasowany do dominującego mechanizmu z kroku 3. np. (przy bezradności) „Codziennie przez tydzień zapiszę jedną rzecz, którą udało mi się dziś zrobić" / (przy beznadziejności) „Spotkanie z terapeutą w środę — omówimy listę wartości""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="wsparcie" placeholder="Wsparcie — kto towarzyszy w tej pracy? Specjalista, bliska osoba, grupa wsparcia. Jeśli jesteś w kryzysie, w Polsce dostępny jest Telefon Zaufania dla Dorosłych w Kryzysie Emocjonalnym 116 123."  rows="3"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła kolejności</strong>: w beznadziejności <em>najpierw</em> wizja, potem działanie. Behawioralny eksperyment narzucony przed odzyskaniem wizji wzmacnia narrację „nawet jak coś robię, i tak nie ma sensu". W bezradności odwrotnie — <em>działanie</em> jest najszybszą drogą do zmiany przekonań.</div>
+
+    <div class="term-note"><strong>📌 Reguła obserwacji</strong>: po pierwszych dwóch tygodniach interwencji wraca się do pomiaru z kroku 3. Spadek w jednym wymiarze przy stałym drugim potwierdza diagnozę. Brak zmiany wskazuje na rewizję planu — często okazuje się, że pierwotnie zdiagnozowany mechanizm nie był dominujący.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja nadziei</div>
+    <h1 class="card-prompt">Pomiar <em>nadziei</em> — przeciwwaga beznadziejności</h1>
+    <p class="card-detail">Snyder (1994, Hope Theory) zdefiniował nadzieję jako sumę dwóch komponentów: <em>pathways thinking</em> (umiejętność widzenia dróg do celu) i <em>agency thinking</em> (przekonanie o własnej zdolności do podążania nimi). Nadzieja w tym sensie nie jest emocją — jest poznawczą zdolnością mierzalną i trenowalną. Po przejściu przez to ćwiczenie — gdzie jesteś?</p>
+
+    <div class="scale">
+      <div class="scale-title">Nadzieja PO ćwiczeniu („widzę drogę i swoje miejsce w niej")</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="nadzPo" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wartość</span><span id="nadzPoVal">5</span></div>
+    </div>
+
+    <textarea class="thought-input" id="nadzPathways" placeholder="PATHWAYS — wymień jedną drogę, którą widzisz w kierunku tego, na czym Ci zależy (nawet jeśli jest długa lub trudna). np. „Powrót do studiów wieczorowych przez 2 lata, potem zmiana pracy""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="nadzAgency" placeholder="AGENCY — wymień jedną cechę lub umiejętność, która pomoże Ci tę drogę przejść. np. „Wytrwałość — pokazałam ją, kończąc poprzednie studia mimo trudności""  rows="3"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: różnicowanie bezradności i beznadziejności wymaga regularnej kalibracji. Powtarzaj pomiar (krok 3) raz w tygodniu w pierwszym miesiącu pracy, potem co dwa tygodnie. Trajektoria zmiany informuje o trafności diagnozy i interwencji. Jeśli beznadziejność rośnie lub utrzymuje się powyżej 7 — kontakt klinicystyczny pilny.
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: pierwsze przesunięcie zwykle dotyczy bezradności (1—2 tygodnie pracy z eksperymentami); beznadziejność reaguje wolniej (4—8 tygodni z wartościami i restrukturyzacją oczekiwań). Tempo różne — to nie wada planu, to charakterystyka mechanizmów.</div>
+
+    <div class="term-note"><strong>📊 Reguła klinicystyczna</strong>: gdy interwencja na dominujący mechanizm nie przynosi efektu po 4 tygodniach — rewizja diagnozy, konsultacja z superwizorem lub psychiatrą. Trwałe utrzymywanie się beznadziejności pomimo terapii wymaga ewaluacji farmakoterapeutycznej i ponownej oceny ryzyka.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Bezradność mówi <strong>„nie mogę"</strong>. Beznadziejność mówi <strong>„nie ma po co"</strong>. To <em>różne</em> mechanizmy wymagające <em>różnych</em> interwencji w innej kolejności. Bezradność reaguje na dowody sprawczości; beznadziejność — na wizję możliwej przyszłości i wartości. Pomylenie konstruktów to częsty powód utknięcia terapii.</div>
+    </div>
+
+    <div class="src">Abramson, Metalsky i Alloy (1989, Psychological Review) · Beck i wsp. (1974, BHS — Beck Hopelessness Scale) · Beck i wsp. (1990, American Journal of Psychiatry) · Brown i wsp. (2000, Journal of Consulting and Clinical Psychology, 7-letni follow-up) · Snyder (1994, The Psychology of Hope) · Liu i wsp. (2015, Clinical Psychology Review)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateBnVals() {
+  ['bSila','bnSila','nadzPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderProfil();
+}
+
+function renderProfil() {
+  const b = document.getElementById('bSila');
+  const bn = document.getElementById('bnSila');
+  const wrap = document.getElementById('profilWrap');
+  if (!b || !bn || !wrap) return;
+  const bv = parseInt(b.value);
+  const bnv = parseInt(bn.value);
+  let txt = '';
+  if (bnv >= 7 && bnv >= bv + 1) {
+    txt = '<strong>Profil: dominuje beznadziejność.</strong> Osoba doświadcza silnych negatywnych oczekiwań wobec przyszłości — nie tylko „nie mogę", ale „nic się nie zmieni". Skierowanie na ocenę kliniczną zalecane (BHS — Beck Hopelessness Scale, ewentualnie C-SSRS). Pierwsza interwencja: wartości (ACT) + restrukturyzacja oczekiwań, nie eksperymenty sprawczości.';
+  } else if (bv >= 7 && bv >= bnv + 1) {
+    txt = '<strong>Profil: dominuje bezradność.</strong> Osoba przekonana, że jej działania nie mają wpływu, ale wciąż wierzy, że <em>w zasadzie</em> coś dobrego mogłoby się wydarzyć. Pierwsza interwencja: eksperymenty behawioralne, mikrosukcesy, restrukturyzacja atrybucji (Seligman, Abramson).';
+  } else if (bv >= 6 && bnv >= 6) {
+    txt = '<strong>Profil mieszany.</strong> Oba mechanizmy obecne w wysokim natężeniu. Zaczynaj od beznadziejności (silniejszy predyktor pogorszenia), potem przechodź do bezradności. Skierowanie kliniczne wskazane przy BHS ≥ 9.';
+  } else if (bv <= 4 && bnv <= 4) {
+    txt = '<strong>Profil łagodny.</strong> Oba mechanizmy obecne, ale w niskim natężeniu. Praca prewencyjna; głównie psychoedukacja i utrwalenie istniejących źródeł sprawczości.';
+  } else {
+    txt = '<strong>Profil pośredni.</strong> Mechanizmy nie są wyraźnie zróżnicowane. Powtórz pomiar po tygodniu i obserwuj trajektorię — kierunek zmiany informuje o mechanizmie dominującym.';
+  }
+  wrap.innerHTML = '<div class="alarm-box"><div class="alarm-h">Interpretacja</div><div class="alarm-text">' + txt + '</div></div>';
+}
+
+function onStepChange(step) {
+  if (step === 3 || step === 5) updateBnVals();
+}
+
+function onReset() {
+  const wrap = document.getElementById('profilWrap');
+  if (wrap) wrap.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_bezr_beznadziejnosc — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_bezr_beznadziejnosc";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updateBnVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

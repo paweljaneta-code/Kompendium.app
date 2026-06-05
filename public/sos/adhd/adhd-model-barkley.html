@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Model Barkleya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.func-card { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 13px 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.func-card:hover, .func-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.func-h { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13.5px; display: flex; gap: 8px; align-items: center; }
+.func-emoji { font-size: 17px; }
+.func-d { font-size: 12px; line-height: 1.45; color: var(--ink-mute); }
+.func-card.picked .func-d { color: rgba(244,241,234,0.85); }
+
+.flow-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.flow-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.flow-text { font-size: 13px; line-height: 1.65; color: rgba(244,241,234,0.92); }
+.flow-text strong { color: var(--bg); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Model Barkleya</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt"><em>Brak hamulca</em>, nie brak woli</h1>
+    <p class="card-detail">Model Russella Barkleya (1997, 2012) — najbardziej wpływowy model neuropsychologiczny <strong>ADHD</strong> (zespołu nadpobudliwości psychoruchowej z deficytem uwagi). Główna teza: ADHD to przede wszystkim <em>deficyt hamowania reakcji</em>, nie uwagi. Hamowanie jest <em>bramką</em> dla 4 funkcji wykonawczych: pamięć robocza (zapominanie, gubienie wątku), samoregulacja emocji i motywacji (impulsywność, frustracja), mowa wewnętrzna (planowanie, automonitorowanie), rekonstytucja (elastyczność, kreatywność, planowanie przyszłości). Brown (2005) uzupełnia: ADHD to „ślepota na czas" i „krótkowzroczność przyszłości".</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery funkcje wykonawcze (Barkley 1997)</div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Pamięć robocza niewerbalna</strong> — zapominanie, gubienie wątku, dezorganizacja przestrzenna.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌋</span>
+        <span class="element-text"><strong>Samoregulacja emocji i motywacji</strong> — impulsywność, frustracja, RSD, niemoc startu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💭</span>
+        <span class="element-text"><strong>Mowa wewnętrzna</strong> — planowanie, zasady, automonitoring, „rozmowa ze sobą" o krokach.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔮</span>
+        <span class="element-text"><strong>Rekonstytucja</strong> — elastyczność, planowanie przyszłości, „krótkowzroczność czasowa".</span>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <div class="flow-h">Kaskada modelu Barkleya</div>
+      <div class="flow-text">
+        <strong>Deficyt hamowania reakcji</strong>
+        <br>↓
+        <br><em>Cztery funkcje wykonawcze upośledzone:</em>
+        <br>① <strong>Pamięć robocza</strong> niewerbalna — zapominanie, gubienie wątku, dezorganizacja
+        <br>② <strong>Samoregulacja emocji</strong> — impulsywność, frustracja, RSD
+        <br>③ <strong>Mowa wewnętrzna</strong> — planowanie, zasady, automonitoring
+        <br>④ <strong>Rekonstytucja</strong> — elastyczność, planowanie przyszłości
+        <br>↓
+        <br><strong>Konsekwencje</strong>: prokrastynacja, chaos, niedokończone projekty, problemy w relacjach
+      </div>
+    </div>
+
+    <div class="frame-quote">„ADHD to nie brak <em>woli</em> — to brak <em>hamulca</em>. Nie mówisz do osoby na wózku «po prostu wstań» — nie mów do osoby z ADHD «po prostu się skup»."
+      <span class="frame-quote-attr">— parafraza Barkleya (2012)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: nie szukasz „silnej woli" — szukasz <em>protezy</em> dla deficytów. Hamowanie wewnętrzne nie zadziała, ale możesz dodać hamowanie zewnętrzne (alarmy, blokery, body double). Pamięć robocza nie pamięta — ale kalendarz pamięta. Samoregulacja zawodzi — ale czas między impulsem a działaniem (reguła 48 godzin) odpracowuje to za Ciebie.</div>
+
+    <div class="src">Barkley (1997, „ADHD and the Nature of Self-Control") · Barkley (2012, „Executive Functions") · Brown (2005, „Attention Deficit Disorder") · Safren i wsp. (2010, CBT-ADHD)</div>
+  </section>
+
+  <!-- ============== KROK 2 — Mapowanie 4 funkcji ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Mapowanie funkcji</div>
+    <h1 class="card-prompt">Która funkcja u Ciebie <em>najbardziej</em> zawodzi?</h1>
+    <p class="card-detail">Cztery funkcje wykonawcze według Barkleya. Cel: ocenić, w której masz największe trudności. Każda osoba z ADHD ma indywidualny profil — ktoś bardziej w pamięci roboczej, ktoś w regulacji emocji. To wpływa na wybór strategii.</p>
+
+    <button id="fA" class="func-card" onclick="this.classList.toggle('picked')">
+      <span class="func-h"><span class="func-emoji">🧠</span>① Pamięć robocza niewerbalna</span>
+      <span class="func-d">Zapominanie w trakcie rozmowy o czym mówiłeś/aś. Gubienie wątku w pisaniu. Dezorganizacja przestrzenna. „Po co tu wszedłem/am?" 5 razy dziennie.</span>
+    </button>
+
+    <button id="fB" class="func-card" onclick="this.classList.toggle('picked')">
+      <span class="func-h"><span class="func-emoji">🌋</span>② Samoregulacja emocji i motywacji</span>
+      <span class="func-d">Impulsywne reakcje, fala RSD, frustracja w 0–60. Niemoc startu nudnego zadania (deficyt motywacji wewnętrznej). Wybuchy, których żałujesz.</span>
+    </button>
+
+    <button id="fC" class="func-card" onclick="this.classList.toggle('picked')">
+      <span class="func-h"><span class="func-emoji">💭</span>③ Mowa wewnętrzna (planowanie, monitoring)</span>
+      <span class="func-d">Trudność z „rozmową ze sobą" w głowie — krok po kroku, plan, zasady. Brak automonitoringu („czy aktualnie robię to, co miałem/am?"). Realizacja chaotyczna.</span>
+    </button>
+
+    <button id="fD" class="func-card" onclick="this.classList.toggle('picked')">
+      <span class="func-h"><span class="func-emoji">🔮</span>④ Rekonstytucja (elastyczność, planowanie przyszłości)</span>
+      <span class="func-d">„Krótkowzroczność przyszłości" — to, co odległe (emerytura, oszczędności, kariera za 5 lat) jest niewidoczne. Trudność z elastyczną zmianą strategii.</span>
+    </button>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja konkretna sytuacja</strong> z ostatniego tygodnia, w której zauważyłeś/aś deficyt funkcji wykonawczej:</p>
+    <textarea class="thought-input" id="sytuacja" placeholder="np. „Wczoraj: zacząłem pisać raport, po 5 min pomyślałem o mailu, otworzyłem skrzynkę, po 30 min byłem w YouTube. Wróciłem do raportu o 15:00, nie pamiętałem, gdzie zostałem (pamięć robocza). Wieczór: kłótnia z partnerką o drobnostkę, fala RSD (samoregulacja emocji)."" rows="5"></textarea>
+
+    <div class="scale" style="margin-top:14px">
+      <div class="scale-title">Pamięć robocza (0 świetna → 10 chronicznie zawodząca)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="pam" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Pamięć:</span><span id="pamV">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Samoregulacja emocji (0 spokojna → 10 fale RSD)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="reg" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Regulacja:</span><span id="regV">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Mowa wewnętrzna / monitoring (0 „rozmawiam ze sobą" → 10 brak)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="mowa" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Mowa:</span><span id="mowaV">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Rekonstytucja / planowanie przyszłości (0 widzę 5 lat → 10 ślepota)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="rek" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Rekonstytucja:</span><span id="rekV">7</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła diagnozy</strong>: w ADHD u dorosłych typowo wszystkie 4 funkcje są upośledzone, ale jedna dominuje. Ta dominująca jest punktem startu interwencji — strategia, która adresuje ją bezpośrednio, daje największy ruch.</div>
+  </section>
+
+  <!-- ============== KROK 3 — Wybór dominującej funkcji + strategia ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Strategia</div>
+    <h1 class="card-prompt">Proteza zewnętrzna dla <em>tej</em> funkcji</h1>
+    <p class="card-detail">Wybierz funkcję wykonawczą, której deficyt jest u Ciebie największy (wskaźnik z kroku 2). Cel: znaleźć protezę zewnętrzną, która przejmuje pracę uszkodzonej funkcji wewnętrznej.</p>
+
+    <p class="examples-h">Twoja dominująca funkcja</p>
+    <div class="example-chips">
+      <button id="d1" class="example-chip" onclick="onlyOne('d', this)">① Pamięć robocza</button>
+      <button id="d2" class="example-chip" onclick="onlyOne('d', this)">② Samoregulacja emocji</button>
+      <button id="d3" class="example-chip" onclick="onlyOne('d', this)">③ Mowa wewnętrzna</button>
+      <button id="d4" class="example-chip" onclick="onlyOne('d', this)">④ Rekonstytucja</button>
+    </div>
+
+    <p class="examples-h" style="margin-top:14px">Protezy zewnętrzne dla pamięci roboczej (①)</p>
+    <div class="example-chips">
+      <button id="a1" class="example-chip" onclick="this.classList.toggle('picked')">Kalendarz cyfrowy z alarmami</button>
+      <button id="a2" class="example-chip" onclick="this.classList.toggle('picked')">Notatnik 24/7 (Apple Notes, dyktafon)</button>
+      <button id="a3" class="example-chip" onclick="this.classList.toggle('picked')">Tablica wizualna w domu / pracy</button>
+      <button id="a4" class="example-chip" onclick="this.classList.toggle('picked')">Listy check-off</button>
+      <button id="a5" class="example-chip" onclick="this.classList.toggle('picked')">Kanban (Trello / Notion)</button>
+    </div>
+
+    <p class="examples-h" style="margin-top:8px">Protezy dla samoregulacji emocji (②)</p>
+    <div class="example-chips">
+      <button id="b1" class="example-chip" onclick="this.classList.toggle('picked')">STOP + 60 sek przed reakcją</button>
+      <button id="b2" class="example-chip" onclick="this.classList.toggle('picked')">Reguła 48h dla impulsywnych decyzji</button>
+      <button id="b3" class="example-chip" onclick="this.classList.toggle('picked')">CFT — praca z RSD</button>
+      <button id="b4" class="example-chip" onclick="this.classList.toggle('picked')">Body scan + body double</button>
+      <button id="b5" class="example-chip" onclick="this.classList.toggle('picked')">Stymulant (poprawia hamowanie reakcji)</button>
+    </div>
+
+    <p class="examples-h" style="margin-top:8px">Protezy dla mowy wewnętrznej (③)</p>
+    <div class="example-chips">
+      <button id="c1" class="example-chip" onclick="this.classList.toggle('picked')">Lista kroków na piśmie (mowa zewnętrzna)</button>
+      <button id="c2" class="example-chip" onclick="this.classList.toggle('picked')">AI / Claude do rozbicia zadania</button>
+      <button id="c3" class="example-chip" onclick="this.classList.toggle('picked')">Body double (zewnętrzny obserwator)</button>
+      <button id="c4" class="example-chip" onclick="this.classList.toggle('picked')">Pomodoro z głośnym ogłoszeniem celu</button>
+      <button id="c5" class="example-chip" onclick="this.classList.toggle('picked')">Coach / mentor cotygodniowy 15 min</button>
+    </div>
+
+    <p class="examples-h" style="margin-top:8px">Protezy dla rekonstytucji (④)</p>
+    <div class="example-chips">
+      <button id="e1" class="example-chip" onclick="this.classList.toggle('picked')">Automatyzacja oszczędności (przyszłość → teraz)</button>
+      <button id="e2" class="example-chip" onclick="this.classList.toggle('picked')">Wizualizacja celów 5-letnich</button>
+      <button id="e3" class="example-chip" onclick="this.classList.toggle('picked')">Cotygodniowy planning + accountability</button>
+      <button id="e4" class="example-chip" onclick="this.classList.toggle('picked')">Coach kariery / mentor</button>
+      <button id="e5" class="example-chip" onclick="this.classList.toggle('picked')">Zegar wizualny (Time Timer)</button>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja konkretna proteza</strong> w tym tygodniu (1–2 sztuki):</p>
+    <textarea class="thought-input" id="proteza" placeholder="np. „Funkcja dominująca: ① pamięć robocza (8/10). Proteza: Apple Notes z dyktowaniem 24/7 — każda myśl, telefon, zadanie zapisywane natychmiast. Codziennie wieczorem 5 min — przeglądam i przenoszę do Todoist. Bez tego mam gubione 20+ rzeczy dziennie."" rows="4"></textarea>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: proteza nie „naprawia" funkcji — przejmuje jej pracę. Kalendarz nie poprawia pamięci roboczej, ale zapamiętuje za nią. Body double nie poprawia mowy wewnętrznej, ale zewnętrzny obserwator pełni jej funkcję. Zaakceptowanie protezy jest częścią leczenia ADHD — nie wstyd, lecz inteligencja.</div>
+  </section>
+
+  <!-- ============== KROK 4 — Stymulant + leczenie ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Leczenie i pomoc</div>
+    <h1 class="card-prompt">Stymulant = <em>okulary</em> dla mózgu</h1>
+    <p class="card-detail">Barkley (2012): stymulanty (metylfenidat, leksamfetamina) poprawiają hamowanie reakcji — fundament wszystkich funkcji wykonawczych w modelu. Działają jak okulary: nie „wzmacniają" mózgu, lecz korygują deficyt. NICE NG87 i Safren (2010) RCT potwierdzają: stymulant + CBT-ADHD daje największy efekt długoterminowy.</p>
+
+    <p class="examples-h">Twoje obecne leczenie</p>
+    <div class="example-chips">
+      <button id="l1" class="example-chip" onclick="this.classList.toggle('picked')">Stymulant (metylfenidat / leksamfetamina)</button>
+      <button id="l2" class="example-chip" onclick="this.classList.toggle('picked')">Atomoksetyna (nie-stymulant)</button>
+      <button id="l3" class="example-chip" onclick="this.classList.toggle('picked')">Guanfacyna (nie-stymulant)</button>
+      <button id="l4" class="example-chip" onclick="this.classList.toggle('picked')">Brak farmakoterapii</button>
+      <button id="l5" class="example-chip" onclick="this.classList.toggle('picked')">CBT-ADHD u terapeuty</button>
+      <button id="l6" class="example-chip" onclick="this.classList.toggle('picked')">Coaching ADHD</button>
+      <button id="l7" class="example-chip" onclick="this.classList.toggle('picked')">Schema Therapy / CFT (RSD)</button>
+      <button id="l8" class="example-chip" onclick="this.classList.toggle('picked')">Grupa wsparcia</button>
+    </div>
+
+    <div class="flow-card">
+      <div class="flow-h">Hierarchia leczenia (NICE NG87)</div>
+      <div class="flow-text">
+        <strong>1. Farmakoterapia</strong> — stymulant pierwszego wyboru (metylfenidat ER lub leksamfetamina). Działa szybko (1–4 tyg.) na hamowanie i uwagę.
+        <br><br>
+        <strong>2. CBT-ADHD</strong> — protokół Safrena lub Ramsaya, 12–20 sesji. Buduje strategie i protezy zewnętrzne. Działa wolniej, ale efekt długoterminowy.
+        <br><br>
+        <strong>3. Coaching ADHD</strong> — uzupełnienie CBT, praca operacyjna nad codziennymi systemami i nawykami.
+        <br><br>
+        <strong>4. Grupa wsparcia / terapia grupowa</strong> — destygmatyzacja, „nie jestem sam/a", body double w skali grupy.
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja decyzja</strong> — co konsultujesz w tym tygodniu?</p>
+    <textarea class="thought-input" id="decyzja" placeholder="np. „Mam stymulant od 6 miesięcy, działa. Brak CBT — szukam terapeuty pracującego protokołem Safrena w Wrocławiu. Lista 3 specjalistów, dzwonię w piątek. Coach ADHD — w 2026 r. (po stabilizacji CBT)."" rows="4"></textarea>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Wyjaśnienie modelu bliskim</strong> — kogo edukujesz w tym tygodniu?</p>
+    <textarea class="thought-input" id="bliscy" placeholder="np. „Magdę (partnerkę) — pokażę jej diagram modelu Barkleya, wyjaśnię, że moje wybuchy emocji to deficyt hamowania, a nie zła wola. Mama — wyślę krótki artykuł o ADHD u dorosłych. Szef — funkcjonalnie (bez ujawniania diagnozy): «pracuję lepiej z pisemnymi instrukcjami»."" rows="4"></textarea>
+
+    <div class="term-note"><strong>⚙️ Reguła</strong>: <em>edukacja bliskich</em> jest częścią leczenia. Bez niej Twoje zachowania ADHD są personalizowane jako „zła wola"; z modelem Barkleya stają się zrozumiałą neurobiologią. Jedna 30-minutowa rozmowa z partnerem o modelu często daje więcej niż miesiąc terapii — bo zmienia całe pole relacyjne.</div>
+  </section>
+
+  <!-- ============== KROK 5 — Po tygodniu ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po tygodniu</div>
+    <h1 class="card-prompt">Czy <em>proteza</em> przyjmuje pracę?</h1>
+    <p class="card-detail">Po pierwszym tygodniu wracaj tu. Cel — zauważyć, czy proteza zewnętrzna przejmuje pracę uszkodzonej funkcji, i czy edukacja bliskich zmieniła pole.</p>
+
+    <div class="scale">
+      <div class="scale-title">Skuteczność protezy (0 brak → 10 wyraźna pomoc)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="skut" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Skuteczność:</span><span id="skutV">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Funkcjonowanie codzienne (0 chaos → 10 stabilność)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="funkc" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Funkcjonowanie:</span><span id="funkcV">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Akceptacja siebie z ADHD (0 wstyd → 10 zrozumienie)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="akcept" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Akceptacja:</span><span id="akceptV">6</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Co realnie zadziałało? Konkretna sytuacja, w której proteza zastąpiła deficyt?</p>
+    <textarea class="thought-input" id="dziala" placeholder="np. „Apple Notes z dyktowaniem — działało 6 z 7 dni. Zapisałem 32 rzeczy w tygodniu, z czego 18 zrealizowane (vs zwykle ~5). Magda po rozmowie o modelu Barkleya powiedziała «teraz rozumiem, dlaczego krzyczysz po nudnym dniu w pracy» — to nie ja, to deficyt regulacji emocji po wyczerpaniu hamowania."" rows="5"></textarea>
+
+    <p class="card-detail" style="margin-top:8px">Co dodajesz / wzmacniasz w drugim tygodniu?</p>
+    <textarea class="thought-input" id="lekcja" placeholder="np. „Drugi tydzień: dodaję protezę dla funkcji ② (regulacja emocji) — STOP + 60 sek przed reakcją + body scan po pracy. Konsultacja z terapeutą o CBT-ADHD — umówiona 23-go. Edukacja siostry o modelu — wyślę jej diagram."" rows="3"></textarea>
+
+    <div class="final-msg" id="finalMsg">Ustaw skale powyżej (skuteczność, funkcjonowanie, akceptacja) — tu pojawi się Twoja konkretna obserwacja po pierwszym tygodniu z protezą.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: pełna stabilizacja systemu protez trwa 4–8 tygodni. Pierwszy tydzień: 1 proteza zaczyna działać, akceptacja modelu wzrasta. Po 4 tygodniach: 2–3 protezy zautomatyzowane, edukacja bliskich kończona. Po 3 miesiącach: model Barkleya jest „mapą" Twoich decyzji codziennych — wiesz, na czym pracujesz, bez wstydu.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Model Barkleya = <strong>brak hamulca, nie brak woli</strong>. <em>Cztery funkcje wykonawcze: pamięć robocza, samoregulacja emocji, mowa wewnętrzna, rekonstytucja</em>. Każda potrzebuje <em>protezy zewnętrznej</em> (kalendarz, body double, STOP, AI). Stymulant = okulary dla mózgu. CBT-ADHD + protezy + edukacja bliskich = standard leczenia (NICE NG87).</div>
+    </div>
+
+    <div class="src">Barkley (1997, 2012) · Brown (2005) · Safren i wsp. (2010, RCT CBT-ADHD) · NICE (2018) NG87 · Hallowell i Ratey (2011)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function onlyOne(prefix, btn) {
+  document.querySelectorAll('[id^="' + prefix + '"]').forEach(function(el){
+    if (el !== btn) el.classList.remove('picked');
+  });
+  btn.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function refreshScales() {
+  ['pam','reg','mowa','rek','skut','funkc','akcept'].forEach(function(id){
+    var s = document.getElementById(id);
+    var v = document.getElementById(id+'V');
+    if (s && v) v.textContent = s.value;
+  });
+  buildFinalMsg();
+}
+
+function buildFinalMsg() {
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var s = document.getElementById('skut');
+  var f = document.getElementById('funkc');
+  var a = document.getElementById('akcept');
+  if (!s || !f || !a) return;
+  var sV = parseInt(s.value, 10);
+  var fV = parseInt(f.value, 10);
+  var aV = parseInt(a.value, 10);
+
+  var msg = '<strong>Skuteczność protezy:</strong> ' + sV + '/10. <strong>Funkcjonowanie:</strong> ' + fV + '/10. <strong>Akceptacja:</strong> ' + aV + '/10. ';
+  if (sV >= 6 && fV >= 6 && aV >= 6) msg += '<em>Bardzo dobry pierwszy tydzień. Drugi tydzień: dodaj protezę dla drugiej funkcji wykonawczej. Po 4 tygodniach 2–3 protezy stają się tłem dnia.</em>';
+  else if (sV >= 5) msg += '<em>Pierwsze ruchy. Sprawdź, w jakich konkretnych sytuacjach proteza działała, a w jakich odpadała. Wzmocnij wzór, w którym była skuteczna.</em>';
+  else if (aV >= 7) msg += '<em>Akceptacja modelu rośnie szybciej niż protezy — to też jest postęp. Daj 2–3 tygodnie na zautomatyzowanie samej protezy. Bez wstydu „że potrzebuję pomocy".</em>';
+  else msg += '<em>Mieszany wynik — pierwsze tygodnie z nową protezą bywają niepewne. Sprawdź, czy proteza była realnie używana, czy tylko zaplanowana. Ustaw alarm jako przypomnienie do używania samej protezy.</em>';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) { if (step === 5 || step === 2) refreshScales(); }
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) refreshScales();
+});
+
+setTimeout(refreshScales, 60);
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_adhd_model_barkley — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_adhd_model_barkley";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

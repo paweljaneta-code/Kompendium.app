@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · EMDR w C-PTSD — z modyfikacjami</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.phase-card { background: rgba(184,197,168,0.12); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border-left: 4px solid var(--sage-deep); position: relative; }
+.phase-card .pc-num { position: absolute; right: 12px; top: 8px; font-size: 22px; font-weight: 800; color: var(--sage-deep); opacity: 0.5; }
+.phase-card .pc-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.phase-card .pc-meta { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+.phase-card .pc-body { font-size: 13px; color: var(--ink); line-height: 1.55; }
+
+.warn-card { background: rgba(180,80,60,0.08); border: 1px solid rgba(180,80,60,0.45); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: flex-start; gap: 12px; }
+.warn-card:hover, .warn-card.picked { background: rgba(180,80,60,0.18); }
+.warn-card.picked .wc-text { color: var(--ink) !important; }
+.warn-card .wc-mark { width: 22px; height: 22px; border-radius: 4px; border: 2px solid rgba(180,80,60,0.7); flex-shrink: 0; background: var(--bg); position: relative; margin-top: 1px; }
+.warn-card.picked .wc-mark::after { content: '⚠'; position: absolute; left: 2px; top: -3px; color: rgba(180,80,60,0.9); font-weight: 800; font-size: 16px; }
+.wc-text { flex: 1; font-size: 13px; color: var(--ink); line-height: 1.5; }
+
+.adapt-row { display: flex; gap: 8px; align-items: stretch; margin-bottom: 6px; }
+.adapt-std { flex: 1; background: rgba(120,150,180,0.12); border-radius: 8px; padding: 10px; font-size: 12px; color: var(--ink); line-height: 1.45; }
+.adapt-std .as-h { font-size: 11px; font-weight: 700; color: rgba(60,90,130,1); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+.adapt-mod { flex: 1; background: rgba(184,197,168,0.18); border-radius: 8px; padding: 10px; font-size: 12px; color: var(--ink); line-height: 1.45; }
+.adapt-mod .as-h { font-size: 11px; font-weight: 700; color: var(--sage-deep); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>EMDR w C-PTSD — z modyfikacjami</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ====== KROK 1 — WPROWADZENIE ====== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">EMDR w C-PTSD: <em>nie</em> z manuala</h1>
+    <p class="card-detail">EMDR (Eye Movement Desensitization and Reprocessing — Shapiro, 1989, 2018) jest skuteczny w prostym PTSD jako leczenie pierwszego rzutu (WHO 2013, NICE 2018). W C-PTSD wymaga modyfikacji: wydłużona faza stabilizacji, krótsze sety stymulacji bilateralnej, gotowość do przerwania i wracania do zasobu. Bez tych adaptacji standardowy protokół z manuala może retraumatyzować — szczególnie u osób z dysocjacją.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery rzeczy o EMDR w C-PTSD</div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>Mechanizm: rekonsolidacja pamięci</strong> — Shapiro (2018): bilateralna stymulacja (ruchy oczu, tapping, dźwięki naprzemienne) podczas przywoływania wspomnienia ułatwia jego integrację. Hipoteza: working memory taxation zmniejsza vividness, neurony reaktywują z nowymi znaczeniami. Trauma „przesuwa się” do pamięci epizodycznej („to było wtedy”), traci ładunek emocjonalny.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🪜</span>
+        <span class="element-text"><strong>Osiem faz, rozszerzone</strong> — Shapiro (2018): wywiad, przygotowanie, ocena targetu, desensytyzacja, instalacja, body scan, zamknięcie, reocena. W C-PTSD faza druga (przygotowanie) zajmuje tygodnie do miesięcy, nie jedną–dwie sesje. RDI (Korn &amp; Leeds, 2002) jest tu obowiązkowy.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📊</span>
+        <span class="element-text"><strong>Dowody w C-PTSD</strong> — Hofmann i in. (2014): EMDR efektywne w C-PTSD pod warunkiem modyfikacji. Hofmann &amp; Nickerson (2018): wymaga większej elastyczności i dłuższego czasu niż w PTSD. ISTSS (2019) rekomenduje jako fazę drugą leczenia C-PTSD.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Targety w C-PTSD są inne</strong> — Knipe (2014): nie tylko „najgorsze wspomnienie”, ale wczesnodziecięce wspomnienia przywiązaniowe, sceny defektywności i wstydu, momenty „kiedy pierwszy raz poczułem/am, że jestem zły/a”. Praca jest dłuższa, bo targetów jest więcej i są warstwowe.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„EMDR z manuala robiony bez fazy stabilizacji u pacjenta z C-PTSD nie jest leczeniem — jest powtórzeniem traumy w gabinecie.”
+      <span class="frame-quote-attr">— parafraza Deborah Korn (2002)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: EMDR nie jest „magicznym ruchem oczu”. Jest ośmiofazowym protokołem, w którym ruch oczu (lub inna bilateralna stymulacja) jest jednym z wielu komponentów. Skuteczność zależy od jakości wszystkich faz — szczególnie przygotowania.</div>
+
+    <div class="src">Shapiro (1989, 2001, 2018, EMDR manual); Korn &amp; Leeds (2002, RDI); Leeds (2009, RDI procedure); Hofmann i in. (2014, meta-analiza); Hofmann &amp; Nickerson (2018, C-PTSD adaptation); Chen i in. (2015, meta-analiza 26 RCT); ISTSS (2019, guidelines); WHO (2013); NICE (2018)</div>
+  </section>
+
+  <!-- ====== KROK 2 — KIEDY EMDR JESZCZE NIE TERAZ ====== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Sygnały ostrzegawcze</div>
+    <h1 class="card-prompt">EMDR <em>jeszcze nie teraz</em>?</h1>
+    <p class="card-detail">EMDR w fazie drugiej C-PTSD wymaga stabilności. Nie chodzi o „gotowość emocjonalną” w sensie odwagi — chodzi o konkretne kompetencje. Niżej sygnały, że <strong>jeszcze za wcześnie</strong>. Stuknij to, co dotyczy Ciebie. Im więcej zaznaczonych, tym dłuższa potrzebna faza pierwsza.</p>
+
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Mam częste epizody dysocjacji — odpływam, tracę poczucie czasu, „budzę się” bez pamięci o ostatnich godzinach.</div>
+    </div>
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Aktualnie mam myśli samobójcze lub samouszkadzam się — bez stabilnego planu bezpieczeństwa.</div>
+    </div>
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Mam aktywne uzależnienie (alkohol, narkotyki, leki nasenne, samouszkodzenia) — bez stabilnej redukcji.</div>
+    </div>
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Jestem w aktualnej relacji przemocowej — sprawca ma do mnie dostęp.</div>
+    </div>
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Nie mam jeszcze ani jednego niezawodnego narzędzia samoregulacji (oddech, uziemienie, zasoby) — w kryzysie tonę.</div>
+    </div>
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Nie mam stabilnego mieszkania, źródła dochodu lub dostępu do podstawowej opieki medycznej.</div>
+    </div>
+    <div class="warn-card" onclick="this.classList.toggle('picked')">
+      <div class="wc-mark"></div>
+      <div class="wc-text">Czuję, że na pierwszą sesję EMDR „wepchnę się” mimo lęku, bo „muszę już wreszcie coś zrobić”.</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Co teraz</strong> — gdy choć jedno zaznaczone:</p>
+    <textarea class="thought-input" id="emdrReady" placeholder="np. „Zaznaczyłam dysocjację i brak narzędzi samoregulacji. Decyzja: nie wchodzę w fazę 2 EMDR teraz. Najpierw — STAIR (faza 1) z terapeutką, minimum 12 sesji. Po stabilizacji — przegląd gotowości razem z nią.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>📐 Reguła „nie pójdziesz szybciej niż wytrzymasz”</strong>: ISSTD (2011, 2017) — pacjent z C-PTSD i wysoką dysocjacją (DES-II powyżej 30) wymaga rozszerzonej fazy stabilizacji. Próba przyspieszenia często skutkuje pogorszeniem, nie skróceniem leczenia.</div>
+
+    <div class="term-note"><strong>🌱 RDI jako test gotowości</strong>: Korn &amp; Leeds (2002) — Resource Development and Installation. Jeśli RDI „nie chwyta” (zasób nie wzmacnia się przy bilateralnej stymulacji, lub zasób natychmiast „znika” przy aktywacji), to znak, że stabilizacja jest niewystarczająca. Zostań w fazie pierwszej.</div>
+  </section>
+
+  <!-- ====== KROK 3 — STANDARD vs MODYFIKACJE ====== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Standard vs C-PTSD</div>
+    <h1 class="card-prompt">Co <em>terapeuta</em> powinien zmienić</h1>
+    <p class="card-detail">Niżej sześć kluczowych modyfikacji standardowego protokołu EMDR w pracy z C-PTSD. To jest mapa, której możesz użyć, by ocenić, czy Twój terapeuta pracuje adaptacyjnie. Pytaj — masz prawo wiedzieć, jak prowadzony jest proces.</p>
+
+    <div class="adapt-row">
+      <div class="adapt-std">
+        <div class="as-h">Standard PTSD</div>
+        Faza 2 (przygotowanie): 1–2 sesje. Bezpieczne miejsce, oddech.
+      </div>
+      <div class="adapt-mod">
+        <div class="as-h">C-PTSD</div>
+        Faza 2 wydłużona: 4–12+ sesji. RDI, wiele zasobów, kontener, koherentne self-soothing.
+      </div>
+    </div>
+
+    <div class="adapt-row">
+      <div class="adapt-std">
+        <div class="as-h">Standard PTSD</div>
+        Sety BLS: 24–30 ruchów oczu.
+      </div>
+      <div class="adapt-mod">
+        <div class="as-h">C-PTSD</div>
+        Sety krótsze: 10–15 ruchów. Częstsze pauzy. Częste sprawdzanie okna tolerancji.
+      </div>
+    </div>
+
+    <div class="adapt-row">
+      <div class="adapt-std">
+        <div class="as-h">Standard PTSD</div>
+        Target: jedno wspomnienie traumatyczne dorosłej osoby.
+      </div>
+      <div class="adapt-mod">
+        <div class="as-h">C-PTSD</div>
+        Targety przywiązaniowe: wczesne sceny zawstydzenia, porzucenia, „pierwszy raz, gdy poczułem/am, że jestem zły/a”. Praca warstwowa, nie linearna.
+      </div>
+    </div>
+
+    <div class="adapt-row">
+      <div class="adapt-std">
+        <div class="as-h">Standard PTSD</div>
+        Float-back i past-present-future jako standard.
+      </div>
+      <div class="adapt-mod">
+        <div class="as-h">C-PTSD</div>
+        Knipe (2014): protokół CIPOS — „contained” loop dla pacjentów z dysocjacją. „Back-of-head scale”. Wycofanie się z aktywacji bezpieczne.
+      </div>
+    </div>
+
+    <div class="adapt-row">
+      <div class="adapt-std">
+        <div class="as-h">Standard PTSD</div>
+        SUDS = 0 jako cel sesji.
+      </div>
+      <div class="adapt-mod">
+        <div class="as-h">C-PTSD</div>
+        Pomiar gotowości w aktualnym oknie. Jeśli SUDS nie schodzi — zatrzymujemy, instalujemy zasób, kończymy w stabilności (nie w obniżeniu).
+      </div>
+    </div>
+
+    <div class="adapt-row">
+      <div class="adapt-std">
+        <div class="as-h">Standard PTSD</div>
+        8–12 sesji średnio do remisji.
+      </div>
+      <div class="adapt-mod">
+        <div class="as-h">C-PTSD</div>
+        1–3 lata (Hofmann 2018). Wiele targetów, wracanie do RDI, integracja z innymi modalnościami (IFS, sensoryczna).</br>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>📐 Reguła „okna”</strong>: Siegel (1999); Ogden (2006) — okno tolerancji to zakres pobudzenia, w którym możliwe jest przetwarzanie bez dysocjacji (poniżej okna) lub paniki (powyżej okna). Cała sesja EMDR ma się odbyć w oknie. Wyjście — natychmiastowa interwencja regulacyjna.</div>
+
+    <div class="term-note"><strong>🌱 Wskazania CIPOS</strong>: Knipe (2014, „CIPOS — Constant Installation of Present Orientation and Safety”) — protokół dla osób z dysocjacją. Pacjent miga między teraźniejszością („tu, teraz, w gabinecie”) a wspomnieniem, w krótkich blokach. Zapobiega zalaniu. Wymaga dodatkowego treningu terapeuty.</div>
+  </section>
+
+  <!-- ====== KROK 4 — ROZMOWA Z TERAPEUTĄ ====== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Rozmowa z terapeutą</div>
+    <h1 class="card-prompt">Pięć pytań, których <em>warto zadać</em></h1>
+    <p class="card-detail">EMDR w C-PTSD wymaga terapeuty z konkretnym treningiem. Sama certyfikacja podstawowa nie wystarczy — szukaj osoby z dodatkowym szkoleniem w pracy z dysocjacją lub C-PTSD. Niżej pięć pytań, które warto zadać przed pierwszą sesją. Wpisz odpowiedzi terapeuty, gdy je dostaniesz.</p>
+
+    <div class="phase-card">
+      <span class="pc-num">1</span>
+      <div class="pc-title">Czy pracuje pan/pani fazowo?</div>
+      <div class="pc-meta">Cel: rozeznanie podejścia</div>
+      <div class="pc-body">Odpowiedź pożądana: tak, faza pierwsza (stabilizacja) jest obowiązkowa, niezależnie od czasu trwania. Czerwona flaga: „idziemy od razu do przetwarzania”.</div>
+    </div>
+    <textarea class="thought-input" id="qmdr1" placeholder="np. „Tak, fazowo. Przeciętnie 10–20 sesji fazy pierwszej, dłużej u osób z dysocjacją.”" rows="2"></textarea>
+
+    <div class="phase-card" style="margin-top:8px;">
+      <span class="pc-num">2</span>
+      <div class="pc-title">Jak ocenia pan/pani gotowość do przejścia do fazy drugiej?</div>
+      <div class="pc-meta">Cel: kryteria gotowości</div>
+      <div class="pc-body">Odpowiedź pożądana: konkretne kryteria — DES-II, stabilne narzędzia samoregulacji, brak aktywnego ryzyka, RDI „chwyta”. Czerwona flaga: „intuicja” lub „kiedy poczuję, że jest pan/pani gotowy/a”.</div>
+    </div>
+    <textarea class="thought-input" id="qmdr2" placeholder="np. „DES-II poniżej 25, stabilne 3 zasoby, brak samookaleczeń od 3 miesięcy, RDI się wzmacnia w trakcie BLS.”" rows="2"></textarea>
+
+    <div class="phase-card" style="margin-top:8px;">
+      <span class="pc-num">3</span>
+      <div class="pc-title">Jakie modyfikacje stosuje pan/pani w C-PTSD?</div>
+      <div class="pc-meta">Cel: znajomość adaptacji</div>
+      <div class="pc-body">Odpowiedź pożądana: krótsze sety, RDI Korn &amp; Leeds, CIPOS Knipe, praca z targetami przywiązaniowymi, częste sprawdzanie okna. Czerwona flaga: „protokół jest protokół”.</div>
+    </div>
+    <textarea class="thought-input" id="qmdr3" placeholder="np. „Sety 10–12 ruchów, częste pauzy, CIPOS dla osób z dysocjacją, dużo RDI.”" rows="2"></textarea>
+
+    <div class="phase-card" style="margin-top:8px;">
+      <span class="pc-num">4</span>
+      <div class="pc-title">Co robimy, jeśli zaczynam dysocjować w sesji?</div>
+      <div class="pc-meta">Cel: bezpieczeństwo</div>
+      <div class="pc-body">Odpowiedź pożądana: konkretny plan — przerwa, uziemienie, zasób, w razie potrzeby koniec sesji w stabilizacji. Czerwona flaga: „idziemy dalej, dysocjacja jest częścią procesu”.</div>
+    </div>
+    <textarea class="thought-input" id="qmdr4" placeholder="np. „Przerywamy BLS, uziemiamy, instalujemy zasób, kończymy sesję w stabilizacji, omawiamy następnym razem.”" rows="2"></textarea>
+
+    <div class="phase-card" style="margin-top:8px;">
+      <span class="pc-num">5</span>
+      <div class="pc-title">Jaki jest realistyczny czas terapii?</div>
+      <div class="pc-meta">Cel: oczekiwania</div>
+      <div class="pc-body">Odpowiedź pożądana: 1–3 lata, z elastycznością. Czerwona flaga: „6 sesji wystarczy” lub „nie da się powiedzieć” bez choćby ramy.</div>
+    </div>
+    <textarea class="thought-input" id="qmdr5" placeholder="np. „Średnio 1,5–2,5 roku, w zależności od ilości targetów i tempa pracy.”" rows="2"></textarea>
+
+    <div class="term-note"><strong>📜 Lista pytań do kieszeni</strong>: zapisz pytania w telefonie, idź na pierwszą rozmowę z nimi otwartymi. Brak odpowiedzi konkretnych — szukaj innego terapeuty. Twoje bezpieczeństwo jest ważniejsze niż grzeczność.</div>
+
+    <div class="term-note"><strong>🌱 Drugie zdanie</strong>: jeśli proces nie idzie (po 3–4 sesjach desensytyzacji nadal silne pogorszenie, dysocjacja, zalanie) — masz prawo poprosić o konsultację u innego terapeuty EMDR. To nie zdrada — to standard kliniczny.</div>
+  </section>
+
+  <!-- ====== KROK 5 — INTEGRACJA ====== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Plan integracji</div>
+    <h1 class="card-prompt">Co <em>dziś</em>, co <em>za pół roku</em></h1>
+    <p class="card-detail">EMDR w C-PTSD jest pracą długoterminową. Niżej pięcioetapowy plan, który możesz traktować jako mapę. Nie jest to harmonogram „od–do” — jest to sekwencja, która ma sens.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Pięć etapów drogi do EMDR (i przez)</div>
+      <div class="element-row">
+        <span class="element-icon">1️⃣</span>
+        <span class="element-text"><strong>Stabilizacja</strong> — STAIR lub równoważne, 3–12 miesięcy. Cel: stabilne narzędzia samoregulacji, redukcja samouszkodzeń, bezpieczne życie codzienne. Bez tego nie ma sensu zaczynać EMDR.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">2️⃣</span>
+        <span class="element-text"><strong>RDI — instalacja zasobów</strong> — Korn &amp; Leeds (2002): 4–8 sesji bilateralnej stymulacji nad zasobami (bezpieczne miejsce, mądra postać, ciało zasobowe). To nie „przygotowanie” — to leczenie samo w sobie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">3️⃣</span>
+        <span class="element-text"><strong>Pierwszy target</strong> — najczęściej nie „najgorsze wspomnienie”, ale wczesna scena zawstydzenia lub porzucenia. Powolnie, w oknie tolerancji. Po sesji: czas na integrację, dziennik.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">4️⃣</span>
+        <span class="element-text"><strong>Praca warstwowa</strong> — kolejne targety, wracanie do RDI, sprawdzanie generalizacji. To jest „ciało” terapii — może trwać 12–24 miesiące. Nie linearne.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">5️⃣</span>
+        <span class="element-text"><strong>Integracja</strong> — faza trzecia leczenia C-PTSD (Herman 1992): zaplecze z odzyskanym sobą, nowymi relacjami, nowym sensem. EMDR przechodzi w pracę poznawczą, narracyjną, relacyjną.</span>
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Twój etap teraz</strong> — i co konkretnie zrobisz w ciągu najbliższych 30 dni:</p>
+    <textarea class="thought-input" id="emdrPlan" placeholder="np. „Etap 1 (stabilizacja). 30 dni: ukończyć 4 sesje STAIR, codziennie 5 minut bezpiecznego miejsca przed snem, dziennik emocji 3 razy dziennie. Po 4 sesjach — przegląd z terapeutką, decyzja o przejściu lub kontynuacji fazy 1.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>⚠️ Granica kompetencji</strong>: ta karta nie zastępuje konsultacji z certyfikowanym terapeutą EMDR. EMDR jest interwencją, którą prowadzi się w bezpiecznej diadzie terapeutycznej, nie samodzielnie. Karta służy do przygotowania, oceny, rozmowy — nie do prowadzenia procesu w pojedynkę.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">EMDR w C-PTSD = <strong>standardowy protokół + modyfikacje</strong>. Wydłużona faza pierwsza (RDI, 4–12 sesji), krótsze sety BLS, targety przywiązaniowe, CIPOS przy dysocjacji, praca warstwowa 1–3 lata. Bez modyfikacji — ryzyko retraumatyzacji. Terapeuta = certyfikowany + dodatkowy trening w C-PTSD/dysocjacji. Stabilizacja przed targetami. <em>Tempo pacjenta, nie protokołu.</em></div>
+    </div>
+
+    <div class="src">Shapiro (2018, EMDR Therapy: Basic Principles, Protocols and Procedures); Korn &amp; Leeds (2002, JCP, RDI); Knipe (2014, EMDR Toolbox, CIPOS); Hofmann i in. (2014, JEBP, meta-analiza); Hofmann &amp; Nickerson (2018, J Clin Psychol); ISSTD (2011, 2017, guidelines dla dysocjacji); ISTSS (2019); Siegel (1999, okno tolerancji)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_emdr_cptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_emdr_cptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

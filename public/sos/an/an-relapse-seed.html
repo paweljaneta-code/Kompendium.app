@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Nawroty i SEED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.warn-card { background: rgba(255,255,255,0.55); border: 1.5px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.warn-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; display: flex; align-items: center; gap: 10px; }
+.warn-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sage-deep); color: var(--bg); font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.warn-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 6px; }
+.warn-text strong { color: var(--ink); font-weight: 600; }
+
+.level-card { padding: 12px 14px; border-radius: 12px; margin: 8px 0; border: 1.5px solid; }
+.level-card.green { background: rgba(184,197,168,0.18); border-color: var(--sage-deep); }
+.level-card.amber { background: rgba(201,165,114,0.15); border-color: #c9a572; }
+.level-card.red { background: rgba(201,122,82,0.15); border-color: #c97a52; }
+.level-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; display: flex; align-items: center; gap: 10px; }
+.level-h.green { color: var(--sage-deep); }
+.level-h.amber { color: #8a4a18; }
+.level-h.red { color: #8a3a18; }
+.level-meta { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; margin-bottom: 6px; }
+.level-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 6px; }
+.level-text strong { color: var(--ink); font-weight: 600; }
+.level-action { background: rgba(244,241,234,0.5); border-radius: 6px; padding: 8px 10px; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.level-action strong { color: var(--ink); font-weight: 700; }
+
+.contact-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 8px 0 12px; }
+.contact-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.contact-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: center; }
+.contact-row:first-of-type { border-top: none; }
+.contact-label { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); font-size: 12px; }
+.contact-input { padding: 6px 10px; border: 1px solid var(--sage); border-radius: 5px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: inherit; font-size: 12px; }
+.contact-input:focus { outline: 1px solid var(--bg); background: white; }
+
+.seed-card { background: rgba(201,165,114,0.10); border: 1.5px solid #c9a572; border-radius: 12px; padding: 13px 15px; margin: 10px 0; }
+.seed-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: #8a4a18; margin-bottom: 6px; line-height: 1.3; }
+.seed-text { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+.seed-text strong { color: var(--ink); font-weight: 600; }
+
+.crit-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.crit-row { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: flex-start; padding: 7px 12px; background: rgba(201,165,114,0.08); border-radius: 8px; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.crit-icon { font-family: 'Fraunces', serif; font-weight: 700; color: #8a4a18; font-size: 13px; }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Nawroty i SEED</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Nawroty — <em>częste</em>, ale niemoralne</h1>
+  <p class="card-detail">Anoreksja ma <strong>wysoki wskaźnik nawrotów</strong>: 22–51% w ciągu 2 lat po leczeniu (Steinhausen, 2002, <em>Am J Psychiatry</em>; Berends i in., 2018, <em>IJED</em>). To nie jest wyjątek — to częste zjawisko. Plan zapobiegania nawrotom (<em>relapse prevention</em>, Carter i in., 2012) jest <strong>obowiązkowym</strong> elementem końca terapii. Zmniejsza ryzyko nawrotu istotnie. Ta karta zawiera dwie powiązane treści: <em>plan zapobiegania nawrotom</em> (dla pacjentów odzyskujących zdrowie) oraz <em>SEED-AN</em> — Severe and Enduring Eating Disorders (etyczne podejście dla pacjentów z długą, oporną na leczenie AN). Dwa różne tematy, które razem definiują <em>długoterminowe</em> prowadzenie choroby.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery zasady relapse prevention</div>
+    <div class="element-row">
+      <span class="element-icon">🚦</span>
+      <span class="element-text"><strong>Trzy poziomy nawrotu</strong> — myśli, zachowania, pełny nawrót; każdy wymaga innego działania</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔔</span>
+      <span class="element-text"><strong>Sygnały ostrzegawcze</strong> — indywidualne dla każdego; muszą być nazwane <em>przed</em> nawrotem, nie podczas</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📞</span>
+      <span class="element-text"><strong>Plan działania</strong> — konkretne kontakty, konkretne kroki; nie „pomyślę, kogo zadzwonić" — wpisane wcześniej</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌱</span>
+      <span class="element-text"><strong>Plan wellness</strong> — codzienna baza, której utrzymanie jest profilaktyką: regularne jedzenie, sen, ruch, kontakt, przyjemność</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Nawrót nie jest porażką — jest częstą fazą procesu zdrowienia. Plan, który wczesny nawrót przekształca w epizod, a nie w pełny powrót do choroby, jest jednym z najważniejszych narzędzi długoterminowej remisji."
+    <span class="frame-quote-attr">— Carter i in. (2012, <em>International Journal of Eating Disorders</em>)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — najtrudniejsza część profilaktyki nawrotów to <em>uznanie</em>, że nawrót jest możliwy. Wielu pacjentów na końcu terapii nie chce o tym myśleć — „przeszłam przez to, nie wracam". Z perspektywy badań: <em>średnio</em> 1 na 3 pacjentów ma nawrót w ciągu 2 lat. Plan jest realistyczną odpowiedzią na realistyczne ryzyko, nie pesymizmem.</div>
+  
+  <div class="term-note"><strong>Walidacja</strong> — gdy nawrót się zdarzy, łatwo wpaść w wstyd: „przeszłam tyle, znowu w tym samym miejscu". Wstyd <em>pogłębia</em> nawrót. Profilaktyka uczy: nawrót jest informacją, nie wyrokiem. Im szybciej go zauważysz i zareagujesz, tym łatwiej wrócić. Plan, który napiszesz dziś, jest darem dla siebie z przyszłości.</div>
+  
+  <div class="src"><em>📚 Carter i in. (2012, IJED — relapse prevention); Marlatt i Gordon (1985, Relapse Prevention); Steinhausen (2002, Am J Psychiatry — meta-analiza); Berends i in. (2018, IJED — nawroty); Robinson (2014, Severe and Enduring AN); NICE NG69 (2017).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Wczesne sygnały</div>
+  <h1 class="card-prompt">Co <em>świadczy</em>, że AN wraca</h1>
+  <p class="card-detail">Pierwsza praca — <strong>nazwij sygnały wczesne</strong>. Każdy pacjent ma trochę inny zestaw, ale typowe sygnały są dobrze opisane. Im wcześniej je rozpoznasz, tym szybciej wrócisz na właściwą ścieżkę. <em>Późny nawrót</em> (zauważony po miesiącach) wymaga znacznie więcej pracy niż <em>wczesny nawrót</em> (zauważony po dniach).</p>
+  
+  <div class="warn-card">
+    <div class="warn-h"><span class="warn-num">1</span>Sygnały myśli</div>
+    <div class="warn-text"><strong>Wczesne, najtrudniejsze do zauważenia</strong>. Pojawia się rosnąca preokupacja jedzeniem, kalorie zaczynają „mówić w głowie", lustro znowu wciąga na 30 minut, porównywanie się z innymi staje się obsesyjne, wraca myśl „muszę zrzucić X kg".</div>
+  </div>
+  
+  <div class="warn-card">
+    <div class="warn-h"><span class="warn-num">2</span>Sygnały zachowań</div>
+    <div class="warn-text"><strong>Pierwsze działania</strong>. Zaczynasz pomijać jedną przekąskę. Liczysz kalorie „dla bezpieczeństwa". Zapisujesz wagę. Ćwiczysz dodatkowe 15 minut „dla zdrowia". Wracasz do thinspo na social media. Unikasz posiłków z innymi „bo nie głodna".</div>
+  </div>
+  
+  <div class="warn-card">
+    <div class="warn-h"><span class="warn-num">3</span>Sygnały emocjonalne</div>
+    <div class="warn-text"><strong>Stan wewnętrzny</strong>. Wracają silne wahania nastroju. Pojawia się znowu wstyd ciała. Lęk przed posiłkami. Drażliwość. Smutek bez przyczyny. Izolacja społeczna „bo zmęczona".</div>
+  </div>
+  
+  <div class="warn-card">
+    <div class="warn-h"><span class="warn-num">4</span>Sygnały somatyczne</div>
+    <div class="warn-text"><strong>Ciało wie</strong>. Spadek wagi (nawet 1–2 kg). Wraca chłodna marznięcie. Energia się obniża. Sen się pogarsza. Miesiączka wraca w nieregularność albo ustaje. Włosy zaczynają wypadać.</div>
+  </div>
+  
+  <div class="examples-h">Twoje <em>indywidualne</em> sygnały — jakie zauważasz u siebie?</div>
+  <textarea id="rel-syg" class="thought-input" rows="5" placeholder="Pomyśl o ostatnim nawrocie albo o trudnym okresie. Jakie były pierwsze sygnały? Pisz konkretnie, w czterech kategoriach: myśli / zachowania / emocje / ciało…"></textarea>
+  
+  <div class="examples-h">Osobiste wyzwalacze — co u Ciebie <em>poprzedza</em> nawroty?</div>
+  <textarea id="rel-wyzw" class="thought-input" rows="3" placeholder="Konflikt z partnerem? Stres w pracy? Choroba? Żałoba? Podróż? Komentarze o ciele? Konkretne sytuacje życiowe, które „wciągają" w AN…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — sygnały są bardziej widoczne <em>z perspektywy</em>. Dlatego pomocne jest poprosić bliską osobę o „drugą parę oczu". Niekiedy ona zauważy zmianę w Tobie wcześniej niż Ty sama/sam. Z jej zgodą i Twoją — to legalne narzędzie, nie inwigilacja.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Trzy poziomy</div>
+  <h1 class="card-prompt">Zielony, <em>żółty</em>, czerwony</h1>
+  <p class="card-detail">Drugi etap — <strong>system trzech poziomów</strong>. Carter i in. (2012) opracowali model trzech kolorów dla nawrotu. Każdy poziom wymaga innego działania. Zielony — utrzymanie. Żółty — sygnały, działanie wczesne. Czerwony — pełny nawrót, powrót do leczenia. Klarowność tych poziomów pozwala działać <em>proporcjonalnie</em> do sytuacji.</p>
+  
+  <div class="level-card green">
+    <div class="level-h green">🟢 ZIELONY — stabilność</div>
+    <div class="level-meta">Codzienność, dobrze</div>
+    <div class="level-text"><strong>Stan</strong>: regularne jedzenie utrzymane, waga stabilna, brak silnych preokupacji jedzeniowych, kontakty społeczne, normalna emocjonalność.</div>
+    <div class="level-action"><strong>Działanie</strong>: utrzymuj plan wellness — 3 posiłki + 2–3 przekąski, sen 7–9h, ruch umiarkowany, kontakt z innymi, 1 przyjemność dziennie. Co tydzień — krótka samococena.</div>
+  </div>
+  
+  <div class="level-card amber">
+    <div class="level-h amber">🟡 ŻÓŁTY — wczesne sygnały</div>
+    <div class="level-meta">Sygnały myśli i pierwsze zachowania</div>
+    <div class="level-text"><strong>Stan</strong>: pojawia się preokupacja jedzeniem, kalorie wracają „w głowie", omijam jeden posiłek, ćwiczę dodatkowo. Waga jeszcze stabilna albo lekko spada (≤1 kg).</div>
+    <div class="level-action"><strong>Działanie</strong>: <em>aktywuj plan</em>. Skontaktuj się z terapeutą — sesja przypominająca w ciągu tygodnia. Wróć do regularnego jedzenia ścisłego (3+2). Wytnij thinspo. Powiedz bliskiej osobie. Działaj <strong>w ciągu kilku dni</strong>.</div>
+  </div>
+  
+  <div class="level-card red">
+    <div class="level-h red">🔴 CZERWONY — pełny nawrót</div>
+    <div class="level-meta">Spadek wagi &gt;2 kg, wzorzec AN wrócił</div>
+    <div class="level-text"><strong>Stan</strong>: spadek wagi powyżej 2 kg, restrykcyjny wzorzec wrócił, pominięte posiłki regularne, kompulsywny ruch, silne preokupacje, izolacja społeczna.</div>
+    <div class="level-action"><strong>Działanie</strong>: <em>powrót do pełnego leczenia</em>. Skontaktuj się z terapeutą i lekarzem <strong>w ciągu 24h</strong>. Ocena medyczna (waga, EKG, elektrolity). Rozważ czy wymagana jest intensyfikacja — częstsze sesje, day program, w skrajnych przypadkach hospitalizacja. <em>Nie</em> czekaj „aż się poprawi samo".</div>
+  </div>
+  
+  <div class="examples-h">Konkretne progi — kiedy Ty przechodzisz z zielonego do żółtego?</div>
+  <textarea id="rel-prog-z" class="thought-input" rows="3" placeholder="Indywidualne. „Gdy pominę 2 posiłki w tygodniu". „Gdy wracają myśli o ważeniu się". „Gdy spędzam &gt;30 min na lustrze". Konkretne progi…"></textarea>
+  
+  <div class="examples-h">Konkretne progi — kiedy z żółtego do czerwonego?</div>
+  <textarea id="rel-prog-c" class="thought-input" rows="3" placeholder="„Gdy spadek wagi &gt;2 kg w 2 tygodniach". „Gdy nie zjedam żadnego posiłku przez cały dzień". „Gdy wraca kompulsywny ruch &gt;1h dziennie". Konkretne progi…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — najczęstszy błąd to <em>czekanie</em>. Pacjent w żółtym myśli „może to przejdzie samo", przesuwa się do czerwonego, dopiero wtedy wraca do leczenia. Wczesna interwencja w żółtym jest <em>łatwiejsza</em> i <em>krótsza</em> niż leczenie w czerwonym. Nie czekaj. Lepiej „przeszacować" niż „nie doszacować".</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan kryzysowy</div>
+  <h1 class="card-prompt">Konkretne <em>kontakty</em> i kroki</h1>
+  <p class="card-detail">Trzeci etap — <strong>plan działania zapisany</strong>. W kryzysie nie myślisz jasno. Plan <em>napisany teraz</em> jest darem dla siebie z trudnego momentu. Wpisz konkretne kontakty. Wydrukuj. Daj jedną kopię zaufanej osobie. Druga przy łóżku albo w portfelu.</p>
+  
+  <div class="contact-card">
+    <div class="contact-h">Twoje kontakty awaryjne</div>
+    <div class="contact-row">
+      <span class="contact-label">Terapeuta</span>
+      <input type="text" id="rel-k-ter" class="contact-input" placeholder="Imię, telefon, email">
+    </div>
+    <div class="contact-row">
+      <span class="contact-label">Psychiatra</span>
+      <input type="text" id="rel-k-psy" class="contact-input" placeholder="Imię, telefon">
+    </div>
+    <div class="contact-row">
+      <span class="contact-label">Lekarz rodz.</span>
+      <input type="text" id="rel-k-lek" class="contact-input" placeholder="Imię, telefon">
+    </div>
+    <div class="contact-row">
+      <span class="contact-label">Dietetyk</span>
+      <input type="text" id="rel-k-die" class="contact-input" placeholder="Imię, telefon">
+    </div>
+    <div class="contact-row">
+      <span class="contact-label">Bliska osoba 1</span>
+      <input type="text" id="rel-k-b1" class="contact-input" placeholder="Imię, telefon — wie o Twoim planie">
+    </div>
+    <div class="contact-row">
+      <span class="contact-label">Bliska osoba 2</span>
+      <input type="text" id="rel-k-b2" class="contact-input" placeholder="Imię, telefon — alternatywa">
+    </div>
+    <div class="contact-row">
+      <span class="contact-label">Telefon zaufania</span>
+      <input type="text" id="rel-k-tz" class="contact-input" value="116 123 (Telefon Zaufania dla Dorosłych)">
+    </div>
+  </div>
+  
+  <div class="examples-h">Plan wellness — co utrzymujesz codziennie</div>
+  <textarea id="rel-well" class="thought-input" rows="5" placeholder="Konkretne pozycje. „3 posiłki + 2 przekąski o stałych godzinach". „Sen 7–9h, do łóżka przed 23". „30 min spaceru". „1 kontakt z bliską osobą". „1 przyjemność". Co utrzymuje Cię w zielonym?…"></textarea>
+  
+  <div class="examples-h">Plan dla żółtego — co konkretnie zrobisz</div>
+  <textarea id="rel-plan-z" class="thought-input" rows="3" placeholder="„① Zadzwonię do terapeuty w ciągu 48h". „② Wrócę do ścisłego 3+2 z dziennikiem". „③ Powiedzę X o sytuacji". Konkretne kroki, nie ogólne zamiary…"></textarea>
+  
+  <div class="examples-h">Plan dla czerwonego — co konkretnie zrobisz</div>
+  <textarea id="rel-plan-c" class="thought-input" rows="3" placeholder="„① Telefon do terapeuty i lekarza w ciągu 24h". „② Sesja w tym tygodniu". „③ Ocena medyczna". „④ Rozważyć day program". Konkretne kroki, nie zwlekanie…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — wydrukuj ten plan. Daj jedną kopię bliskiej osobie (za jej zgodą). Wytłumacz: „Jeśli zauważysz u mnie sygnały, masz prawo i obowiązek mi to powiedzieć". To <em>nie</em> jest inwigilacja. To bezpieczeństwo, na które się umawiacie wcześniej, gdy myślisz jasno. W kryzysie tej zgody już byś nie dał/a.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ SEED-AN</div>
+  <h1 class="card-prompt">Gdy <em>pełna remisja</em> nie jest celem</h1>
+  <p class="card-detail">Ostatnia część — krótka informacja o <strong>SEED-AN</strong> (Severe and Enduring Anorexia Nervosa). Nie dla każdego pacjenta. Dla pacjentów chorujących <em>powyżej 7 lat</em>, z wielokrotnymi nieskutecznymi terapiami, dla których cel terapii zostaje <em>zmieniony</em> — z „pełnej remisji" na „jakość życia".</p>
+  
+  <div class="seed-card">
+    <div class="seed-h">SEED-AN — co to znaczy</div>
+    <div class="seed-text">Robinson (2014, <em>Severe and Enduring Anorexia Nervosa</em>) wyróżnił osobną kategorię kliniczną dla pacjentów z chronicznym przebiegiem AN. SEED-AN <em>nie</em> jest „rezygnacją" z leczenia — jest <em>etyczną zmianą celu</em>. Cel: <strong>poprawa jakości życia, stabilizacja medyczna, zapobieganie pogorszeniu</strong>. Dla niektórych pacjentów chronicznie chorych dalsze agresywne wymuszanie pełnej remisji powoduje <em>więcej szkody niż pożytku</em> — retraumatyzujące hospitalizacje, utrata autonomii, brak własnego życia poza chorobą. SEED-AN wymaga otwartej, etycznej rozmowy z pacjentem, zespołem i bliskimi.</div>
+  </div>
+  
+  <div class="examples-h">Cztery kryteria diagnostyczne SEED-AN</div>
+  <div class="crit-list">
+    <div class="crit-row"><span class="crit-icon">①</span><span><strong>Choroba &gt; 7 lat</strong> z utrwalonym wzorcem</span></div>
+    <div class="crit-row"><span class="crit-icon">②</span><span><strong>≥ 2 pełne standardowe leczenia</strong> bez trwałej remisji</span></div>
+    <div class="crit-row"><span class="crit-icon">③</span><span><strong>Stabilna „LOW-WEIGHT" egzystencja</strong> — funkcjonuje, ale w stanie chronicznego niedożywienia</span></div>
+    <div class="crit-row"><span class="crit-icon">④</span><span><strong>Pacjent i zespół oceniają</strong>: dalsze agresywne leczenie przyniesie więcej szkody niż pożytku</span></div>
+  </div>
+  
+  <div class="examples-h">Pięć priorytetów podejścia SEED-AN</div>
+  <textarea id="rel-seed" class="thought-input" rows="5" placeholder="① Stabilność medyczna (waga „minimum safe", nie „docelowa").&#10;② Jakość życia (relacje, sens, aktywności).&#10;③ Autonomia (unikanie wymuszonych hospitalizacji poza zagrożeniem życia).&#10;④ Paliatywne podejście do cierpienia (psychiatra — leki na lęk, depresję, sen).&#10;⑤ Stały zespół (nie „rotacja" specjalistów)."></textarea>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Plan nawrotów dziś</strong> — wypełnij kontakty i progi w Krokach 2–4. Wydrukuj. Daj kopię bliskiej osobie. Plan na papierze działa lepiej niż w głowie.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Booster sessions</strong> — zaplanuj 3–4 sesje kontrolne w ciągu 6 miesięcy po zakończeniu terapii. Co 1–2 miesiące, później rzadsze. Nie czekaj na kryzys.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>Self-monitoring co tydzień</strong> — krótka samoocena (5 minut): czy jestem w zielonym, żółtym, czerwonym? Co dzieje się z wagą, jedzeniem, nastrojem, snem?</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Jeśli rozważasz SEED-AN</strong> — wymaga konsultacji etycznej z zespołem (psychoterapeuta + psychiatra + lekarz + bliscy + Ty). Nie decyzja jednostronna. W Polsce brakuje formalnego protokołu — praktycznie dostosuj do swojej sytuacji w dialogu z zespołem.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Nawroty są <strong>częste</strong> (22–51% w ciągu 2 lat) — plan profilaktyki jest obowiązkowy elementem końca terapii. Trzy poziomy: <em>zielony (stabilność), żółty (sygnały, działanie wczesne), czerwony (pełny nawrót, powrót do leczenia)</em>. Konkretne kontakty zapisane przed kryzysem. Plan wellness codziennie. Booster sessions co 1–2 miesiące przez pierwszy rok po zakończeniu terapii. <em>SEED-AN</em> — etyczna zmiana celu z „pełnej remisji" na „jakość życia" dla pacjentów z &gt;7 lat oporną AN. Wymaga konsultacji etycznej.</div>
+  </div>
+  
+  <div class="final-msg"><strong>Profilaktyka nawrotów działa</strong> — Carter i in. (2012, <em>IJED</em>): pacjenci z napisanym, strukturalizowanym planem zapobiegania nawrotom mają <em>znacznie</em> niższe ryzyko pełnego nawrotu niż pacjenci bez planu. Plan nie eliminuje ryzyka — sprawia, że nawrót staje się <em>krótkim epizodem</em> zamiast długą chorobą. To realna różnica w jakości życia po terapii. <strong>SEED-AN</strong> jako rama — Robinson (2014); Westmoreland i in. (2017): otwarta etyczna debata o zmianie celu pomaga pacjentom przewlekle chorym zachować autonomię i godność. Pacjent z chroniczną AN zasługuje na pełne człowieczeństwo do końca.</div>
+  
+  <div class="src"><em>📚 Carter i in. (2012, IJED — relapse prevention); Marlatt i Gordon (1985, Relapse Prevention); Steinhausen (2002, Am J Psychiatry); Berends i in. (2018, IJED); Robinson (2014, Severe and Enduring AN); Westmoreland i in. (2017, etyka SEED); Arcelus i in. (2011, śmiertelność w AN); NICE NG69 (2017).</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Brak interaktywnego JS — inputs i textareas, persystencja zapisuje. */
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_relapse_seed — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_relapse_seed";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Uruchamianie zadania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.tech-row { display: flex; gap: 12px; padding: 12px 14px; background: rgba(184,197,168,0.15); border-radius: 10px; margin-bottom: 6px; align-items: flex-start; cursor: pointer; transition: all 0.2s; }
+.tech-row:hover, .tech-row.picked { background: rgba(74,99,71,0.18); }
+.tech-row.picked { border-left: 3px solid var(--sage-deep); }
+.tech-num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 17px; color: var(--warm); min-width: 32px; flex-shrink: 0; }
+.tech-text { flex: 1; }
+.tech-h { font-weight: 600; font-size: 13px; color: var(--ink); margin-bottom: 3px; }
+.tech-d { font-size: 12px; color: var(--ink-mute); line-height: 1.45; }
+.tech-row.picked .tech-d { color: var(--ink-soft); }
+
+.killer-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.killer-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 10px; }
+.killer-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: center; font-size: 12.5px; line-height: 1.5; }
+.killer-row:first-of-type { border-top: none; }
+.killer-row .red { color: rgba(255, 200, 180, 0.85); }
+.killer-row .green { color: var(--sage); }
+.killer-arrow { color: var(--bg); font-weight: 600; padding: 0 4px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Uruchamianie zadania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Activation energy — <em>moment</em> startu</h1>
+    <p class="card-detail">Task initiation (uruchamianie zadania) to jedna z podstawowych funkcji wykonawczych — w <strong>ADHD</strong> (zespół nadpobudliwości psychoruchowej z deficytem uwagi) jest centralnym deficytem, często ważniejszym niż utrzymanie uwagi. Różnica od prokrastynacji: prokrastynacja to szersza decyzja „zrobię później"; task initiation to techniczna trudność z samym <em>momentem</em> startu — siedzisz przed zadaniem, chcesz je zacząć, a nie możesz. Dawson i Guare (2016) używają metafory chemicznej: <em>energia aktywacji</em> — jak w reakcji chemicznej, potrzebujesz pewnej energii, by zainicjować proces. Mózg ADHD ma wyższą energię aktywacji niż neurotypowy — stąd „utkwienie" przed zadaniem.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery wymiary energii aktywacji (Dawson 2016)</div>
+      <div class="element-row">
+        <span class="element-icon">🧱</span>
+        <span class="element-text"><strong>Próg startu</strong> — większy w ADHD: trzeba więcej impulsu, by zacząć. Pomodoro 25 min często odpycha, 5 min przepuszcza.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚪</span>
+        <span class="element-text"><strong>Decyzje przed startem</strong> — każda decyzja na progu (co, jak, gdzie) zwiększa próg. Im więcej przygotowane wcześniej, tym łatwiej ruszyć.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>Inicjacja motoryczna</strong> — gdy fizycznie ruszasz (5-4-3-2-1, wstajesz, otwierasz dokument), kora przedczołowa „budzi się" sekundę później.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Mikro-krok</strong> — pierwszy krok ma być na tyle mały, by absolutnie nie dało się go nie zrobić. „Otwórz dokument", nie „napisz raport".</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Akcja przed motywacją. Mózg ADHD nie czeka na motywację — ona przychodzi <em>po</em> uruchomieniu, nie przed."
+      <span class="frame-quote-attr">— parafraza Robbins (2017, „The 5 Second Rule")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: nie czekaj na „chcę". Sprowadź start do działania, które jest tak małe, że nie wymaga „chcę" — i pierwszy ruch fizyczny zrobi resztę pracy za Ciebie.</div>
+
+    <div class="src">Dawson i Guare (2016, „Smart but Scattered for Teens") · Allen (2015, „Getting Things Done") · Robbins (2017, „The 5 Second Rule") · Sibley i wsp. (2020, task initiation w ADHD) · Tuckman (2009, „Integrative Treatment for Adult ADHD") · Fogg (2020, „Tiny Habits")</div>
+  </section>
+
+  <!-- ============== KROK 2 — Zadanie i utykanie ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoje zadanie</div>
+    <h1 class="card-prompt">Gdzie konkretnie <em>utykasz</em>?</h1>
+    <p class="card-detail">Pomyśl o zadaniu, które właśnie utknąłeś/aś — siedzisz, wiesz, co masz robić, a nie ruszasz. Opisz konkret. Cel — namierzyć dokładnie moment, w którym zatrzymujesz się.</p>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Zadanie</strong> (czasownik + obiekt + termin):</p>
+    <textarea class="thought-input" id="zadanie" placeholder="np. „Napisać raport miesięczny dla klienta — 4 strony, deadline jutro 12:00."" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Gdzie konkretnie utykasz</strong> — co robisz <em>zamiast</em> startu?</p>
+    <textarea class="thought-input" id="utyk" placeholder="np. „Otwieram dokument, patrzę, zamykam. Otwieram skrzynkę, czytam maile. Idę po kawę. Wracam, otwieram, patrzę, zamykam. Tak 3 razy."" rows="3"></textarea>
+
+    <div class="scale" style="margin-top:14px">
+      <div class="scale-title">Czas między „chcę zacząć" a „faktycznie zaczynam" (minuty)</div>
+      <div class="scale-bounds"><span>0</span><span>120+</span></div>
+      <input type="range" id="dystans" class="scale-input" min="0" max="120" value="45" data-default="45">
+      <div class="scale-readout"><span>Dystans:</span><span id="dystansV">45 min</span></div>
+    </div>
+
+    <p class="examples-h" style="margin-top:8px">Czego brakuje na progu?</p>
+    <div class="example-chips">
+      <button id="b1" class="example-chip" onclick="this.classList.toggle('picked')">Konkretny pierwszy krok</button>
+      <button id="b2" class="example-chip" onclick="this.classList.toggle('picked')">Materiały gotowe</button>
+      <button id="b3" class="example-chip" onclick="this.classList.toggle('picked')">Brak rozpraszaczy</button>
+      <button id="b4" class="example-chip" onclick="this.classList.toggle('picked')">Body double</button>
+      <button id="b5" class="example-chip" onclick="this.classList.toggle('picked')">Termin „twardy"</button>
+      <button id="b6" class="example-chip" onclick="this.classList.toggle('picked')">Zewnętrzny dźwięk / muzyka</button>
+      <button id="b7" class="example-chip" onclick="this.classList.toggle('picked')">Zmiana lokalizacji</button>
+      <button id="b8" class="example-chip" onclick="this.classList.toggle('picked')">Plan przerwy/nagrody</button>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła</strong>: dystans między intencją a działaniem to obiektywna miara efektywności. Na początku terapii — godziny, czasem dni. Po 8 tygodniach pracy z technikami — minuty. To <em>jest</em> miara sukcesu, nie „ile zrobiłem".</div>
+  </section>
+
+  <!-- ============== KROK 3 — Wybór technik ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Twoje techniki</div>
+    <h1 class="card-prompt">Wybierz <em>trzy</em> z ośmiu</h1>
+    <p class="card-detail">Osiem technik obniżania energii aktywacji. Wybierz <em>trzy</em> najpasujące do Twojej sytuacji z kroku 2 (klikaj wiersze). Łączenie 2–3 technik daje większy efekt niż jedna.</p>
+
+    <div id="tech1" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">1</div>
+      <div class="tech-text">
+        <div class="tech-h">Reguła 2 minut (Allen)</div>
+        <div class="tech-d">Jeśli zadanie zajmie mniej niż 2 min — zrób od razu, nie planuj. Lista 2-minutowa to „łatwe zwycięstwa", które tworzą rozpęd dla większych zadań.</div>
+      </div>
+    </div>
+
+    <div id="tech2" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">2</div>
+      <div class="tech-text">
+        <div class="tech-h">Reguła 5 minut (Robbins)</div>
+        <div class="tech-d">Dla zadań większych: „zrób tylko 5 min, potem możesz przestać". Mózg ADHD akceptuje, bo „to tylko 5 min". W 70–80% przypadków inercja niesie dalej.</div>
+      </div>
+    </div>
+
+    <div id="tech3" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">3</div>
+      <div class="tech-text">
+        <div class="tech-h">Reguła 5 sekund (Robbins)</div>
+        <div class="tech-d">Odliczasz „5-4-3-2-1-START" i ruszasz fizycznie. Zanim mózg wygeneruje wymówkę (5 sekund), jesteś już w ruchu. Inicjacja motoryczna budzi korę przedczołową.</div>
+      </div>
+    </div>
+
+    <div id="tech4" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">4</div>
+      <div class="tech-text">
+        <div class="tech-h">Najmniejszy pierwszy krok (Dawson)</div>
+        <div class="tech-d">Pierwszy krok absurdalnie mały: „otwórz dokument", „włóż buty do torby", „wpisz tytuł". Tak mały, że nie da się go nie zrobić. „Jeśli nie potrafisz zacząć, zmniejsz start."</div>
+      </div>
+    </div>
+
+    <div id="tech5" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">5</div>
+      <div class="tech-text">
+        <div class="tech-h">Rytuał startu — pavlovski trigger</div>
+        <div class="tech-d">Zawsze ten sam ciąg czynności: siadam → laptop → drzwi → słuchawki → timer → dokument. Stopniowo staje się „pavlovskim trigger-em": mózg automatycznie wchodzi w tryb pracy.</div>
+      </div>
+    </div>
+
+    <div id="tech6" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">6</div>
+      <div class="tech-text">
+        <div class="tech-h">Body doubling</div>
+        <div class="tech-d">Druga osoba obok (Zoom, Focusmate, na żywo) obniża energię aktywacji. Mózg mobilizuje się w obecności społecznej. Nie potrzebuje pomocy — potrzebuje świadka.</div>
+      </div>
+    </div>
+
+    <div id="tech7" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">7</div>
+      <div class="tech-text">
+        <div class="tech-h">Nagroda za <em>start</em>, nie koniec</div>
+        <div class="tech-d">Mózg ADHD nie widzi nagrody odroczonej. Nagroda <em>za rozpoczęcie</em>: ulubiona muzyka, ciepły kubek, zapach świecy. Mózg kojarzy start z przyjemnością.</div>
+      </div>
+    </div>
+
+    <div id="tech8" class="tech-row" onclick="this.classList.toggle('picked')">
+      <div class="tech-num">8</div>
+      <div class="tech-text">
+        <div class="tech-h">Zmiana lokalizacji</div>
+        <div class="tech-d">Z domu do kawiarni, z biurka do innego pokoju. Nowe miejsce = nowe bodźce = chwilowy wzrost dopaminy = łatwiejsze uruchomienie. Nie codziennie — to też zaczyna być wymówką.</div>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: trzy techniki na raz tworzą redundancję. Reguła 5 sekund + najmniejszy krok + body double = nawet jeśli jedna nie zadziała, dwie pozostałe przepuszczą.</div>
+  </section>
+
+  <!-- ============== KROK 4 — Konkretny start ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Konkretny start</div>
+    <h1 class="card-prompt">Twoje <em>5 minut</em> teraz</h1>
+    <p class="card-detail">Dla zadania z kroku 2, używając wybranych technik, ułóż konkretny start. Każdy element konkretny, na pisanie nie więcej niż 5 minut.</p>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Twój najmniejszy pierwszy krok</strong> (30–60 sekund):</p>
+    <textarea class="thought-input" id="krok1" placeholder="np. „Otwieram laptopa, klikam plik «raport-X», wpisuję datę i nazwisko klienta w nagłówku."" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Drugi krok</strong> (1–2 minuty):</p>
+    <textarea class="thought-input" id="krok2" placeholder="np. „Wpisuję tytuł sekcji 1: «Wyniki sprzedaży»."" rows="2"></textarea>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Trzeci krok</strong> (3–5 minut):</p>
+    <textarea class="thought-input" id="krok3" placeholder="np. „Wklejam tabelę przychodów z Excela. Patrzę i piszę 2 zdania komentarza pod tabelą."" rows="2"></textarea>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twój rytuał startu</strong> — fizyczny ciąg, który zawsze poprzedza pracę:</p>
+    <textarea class="thought-input" id="rytual" placeholder="np. „Siadam → kawa po prawej → słuchawki → timer 25 min → bloker stron → dokument otwarty. Sekwencja zawsze ta sama. 1 minuta."" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Twoja nagroda za START</strong> (nie za koniec):</p>
+    <textarea class="thought-input" id="nagroda" placeholder="np. „Po pierwszym kroku — kubek dobrej kawy w specjalnym kubku. Po 25 min pracy — 5 min ulubionego serialu na YouTube."" rows="2"></textarea>
+
+    <div class="killer-card">
+      <div class="killer-h">Zamień killer phrases na startery</div>
+      <div class="killer-row">
+        <span class="red">„Muszę napisać raport"</span>
+        <span class="killer-arrow">→</span>
+        <span class="green">„Otwieram dokument"</span>
+      </div>
+      <div class="killer-row">
+        <span class="red">„Powinienem już zacząć"</span>
+        <span class="killer-arrow">→</span>
+        <span class="green">„5-4-3-2-1, otwieram dokument"</span>
+      </div>
+      <div class="killer-row">
+        <span class="red">„Nie chce mi się"</span>
+        <span class="killer-arrow">→</span>
+        <span class="green">„Zaczynam od 5 min, potem mogę przestać"</span>
+      </div>
+      <div class="killer-row">
+        <span class="red">„Jestem beznadziejny/a, że jeszcze nie zacząłem/am"</span>
+        <span class="killer-arrow">→</span>
+        <span class="green">„To trudne dla mózgu z ADHD — zaczynam jednym krokiem"</span>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: samokrytyka <em>w momencie startu</em> paradoksalnie podnosi energię aktywacji — teraz musisz pokonać zadanie <em>plus</em> negatywne emocje o sobie. Krytyka siebie nie jest motywacją, jest sabotażem. Nazwij to.</div>
+  </section>
+
+  <!-- ============== KROK 5 — Po starcie ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po starcie</div>
+    <h1 class="card-prompt">Ile minut <em>zniknęło</em> między „chcę" a „zaczynam"?</h1>
+    <p class="card-detail">Wracaj tu po sesji. Cel — zmierzyć rzeczywistą redukcję dystansu intencja-akcja. To jedyna miara, która naprawdę pokazuje, czy techniki działają.</p>
+
+    <div class="scale">
+      <div class="scale-title">Czas między „chcę zacząć" a „zaczynam" — TERAZ (min)</div>
+      <div class="scale-bounds"><span>0</span><span>120+</span></div>
+      <input type="range" id="dystansPo" class="scale-input" min="0" max="120" value="15" data-default="15">
+      <div class="scale-readout"><span>Po:</span><span id="dystansPoV">15 min</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Ile minut realnie pracowałeś/aś po starcie</div>
+      <div class="scale-bounds"><span>0</span><span>120+</span></div>
+      <input type="range" id="czas" class="scale-input" min="0" max="120" value="45" data-default="45">
+      <div class="scale-readout"><span>Praca:</span><span id="czasV">45 min</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Co realnie zadziałało? Która z technik była kotwicą?</p>
+    <textarea class="thought-input" id="dziala" placeholder="np. „«5-4-3-2-1» na głos zadziałało — ruszyłem od razu. Najmniejszy krok («wpisz datę») obniżył próg. Bez body double bym wrócił po 10 min do skrzynki."" rows="4"></textarea>
+
+    <p class="card-detail" style="margin-top:8px">Co bierzesz do następnego startu?</p>
+    <textarea class="thought-input" id="lekcja" placeholder="np. „Zawsze pierwsze: 5-4-3-2-1 + najmniejszy krok. Drugie: ten sam rytuał startu (kawa, słuchawki, timer). Trzecie: body double dla trudniejszych zadań."" rows="3"></textarea>
+
+    <div class="final-msg" id="finalMsg">Ustaw skale „przed" (krok 2) i „po" (tu) — wtedy pojawi się Twój konkretny pomiar redukcji dystansu intencja-akcja.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: średnia redukcja dystansu po pierwszych 2 tygodniach to ~50%. Po 8 tygodniach — z godziny do 5–10 minut. Mierz ten wskaźnik regularnie — to dane, które przekonują mózg, że techniki działają.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Mózg ADHD ma <strong>wyższą energię aktywacji</strong> — to fakt biologiczny. <em>Nie czekasz na motywację</em> — schodzisz pod jej próg: 5-4-3-2-1, najmniejszy krok, rytuał startu, nagroda za <em>start</em> (nie koniec). Akcja przed motywacją, nie odwrotnie.</div>
+    </div>
+
+    <div class="src">Dawson i Guare (2016, „Smart but Scattered for Teens") · Allen (2015, „Getting Things Done") · Robbins (2017, „The 5 Second Rule") · Sibley i wsp. (2020, task initiation w ADHD) · Tuckman (2009) · Phelan (2019) · Gollwitzer (1999)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function refreshScales() {
+  ['dystans','dystansPo','czas'].forEach(function(id){
+    var s = document.getElementById(id);
+    var v = document.getElementById(id+'V');
+    if (s && v) v.textContent = s.value + ' min';
+  });
+  buildFinalMsg();
+}
+
+function buildFinalMsg() {
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var p = document.getElementById('dystans');
+  var q = document.getElementById('dystansPo');
+  var c = document.getElementById('czas');
+  if (!p || !q || !c) return;
+  var pre = parseInt(p.value, 10);
+  var post = parseInt(q.value, 10);
+  var cz = parseInt(c.value, 10);
+  var diff = pre - post;
+  var pct = pre > 0 ? Math.round((diff / pre) * 100) : 0;
+
+  var msg = '<strong>Dystans:</strong> ' + pre + ' → ' + post + ' min';
+  if (pct > 0) msg += ' (redukcja ' + pct + '%). ';
+  else msg += '. ';
+  msg += '<strong>Praca:</strong> ' + cz + ' min. ';
+  if (diff >= 30 && cz >= 25) msg += '<em>Wyraźna redukcja dystansu i solidna sesja — techniki działają. Zapisz te 3, których użyłeś, i powtarzaj.</em>';
+  else if (diff >= 10) msg += '<em>Spadek dystansu o ' + diff + ' min — to zauważalny postęp. Po 4–6 powtórzeniach utrwala się.</em>';
+  else if (cz > 0) msg += '<em>Start się udał, ale dystans podobny — sprawdź, czy nie warto wzmocnić mikro-kroku (jeszcze mniejszy).</em>';
+  else msg += '<em>Start się nie udał — dla następnej próby zmniejsz pierwszy krok do 30 sekund (np. „otwórz dokument") i dodaj 5-4-3-2-1.</em>';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) { if (step === 5 || step === 2) refreshScales(); }
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) refreshScales();
+});
+
+setTimeout(refreshScales, 60);
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_adhd_task_initiation — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_adhd_task_initiation";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

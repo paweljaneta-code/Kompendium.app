@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Gotowość vs opór</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.contrast-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.contrast-half { padding: 11px 13px; border-radius: 9px; font-size: 12.5px; line-height: 1.5; }
+.contrast-half.opp { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); color: var(--ink); }
+.contrast-half.will { background: rgba(184,197,168,0.22); border: 1px solid var(--sage); color: var(--ink); }
+.contrast-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+.contrast-half.opp .contrast-h { color: #8a6e3a; }
+.contrast-half.will .contrast-h { color: var(--sage-deep); }
+.contrast-half strong { color: var(--ink); font-weight: 600; }
+
+.area-grid { display: grid; gap: 8px; margin: 12px 0; }
+.area-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.area-btn:hover, .area-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.area-btn .area-name { font-weight: 600; display: block; margin-bottom: 4px; font-size: 14px; }
+.area-btn .area-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; display: block; }
+.area-btn.picked .area-desc { color: rgba(244,241,234,0.85); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Gotowość vs opór</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Gotowość vs opór — <em>otwarte dłonie</em> czy <em>zaciśnięte pięści</em>?</h1>
+    <p class="card-detail">Gotowość vs opór (po angielsku <em>willingness vs willfulness</em>) to umiejętność z modułu tolerancji dystresu DBT — dialektycznej terapii behawioralnej (Linehan, 2015), zaczerpnięta z pracy Geralda Maya (1985, Will and Spirit). Opisuje dwie kontrastowe postawy wobec rzeczywistości: <strong>gotowość</strong> (otwartość + działanie zgodne z tym, co jest potrzebne) i <strong>opór</strong> (sztywne „nie chcę”, walka, próba kontroli rzeczywistości).</p>
+
+    <p class="card-detail">Gotowość to nie pasywność. To otwartość na to, co jest, plus gotowość do <em>robienia tego, co potrzebne</em>. Zauważasz fakty (smutek, deszcz, czekanie, niesprawiedliwą sytuację) i pytasz: „co jest do zrobienia?”. Robisz to bez napięcia, bez „powinno być inaczej”. Gotowość = otwarte dłonie.</p>
+
+    <p class="card-detail">Opór to sztywne „nie chcę”, „nie zrobię”, „tak nie powinno być”. Może wyglądać jak walka aktywna (krzyk, opór wobec terapeuty, „mam rację”) albo pasywna (paraliż, „nie tknę tego”, dąsanie się). May (1985) zauważył, że opór jest <em>iluzją kontroli</em> — daje poczucie sprawczości, a kosztuje energię i więzi. Opór = zaciśnięte pięści.</p>
+
+    <p class="card-detail">Linehan (2015) podkreśla: opór jest <strong>naturalnym ludzkim odruchem</strong> wobec bólu i niesprawiedliwości. Nie chodzi o to, żeby nigdy go nie mieć — tylko o to, żeby <em>go zauważać</em>, nazywać i wracać do gotowości. Pytanie kluczowe, które zadajesz wielokrotnie w ciągu dnia: „<strong>Jestem teraz w gotowości czy w oporze?</strong>”</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Sześć zasad Gotowości (Linehan 2015 / May 1985)</div>
+      <div class="element-row">
+        <span class="element-icon">🌅</span>
+        <span class="element-text"><strong>Otwartość na rzeczywistość</strong>: zauważasz, jak jest, bez próby zmiany w głowie. Czujesz to, co jest do czucia.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✅</span>
+        <span class="element-text"><strong>Akceptacja warunków</strong>: pracujesz z tym, co masz dziś, nie z idealną wersją. Akceptacja ≠ aprobata.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔧</span>
+        <span class="element-text"><strong>Robienie tego, co potrzebne</strong>: bez „powinno być łatwiej”, bez negocjowania. Następny mały krok.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚫</span>
+        <span class="element-text"><strong>Nie walka</strong>: zauważasz energię walki i nie podążasz za nią. Energia idzie w działanie, nie w opór.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🤲</span>
+        <span class="element-text"><strong>Somatyczna kotwica</strong>: półuśmiech + otwarte dłonie. Ciało komunikuje gotowość, kiedy umysł jeszcze nie potrafi.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">❓</span>
+        <span class="element-text"><strong>Pytanie</strong>: „Jestem teraz w gotowości czy w oporze?” Wracaj do tego pytania kilkanaście razy dziennie.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Opór mówi »tak nie powinno być«, dopóki nie jest. Gotowość mówi »tak jest, co teraz robię«, gdy tylko zauważasz fakt.”
+      <span class="frame-quote-attr">— Marsha Linehan (2015, DBT Skills Training Manual, wyd. 2)</span>
+    </div>
+
+    <div class="term-note"><strong>💡 Klucz</strong>: Gotowość ≠ rezygnacja. Możesz aktywnie walczyć o zmianę systemu, sprzeciwiać się niesprawiedliwości, dążyć do celu — w postawie gotowości. Różnica leży w <em>napięciu</em>: opór jest sztywny i wyczerpuje; gotowość jest otwarta i daje energię na działanie.</div>
+
+    <div class="src">Linehan (2015, DBT Skills Training Manual, wyd. 2) · May (1985, Will and Spirit: A Contemplative Psychology) · Linehan (1993, Cognitive-Behavioral Treatment of BPD)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+    <h1 class="card-prompt">Gdzie czujesz <em>utknięcie</em>?</h1>
+    <p class="card-detail">Pomyśl o jednej sytuacji z ostatnich dni, w której coś nie idzie do przodu — masz wrażenie zacięcia, kręcenia się w kółko, blokady. Może to być relacja, projekt, decyzja, codzienna rutyna, leczenie, problem zawodowy.</p>
+
+    <div class="scale">
+      <div class="scale-title">Poczucie utknięcia / oporu — przed</div>
+      <div class="scale-bounds"><span>0 — płynnie</span><span>10 — totalna blokada</span></div>
+      <input type="range" class="scale-input" id="preStuck" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Poziom</span><span id="preStuckVal">6</span></div>
+    </div>
+
+    <textarea class="thought-input" id="gSit" placeholder="np. „Od miesiąca odkładam telefon do urzędu skarbowego. Wiem, że muszę zadzwonić, ale za każdym razem, kiedy biorę telefon, czuję ucisk w klatce i odkładam. Dni mijają, problem rośnie, ja krążę.”" rows="4"></textarea>
+
+    <div class="term-note"><strong>📌 Reguła pomiaru</strong>: Utknięcie 8–10 zwykle to <em>ostry opór</em> — sztywne „nie zrobię”, paraliż, sabotaż. Utknięcie 4–7 to opór <em>tłący się</em> — odkładanie, dąsanie, „jeszcze nie dziś”. Poniżej 4 — w gotowości albo bardzo blisko niej.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór obszaru oporu</div>
+    <h1 class="card-prompt">W jakim <em>obszarze</em> trzymasz opór?</h1>
+    <p class="card-detail">Linehan (2015) zauważyła, że opór często <em>zlokalizowany</em> w jednym wymiarze życia — i można w innych być w gotowości. Wybierz obszar, w którym najmocniej się trzyma.</p>
+
+    <div class="area-grid">
+      <button class="area-btn" id="arA" onclick="pickArea('A')">
+        <span class="area-name">A · Opór wobec faktu / sytuacji</span>
+        <span class="area-desc">„Tak nie powinno być”, „nie godzę się na to”. Choroba, strata, niesprawiedliwa decyzja, zmiana zewnętrzna. Opór wobec rzeczywistości jako takiej.</span>
+      </button>
+      <button class="area-btn" id="arB" onclick="pickArea('B')">
+        <span class="area-name">B · Opór wobec działania</span>
+        <span class="area-desc">„Wiem, co trzeba zrobić, ale nie zrobię”. Telefon do urzędu, rozmowa z partnerem, zadanie zawodowe, leczenie. Aktywne odkładanie wbrew wiedzy.</span>
+      </button>
+      <button class="area-btn" id="arC" onclick="pickArea('C')">
+        <span class="area-name">C · Opór wobec emocji</span>
+        <span class="area-desc">„Nie chcę tego czuć”. Smutek po stracie, lęk przed nowym, gniew na bliskich. Próba zatrzymania, stłumienia, „przeskoczenia” emocji.</span>
+      </button>
+      <button class="area-btn" id="arD" onclick="pickArea('D')">
+        <span class="area-name">D · Opór wobec relacji / pomocy</span>
+        <span class="area-desc">„Sam/a sobie poradzę”, „nie zaufam terapeucie”, „nie powiem partnerowi”. Sztywne odgrodzenie się, kiedy współpraca byłaby pomocna.</span>
+      </button>
+    </div>
+
+    <div class="term-note"><strong>🔑 Reguła wyboru</strong>: Często kilka obszarów na raz, ale jeden dominujący. Wybierz ten, w którym opór najbardziej <strong>kosztuje</strong> Cię energii lub szans. To zwykle pierwszy obszar do pracy, bo każdy ruch tam się szybko opłaca.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — pytanie i przesunięcie</div>
+    <h1 class="card-prompt">Z <em>oporu</em> w <em>gotowość</em></h1>
+    <p class="card-detail">Wykonaj cztery kroki: zauważ opór, nazwij go, wykonaj somatyczną kotwicę, przesuń się w gotowość konkretnym pierwszym ruchem. Po wszystkim wpisz, co się zmieniło.</p>
+
+    <div class="contrast-row">
+      <div class="contrast-half opp">
+        <div class="contrast-h">⚠️ Opór</div>
+        <div>„Nie zadzwonię do urzędu. Nie mam siły. Niech sami się ze mną skontaktują.”</div>
+      </div>
+      <div class="contrast-half will">
+        <div class="contrast-h">✅ Gotowość</div>
+        <div>„Tak, sprawa jest. Co jest pierwszym małym krokiem? Wybiorę numer telefonu i spiszę 3 zdania, które chcę powiedzieć. Zaraz.”</div>
+      </div>
+    </div>
+
+    <div class="contrast-row">
+      <div class="contrast-half opp">
+        <div class="contrast-h">⚠️ Opór</div>
+        <div>„Nie chcę czuć smutku po rozstaniu. To było 3 miesiące temu, powinnam już iść dalej.”</div>
+      </div>
+      <div class="contrast-half will">
+        <div class="contrast-h">✅ Gotowość</div>
+        <div>„Smutek wraca, taki jest. Pozwolę mu być przez 10 minut — nawet jeśli to niewygodne. Potem wracam do dnia.”</div>
+      </div>
+    </div>
+
+    <div class="contrast-row">
+      <div class="contrast-half opp">
+        <div class="contrast-h">⚠️ Opór</div>
+        <div>„Nie powiem terapeucie o tej myśli. Wystarczy, że ja wiem.”</div>
+      </div>
+      <div class="contrast-half will">
+        <div class="contrast-h">✅ Gotowość</div>
+        <div>„Trudna myśl jest. Po to chodzę na terapię. Powiem ją na początku następnej sesji — nie w środku ani na końcu.”</div>
+      </div>
+    </div>
+
+    <div class="path-card" style="background:rgba(184,197,168,0.18); border:1px solid var(--sage); padding:14px 16px; border-radius:12px; margin:10px 0">
+      <div class="path-h" style="font-family:'Fraunces',serif; font-size:13px; color:var(--sage-deep); font-weight:700; margin-bottom:10px">Cztery kroki przesunięcia</div>
+      <div class="path-step" style="display:flex; gap:10px; padding:6px 0; align-items:flex-start">
+        <div class="path-num" style="font-family:'Fraunces',serif; font-weight:700; color:var(--warm); font-size:14px; flex-shrink:0; min-width:22px">1.</div>
+        <div class="path-text" style="font-size:13px; line-height:1.55; color:var(--ink-soft)"><strong>Zadaj pytanie:</strong> „Jestem teraz w gotowości czy w oporze?” Odpowiedz uczciwie.</div>
+      </div>
+      <div class="path-step" style="display:flex; gap:10px; padding:6px 0; align-items:flex-start">
+        <div class="path-num" style="font-family:'Fraunces',serif; font-weight:700; color:var(--warm); font-size:14px; flex-shrink:0; min-width:22px">2.</div>
+        <div class="path-text" style="font-size:13px; line-height:1.55; color:var(--ink-soft)"><strong>Nazwij opór:</strong> „Jestem teraz w oporze wobec [zadzwonienia / poczucia smutku / rozmowy].” Sama nazwa rozluźnia.</div>
+      </div>
+      <div class="path-step" style="display:flex; gap:10px; padding:6px 0; align-items:flex-start">
+        <div class="path-num" style="font-family:'Fraunces',serif; font-weight:700; color:var(--warm); font-size:14px; flex-shrink:0; min-width:22px">3.</div>
+        <div class="path-text" style="font-size:13px; line-height:1.55; color:var(--ink-soft)"><strong>Somatyczna kotwica:</strong> rozluźnij dłonie (połóż na kolanach, otwarte dłonie w górę). Lekko unieś kąciki ust. 30 sekund.</div>
+      </div>
+      <div class="path-step" style="display:flex; gap:10px; padding:6px 0; align-items:flex-start">
+        <div class="path-num" style="font-family:'Fraunces',serif; font-weight:700; color:var(--warm); font-size:14px; flex-shrink:0; min-width:22px">4.</div>
+        <div class="path-text" style="font-size:13px; line-height:1.55; color:var(--ink-soft)"><strong>Mały pierwszy ruch:</strong> nie cały plan — JEDEN konkretny krok w kierunku tego, co potrzebne. Zrób go w ciągu najbliższej godziny.</div>
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="gNotes" placeholder="Zapisz przesunięcie. np. „Pytanie: jestem w oporze wobec telefonu do urzędu. Nazwałam: »jestem w oporze«. Otworzyłam dłonie, oddech. Pierwszy ruch: za 30 minut wybiorę numer i powiem 1 zdanie — »dzień dobry, dzwonię w sprawie X, mam pytanie do Y«. Tylko tyle.”" rows="4"></textarea>
+
+    <div class="term-note"><strong>⚠️ Trzy częste pułapki</strong>: (1) <em>Pomijanie kroku 2 (nazwania)</em> — sama refleksja „chyba mam opór” nie wystarczy. Trzeba powiedzieć wprost: „jestem w oporze”. Sama nazwa zmienia stan. (2) <em>Plan zamiast pierwszego ruchu</em> — „muszę uporządkować całą sprawę” zwykle skutkuje paraliżem. Tylko jeden mały krok. (3) <em>Wstyd o opór</em> — opór jest naturalny, każdy go ma. Pytanie nie jest oceną — jest narzędziem nawigacji.</div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: Opór jest stanem aktywacji układu współczulnego (mięśnie napięte, oddech płytki, gotowość do walki/zamrożenia). Otwarcie dłoni i półuśmiech wysyłają do mózgu sygnały bezpieczeństwa przez nerw błędny — aktywacja przywspółczulnego (Porges, 2011). May (1985) opisuje to jako „relaksację woli” — odpuszczenie uchwytu bez rezygnacji z kierunku.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po przesunięciu</div>
+    <h1 class="card-prompt">Czy <em>blokada</em> się rozluźniła?</h1>
+    <p class="card-detail">Porównaj poczucie utknięcia po przesunięciu z poziomem przed. Spadek = gotowość zaczęła zastępować opór. Brak spadku = opór głęboki, wymaga powtórzenia narzędzia w kolejnych falach.</p>
+
+    <div class="scale">
+      <div class="scale-title">Poczucie utknięcia — po</div>
+      <div class="scale-bounds"><span>0 — płynnie</span><span>10 — totalna blokada</span></div>
+      <input type="range" class="scale-input" id="postStuck" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Poziom</span><span id="postStuckVal">3</span></div>
+    </div>
+
+    <div class="final-msg" id="diffMsg"><strong>Zmiana utknięcia</strong>: −3 pkt (przed 6 → po 3). Wyraźny spadek poczucia utknięcia. Postawa gotowości otworzyła ruch — pamiętaj, że opór wraca i wymaga ponownych aktów wyboru.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: Pojedyncze przesunięcie obniża utknięcie o 2–4 punkty na 1–3 godziny. Codzienne pytanie „jestem teraz w gotowości czy w oporze?” (rano, w południe, wieczorem) buduje odruch. Po 4–6 tygodniach zauważasz, że opór skraca się z dni do godzin, a gotowość staje się dostępna na nowych obszarach życia.</div>
+
+    <div class="term-note"><strong>📈 Trajektoria praktyki</strong>: Tydzień 1 — zauważasz opór dopiero po fakcie („widać, że tydzień siedziałam w oporze”). Tydzień 2–3 — w trakcie. Tydzień 4+ — pytanie „gotowość czy opór” staje się odruchem. Po 8–12 tygodniach opór w jednym obszarze zmienia się trwale; w innych nadal wymaga pracy.</div>
+
+    <div class="term-note"><strong>🔄 W łańcuchu narzędzi</strong>: Gotowość to <em>postawa</em> realizująca akceptację z Odwrócenia umysłu. Następny krok — somatyczne zakotwiczenie tej postawy w ciele (półuśmiech + otwarte dłonie). Trzy poziomy: poznawczy (akceptacja), postawowy (gotowość), cielesny (półuśmiech). Razem dają trzy drogi dojścia do tego samego stanu, kiedy jedna jest niedostępna.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Gotowość = <strong>otwartość na to, co jest, plus robienie tego, co potrzebne</strong>. Opór = sztywne „nie chcę”, zaciśnięte pięści. Cztery kroki: pytanie → nazwanie oporu → otwarte dłonie + półuśmiech → mały pierwszy ruch. Pytanie zadawaj kilkanaście razy dziennie. Opór jest naturalny — chodzi nie o to, by go nie mieć, ale by wracać do gotowości.</div>
+    </div>
+
+    <div class="src">Linehan (2015, DBT Skills Training Manual, wyd. 2) · May (1985, Will and Spirit) · Porges (2011, The Polyvagal Theory) · Linehan (1993, Cognitive-Behavioral Treatment of BPD)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickArea(letter) {
+  ['arA','arB','arC','arD'].forEach(id => {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('ar' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+function updateDiff() {
+  var preEl = document.getElementById('preStuck');
+  var postEl = document.getElementById('postStuck');
+  var diffEl = document.getElementById('diffMsg');
+  if (!preEl || !postEl || !diffEl) return;
+  var pre = parseInt(preEl.value, 10);
+  var post = parseInt(postEl.value, 10);
+  var delta = pre - post;
+  var label = '';
+  if (delta >= 3) label = 'Wyraźny spadek poczucia utknięcia. Postawa gotowości otworzyła ruch — pamiętaj, że opór wraca i wymaga ponownych aktów wyboru.';
+  else if (delta >= 1) label = 'Drobny spadek — typowe po jednym pytaniu. Codziennie zadawaj sobie „gotowość czy opór” w trudnych chwilach; postawa zmienia się powtarzalnie.';
+  else if (delta === 0) label = 'Bez zmiany — być może opór jest głęboki i wymaga somatycznego dotknięcia. Wykonaj półuśmiech + otwarte dłonie 2 minuty, potem wróć do tego pytania.';
+  else label = 'Wzrost utknięcia — czasami nazwanie oporu („jestem teraz w oporze”) ujawnia, jak głęboko siedzi. To jest etap, nie błąd. Zauważ go i wybierz gotowość mimo tej świadomości.';
+  diffEl.innerHTML = '<strong>Zmiana utknięcia</strong>: ' + (delta >= 0 ? '−' : '+') + Math.abs(delta) + ' pkt (przed ' + pre + ' → po ' + post + '). ' + label;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_dbt_gotowo_vs_op_r — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_dbt_gotowo_vs_op_r";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.addEventListener('input', function(e) {
+  if (!e.target) return;
+  if (e.target.id === 'preStuck') {
+    var v = document.getElementById('preStuckVal');
+    if (v) v.textContent = e.target.value;
+    updateDiff();
+  } else if (e.target.id === 'postStuck') {
+    var v = document.getElementById('postStuckVal');
+    if (v) v.textContent = e.target.value;
+    updateDiff();
+  }
+});
+setTimeout(updateDiff, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

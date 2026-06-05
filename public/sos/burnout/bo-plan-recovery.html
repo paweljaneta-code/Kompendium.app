@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Plan recovery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.faza-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.faza-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.faza-card.picked .faza-d, .faza-card.picked .faza-mark { color: rgba(244,241,234,0.85); }
+.faza-h { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
+.faza-d { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; margin-bottom: 5px; }
+.faza-mark { font-size: 11.5px; color: var(--ink-mute); font-style: italic; }
+.crit-row { background: rgba(244,241,234,0.6); border-left: 3px solid var(--sage-deep); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; }
+.crit-row strong { color: var(--ink-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Plan recovery</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Wyjście z wypalenia <em>nie jest</em> dwutygodniowym urlopem</h1>
+  <p class="card-detail">Recovery z wypalenia klinicznego wymaga <strong>3–6 miesięcy</strong> systematycznej pracy. Dane: Hatch i in. (2019) w przeglądzie programów RTW (return to work) po wypaleniu pokazali, że pracownicy bez ustrukturyzowanego planu mają trzykrotnie wyższe ryzyko nawrotu w ciągu 12 miesięcy. Joyce i in. (2016) w przeglądzie Cochrane interwencji RTW potwierdzili: nie sam odpoczynek determinuje zdrowienie, lecz <em>strukturyzowany powrót</em> z monitorowaniem postępu i zmianą warunków pracy. Pracownik, który „bierze L4 i zobaczy", często wraca do tych samych wzorców i wypala się ponownie w ciągu 4–8 tygodni.</p>
+  <p class="card-detail">Skogen i in. (2020) w analizie norweskich programów recovery z wypalenia zawodowego pokazali, że plany w czterech fazach — stabilizacja, refleksja, przebudowa, utrzymanie — dają najlepsze wyniki długoterminowe. Każda faza ma <em>kryteria przejścia</em> mierzalne: poziom wyczerpania, jakość snu, poczucie sensu. Bez kryteriów osoby przyspieszają fazy zbyt szybko (klasyczny błąd: faza 1 skrócona do 1 tygodnia zamiast 4 — recidywa nieunikniona). Plan musi być <em>pisemny</em>, z datami i kryteriami, by oprzeć się presji wewnętrznej („już chyba mogę wrócić") i zewnętrznej („kiedy wracasz?").</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery fazy recovery (model Skogen 2020 + Hatch 2019)</div>
+    <div class="element-row">
+      <span class="element-icon">🛏️</span>
+      <span class="element-text"><strong>Faza 1 — Stabilizacja (0–4 tyg.)</strong> — sen, jedzenie, ruch, minimum obowiązków. Żadnych dużych decyzji. Cel: organizm wraca do baseline.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔍</span>
+      <span class="element-text"><strong>Faza 2 — Refleksja (4–8 tyg.)</strong> — diagnoza co spowodowało wypalenie. Model JD-R, sześć obszarów Maslach. Wartości, granice. Co musisz zmienić, by nie wrócić do punktu wyjścia.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔧</span>
+      <span class="element-text"><strong>Faza 3 — Przebudowa (8–12 tyg.)</strong> — wdrażanie zmian. Granice, komunikacja, przerwy, wsparcie. Rozmowa z przełożonym. Job crafting. Stopniowy powrót do pracy.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🛡️</span>
+      <span class="element-text"><strong>Faza 4 — Utrzymanie (12+ tyg.)</strong> — monitoring (OLBI / MBI co miesiąc). Plan B na wypadek nawrotu. Superwizja lub coach. Cel: trwała remisja.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Recovery z wypalenia trwa <em>miesiące, nie tygodnie</em>. Każdy powrót przed gotowością to ryzyko gorszego nawrotu — bo organizm uczy się, że <em>próba powrotu = przeciążenie = załamanie</em>. Cierpliwość jest pierwszym lekarstwem."
+    <span class="frame-quote-attr">— Stine Skogen i in. (2020, structured recovery programs)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: typowy błąd to <em>łączenie faz</em>. Pacjent w trzecim tygodniu próbuje robić refleksję (faza 2). W szóstym próbuje wdrażać zmiany (faza 3). W ósmym wraca do pełnej pracy (faza 4). Każda faza wymaga zasobów, których w poprzedniej jeszcze nie ma. Refleksja w wyczerpaniu daje błędne wnioski. Wdrażanie zmian bez refleksji nie adresuje przyczyn. Cierpliwość czterech faz w czasie jest tańsza niż recidywa.</div>
+
+  <div class="src">Hatch i in. (2019, RTW review) · Joyce i in. (2016, Cochrane review interwencji RTW) · Skogen i in. (2020, structured recovery programs) · Maslach &amp; Leiter (2016, sześć obszarów pracy) · Bakker &amp; Demerouti (2017, JD-R) · Schaufeli &amp; Bakker (2004)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja diagnoza wstępna</div>
+  <h1 class="card-prompt">W jakiej <em>fazie</em> jesteś teraz?</h1>
+  <p class="card-detail">Pierwsza decyzja: w której fazie realnie się znajdujesz. Cztery sygnały orientacyjne plus pomiar trzech wskaźników. Bez właściwej diagnozy planowanie kolejnych faz jest bezsensowne — można pomylić się o 4–8 tygodni.</p>
+
+  <div class="examples-h">Sygnały aktualnej fazy (zaznacz)</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="syg1" onclick="pickSyg('1')">😴 Większość dnia spędzam na łóżku / fotelu</button>
+    <button type="button" class="example-chip" id="syg2" onclick="pickSyg('2')">🌙 Sen rozregulowany (krótki, fragmentowany)</button>
+    <button type="button" class="example-chip" id="syg3" onclick="pickSyg('3')">🍽️ Apetyt skrajny (brak / nadmiar)</button>
+    <button type="button" class="example-chip" id="syg4" onclick="pickSyg('4')">📵 Nie odpisuję na maile / smsy</button>
+    <button type="button" class="example-chip" id="syg5" onclick="pickSyg('5')">😶 Trudność z koncentracją na książce / serialu</button>
+    <button type="button" class="example-chip" id="syg6" onclick="pickSyg('6')">🚶 Krótkie spacery są możliwe (15–30 min)</button>
+    <button type="button" class="example-chip" id="syg7" onclick="pickSyg('7')">📓 Mogę myśleć refleksyjnie o pracy bez paniki</button>
+    <button type="button" class="example-chip" id="syg8" onclick="pickSyg('8')">🤝 Mogę prowadzić rozmowy o przyszłości</button>
+    <button type="button" class="example-chip" id="syg9" onclick="pickSyg('9')">🛠️ Wprowadzam już konkretne zmiany w pracy</button>
+    <button type="button" class="example-chip" id="syg10" onclick="pickSyg('10')">📊 Funkcjonuję bez nawrotów od kilku tygodni</button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — totalne</span><span>10 — minimalne</span></div>
+    <input type="range" class="scale-input" id="planExh" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>🔋 Aktualny poziom energii</span><span id="planExhVal">3</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bardzo zły</span><span>10 — stabilny</span></div>
+    <input type="range" class="scale-input" id="planSen" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>😴 Sen w ostatnim tygodniu</span><span id="planSenVal">4</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — minimalny</span><span>10 — pełny</span></div>
+    <input type="range" class="scale-input" id="planFunk" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>🚶 Funkcjonowanie codzienne</span><span id="planFunkVal">3</span></div>
+  </div>
+
+  <textarea class="thought-input" id="planObs" rows="3" placeholder="Twoja diagnoza fazy: np. „Sygnały głównie z grupy 1–4 (łóżko, sen, apetyt, brak maili). Energia 3/10, sen 3/10, funkcjonowanie 3/10. Wniosek: faza 1 — stabilizacja. Brak warunków na refleksję, tym bardziej na zmiany w pracy. Cel następnych 4 tygodni: tylko sen + jedzenie + krótkie spacery.""></textarea>
+
+  <div class="term-note"><strong>Reguła interpretacji</strong>: sygnały 1–4 + wszystkie wskaźniki ≤ 4 — faza 1 (stabilizacja). Sygnały 5–7 + wskaźniki 5–6 — faza 2 (refleksja). Sygnały 8–9 + wskaźniki 6–7 — faza 3 (przebudowa). Sygnały 10 + wskaźniki ≥ 7 — faza 4 (utrzymanie). Cierpliwość wobec siebie w fazie diagnostycznej — wstyd, że jest się „dopiero" w fazie 1, jest częstym blokiem w realnym leczeniu.</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Kryteria przejścia</div>
+  <h1 class="card-prompt">Co <em>musi się zdarzyć</em>, byś przeszła/szedł dalej?</h1>
+  <p class="card-detail">Każda faza ma kryteria przejścia — mierzalne wskaźniki, które muszą być spełnione przed przejściem do następnej. Bez kryteriów presja („już chyba mogę") wymusza przyspieszenie, które kończy się recidywą. Z kryteriami decyzja staje się obiektywna, nie emocjonalna.</p>
+
+  <div class="crit-row">
+    <strong>Faza 1 → 2 (Stabilizacja → Refleksja)</strong><br>
+    • Sen ≥ 7 godz. nieprzerwany przez 7 dni<br>
+    • Energia rano ≥ 5/10 stabilnie przez 14 dni<br>
+    • Możliwa koncentracja na czytaniu / serialu 30 minut<br>
+    • Brak codziennych ataków lęku / paniki
+  </div>
+
+  <div class="crit-row">
+    <strong>Faza 2 → 3 (Refleksja → Przebudowa)</strong><br>
+    • Energia ≥ 6/10 stabilnie przez 14 dni<br>
+    • Refleksyjne myślenie o pracy bez ataków paniki / wymiotów<br>
+    • Wypisana lista konkretnych zmian do wdrożenia<br>
+    • Wsparcie zewnętrzne (terapeuta / supervisor / lekarz medycyny pracy)
+  </div>
+
+  <div class="crit-row">
+    <strong>Faza 3 → 4 (Przebudowa → Utrzymanie)</strong><br>
+    • Energia ≥ 7/10 stabilnie przez 14 dni<br>
+    • Wdrożone min. 3 z 5 planowanych zmian<br>
+    • Brak ruminacji o pracy poza godzinami<br>
+    • Pierwsze poczucie sensu i zaangażowania w pracy
+  </div>
+
+  <div class="faza-card" id="kryt1" onclick="pickKryt('1')">
+    <div class="faza-h">⚡ Sygnały zbyt szybkiego przyspieszania</div>
+    <div class="faza-d">„Już dawno nie jestem chora/y, mogę więcej". „Inni wracają w 2 tygodnie". „Nie chcę być ciężarem". „Wstyd brać L4 dłużej". „Pieniądze się kończą". To presje, nie kryteria. Każdy z tych sygnałów oznacza: <em>nie</em> przyspieszaj. Recidywa kosztuje więcej.</div>
+    <div class="faza-mark">Test: czy mogę uzasadnić przejście fazy mierzalnie, czy tylko emocjonalnie?</div>
+  </div>
+
+  <div class="faza-card" id="kryt2" onclick="pickKryt('2')">
+    <div class="faza-h">📊 Sygnały gotowości</div>
+    <div class="faza-d">Stabilność wskaźników (sen, energia, funkcjonowanie) przez 14 dni. Spadek lęku do akceptowalnego poziomu. Możliwość refleksji bez kryzysu. Wsparcie zewnętrzne potwierdzające. To kryteria, nie pojedyncze dobre dni.</div>
+    <div class="faza-mark">Reguła „14 dni stabilności"</em> — pojedyncze dobre dni nie wystarczą.</div>
+  </div>
+
+  <textarea class="thought-input" id="planKryt" rows="3" placeholder="Twoje kryteria przejścia z aktualnej fazy: np. „Aktualna faza: 1. Kryteria do przejścia w fazę 2: sen 7+ godz. przez tydzień, energia rano ≥ 5/10 przez 14 dni, mogę przeczytać rozdział książki. Wskaźnik dotychczas: sen 6 godz. (do poprawy), energia 4/10 (do poprawy), koncentracja słaba. Realny cel: 2–3 tyg. dalszej stabilizacji.""></textarea>
+
+  <div class="term-note"><strong>Reguła „pomiar tygodniowy"</strong>: każdy z trzech wskaźników (sen, energia, funkcjonowanie) mierzony raz w tygodniu, w stałym dniu (np. niedziela wieczorem). Średnia z dwóch tygodni daje podstawę decyzji. Pomiar codzienny generuje fałszywe sygnały (każdy ma gorsze i lepsze dni). Stabilność dwóch tygodni jest wiarygodna.</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan na 4 tygodnie</div>
+  <h1 class="card-prompt">Co <em>konkretnie</em> robisz w aktualnej fazie?</h1>
+  <p class="card-detail">Plan musi być pisemny i konkretny. Dla każdej fazy inne priorytety. W fazie 1 — sen, jedzenie, ruch, minimum obowiązków. W fazie 2 — refleksja, klaryfikacja wartości, model JD-R. W fazie 3 — wdrażanie zmian, rozmowa z przełożonym. W fazie 4 — monitoring i profilaktyka.</p>
+
+  <textarea class="thought-input" id="planAkt" rows="6" placeholder="Plan na 4 tygodnie: np. „Faza 1 (stabilizacja). Tydzień 1–2: sen 22:00–7:00 (alarm), 3 posiłki o stałych godzinach, 20 min spaceru codziennie. Zero spotkań, zero pracy, zero długich rozmów. Tydzień 3–4: dodanie 1 aktywności hobbystycznej (czytanie / instrument). Krótka rozmowa z 1 bliską osobą tygodniowo. Pomiar: niedziela wieczór sen + energia + funkcjonowanie.""></textarea>
+
+  <div class="examples-h">Konkretne elementy planu (zależnie od fazy)</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="el1" onclick="pickEl('1')">😴 Stałe godziny snu (22:00–7:00)</button>
+    <button type="button" class="example-chip" id="el2" onclick="pickEl('2')">🍽️ 3 posiłki o stałych godzinach</button>
+    <button type="button" class="example-chip" id="el3" onclick="pickEl('3')">🚶 20 min spaceru codziennie (po jedzeniu)</button>
+    <button type="button" class="example-chip" id="el4" onclick="pickEl('4')">📵 Bez maili / pracy / spotkań w fazie 1</button>
+    <button type="button" class="example-chip" id="el5" onclick="pickEl('5')">📓 Tygodniowy zapis 3 wskaźników (niedziela)</button>
+    <button type="button" class="example-chip" id="el6" onclick="pickEl('6')">🤝 1 rozmowa wspierająca tygodniowo</button>
+    <button type="button" class="example-chip" id="el7" onclick="pickEl('7')">🧠 Faza 2: refleksja — dziennik 15 min</button>
+    <button type="button" class="example-chip" id="el8" onclick="pickEl('8')">🛠️ Faza 3: 1 zmiana wdrożona w pracy</button>
+    <button type="button" class="example-chip" id="el9" onclick="pickEl('9')">🩺 Lekarz medycyny pracy / psychiatra (jeśli dot.)</button>
+    <button type="button" class="example-chip" id="el10" onclick="pickEl('10')">🧘 Terapeuta — regularne spotkania</button>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „aktywne odpoczywanie"</strong>: w fazie 1 pacjenci często wypełniają czas „rozwojowymi" aktywnościami: kursy online, książki o produktywności, planowanie nowych projektów. To <em>nie jest</em> regeneracja — to ucieczka od obecności w wyczerpaniu. Faza 1 to świadome <em>nicnierobienie</em>, podstawowa higiena, możliwie najmniej decyzji. Aktywność rozwojowa wraca w fazie 2.</div>
+
+  <div class="term-note"><strong>Pułapka „samotne recovery"</strong>: wypalenie kliniczne wymaga zewnętrznego wsparcia — terapeuta, lekarz, czasem psychiatra. Sam plan, choćby najlepszy, działa słabiej niż plan + regularne wsparcie. W Polsce <em>L4 z powodu wypalenia</em> jest możliwe (kod F43 — reakcja na ciężki stres / zaburzenia adaptacyjne). Lekarz medycyny pracy może oszacować potrzebny czas. Bez profesjonalnego wsparcia samodzielne recovery często nie wystarcza.</div>
+
+  <div class="term-note"><strong>Pułapka „powrót do pracy bez przebudowy"</strong>: typowy błąd po 4–6 tygodniach urlopu — powrót do tej samej pracy, tych samych warunków, tych samych obowiązków. Skutek: 4–8 tyg. później recidywa, często cięższa. Faza 3 (przebudowa) jest <em>warunkiem</em> trwałego powrotu — bez zmiany warunków pracy nawet pełnia regeneracji nie chroni przed kolejnym wypaleniem.</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po czterech tygodniach</div>
+  <h1 class="card-prompt">Czy faza <em>się zamknęła</em>?</h1>
+  <p class="card-detail">Po 4 tygodniach realizacji planu — pomiar wskaźników i decyzja: czy kryteria przejścia do następnej fazy są spełnione, czy potrzebujesz jeszcze 2–4 tygodni. Cierpliwość wobec siebie. Recovery nie jest liniowe.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez zmian</span><span>10 — wyraźna poprawa</span></div>
+    <input type="range" class="scale-input" id="planImprove" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Subiektywna poprawa</span><span id="planImproveVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — porzucone</span><span>10 — wykonane</span></div>
+    <input type="range" class="scale-input" id="planExec" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Realizacja planu fazy</span><span id="planExecVal">5</span></div>
+  </div>
+
+  <textarea class="thought-input" id="planReflect" rows="3" placeholder="Co się stało? np. „Faza 1 — 4 tygodnie. Sen: poprawa z 5 do 7,5 godz./dobę. Energia: 3 → 6/10 stabilnie ostatnie 2 tygodnie. Funkcjonowanie: spacery 30 min codziennie, 1 rozmowa tygodniowo, krótkie czytanie wieczorem. Wniosek: kryteria przejścia spełnione (sen 7+ przez 7 dni, energia ≥ 5 przez 14 dni). Wchodzę w fazę 2 — refleksja. Plan: dziennik refleksyjny 15 min/dobę, model JD-R, wartości.""></textarea>
+
+  <div class="final-msg" id="finalMsg">Wpisz oba pomiary, by zobaczyć podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła „brak liniowości"</strong>: recovery nie idzie liniowo do góry — są dni / tygodnie regresu. Po dobrych dwóch tygodniach często pojawia się tydzień gorszy (organizm „przestaje się trzymać", uwalnia napięcie). To normalne. Decyzja o przejściu fazy nie powinna być zatrzymywana przez pojedynczy gorszy tydzień, ale powinna być zatrzymywana przez 2 tygodnie pogorszenia.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Recovery z wypalenia trwa <strong>3–6 miesięcy</strong>, nie tygodnie. Cztery fazy: <em>stabilizacja, refleksja, przebudowa, utrzymanie</em>. Każda faza ma <em>kryteria przejścia</em> (sen, energia, funkcjonowanie) — minimum 14 dni stabilności. Bez kryteriów presja przyspiesza fazy → recidywa. Faza 1 to świadome nicnierobienie, nie aktywne odpoczywanie. Powrót do pracy bez fazy 3 (przebudowa) → recidywa w 4–8 tyg. Plan pisemny, wsparcie zewnętrzne, monitoring tygodniowy.</div>
+  </div>
+
+  <div class="src">Hatch i in. (2019, RTW review) · Joyce i in. (2016, Cochrane) · Skogen i in. (2020, structured recovery) · Maslach &amp; Leiter (2016) · Bakker &amp; Demerouti (2017, JD-R) · Schaufeli &amp; Bakker (2004)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['planExh','planSen','planFunk','planImprove','planExec'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; if (id === 'planImprove' || id === 'planExec') updateFinalMsg(); });
+    }
+  });
+}
+
+function pickSyg(n) {
+  var el = document.getElementById('syg' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickKryt(n) {
+  var el = document.getElementById('kryt' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickEl(n) {
+  var el = document.getElementById('el' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function updateFinalMsg() {
+  var imp = parseInt(document.getElementById('planImprove').value, 10);
+  var exec = parseInt(document.getElementById('planExec').value, 10);
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  if (imp === 5 && exec === 5) {
+    fm.innerHTML = 'Wpisz oba pomiary, by zobaczyć podsumowanie.';
+    return;
+  }
+  var msg = '';
+  if (exec >= 7 && imp >= 6) msg = '<strong>Faza idzie dobrze, kryteria przejścia w zasięgu</strong> — sprawdź mierzalne kryteria. Jeśli spełnione przez 14 dni stabilnie — przejście do następnej fazy. Jeśli niespełnione — kontynuuj 2–4 tyg. tej samej fazy. Cierpliwość jest tańsza niż recidywa.';
+  else if (exec >= 7 && imp < 4) msg = '<strong>Plan wykonany, ale poprawa mała</strong> — możliwe (a) wybrana faza była błędna (zbyt wymagająca, np. zaczęto od fazy 2 zamiast 1), (b) brakuje wsparcia profesjonalnego (terapeuta, lekarz medycyny pracy). Wypalenie kliniczne rzadko leczy się samodzielnie.';
+  else if (exec < 4) msg = '<strong>Plan głównie nie wykonany</strong> — w wyczerpaniu plan jest często zbyt ambitny. Skróć do <em>jednego</em> elementu (np. tylko sen w stałych godzinach). Po 2 tyg. dodaj drugi. Mózg w wypaleniu nie pamięta złożonych planów bez wsparcia.';
+  else msg = 'Częściowy ruch — kontynuuj. Cel kolejnych 4 tygodni: realizacja ≥7/10, jasna decyzja o gotowości do następnej fazy lub o pozostaniu w obecnej.';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateFinalMsg();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bo_plan_recovery — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bo_plan_recovery";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

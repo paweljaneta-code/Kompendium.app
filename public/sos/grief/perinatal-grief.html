@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Strata perinatalna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Strata perinatalna</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+<div class="card-eyebrow">🌱 Wprowadzenie</div>
+<h1 class="card-prompt">Twoje dziecko — Twój ból jest <em>realny</em></h1>
+<p class="card-detail">Strata ciąży (poronienie, obumarcie wewnątrzmaciczne, martwy poród, śmierć noworodka) jest jedną z najbardziej niewidocznych form żałoby — kategorii <em>disenfranchised grief</em> opisanej przez Doka (1989). Otoczenie często nie wie, jak się zachować; padają zdania jak „spróbujcie znowu", „lepiej, że teraz niż później", „przynajmniej masz inne dziecko". Każde z tych zdań — choć często wypowiedzianych z dobrej woli — jest formą umniejszania. Kersting i Wagner (2012, Dialogues in Clinical Neuroscience) w meta-analizie pokazali, że <strong>10-50% kobiet</strong> po stracie perinatalnej spełnia kryteria klinicznego dystresu, a 22% — kryteria depresji. Twoje dziecko, niezależnie od tygodnia ciąży, było realne. Twoja więź była realna. Twoja strata jest realna.</p>
+
+<div class="frame-card">
+  <div class="frame-h">Cztery prawdy o stracie perinatalnej</div>
+  <div class="element-row"><span class="element-icon">👶</span><span class="element-text"><strong>To było Twoje dziecko</strong> — od momentu, w którym o nim wiedziałaś/eś, była więź. Nie ma „za wcześnie", żeby zaboleć. 6 tydzień, 20 tydzień, 38 tydzień — żałoba jest realna w każdym z nich.</span></div>
+  <div class="element-row"><span class="element-icon">🎭</span><span class="element-text"><strong>To strata wielowarstwowa</strong> — straciłaś nie tylko dziecko, ale też wyobrażoną przyszłość: pierwsze słowa, pierwszy ząbek, pierwszy dzień szkoły. Tracisz <em>nadzieję</em>, nie tylko obecność.</span></div>
+  <div class="element-row"><span class="element-icon">🤐</span><span class="element-text"><strong>Otoczenie często milczy</strong> lub mówi nietrafione rzeczy. Brak rytuałów społecznych, urlopu, kondolencji, zdjęcia w albumie — pogłębia samotność.</span></div>
+  <div class="element-row"><span class="element-icon">🌗</span><span class="element-text"><strong>Partnerka i partner przeżywają inaczej</strong> — matka traci często doświadczenie fizyczne; ojciec / drugi rodzic — wyobrażoną przyszłość. Różnica nie znaczy „jeden bardziej niż drugi".</span></div>
+</div>
+
+<div class="frame-quote">„Każda kobieta, która straciła ciążę, mówi do mnie to samo zdanie: »ale ja słyszałam jego serce / czułam jego ruchy / wiedziałam, że to chłopczyk«. To nie wyobraźnia. To była więź — krótka, ale głęboka. Twój ból jest językiem tej więzi."<span class="frame-quote-attr">— Kersting (2012, Dialogues in Clinical Neuroscience)</span></div>
+
+<div class="term-note"><strong>Klucz</strong>: zdanie „spróbujcie znowu" jest nietrafione, nawet jeśli dobrze pomyślane. Kolejne dziecko nie zastępuje tego, którego zabrakło. Każde dziecko, w tym to, które straciłaś, jest osobne i niezastępowalne. Twój ból to znak, że ono <em>było</em>.</div>
+
+<div class="src">Doka (1989, „Disenfranchised Grief"); Kersting i Wagner (2012, Dialogues in Clinical Neuroscience, perinatal grief meta-analysis); Brier (2008, Birth, miscarriage emotional impact); Robinson (2014, BJOG, longitudinal study); Lang i wsp. (2011, Omega, perinatal bereavement).</div>
+</section>
+
+<section class="card" data-step="2">
+<div class="card-eyebrow">🎯 Twoja konkretna strata</div>
+<h1 class="card-prompt">Każda strata <em>perinatalna</em> jest osobna</h1>
+<p class="card-detail">Wybierz scenariusz najbliższy Twojej sytuacji. Każdy z nich ma swoją specyfikę — i każdy zasługuje na uznanie.</p>
+
+<div>
+<button type="button" class="rel-btn" id="lossEarly" onclick="pickL(this)">
+<span class="rel-name">🌱 Wczesne poronienie (do 12 tygodnia)</span>
+<span class="rel-desc">Najczęstsza i jednocześnie najbardziej niewidoczna strata. Często przedstawiana jako „normalne". Czujesz, że nie masz prawa rozpaczać — masz.</span>
+</button>
+<button type="button" class="rel-btn" id="lossLate" onclick="pickL(this)">
+<span class="rel-name">🌿 Późniejsza strata (12-22 tydzień)</span>
+<span class="rel-desc">Często już wiedzieliście płeć, imię, czuliście ruchy. Wiedzieli o ciąży znajomi. Strata jest bardziej dotkliwie społecznie widoczna.</span>
+</button>
+<button type="button" class="rel-btn" id="lossStill" onclick="pickL(this)">
+<span class="rel-name">💔 Martwy poród (22+ tydzień)</span>
+<span class="rel-desc">Najtrudniejsza forma — pełen poród z wiedzą o śmierci. Wymaga pożegnania, czasem pochowania. Trauma porodu i strata jednocześnie.</span>
+</button>
+<button type="button" class="rel-btn" id="lossNeo" onclick="pickL(this)">
+<span class="rel-name">👶 Śmierć noworodka</span>
+<span class="rel-desc">Dziecko żyło — godzin, dni, tygodni. Często intensywne dni walki w neonatologii, potem strata. Pamięć ma już twarz, dotyk, zapach.</span>
+</button>
+<button type="button" class="rel-btn" id="lossTOP" onclick="pickL(this)">
+<span class="rel-name">⚖️ Zakończenie ciąży z powodów medycznych</span>
+<span class="rel-desc">Decyzja medyczna o zakończeniu (TOPFA, termination of pregnancy for fetal anomaly). Często niewidoczna, obciążona winą i tabu.</span>
+</button>
+<button type="button" class="rel-btn" id="lossEctopic" onclick="pickL(this)">
+<span class="rel-name">🩺 Ciąża pozamaciczna / inne</span>
+<span class="rel-desc">Strata + zagrożenie życia kobiety. Często pomijana — fokus na „zdrowiu matki", a nie na żałobie.</span>
+</button>
+</div>
+
+<p class="card-detail" style="margin-top:14px"><strong>Ile czasu</strong> minęło od straty?</p>
+<div class="scale">
+  <div class="scale-title">Tygodni / miesięcy od straty</div>
+  <div class="scale-bounds"><span>świeża</span><span>2+ lata</span></div>
+  <input type="range" class="scale-input" id="timeSince" min="0" max="104" value="12" data-default="12" oninput="document.getElementById('timeSinceR').textContent=this.value+' tyg.'">
+  <div class="scale-readout"><span>0</span><span id="timeSinceR">12 tyg.</span><span>104</span></div>
+</div>
+
+<div class="term-note"><strong>Mechanizm</strong>: każdy typ straty perinatalnej ma swoje wzorce żałoby. Wczesne poronienia często boli najbardziej brak społecznego uznania; martwy poród niesie traumę. Robinson (2014) w longitudinalnym badaniu pokazała, że większość kobiet ma zauważalne objawy 1-2 lata po stracie, niezależnie od typu.</div>
+</section>
+
+<section class="card" data-step="3">
+<div class="card-eyebrow">🧭 Co najbardziej rani</div>
+<h1 class="card-prompt">Konkrety Twojego cierpienia</h1>
+<p class="card-detail">Strata perinatalna ma swoje specyficzne wymiary, których inne formy żałoby nie mają. Zaznacz, co aktualnie najbardziej Cię obciąża:</p>
+
+<div>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">😔 Poczucie winy: „może coś zrobiłam nie tak"</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">😡 Gniew: na lekarzy, na własne ciało, na los</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🤐 Otoczenie nie wie, jak rozmawiać — milczy lub mówi rzeczy, które ranią</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">👶 Widzę ciężarne kobiety / niemowlęta i boli</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">📅 Zbliża się PDP (przewidywany termin porodu) — symboliczna data</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">💔 Boję się kolejnej ciąży albo: bardzo chcę, ale nie mogę / nie wolno mi jeszcze</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🎭 Trudno mi rozmawiać z partnerką/partnerem — różnimy się w przeżywaniu</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">😢 Tęsknię za dzieckiem, którego nie poznałam/em fizycznie</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🌑 Czuję, że „nie mam prawa" tak rozpaczać</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🩺 Trauma medyczna: szpital, sala porodowa, badania</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🤰 Pierwsza ciąża po stracie — lęk i ambiwalencja</button>
+</div>
+
+<p class="card-detail" style="margin-top:14px"><strong>Najtrudniejszy moment</strong> ostatniego tygodnia — opisz krótko:</p>
+<textarea id="hardestMoment" class="thought-input" placeholder="np. „Wczoraj na ulicy widziałam kobietę z wózkiem. Mała była w czerwonym kombinezonie. Płakałam w aucie…"></textarea>
+
+<div class="term-note"><strong>Walidacja</strong>: każda z tych reakcji jest <em>normalna</em>. Poczucie winy jest najczęstsze i najbardziej krzywdzące — w ogromnej większości przypadków poronień nie ma związku z zachowaniem matki. Lang i wsp. (2011) w przeglądzie 30 badań: 70% kobiet doświadcza poczucia winy mimo braku obiektywnej przyczyny.</div>
+</section>
+
+<section class="card" data-step="4">
+<div class="card-eyebrow">⚙️ Trzy formy uznania</div>
+<h1 class="card-prompt">Jak <em>uczynić</em> tę stratę widzialną?</h1>
+<p class="card-detail">Skoro otoczenie nie zawsze daje rytuały, ważne jest, byś sama/sam je tworzyła/tworzył. Trzy formy działania, które pomagają w stracie perinatalnej:</p>
+
+<p class="card-detail" style="margin-top:14px"><strong>1. Imię / oznaczenie</strong> — czy chcesz nadać dziecku imię? (jeśli jeszcze nie ma)</p>
+<textarea id="naming" class="thought-input" placeholder="Imię, pseudonim, oznaczenie pełni dwie funkcje: czyni dziecko realnym (nie „to") i pozwala mówić o nim. Może być pełne imię lub pieszczotliwe „Maluszek", „Iskierka" — Twoja decyzja."></textarea>
+
+<p class="card-detail" style="margin-top:14px"><strong>2. Pamiątki</strong> — co masz lub chciałabyś mieć?</p>
+<div>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">📷 Zdjęcie USG / zdjęcie po porodzie</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">👣 Odcisk stopy / dłoni</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">👕 Ubranko, otulacz, kocyk</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">📜 Karta urodzenia / akt urodzenia martwego</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">💝 Pudełko pamięci — zbiór drobiazgów</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">📓 Dziennik — listy do dziecka</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🌳 Drzewo, kwiaty — żywy pomnik</button>
+<button type="button" class="example-chip" onclick="this.classList.toggle('picked')">🕯️ Świeczka, miejsce na komodzie</button>
+</div>
+
+<p class="card-detail" style="margin-top:14px"><strong>3. List do dziecka</strong> — napisz tutaj kilka zdań. Nie myśl o stylu. Pisz, jakbyś naprawdę chciała/chciał coś powiedzieć.</p>
+<textarea id="letterToBaby" class="thought-input" placeholder="„Drogi Maluszku…". Co chcesz powiedzieć? O miłości, którą czułaś. O tym, czego się bałaś. O tym, jak wyobrażałaś sobie nasze życie razem. Nie ma złych słów."></textarea>
+
+<p class="card-detail" style="margin-top:14px"><strong>4. Wsparcie</strong> — kto rozumie? czy ktoś otoczenia rozumie?</p>
+<textarea id="support" class="thought-input" placeholder="np. „Siostra rozumie, bo sama miała poronienie. Mąż zaczął rozumieć po długiej rozmowie. Grupa wsparcia online »Anioły utracone« bardzo pomogła… Czy szukałam grupy / terapii?"></textarea>
+
+<div class="term-note"><strong>Reguła</strong>: rytuały — nawet jeśli „prywatne" — robią różnicę. Norton i Gino (2014) pokazali, że rytuał (jakikolwiek) redukuje intensywność żałoby. Po stracie perinatalnej rytuały są szczególnie ważne, bo wypełniają lukę po nieobecnych rytuałach społecznych (chrzcie, urodzinach, pogrzebie z udziałem rodziny).</div>
+</section>
+
+<section class="card" data-step="5">
+<div class="card-eyebrow">✨ Domknięcie</div>
+<h1 class="card-prompt">Twoje dziecko, Twoja miłość</h1>
+
+<div class="scale">
+  <div class="scale-title">Czy <em>bardziej</em> czujesz teraz, że Twoja strata jest realna i ważna?</div>
+  <div class="scale-bounds"><span>wcale</span><span>w pełni</span></div>
+  <input type="range" class="scale-input" id="realAfter" min="0" max="10" value="5" data-default="5" oninput="document.getElementById('realAfterR').textContent=this.value">
+  <div class="scale-readout"><span>0</span><span id="realAfterR">5</span><span>10</span></div>
+</div>
+
+<div class="final-msg">
+<p>Twoje dziecko — niezależnie od tego, czy żyło tygodni, miesięcy w Tobie, czy chwilę po porodzie — było <strong>realne</strong>. Twoja więź była realna. Twoja miłość, plany, marzenia — wszystkie były realne. Strata, którą przeżywasz, jest realna. Nie pozwól nikomu — nawet sobie samej/samemu — umniejszyć tego, co czujesz.</p>
+<p>Społeczne tabu wokół straty perinatalnej powoli się zmienia, ale jeszcze długo będzie wymagać, żebyś sama/sam była/był rzeczniczką/rzecznikiem swojej żałoby. Nadanie imienia, list, pudełko pamięci, sadzenie drzewa, grupa wsparcia, terapia — to wszystko sposoby, by uczynić tę stratę widzialną. Twoja matka-miłość, ojciec-miłość — istnieje, niezależnie od tego, czy świat ją widzi. Ty ją widzisz. To wystarczy, by była prawdziwa.</p>
+</div>
+
+<div class="repeat-reminder">Wracaj do tego narzędzia w trudnych dniach: pierwsze i kolejne PDP, „rocznice", widok ciężarnej kobiety, kolejna ciąża po stracie, lęk przed poronieniem znowu. Każdy z tych momentów może wymagać świeżego uznania bólu.</div>
+
+<div class="term-note"><strong>Pamiętaj</strong>: Robinson (2014) w longitudinalnym badaniu pokazała, że większość kobiet odczuwa znaczne objawy 1-2 lata po stracie. To <em>normalne</em>. Jeśli po 12-18 miesiącach ból jest tak intensywny jak na początku — rozważ wsparcie specjalistyczne (terapia żałoby perinatalnej).</div>
+
+<div class="src">Doka (1989, „Disenfranchised Grief"); Kersting i Wagner (2012, Dialogues in Clinical Neuroscience, perinatal grief meta-analysis); Brier (2008, Birth, miscarriage psychological impact); Robinson (2014, BJOG, longitudinal); Lang i wsp. (2011, Omega, perinatal bereavement); Norton i Gino (2014, Journal of Experimental Psychology, rituals).</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickL(el) {
+  document.querySelectorAll('.rel-btn').forEach(b => b.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_perinatal_grief — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_perinatal_grief";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

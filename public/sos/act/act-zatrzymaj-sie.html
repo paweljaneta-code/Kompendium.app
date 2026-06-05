@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Zatrzymaj się</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative; }
+.frame-card::before { content: "✦ MIĘSIEŃ UWAŻNOŚCI"; position: absolute; top: 12px; left: 20px; background: var(--sage); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+
+/* === ANCHOR PICKER === */
+.anchor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.anchor-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.anchor-block:hover { background: var(--sage-soft); }
+.anchor-block.active { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 9px; }
+.anchor-h { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+.anchor-icon { font-size: 16px; }
+.anchor-name { font-size: 12.5px; font-weight: 700; flex: 1; }
+.anchor-desc { font-size: 11px; color: var(--ink-soft); font-style: italic; line-height: 1.35; }
+
+/* === STOP PROTOCOL === */
+.stop-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+.stop-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-left: 4px solid var(--sage);
+  border-radius: 12px;
+  padding: 12px 14px;
+  align-items: start;
+}
+.stop-letter {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--sage-deep);
+  text-align: center;
+  line-height: 1;
+}
+.stop-content { display: flex; flex-direction: column; gap: 2px; }
+.stop-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.stop-time { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.stop-instruction { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; line-height: 1.45; color: var(--ink-soft); margin-top: 2px; }
+.stop-instruction strong { color: var(--ink); font-style: normal; font-weight: 700; }
+
+/* === MICROSESSION === */
+.session-list { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 14px; }
+.session-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warm);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.session-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.session-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--warm); }
+.session-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; flex: 1; }
+.session-fields { display: flex; flex-direction: column; gap: 6px; }
+.session-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.session-row-label { font-size: 11px; color: var(--ink-mute); font-weight: 600; }
+.session-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink);
+}
+.session-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === DAILY === */
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Zatrzymaj się</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: 30 SEC > 30 MIN -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">30 sekund <em>w środku dnia</em></h1>
+    <p class="card-detail"><strong>Stop and notice</strong> (Harris 2009) — mikro-praktyka uważności w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). 30 sekund zatrzymania w trakcie dnia — sprawdzasz, co myślisz, co czujesz w ciele, co cię otacza. <strong>Przerywacz autopilota</strong> — krótka pauza, która przywraca kontakt z chwilą.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Mikro kontra makro</div>
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">Tradycyjna medytacja</div>
+          <div class="frame-text">Wymaga <strong>poduszki, czasu, ciszy</strong>. Częste „nie mam na to czasu".</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">Stop and notice</div>
+          <div class="frame-text">30 sek <strong>w trakcie codzienności</strong>. Bez poduszki, bez czasu wolnego. <strong>5-10× dziennie</strong>.</div>
+        </div>
+      </div>
+      <div class="frame-quote">„Mięsień uwagi rośnie z 50 powtórzeń po 30 sek lepiej niż z jednego przysiadu na 25 minut."</div>
+    </div>
+    
+    <div class="term-note"><strong>Stos nawyków</strong>: technikę podpinasz pod <em>istniejący</em> nawyk. „Za każdym razem, gdy podnosisz telefon — zatrzymaj się i zauważ". Twoja codzienność ma już 100+ zakotwiczonych momentów. Wystarczy wybrać kilka.</div>
+    
+    <div class="src">Harris (2009, ACT Made Simple) · Kabat-Zinn (1990, MBSR)</div>
+  </section>
+
+  <!-- 2: ANCHOR PICKER -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Twoje kotwice</div>
+    <h1 class="card-prompt">Co <em>uruchomi</em> STOP?</h1>
+    <p class="card-detail">Wybierz <strong>3-5 kotwic</strong> w swojej codzienności. Każde wykonanie wybranej czynności = automatyczny moment STOP. Działa lepiej niż alarm w telefonie, bo to <em>naturalne</em>, a nie zewnętrzne.</p>
+    
+    <div class="anchor-grid">
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">🚪</span><span class="anchor-name">Otwarcie drzwi</span></div>
+        <div class="anchor-desc">Wejście/wyjście — dom, biuro, sklep</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">📱</span><span class="anchor-name">Sięgnięcie po telefon</span></div>
+        <div class="anchor-desc">Każde wybudzenie ekranu — bezwiednie</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">🍽</span><span class="anchor-name">Przed posiłkiem</span></div>
+        <div class="anchor-desc">Pierwszy kęs — pauza zamiast scrollowania</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">🚦</span><span class="anchor-name">Czerwone światło</span></div>
+        <div class="anchor-desc">Auto / pieszo — naturalne 30 sek</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">☕</span><span class="anchor-name">Po zaparzeniu kawy</span></div>
+        <div class="anchor-desc">Pierwszy łyk — uważnie, nie przy ekranie</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">🛗</span><span class="anchor-name">W windzie</span></div>
+        <div class="anchor-desc">Zamiast scrollowania — STOP</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">💻</span><span class="anchor-name">Włączenie komputera</span></div>
+        <div class="anchor-desc">Zanim otworzysz pierwsze okno</div>
+      </div>
+      <div class="anchor-block" onclick="toggleAnchor(this)">
+        <div class="anchor-h"><span class="anchor-icon">🦷</span><span class="anchor-name">Po umyciu zębów</span></div>
+        <div class="anchor-desc">Rano i wieczorem — stała kotwica</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Albo własne kotwice</div>
+    <textarea class="thought-input" id="customAnchors" placeholder="np. „przed każdym spotkaniem zoom" / „gdy zauważę spięcie w ramionach" / „po każdym pingu maila"..." rows="2"></textarea>
+  </section>
+
+  <!-- 3: STOP PROTOCOL -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Protokół STOP</div>
+    <h1 class="card-prompt">Cztery <em>litery</em></h1>
+    <p class="card-detail">STOP to akronim — każda litera oznacza jeden krok. Cała sekwencja trwa <strong>30-60 sekund</strong>. Nie wymaga miejsca, czasu wolnego, narzędzi.</p>
+    
+    <div class="stop-grid">
+      <div class="stop-row">
+        <div class="stop-letter">S</div>
+        <div class="stop-content">
+          <div class="stop-name">STOP — Zatrzymaj się</div>
+          <div class="stop-time">3 sekundy</div>
+          <div class="stop-instruction">Dosłownie: <strong>przerwij</strong> pisanie, mówienie, chodzenie. Trzy sekundy bez działania.</div>
+        </div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-letter">T</div>
+        <div class="stop-content">
+          <div class="stop-name">TAKE A BREATH — Weź oddech</div>
+          <div class="stop-time">10-15 sekund</div>
+          <div class="stop-instruction"><strong>Jeden pełny oddech</strong>: wdech nosem 4 sek, wydech ustami 6 sek. Tylko jeden — kotwiczy w ciele.</div>
+        </div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-letter">O</div>
+        <div class="stop-content">
+          <div class="stop-name">OBSERVE — Zauważ</div>
+          <div class="stop-time">30-40 sekund · NAJWAŻNIEJSZY</div>
+          <div class="stop-instruction">Trzy obszary: <strong>(1) myśli</strong> — o czym teraz myślę?, <strong>(2) emocje</strong> — co czuję?, <strong>(3) ciało</strong> — co jest napięte/rozluźnione?</div>
+        </div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-letter">P</div>
+        <div class="stop-content">
+          <div class="stop-name">PROCEED — Kontynuuj</div>
+          <div class="stop-time">5 sekund</div>
+          <div class="stop-instruction">Wróć do działania, ale <strong>świadomie</strong>. Jeśli zauważyłeś/aś napięcie barków — rozluźnij. Jeśli reaktywną myśl — nie daj jej prowadzić.</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Punkt wyboru</strong> (Russ Harris): w kroku <strong>O</strong> zauważasz autopilota. W <strong>P</strong> wybierasz świadomie. Tu rodzi się różnica między <em>reakcją</em> (autopilot) a <em>działaniem</em> (zgodne z wartościami).</div>
+  </section>
+
+  <!-- 4: 3 MICROSESSIONS TODAY -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Praktyka dzisiaj</div>
+    <h1 class="card-prompt">Trzy <em>mikrosesje</em></h1>
+    <p class="card-detail">Wykonaj STOP <strong>3 razy w ciągu dnia</strong>. Po każdej zapisz: godzinę, kontekst, co zauważyłeś/aś. Po tygodniu zauważysz <em>wzorce</em> — co się powtarza w myślach, gdzie najczęściej jest napięcie w ciele.</p>
+    
+    <div class="session-list">
+      <div class="session-card">
+        <div class="session-h">
+          <span class="session-num">1</span>
+          <span class="session-label">STOP — Mikrosesja pierwsza</span>
+        </div>
+        <div class="session-fields">
+          <div class="session-row">
+            <span class="session-row-label">Godzina</span>
+            <input type="text" class="session-input" id="time1" placeholder="np. 10:15">
+          </div>
+          <div class="session-row">
+            <span class="session-row-label">Kotwica</span>
+            <input type="text" class="session-input" id="anchor1" placeholder="np. po zaparzeniu kawy">
+          </div>
+          <div class="session-row">
+            <span class="session-row-label">Zauważyłem/am</span>
+            <input type="text" class="session-input" id="notice1" placeholder="np. napięcie w ramionach, myśl o deadlinie, zapach kawy">
+          </div>
+        </div>
+      </div>
+      
+      <div class="session-card">
+        <div class="session-h">
+          <span class="session-num">2</span>
+          <span class="session-label">STOP — Mikrosesja druga</span>
+        </div>
+        <div class="session-fields">
+          <div class="session-row">
+            <span class="session-row-label">Godzina</span>
+            <input type="text" class="session-input" id="time2" placeholder="np. 14:30">
+          </div>
+          <div class="session-row">
+            <span class="session-row-label">Kotwica</span>
+            <input type="text" class="session-input" id="anchor2" placeholder="np. przy windzie">
+          </div>
+          <div class="session-row">
+            <span class="session-row-label">Zauważyłem/am</span>
+            <input type="text" class="session-input" id="notice2" placeholder="np. zmęczenie, autopilot przy mailu, oddech płytki">
+          </div>
+        </div>
+      </div>
+      
+      <div class="session-card">
+        <div class="session-h">
+          <span class="session-num">3</span>
+          <span class="session-label">STOP — Mikrosesja trzecia</span>
+        </div>
+        <div class="session-fields">
+          <div class="session-row">
+            <span class="session-row-label">Godzina</span>
+            <input type="text" class="session-input" id="time3" placeholder="np. 19:00">
+          </div>
+          <div class="session-row">
+            <span class="session-row-label">Kotwica</span>
+            <input type="text" class="session-input" id="anchor3" placeholder="np. przed kolacją">
+          </div>
+          <div class="session-row">
+            <span class="session-row-label">Zauważyłem/am</span>
+            <input type="text" class="session-input" id="notice3" placeholder="np. głód, myśli o pracy, napięcie w szczęce">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5: WEEKLY PLAN + RULES -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan tygodnia</div>
+    <h1 class="card-prompt">Akumulacja <em>uwagi</em></h1>
+    <p class="card-detail">3 STOP-y dziennie przez tydzień = <strong>21 mikrosesji</strong>. Trzy 5-minutowe medytacje formalne tygodniowo = 15 min. Akumulacja jest porównywalna, ale STOP-y są <em>wkomponowane w życie</em> — łatwiej je utrzymać.</p>
+    
+    <div class="day-h">Co najczęściej zauważam podczas STOP (wzorce)</div>
+    <textarea class="thought-input" id="patterns" placeholder="np. „prawie zawsze jestem w przyszłości myślami" / „ciało jest napięte w ramionach" / „oddech płytki większość dnia"..." rows="2"></textarea>
+    
+    <div class="day-h">Jak STOP wpływa na resztę dnia</div>
+    <textarea class="thought-input" id="impact" placeholder="np. „po STOP jestem spokojniejszy/a przez 15-20 min" / „podejmuję lepsze decyzje" / „mniej reaguję impulsywnie"..." rows="2"></textarea>
+    
+    <div class="day-h">Mój plan na tydzień</div>
+    <textarea class="thought-input" id="weekPlan" placeholder="np. „minimum 3× dziennie + 1 alarm w telefonie" / „przy każdym otwarciu drzwi do biura"..." rows="2"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body"><strong>10 zapomnień, 1 wykonane</strong> = sukces w pierwszym tygodniu. Mikropraktyka <em>akumuluje się</em>: po miesiącu zauważasz, że STOP-y wchodzą same, bez przypominania. To <strong>moment, w którym przerywanie autopilota stało się automatyczne</strong>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.anchor-block.active').forEach(b => b.classList.remove('active'));
+    ['customAnchors','time1','anchor1','notice1','time2','anchor2','notice2','time3','anchor3','notice3','patterns','impact','weekPlan'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleAnchor(el) { el.classList.toggle('active'); }
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_zatrzymaj_sie";
+  var clickSel0 = '.anchor-block';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.anchor-block')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

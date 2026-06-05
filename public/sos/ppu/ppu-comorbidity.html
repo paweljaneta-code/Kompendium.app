@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Komorbidność PPU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.como-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.como-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.como-icon { font-size: 22px; line-height: 1; }
+.como-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.como-prev {
+  font-family: 'Fraunces', serif; font-size: 11.5px; font-weight: 600;
+  color: var(--bg); background: var(--sage-deep);
+  padding: 2px 8px; border-radius: 10px;
+}
+.como-mech {
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-soft);
+  background: rgba(184,197,168,0.18); padding: 6px 10px; border-radius: 6px;
+  border-left: 2px solid var(--sage); margin-bottom: 6px;
+}
+.como-mech strong { color: var(--ink); font-weight: 600; }
+
+.approach-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.approach-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.approach-row {
+  padding: 8px 0; border-bottom: 1px dashed rgba(184,197,168,0.25);
+  display: grid; grid-template-columns: 110px 1fr; gap: 10px;
+  font-size: 12.5px; line-height: 1.55;
+}
+.approach-row:last-child { border-bottom: none; }
+.approach-tag { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); }
+.approach-text { color: rgba(244,241,234,0.92); }
+.approach-text strong { color: var(--bg); display: block; margin-bottom: 2px; }
+.approach-text em { color: var(--sage); font-style: italic; }
+
+.warn-clinical {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Komorbidność PPU</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">PPU/CSBD <em>rzadko bywa samotne</em></h1>
+    <p class="card-detail">Aviv Kor i in. (2014, „Psychiatric comorbidity and aggression in patients with hypersexual disorder"), Shane Kraus i in. (2016, „Psychiatric comorbidity in compulsive sexual behavior"), Beáta Bőthe i in. (2020) i Paula Hall (2013) udokumentowali, że <strong>60—80% osób z CSBD ma ≥1 inne rozpoznanie psychiatryczne</strong>. Najczęstsze: depresja (30—50%), zaburzenia lękowe (30—50%), ADHD (25—40%), uzależnienia substancyjne (20—30%), trauma rozwojowa (częsta), OCD i zaburzenia osobowości. Pomijanie komorbidności = <em>częsty błąd kliniczny</em>: terapia "tylko PPU" daje gorsze wyniki, gdy podstawowe zaburzenia (depresja, ADHD) pozostają nieleczone. Świadomość komorbidności otwiera <strong>integracyjne podejście</strong>: leczenie obu (lub kilku) zaburzeń <em>równolegle</em>, nie sekwencyjnie.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady komorbidności w PPU</div>
+      <div class="element-row"><span class="element-icon">📊</span><span class="element-text"><strong>60—80% prawdopodobieństwo</strong> ≥1 komorbidności — <em>standard</em>, nie wyjątek. PPU samotne (bez innych zaburzeń) jest mniejszością.</span></div>
+      <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Wspólne mechanizmy</strong> — często leżące u podstaw obu zaburzeń (impulsywność, dysregulacja emocji, regulacja samodzielna stresu). PPU może być <em>samoleczeniem</em> innego zaburzenia.</span></div>
+      <div class="element-row"><span class="element-icon">⚙️</span><span class="element-text"><strong>Integrated &gt; sequential</strong> — leczenie równoległe daje lepsze wyniki niż "najpierw PPU, potem depresja". Niektóre objawy stabilizują się tylko gdy oba są adresowane jednocześnie.</span></div>
+      <div class="element-row"><span class="element-icon">🔍</span><span class="element-text"><strong>Screening obowiązkowy</strong> — w pierwszych sesjach. Każdy klient PPU powinien być przesiewowo oceniony pod kątem 6—8 najczęstszych komorbidności.</span></div>
+    </div>
+
+    <div class="frame-quote">„Leczenie PPU bez sprawdzenia komorbidności jest jak leczenie bólu głowy bez sprawdzenia ciśnienia. Symptom będziesz adresować, ale jeśli przyczyna leży głębiej — wracać będzie wciąż."
+      <span class="frame-quote-attr">— parafraza po Avivie Korze i in., „Psychiatric comorbidity in hypersexual disorder" (2014)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ten Karta wsparcia jest <em>narzędziem psychoedukacyjnym i screeningowym</em>. Pomaga: (a) zauważyć, jakie inne zaburzenia mogą u ciebie współwystępować; (b) zrozumieć mechanizmy, jakimi się napędzają wzajemnie; (c) przygotować się do konsultacji ze specjalistą — ze świadomością, że PPU rzadko bywa "samotne". <strong>Nie zastępuje diagnozy</strong> — formalną diagnozę komorbidności stawia psychiatra na podstawie pełnego badania.</div>
+
+    <div class="src">Kor i in. (2014, „Psychiatric comorbidity and aggression in patients with hypersexual disorder", Comprehensive Psychiatry); Kraus i in. (2016, „Psychiatric comorbidity in compulsive sexual behavior", Journal of Behavioral Addictions); Bőthe i in. (2020, „ADHD and PPU", Journal of Sex Research); Hall (2013, „Understanding and Treating Sex and Pornography Addiction"); Reid i in. (2012, DSM-5 field trial); Lewczuk i in. (2020, replikacja polska); APA Practice Guidelines on integrated treatment.</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — sześć najczęstszych komorbidności</div>
+    <h1 class="card-prompt">Sprawdź <em>każdą kategorię</em></h1>
+    <p class="card-detail">Sprawdź sześć najczęstszych komorbidności PPU/CSBD. Każda ma <em>charakterystyczne sygnały</em> + <em>typowy mechanizm</em> łączący ją z PPU. Zaznacz sygnały, które rozpoznajesz u siebie.</p>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">😔</span>
+        <span class="como-name">1. Depresja</span>
+        <span class="como-prev">30—50%</span>
+      </div>
+      <div class="como-mech"><strong>Mechanizm:</strong> dwukierunkowy. Depresja → anhedonia → szukanie stymulacji w PPU. PPU → wstyd → wzmocnienie depresji. Klasyczny <em>cykl błędnego koła</em>. Bez leczenia depresji terapia PPU mniej skuteczna.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="d1" onclick="this.classList.toggle('picked')">Smutek / pustka utrzymujące się ≥2 tyg.</button>
+        <button type="button" class="example-chip" id="d2" onclick="this.classList.toggle('picked')">Anhedonia (brak przyjemności)</button>
+        <button type="button" class="example-chip" id="d3" onclick="this.classList.toggle('picked')">Niedospanie LUB hipersomnia</button>
+        <button type="button" class="example-chip" id="d4" onclick="this.classList.toggle('picked')">Spadek energii, motywacji</button>
+        <button type="button" class="example-chip" id="d5" onclick="this.classList.toggle('picked')">Negatywne myślenie o sobie</button>
+        <button type="button" class="example-chip" id="d6" onclick="this.classList.toggle('picked')">Myśli rezygnacji / suicydalne</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">😰</span>
+        <span class="como-name">2. Zaburzenia lękowe (GAD, SAD, panika)</span>
+        <span class="como-prev">30—50%</span>
+      </div>
+      <div class="como-mech"><strong>Mechanizm:</strong> PPU jako <em>tymczasowy regulator</em> pobudzenia lękowego. Krótka ulga, długoterminowo wzmocnienie cyklu. Leczenie lęku (CBT-lękowe, ekspozycje, czasem SSRI) <em>znacząco redukuje</em> PPU u części osób.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="l1" onclick="this.classList.toggle('picked')">Chroniczne martwienie się (GAD)</button>
+        <button type="button" class="example-chip" id="l2" onclick="this.classList.toggle('picked')">Lęk społeczny (SAD)</button>
+        <button type="button" class="example-chip" id="l3" onclick="this.classList.toggle('picked')">Ataki paniki</button>
+        <button type="button" class="example-chip" id="l4" onclick="this.classList.toggle('picked')">Lęk performance (intymność)</button>
+        <button type="button" class="example-chip" id="l5" onclick="this.classList.toggle('picked')">Unikanie sytuacji społecznych</button>
+        <button type="button" class="example-chip" id="l6" onclick="this.classList.toggle('picked')">PPU "uspokaja" tymczasowo</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">⚡</span>
+        <span class="como-name">3. ADHD</span>
+        <span class="como-prev">25—40%</span>
+      </div>
+      <div class="como-mech"><strong>Mechanizm:</strong> impulsywność, novelty seeking, dysregulacja dopaminowa, trudność z odraczaniem gratyfikacji. PPU "pasuje" do profilu ADHD. <em>Leczenie ADHD często znacząco redukuje PPU</em> (Bőthe 2020) — stymulanty zwiększają tonus dopaminowy → mniejsza potrzeba "ekstra" stymulacji.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="a1" onclick="this.classList.toggle('picked')">Diagnoza ADHD (lub silne podejrzenie)</button>
+        <button type="button" class="example-chip" id="a2" onclick="this.classList.toggle('picked')">Trudność z koncentracją chronicznie</button>
+        <button type="button" class="example-chip" id="a3" onclick="this.classList.toggle('picked')">Impulsywność transdiagnostyczna</button>
+        <button type="button" class="example-chip" id="a4" onclick="this.classList.toggle('picked')">Trudność z odraczaniem gratyfikacji</button>
+        <button type="button" class="example-chip" id="a5" onclick="this.classList.toggle('picked')">Krótkie sesje, wielokrotnie dziennie</button>
+        <button type="button" class="example-chip" id="a6" onclick="this.classList.toggle('picked')">Hyperfocus przy stymulujących bodźcach</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">🍷</span>
+        <span class="como-name">4. Uzależnienia substancyjne</span>
+        <span class="como-prev">20—30%</span>
+      </div>
+      <div class="como-mech"><strong>Mechanizm:</strong> wspólne szlaki nagrody. Często alkohol/stymulanty + PPU (chemsex w niektórych populacjach). <em>Plan leczenia łączny</em> — odstawienie substancji często wzmacnia PPU (kompensacja), więc <em>oba</em> trzeba adresować.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="s1" onclick="this.classList.toggle('picked')">Alkohol regularnie (≥3× tygodniowo)</button>
+        <button type="button" class="example-chip" id="s2" onclick="this.classList.toggle('picked')">Stymulanty (kokaina, amfetamina)</button>
+        <button type="button" class="example-chip" id="s3" onclick="this.classList.toggle('picked')">Marihuana codziennie</button>
+        <button type="button" class="example-chip" id="s4" onclick="this.classList.toggle('picked')">Substancje + seks (chemsex)</button>
+        <button type="button" class="example-chip" id="s5" onclick="this.classList.toggle('picked')">Inne uzależnienia behawioralne (gry, hazard)</button>
+        <button type="button" class="example-chip" id="s6" onclick="this.classList.toggle('picked')">PPU + alkohol = częstsza eskalacja</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">💔</span>
+        <span class="como-name">5. Trauma rozwojowa / PTSD</span>
+        <span class="como-prev">częste</span>
+      </div>
+      <div class="como-mech"><strong>Mechanizm:</strong> PPU jako <em>kompensacja</em>, <em>dysocjacja</em>, <em>re-inscenizacja</em> wzorców traumatycznych. Często wczesna trauma seksualna, emocjonalne zaniedbanie, niepewny styl przywiązania. <em>Praca z traumą</em> jako głównym frontem zwykle redukuje PPU znacząco.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="t1" onclick="this.classList.toggle('picked')">Trauma seksualna w dzieciństwie</button>
+        <button type="button" class="example-chip" id="t2" onclick="this.classList.toggle('picked')">Emocjonalne zaniedbanie / przemoc</button>
+        <button type="button" class="example-chip" id="t3" onclick="this.classList.toggle('picked')">Niepewny styl przywiązania</button>
+        <button type="button" class="example-chip" id="t4" onclick="this.classList.toggle('picked')">Intruzje / flashbacki</button>
+        <button type="button" class="example-chip" id="t5" onclick="this.classList.toggle('picked')">PPU jako dysocjacja ("tunelowo")</button>
+        <button type="button" class="example-chip" id="t6" onclick="this.classList.toggle('picked')">Treści w PPU związane z historią</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">🔁</span>
+        <span class="como-name">6. OCD / zaburzenia osobowości (BPD, NPD)</span>
+        <span class="como-prev">10—20%</span>
+      </div>
+      <div class="como-mech"><strong>Mechanizm:</strong> OCD (osobne zaburzenie, nie OCD seksualne) — kompulsywność transdiagnostyczna. BPD — impulsywność, dysregulacja emocji. NPD — narcystyczna gratyfikacja przez PPU. Każde wymaga specyficznego dodatku do terapii PPU.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="o1" onclick="this.classList.toggle('picked')">OCD klasyczne (nie tylko seksualne)</button>
+        <button type="button" class="example-chip" id="o2" onclick="this.classList.toggle('picked')">BPD: niestabilne relacje + tożsamość</button>
+        <button type="button" class="example-chip" id="o3" onclick="this.classList.toggle('picked')">BPD: impulsywność w ≥2 obszarach</button>
+        <button type="button" class="example-chip" id="o4" onclick="this.classList.toggle('picked')">NPD: PPU jako narcystyczna gratyfikacja</button>
+        <button type="button" class="example-chip" id="o5" onclick="this.classList.toggle('picked')">Schemat osobowościowy widoczny</button>
+      </div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Ile komorbidności rozpoznajesz / podejrzewasz?</span><span></span></div>
+      <input type="range" class="scale-input" id="numComo" min="0" max="6" step="1" value="2" data-default="2">
+      <div class="scale-readout"><span>0 = żadne</span><span id="numComoval">2</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy obecne komorbidności są leczone?</span><span></span></div>
+      <input type="range" class="scale-input" id="treated" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = nie</span><span id="treatedval">3</span></div>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Suicidalność — wysokie ryzyko w komorbidności</div>
+      <div class="warn-body">PPU + depresja + wstyd + izolacja + ewentualnie alkohol = realne ryzyko suicydalne. Kor i in. (2014): hiperseksualność koreluje z agresywnością i ryzykiem auto-/heteroagresji. Sygnały do <em>natychmiastowej</em> konsultacji psychiatrycznej: myśli, że "lepiej by było, gdybym nie żył"; konkretne plany; dostęp do środków; izolacja społeczna; radykalne wycofanie. Tel. zaufania: 116 123 (kryzysowy), 800 70 2222 (telefon dla dzieci i młodzieży).</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła obrazu</strong>: typowy obraz osoby z PPU + komorbidności: 1—3 współwystępujące zaburzenia. Najczęstsza kombinacja: PPU + depresja/lęk + ADHD. Druga: PPU + trauma + niepewne przywiązanie. Trzecia: PPU + alkohol + lęk. Świadomość kombinacji u <em>ciebie</em> kieruje wyborem podejścia integracyjnego.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — integrated vs sequential</div>
+    <h1 class="card-prompt">Dwa podejścia: <em>integrated</em> vs <em>sequential</em></h1>
+    <p class="card-detail">Tradycyjnie kliniczna myśl mówiła: "leczymy najpierw to, potem tamto" (sequential). Współczesna ewidencja (APA Practice Guidelines, badania w obszarze podwójnej diagnozy) pokazują, że <strong>leczenie integrated</strong> (równoległe) daje lepsze wyniki dla większości komorbidności PPU.</p>
+
+    <div class="approach-card">
+      <div class="approach-h">Sequential vs Integrated</div>
+      <div class="approach-row">
+        <span class="approach-tag">Sequential</span>
+        <span class="approach-text"><strong>"Najpierw to, potem tamto"</strong>Najpierw stabilizacja jednego (np. depresja), potem drugiego (PPU). Logika: jedno na raz. <em>Wada</em>: zaburzenia napędzają się wzajemnie; "stabilizacja" jednego jest niemożliwa, gdy drugie jest aktywne.</span>
+      </div>
+      <div class="approach-row">
+        <span class="approach-tag">Integrated</span>
+        <span class="approach-text"><strong>"Oba jednocześnie"</strong>Leczenie obu (lub kilku) zaburzeń równolegle. Wymaga: terapeuta świadomy kombinacji, ewentualnie multi-disciplinary team (terapeuta + psychiatra). <em>Korzyść</em>: mechanizmy się wzajemnie wzmacniają, leczenie razem skuteczniejsze.</span>
+      </div>
+      <div class="approach-row">
+        <span class="approach-tag">Wyjątki</span>
+        <span class="approach-text"><strong>Kiedy sequential jest lepszy</strong>Gdy jedno z zaburzeń jest <em>w fazie ostrej</em> (suicydalność, mania, ostra psychoza, intoksykacja) — najpierw stabilizacja kryzysowa, potem komorbidność. Albo gdy zaburzenie jest na tyle ciężkie, że uniemożliwia pracę nad innym.</span>
+      </div>
+    </div>
+
+    <div class="examples-h">Twoje podejście — wybór ścieżki</div>
+    <button type="button" class="rel-btn" id="aI" onclick="pickApproach('I')">
+      <span class="rel-name">📍 Integrated — równoległe leczenie</span>
+      <span class="rel-desc">Standard dla większości komorbidności PPU. Wymaga świadomego terapeuty + psychiatry.</span>
+    </button>
+    <button type="button" class="rel-btn" id="aS" onclick="pickApproach('S')">
+      <span class="rel-name">📍 Sequential — jedno potem drugie</span>
+      <span class="rel-desc">Wskazane gdy jedno jest w fazie ostrej (kryzys, mania, intoksykacja).</span>
+    </button>
+    <button type="button" class="rel-btn" id="aN" onclick="pickApproach('N')">
+      <span class="rel-name">📍 Brak komorbidności — tylko PPU</span>
+      <span class="rel-desc">Mniejszość. Klasyczna terapia PPU bez integracji.</span>
+    </button>
+
+    <div class="examples-h">Implikacje per komorbidność (przykłady kombinacji)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="cP1" onclick="this.classList.toggle('picked')">PPU + depresja: terapia + ewent. SSRI</button>
+      <button type="button" class="example-chip" id="cP2" onclick="this.classList.toggle('picked')">PPU + lęk: CBT-lękowe + ekspozycje</button>
+      <button type="button" class="example-chip" id="cP3" onclick="this.classList.toggle('picked')">PPU + ADHD: stymulanty + terapia ADHD + PPU</button>
+      <button type="button" class="example-chip" id="cP4" onclick="this.classList.toggle('picked')">PPU + alkohol: AA / SMART + CBT + PPU</button>
+      <button type="button" class="example-chip" id="cP5" onclick="this.classList.toggle('picked')">PPU + trauma: EMDR + Somatic + PPU</button>
+      <button type="button" class="example-chip" id="cP6" onclick="this.classList.toggle('picked')">PPU + BPD: DBT + PPU</button>
+      <button type="button" class="example-chip" id="cP7" onclick="this.classList.toggle('picked')">PPU + OCD: ERP + PPU (oddzielnie)</button>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Pułapka "leczę tylko PPU"</div>
+      <div class="warn-body">Najczęstszy błąd: osoba przychodzi z "problemem porno", terapeuta pracuje <em>tylko</em> nad PPU. Po 6—12 mies. terapia daje średnie wyniki. Powód: nieleczona depresja / ADHD / lęk podtrzymują mechanizmy PPU. Prawidłowe podejście: <em>screening komorbidności</em> w pierwszych sesjach + <em>integracyjne podejście</em> (terapeuta + ewentualnie psychiatra). Bez tego terapia PPU jest niepełna.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: jeśli masz ≥1 znaczącą komorbidność (depresja, lęk, ADHD, trauma, alkohol) — <strong>wybierz integrated</strong>. Wymaga: terapeuta świadomy kombinacji + psychiatra przy podejrzeniu farmakoterapii. Jeśli komorbidność jest w fazie ostrej (kryzys, mania, intoksykacja) — najpierw <strong>sequential</strong> (stabilizacja kryzysu), potem integrated.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — twój plan integracyjny</div>
+    <h1 class="card-prompt">Konkretny <em>plan leczenia</em></h1>
+    <p class="card-detail">Praktyczna część: konkretne kroki <em>twojego</em> planu integracyjnego. Plan zależy od kombinacji u ciebie. Sprawdź ścieżki + przygotuj rozmowę z terapeutą i psychiatrą.</p>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">😔</span>
+        <span class="como-name">Jeśli depresja jest komorbidna</span>
+      </div>
+      <div class="como-mech"><strong>Plan:</strong> CBT-depresji równolegle z CBT-PPU. Aktywacja behawioralna, restrukturyzacja poznawcza, rutyny snu i ruchu. Psychiatra: ocena, czy SSRI/SNRI wskazane (uwaga: niektóre SSRI obniżają libido — może być pomocne lub utrudniające).</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="iD1" onclick="this.classList.toggle('picked')">CBT-depresji (Beck, Lewinsohn)</button>
+        <button type="button" class="example-chip" id="iD2" onclick="this.classList.toggle('picked')">Aktywacja behawioralna</button>
+        <button type="button" class="example-chip" id="iD3" onclick="this.classList.toggle('picked')">Konsultacja psychiatry (SSRI/SNRI)</button>
+        <button type="button" class="example-chip" id="iD4" onclick="this.classList.toggle('picked')">Rutyny snu + ruch</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">😰</span>
+        <span class="como-name">Jeśli lęk jest komorbidny</span>
+      </div>
+      <div class="como-mech"><strong>Plan:</strong> CBT-lękowe + ekspozycje (stopniowe). Praca nad lękiem performance (jeśli ED w realu) — Sensate Focus z partnerką. Psychiatra: czy SSRI/buspiron pomocne. Mindfulness często wzmacnia oba fronty.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="iL1" onclick="this.classList.toggle('picked')">CBT-lękowe (Clark, Wells)</button>
+        <button type="button" class="example-chip" id="iL2" onclick="this.classList.toggle('picked')">Ekspozycje stopniowe</button>
+        <button type="button" class="example-chip" id="iL3" onclick="this.classList.toggle('picked')">Sensate Focus (jeśli ED w realu)</button>
+        <button type="button" class="example-chip" id="iL4" onclick="this.classList.toggle('picked')">Konsultacja psychiatry (SSRI/buspiron)</button>
+        <button type="button" class="example-chip" id="iL5" onclick="this.classList.toggle('picked')">Mindfulness codziennie</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">⚡</span>
+        <span class="como-name">Jeśli ADHD jest komorbidne</span>
+      </div>
+      <div class="como-mech"><strong>Plan:</strong> diagnoza ADHD u psychiatry (jeśli nie diagnozowane) + leczenie farmakologiczne (stymulanty, atomoksetyna). Plus terapia ADHD (CBT-ADHD, coaching). Plus terapia PPU. Bőthe (2020): leczenie ADHD często znacząco redukuje PPU.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="iA1" onclick="this.classList.toggle('picked')">Diagnoza ADHD u psychiatry</button>
+        <button type="button" class="example-chip" id="iA2" onclick="this.classList.toggle('picked')">Stymulanty (metylfenidat, amfetamina)</button>
+        <button type="button" class="example-chip" id="iA3" onclick="this.classList.toggle('picked')">Atomoksetyna (jeśli stymulanty problematyczne)</button>
+        <button type="button" class="example-chip" id="iA4" onclick="this.classList.toggle('picked')">CBT-ADHD / coaching</button>
+        <button type="button" class="example-chip" id="iA5" onclick="this.classList.toggle('picked')">Plus terapia PPU (CBT/ACT)</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">🍷</span>
+        <span class="como-name">Jeśli alkohol / substancje</span>
+      </div>
+      <div class="como-mech"><strong>Plan:</strong> grupa wsparcia (AA / SMART Recovery) + terapia uzależnień + terapia PPU. Leczenie obu <em>równolegle</em> — odstawienie samego alkoholu często wzmacnia PPU. Psychiatra: czy naltrekson pomocny (działa na oba).</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="iS1" onclick="this.classList.toggle('picked')">Grupa AA / SMART Recovery</button>
+        <button type="button" class="example-chip" id="iS2" onclick="this.classList.toggle('picked')">Terapia uzależnień (CBT, MI)</button>
+        <button type="button" class="example-chip" id="iS3" onclick="this.classList.toggle('picked')">Naltrekson (działa na oba)</button>
+        <button type="button" class="example-chip" id="iS4" onclick="this.classList.toggle('picked')">Plus terapia PPU</button>
+      </div>
+    </div>
+
+    <div class="como-card">
+      <div class="como-h">
+        <span class="como-icon">💔</span>
+        <span class="como-name">Jeśli trauma rozwojowa</span>
+      </div>
+      <div class="como-mech"><strong>Plan:</strong> terapia traumy jako <em>główny front</em>. EMDR (Shapiro), Somatic Experiencing (Levine), TF-CBT, lub specjalistyczna terapia traumy. PPU często redukuje się znacząco po przepracowaniu traumy.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="iT1" onclick="this.classList.toggle('picked')">EMDR (Shapiro)</button>
+        <button type="button" class="example-chip" id="iT2" onclick="this.classList.toggle('picked')">Somatic Experiencing (Levine)</button>
+        <button type="button" class="example-chip" id="iT3" onclick="this.classList.toggle('picked')">TF-CBT (Cohen, Mannarino)</button>
+        <button type="button" class="example-chip" id="iT4" onclick="this.classList.toggle('picked')">Schema Therapy (Young)</button>
+        <button type="button" class="example-chip" id="iT5" onclick="this.classList.toggle('picked')">Plus terapia PPU (równolegle)</button>
+      </div>
+    </div>
+
+    <div class="examples-h">Twój plan integracyjny — opisz konkretnie</div>
+    <textarea class="thought-input" id="myPlan" placeholder='Konkretnie. np. „MOJA SYTUACJA:
+- PPU/CSBD (główne)
+- Komorbidności: depresja umiarkowana (PHQ-9: 12), ADHD (diagnozowane w dzieciństwie)
+- Brak akutnej fazy
+
+PLAN INTEGRACYJNY (8—12 mies.):
+
+1. PSYCHIATRA (pierwsza wizyta w 2 tyg.):
+- Re-evaluacja ADHD — możliwe powrócenie do leczenia
+- Ocena depresji — czy SSRI wskazane (uwaga na libido)
+- Konsultacja farmakologiczna co 3 mies.
+
+2. TERAPIA INDYWIDUALNA (1× tygodniowo):
+- CBT-PPU (Hall) jako główny front
+- + elementy CBT-depresji (aktywacja behawioralna, restrukturyzacja)
+- Terapeuta ze świadomością ADHD
+
+3. ŻYCIE CODZIENNE:
+- Sen 7—8h regularnie
+- Ruch 4× tygodniowo (silnie pomaga w depresji + ADHD + PPU)
+- Mindfulness 15 min codziennie
+- Redukcja alkoholu pn—czw
+
+4. GRUPA WSPARCIA (raz na 2 tyg.):
+- SAA lub SMART Recovery
+- Wspólnota, struktura
+
+5. PRACA NAD WARTOŚCIAMI (ACT) — od 3 mies.
+
+6. CO 3 MIES. — REOCENA:
+- PPCS-18 (PPU)
+- PHQ-9 (depresja)
+- ASRS (ADHD)
+- Plan dostosowany do wyników”' rows="18"></textarea>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Sygnał: terapeuta nie pyta o komorbidność</div>
+      <div class="warn-body">Jeśli w pierwszych 2—3 sesjach terapeuta <em>nie pyta</em> o: depresję, lęk, ADHD, alkohol, traumę, samobójstwo — to <em>czerwona flaga</em>. Kompetentny terapeuta CSBD/PPU <strong>zawsze</strong> robi screening komorbidności. Bez tego terapia jest niepełna i mniej skuteczna. Jeśli nie pyta — pytaj sam/a: "co z komorbidnością? Czy mam się przebadać u psychiatry?". Jeśli odpowiedzią jest "skupmy się na PPU" — rozważ innego specjalistę.</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: integrowane podejście do PPU + komorbidności = <strong>leczenie wszystkich napędów</strong> jednocześnie. Bez integracji jeden napęd zostaje aktywny i podtrzymuje cykl. Przykład: PPU + ADHD + lęk — leczenie tylko PPU pomija dopaminową dysregulację (ADHD) i tymczasową regulację lęku przez PPU. Po 6—12 mies. integracji większość pacjentów zauważa <em>znacząco</em> lepsze wyniki niż w terapii tylko-PPU.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>komorbidności są zaadresowane</em>?</h1>
+    <p class="card-detail">Wróć tu po 3—6 miesiącach pracy z integracyjnym planem. Praca z komorbidnością jest <em>długoterminowa</em> — pierwsze efekty po 6—8 tyg., znaczące po 6—12 mies.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy zidentyfikowałeś/aś komorbidności?</span><span></span></div>
+      <input type="range" class="scale-input" id="postId" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postIdval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy każda komorbidność ma plan leczenia?</span><span></span></div>
+      <input type="range" class="scale-input" id="postPlan" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postPlanval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy podejście jest integrated (vs sequential)?</span><span></span></div>
+      <input type="range" class="scale-input" id="postIntegrated" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postIntegratedval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Stabilizacja komorbidności (depresja/lęk/ADHD)</span><span></span></div>
+      <input type="range" class="scale-input" id="postStab" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>0 = brak</span><span id="postStabval">4</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: skuteczne leczenie integracyjne = <em>komorbidności zidentyfikowane</em> ≥7 + <em>plan dla każdej</em> ≥6 + <em>podejście integrated</em> ≥6 + <em>stabilizacja</em> ≥5. Najczęstsza luka: <em>identyfikacja bez planu</em> — wiesz, że masz depresję, ale nie ma planu leczenia. Druga: <em>sequential zamiast integrated</em> — leczysz tylko jedno, drugie czeka.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">PPU/CSBD <em>rzadko bywa samotne</em> — 60—80% osób ma ≥1 komorbidność. <strong>Sześć najczęstszych</strong>: (1) <strong>depresja</strong> (30—50%); (2) <strong>zaburzenia lękowe</strong> (30—50%); (3) <strong>ADHD</strong> (25—40%); (4) <strong>uzależnienia substancyjne</strong> (20—30%); (5) <strong>trauma rozwojowa / PTSD</strong> (częste); (6) <strong>OCD / zaburzenia osobowości</strong> (10—20%). <strong>Mechanizmy</strong>: dwukierunkowe — PPU jako samoleczenie + wzmocnienie problemu. <strong>Integrated &gt; sequential</strong>: leczenie wszystkich równolegle daje lepsze wyniki niż "jedno potem drugie". Wyjątki: faza ostra (kryzys, mania, intoksykacja) wymaga sequential. <strong>Plan</strong>: terapeuta świadomy kombinacji + ewentualnie psychiatra (farmakoterapia) + grupa wsparcia + reocena co 3 mies. (PPCS-18, PHQ-9, ASRS, GAD-7). <strong>Sygnał czerwony</strong>: terapeuta nie pyta o komorbidność = niekompetentny w PPU/CSBD. Świadomość komorbidności = <em>fundament skutecznej terapii</em>.</div>
+    </div>
+
+    <div class="src">Kor i in. (2014, „Psychiatric comorbidity and aggression in patients with hypersexual disorder", Comprehensive Psychiatry); Kraus i in. (2016, „Psychiatric comorbidity in compulsive sexual behavior", Journal of Behavioral Addictions); Bőthe i in. (2020, „ADHD and PPU"); Hall (2013, „Understanding and Treating Sex and Pornography Addiction"); Reid i in. (2012, DSM-5 field trial); Lewczuk i in. (2020, replikacja polska); APA Practice Guidelines on integrated treatment; SAMHSA — Concurrent Disorders Treatment; kwestionariusze: PHQ-9 (depresja), GAD-7 (lęk), ASRS (ADHD), AUDIT (alkohol), PCL-5 (PTSD), OCI-R (OCD).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['numComo','treated','postId','postPlan','postIntegrated','postStab'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedApproach = null;
+function pickApproach(code) {
+  window.pickedApproach = code;
+  ['aI','aS','aN'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('a' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var i = parseInt(document.getElementById('postId').value, 10);
+  var p = parseInt(document.getElementById('postPlan').value, 10);
+  var it = parseInt(document.getElementById('postIntegrated').value, 10);
+  var st = parseInt(document.getElementById('postStab').value, 10);
+
+  var rows = [];
+  var iW = i <= 3 ? 'nie' : (i <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Identyfikacja komorbidności</strong><span class="diff-delta">' + i + '/10 — ' + iW + '</span></div>');
+  var pW = p <= 3 ? 'brak' : (p <= 6 ? 'częściowo' : 'pełny');
+  rows.push('<div class="diff-row"><strong>Plan dla każdej</strong><span class="diff-delta">' + p + '/10 — ' + pW + '</span></div>');
+  var itW = it <= 3 ? 'sequential' : (it <= 6 ? 'mieszane' : 'integrated');
+  rows.push('<div class="diff-row"><strong>Podejście</strong><span class="diff-delta">' + it + '/10 — ' + itW + '</span></div>');
+  var sW = st <= 3 ? 'brak' : (st <= 6 ? 'częściowa' : 'stabilna');
+  rows.push('<div class="diff-row"><strong>Stabilizacja</strong><span class="diff-delta">' + st + '/10 — ' + sW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (i >= 7 && p >= 6 && it >= 6 && st >= 5) {
+      msg = '<strong>Integracyjne podejście działa.</strong> Komorbidności zidentyfikowane, plany zaplanowane, podejście integrated, stabilizacja postępuje. <em>Kontynuuj 6—12 mies.</em> z reoceną kwartalną.';
+    } else if (i >= 6 && p >= 5) {
+      msg = '<strong>Pierwsze ruchy.</strong> Wzmocnij <em>integracyjność podejścia</em>. Sprawdź, czy wszystkie komorbidności są adresowane <em>równolegle</em>, nie sekwencyjnie. Jeśli leczysz tylko PPU — dodaj rozmowę z psychiatrą o pozostałych.';
+    } else if (i <= 3) {
+      msg = '<strong>Brak identyfikacji komorbidności — krytyczne.</strong> 60—80% osób z PPU ma ≥1 komorbidność. <em>W tym tygodniu</em>: konsultacja z psychiatrą / terapeutą; przesiewowe kwestionariusze (PHQ-9, GAD-7, ASRS, AUDIT).';
+    } else if (it <= 3) {
+      msg = '<strong>Sequential zamiast integrated.</strong> Leczysz jedno, drugie czeka — często nieskuteczne. <em>Sprawdź</em> z terapeutą, czy można dodać równoległe leczenie pozostałych komorbidności. Multi-disciplinary team jest standardem.';
+    } else if (p <= 3) {
+      msg = '<strong>Identyfikacja bez planu.</strong> Wiesz, że masz depresję / ADHD / lęk, ale nie ma planu leczenia. Konsultacja psychiatry / terapeuty: konkretny plan dla każdej komorbidności.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Praca z komorbidnościami to długoterminowy proces — efekty znaczące w 6—12 mies.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['d1','d2','d3','d4','d5','d6','l1','l2','l3','l4','l5','l6','a1','a2','a3','a4','a5','a6','s1','s2','s3','s4','s5','s6','t1','t2','t3','t4','t5','t6','o1','o2','o3','o4','o5','cP1','cP2','cP3','cP4','cP5','cP6','cP7','iD1','iD2','iD3','iD4','iL1','iL2','iL3','iL4','iL5','iA1','iA2','iA3','iA4','iA5','iS1','iS2','iS3','iS4','iT1','iT2','iT3','iT4','iT5'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['aI','aS','aN'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedApproach = null;
+}
+
+['postId','postPlan','postIntegrated','postStab'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_comorbidity — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_comorbidity";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['I','S','N'].forEach(function(code){
+    var el = document.getElementById('a' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedApproach = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

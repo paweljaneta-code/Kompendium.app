@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Leczenie stopniowane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.sc-input { width: 100%; min-height: 60px; padding: 11px 13px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 10px; }
+.sc-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+.steps-grid { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.step-row { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 12px 14px; border-left: 4px solid var(--sage-deep); border-radius: 9px; background: rgba(184,197,168,0.13); }
+.step-num { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--sage-deep); width: 44px; text-align: center; line-height: 1.2; font-style: italic; }
+.step-name { font-weight: 600; font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+.step-target { font-size: 11.5px; color: var(--sage-deep); margin-bottom: 5px; font-style: italic; }
+.step-tools { font-size: 11.5px; color: var(--ink); line-height: 1.5; }
+.diag-grid { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.diag-row { padding: 10px 12px; background: rgba(184,197,168,0.13); border-radius: 9px; border-left: 3px solid var(--sage-deep); }
+.diag-row .dq { font-weight: 600; font-size: 12.5px; color: var(--sage-deep); margin-bottom: 4px; }
+.diag-row .dh { font-size: 11.5px; color: var(--ink); line-height: 1.5; margin-bottom: 6px; }
+.diag-row textarea { width: 100%; min-height: 50px; padding: 8px 10px; border: 1px solid var(--sage); border-radius: 7px; background: rgba(255,253,247,0.7); font-family: inherit; font-size: 12.5px; line-height: 1.5; color: var(--ink); resize: vertical; }
+.diag-row textarea:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Leczenie stopniowane</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Leczenie stopniowane — <em>minimalna skuteczna dawka</em></h1>
+    <p class="card-detail">Leczenie stopniowane (NICE, 2011 i 2022) to model organizacji leczenia, w którym interwencja o najniższej intensywności jest stosowana pierwsza. Tylko jeśli nie daje efektu — pacjent przechodzi na wyższy stopień. Niska samoocena nie ma własnych wytycznych NICE, ale analogiczny model można skonstruować z Fennell (2016), Gilbert (2014) i badań empirycznych.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Skąd to się wzięło</div>
+      <div class="element-row">
+        <span class="element-icon">🧬</span>
+        <span class="element-text"><strong>Tradycja</strong> — NICE (2011, CG123; 2022): leczenie stopniowane dla depresji, lęku, transdiagnostycznie. Williams (2009): aplikacja w samopomocy. IAPT (NHS UK): praktyczne wdrożenie. Fennell (1999, 2016): protokoły niskiej samooceny dopasowane do różnych poziomów intensywności.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚙️</span>
+        <span class="element-text"><strong>Mechanizm</strong> — zasada <em>minimalnej skutecznej dawki</em>. Każda interwencja ma swój koszt (czas, pieniądze, trudność). Pacjent z lekką niską samooceną otrzymujący 2-letnią terapię intensywną — koszt nieproporcjonalny. Pacjent z głęboką niską samooceną otrzymujący tylko bibliotherapy — niewystarczający efekt. Stopniowanie alokuje intensywność do potrzeby.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Dane</strong> — Bower, Gilbody (2005, BMJ): 50% redukcja kosztów przy zachowanej skuteczności w lżejszych przypadkach. Cuijpers i in. (2010): bibliotherapy z minimalnym kontaktem terapeutycznym daje d=0.51, porównywalne z pełną terapią. Fennell (2016): protokół CBT-LSE 8–12 sesji daje d=1.2 na RSES (Waite i in. 2012, RCT).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✨</span>
+        <span class="element-text"><strong>Implikacje</strong> — klient otrzymuje propozycję dopasowaną do potrzeby. Klinicysta nie improwizuje, tylko stosuje protokół adekwatny. System publiczny alokuje zasoby efektywnie. Brak skuteczności na danym stopniu nie jest porażką klienta — jest sygnałem do eskalacji.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Najlżejsza interwencja jest najpierw — nie z powodu skąpstwa, ale z powodu szacunku dla autonomii klienta i jego zasobów. Bibliotherapy ze stronami Fennell może zmienić więcej niż 2-letnia terapia, gdy problem jest lekki. I 50 sesji schema therapy jest niezbędna, gdy problem jest głęboki."
+      <span class="frame-quote-attr">— parafraza Williams (2009)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: pięć stopni — <span id="t-sc-stopnie">samopomoc → CBT-LSE krótkoterminowy → CBT+CFT zintegrowany → psychoterapia długoterminowa → leczenie złożone</span>. Diagnostyka oparta na czterech pytaniach: głębokość, komorbidność, historia, funkcjonowanie.</div>
+
+    <div class="src">NICE (2011, CG123; 2022); Williams (2009); Bower, Gilbody (2005, BMJ); Cuijpers i in. (2010); Fennell (1999, 2016); Waite i in. (2012, RCT); Gilbert (2014); Kirby i in. (2017); Masley i in. (2012)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Krok 1 — diagnostyka 4 pytania</div>
+    <h1 class="card-prompt">Cztery pytania <em>stratyfikujące</em></h1>
+    <p class="card-detail">Decyzja o stopniu leczenia opiera się na czterech pytaniach diagnostycznych. Razem dają jasną stratyfikację — który stopień jest właściwy dla tego pacjenta. Każde pytanie odpowiada na inną oś.</p>
+
+    <div class="diag-grid">
+      <div class="diag-row">
+        <div class="dq">1. GŁĘBOKOŚĆ — RSES (Rosenberg)</div>
+        <div class="dh">Wynik &gt;25: lekka. 20–25: umiarkowana. &lt;20: głęboka. Kwestionariusz dostępny po polsku, 10 pytań, 5 minut.</div>
+        <textarea id="depth" placeholder="„Twój wynik RSES (lub szacunkowo): &gt;25 / 20–25 / &lt;20."" rows="2"></textarea>
+      </div>
+      <div class="diag-row">
+        <div class="dq">2. KOMORBIDNOŚĆ — co jeszcze obecne</div>
+        <div class="dh">Czysta niska samoocena vs + depresja (MDD) vs + zaburzenie osobowości (BPD, AvPD, NPD) vs + C-PTSD vs + zaburzenie odżywiania vs + zaburzenie lękowe.</div>
+        <textarea id="comorbid" placeholder="„Co jeszcze jest obecne? Diagnoza formalna lub samoobserwacja."" rows="3"></textarea>
+      </div>
+      <div class="diag-row">
+        <div class="dq">3. HISTORIA — trauma rozwojowa</div>
+        <div class="dh">Czy w historii: powtarzające się zranienia relacyjne? Trauma w dzieciństwie? Zaniedbanie emocjonalne? Krytyka chroniczna od rodzica? Bullying przewlekły?</div>
+        <textarea id="history" placeholder="„Główne wczesne doświadczenia, które ukształtowały bottom line. Konkrety, krótko."" rows="3"></textarea>
+      </div>
+      <div class="diag-row">
+        <div class="dq">4. FUNKCJONOWANIE — gdzie ogranicza</div>
+        <div class="dh">Zachowane (praca, relacje OK, mimo cierpienia)? Częściowo upośledzone? Istotnie upośledzone (wycofanie, brak pracy, izolacja)?</div>
+        <textarea id="function" placeholder="„Twoje aktualne funkcjonowanie: praca, relacje, codzienność. Konkretne sygnały."" rows="3"></textarea>
+      </div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Po odpowiedzi na 4 pytania — Twoja ogólna ocena głębokości</div>
+      <div class="scale-bounds"><span>(1 = lekka)</span><span>(2 = umiarkowana)</span><span>(3 = głęboka)</span><span>(4 = bardzo głęboka)</span></div>
+      <input type="range" class="scale-input" id="severity" min="1" max="4" step="1" value="2" data-default="2">
+      <div class="scale-readout"><span>Poziom</span><span id="severityval">2</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła stratyfikacji</strong>: poziom zwykle wynika z najgorszej osi z 4. Jeśli 3 osie są na poziomie 1 (lekkie), ale jedna na poziomie 3 (głęboka) — całość traktuj jako poziom 3 lub 4. Najgorsza oś dyktuje stopień.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Krok 2 — pięć stopni leczenia</div>
+    <h1 class="card-prompt">Pięć <em>stopni</em> intensywności</h1>
+    <p class="card-detail">Każdy stopień ma swoje wskazania, narzędzia, oczekiwany efekt. Wybór opiera się na 4-pytaniowej diagnostyce. Eskalacja: gdy poprzedni stopień nie daje poprawy ≥20% w określonym czasie.</p>
+
+    <div class="steps-grid">
+      <div class="step-row">
+        <span class="step-num">1</span>
+        <div>
+          <div class="step-name">Psychoedukacja + samopomoc kierowana</div>
+          <div class="step-target">Dla: lekkiej niskiej samooceny, dobre zasoby, bez komorbidności</div>
+          <div class="step-tools">Bibliotherapy (Fennell „Overcoming Low Self-Esteem"; Neff „Self-Compassion"). Aplikacje: Woebot, MSC Companion. Materiały online (CCI Australia, darmowe). Monitor: RSES co 2 tygodnie. Czas: 0–8 tygodni.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <span class="step-num">2</span>
+        <div>
+          <div class="step-name">CBT-LSE krótkoterminowe (Fennell)</div>
+          <div class="step-target">Dla: umiarkowanej niskiej samooceny, czystej lub z łagodną depresją</div>
+          <div class="step-tools">Protokół Fennell (2016): 8–12 sesji. Formulacja → restrukturyzacja → eksperymenty → profilaktyka nawrotów. Waite i in. (2012, RCT): d=1.2 na RSES.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <span class="step-num">3</span>
+        <div>
+          <div class="step-name">Zintegrowana CBT + CFT</div>
+          <div class="step-target">Dla: niskiej samooceny z wysokim samokrytycyzmem, depresją, lękiem społecznym</div>
+          <div class="step-tools">16–24 sesje. Fazy CFT (Soothing Rhythm Breathing, safe place, ideal compassionate self) + Fennell + DBT. Kirby i in. (2017): d=0.55–0.77.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <span class="step-num">4</span>
+        <div>
+          <div class="step-name">Psychoterapia długoterminowa</div>
+          <div class="step-target">Dla: niskiej samooceny z zaburzeniem osobowości, C-PTSD, ciężką traumą</div>
+          <div class="step-tools">Schema Therapy (Young i in., 2003) — 50–100 sesji. Mentalization-Based Therapy. Psychodynamiczna długoterminowa. Czas: 1–3 lata. Masley i in. (2012): efekty stabilne, utrzymanie po 4 latach.</div>
+        </div>
+      </div>
+      <div class="step-row">
+        <span class="step-num">5</span>
+        <div>
+          <div class="step-name">Leczenie złożone</div>
+          <div class="step-target">Dla: ciężkiej komorbidności, ciężkiego ryzyka, hospitalizacji</div>
+          <div class="step-tools">Stabilizacja (lek, terapia indywidualna, grupy). Farmakoterapia (psychiatra). Programy intensywne dzienne. Hospitalizacja przy aktywnych SI lub ciężkim załamaniu funkcjonowania.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Stopień adekwatny do Twojego profilu</div>
+      <div class="scale-bounds"><span>(1)</span><span>(2)</span><span>(3)</span><span>(4)</span><span>(5)</span></div>
+      <input type="range" class="scale-input" id="myStep" min="1" max="5" step="1" value="2" data-default="2">
+      <div class="scale-readout"><span>Stopień</span><span id="myStepval">2</span></div>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Reguła eskalacji</strong>: brak poprawy ≥20% w określonym czasie (8 tygodni dla stopnia 1, 12 sesji dla stopnia 2) jest sygnałem eskalacji. Eskalacja nie jest porażką klienta — jest informacją diagnostyczną.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Krok 3 — Twoja stratyfikacja</div>
+    <h1 class="card-prompt">Twój <em>aktualny stopień</em> i plan</h1>
+    <p class="card-detail">Mając wynik diagnostyki 4-pytaniowej i znajomość 5 stopni, konkretyzujesz pod siebie. Uwzględnij dostępność (system publiczny vs prywatny) i preferencje (samopomoc vs prowadzona terapia).</p>
+
+    <textarea class="sc-input" id="myProfile" placeholder="„Twój profil — krótko. Np.: 'Umiarkowana niska samoocena (RSES 22). Komorbidność: łagodna depresja okresowo. Historia: krytyczny ojciec. Funkcjonowanie: zachowane. Stopień adekwatny: 2.'"" rows="5"></textarea>
+
+    <textarea class="sc-input" id="myFirst" placeholder="„Pierwszy konkretny krok — co rozpoczynasz w nadchodzącym tygodniu? Np.:
+- Dla stopnia 1: zakup książki Fennell + plan czytania.
+- Dla stopnia 2: poszukanie psychologa CBT, rezerwacja sesji wstępnej.
+- Dla stopnia 3+: konsultacja u psychiatry + diagnostyka pełna."" rows="5"></textarea>
+
+    <textarea class="sc-input" id="monitoring" placeholder="„Plan monitorowania — kiedy ocenisz efekt? Co konkretnie sprawdzasz?
+- Dla stopnia 1: RSES co 2 tygodnie, decyzja eskalacyjna po 8 tygodniach.
+- Dla stopnia 2: RSES co 4 sesje, decyzja po 12 sesjach.
+- Dla stopnia 3+: monitoring z terapeutą."" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Realizm aktualnego stopnia w Twojej sytuacji</div>
+      <div class="scale-bounds"><span>(0 = niedostępne)</span><span>(10 = w pełni dostępne)</span></div>
+      <input type="range" class="scale-input" id="feasibility" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wynik</span><span id="feasibilityval">6</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła dostępności</strong>: jeśli adekwatny stopień jest niedostępny (kolejka NFZ, brak finansów na prywatną terapię), trzymaj się <em>niższego</em> stopnia + monitoring intensywny. To lepsze niż czekanie na adekwatny.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Krok 4 — eskalacja, deeskalacja, kontynuacja</div>
+    <h1 class="card-prompt">Plan <em>długofalowy</em> — gdy potrzebujesz zmiany</h1>
+    <p class="card-detail">Leczenie stopniowane nie jest jednorazowym wyborem — jest dynamicznym procesem. Eskalacja gdy brak efektu. Deeskalacja gdy stabilna poprawa. Kontynuacja zawsze: nawet po sukcesie pełny powrót do bottom line jest możliwy bez utrzymania praktyk.</p>
+
+    <textarea class="sc-input" id="escalateWhen" placeholder="„Kryteria eskalacji — gdy aktualny stopień nie wystarcza:
+- Brak poprawy ≥20% w określonym czasie.
+- Pojawienie się aktywnych SI.
+- Pojawienie się objawów uniemożliwiających pracę/relacje.
+- Pojawienie się komorbidności (depresja, lęk, ED).
+Co konkretnie zrobisz, gdy te kryteria się spełnią?"" rows="5"></textarea>
+
+    <textarea class="sc-input" id="deescalateWhen" placeholder="„Kryteria deeskalacji — gdy poprawa stabilna:
+- RSES &gt;25 przez 3 miesiące z rzędu.
+- Brak nawrotów w sytuacjach wcześniej trudnych.
+- Klient ma narzędzia samopomocy w razie nawrotu.
+Plan przejścia z terapii na samopomoc utrzymującą:"" rows="5"></textarea>
+
+    <textarea class="sc-input" id="maintenance" placeholder="„Plan utrzymania (po osiągnięciu poprawy) — co zostawiasz na stałe?
+- Codzienne 5-minutowe praktyki samowspółczucia.
+- RSES co 6 miesięcy (kontrola).
+- Booster sesja u terapeuty raz w roku.
+- Co jeszcze jest dla Ciebie ważne?"" rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Po pełnym planie — gotowość do wdrożenia</div>
+      <div class="scale-bounds"><span>(0 = nie wiem co dalej)</span><span>(10 = mam plan)</span></div>
+      <input type="range" class="scale-input" id="readiness" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wynik</span><span id="readinessval">6</span></div>
+    </div>
+
+    <div class="diff-list">
+      <div class="diff-row"><span><strong>Twój poziom głębokości</strong></span><span class="diff-delta" id="dS">—</span></div>
+      <div class="diff-row"><span><strong>Adekwatny stopień</strong></span><span class="diff-delta" id="dT">—</span></div>
+      <div class="diff-row"><span><strong>Realizm dostępności</strong></span><span class="diff-delta" id="dF">—</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsgSC">Sama wiedza o leczeniu stopniowanym redukuje wstyd („nie potrzebuję od razu intensywnej terapii — moja sytuacja jest lekka") i daje konkretną mapę. Klucz: <em>monitor i eskalacja, gdy potrzebne</em>.</div>
+
+    <div class="term-note"><strong>🔁 Reguła oceny</strong>: każdy stopień ma swój horyzont oceny. Stopień 1: 8 tygodni. Stopień 2: 12 sesji. Stopień 3: 16–24 sesje. Stopień 4: 6–12 miesięcy. Eskalacja przed tym horyzontem rzadko jest właściwa.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Leczenie stopniowane to <em>minimalna skuteczna dawka</em>. Pięć stopni: <strong>samopomoc → CBT-LSE → CBT+CFT → psychoterapia długoterminowa → leczenie złożone</strong>. Diagnostyka: 4 pytania. Eskalacja gdy brak poprawy ≥20%. Deeskalacja gdy stabilna poprawa.</div>
+    </div>
+
+    <div class="src">NICE (2011, CG123; 2022); Williams (2009); Bower, Gilbody (2005, BMJ); Cuijpers i in. (2010); Fennell (2016); Waite i in. (2012, RCT); Gilbert (2014); Kirby i in. (2017); Masley i in. (2012); Young i in. (2003)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateDiff() {
+  var s = parseInt(document.getElementById('severity').value);
+  var t = parseInt(document.getElementById('myStep').value);
+  var f = parseInt(document.getElementById('feasibility').value);
+  var dSe = document.getElementById('dS');
+  var dTe = document.getElementById('dT');
+  var dFe = document.getElementById('dF');
+  var sevLabels = ['', 'lekka', 'umiarkowana', 'głęboka', 'bardzo głęboka'];
+  dSe.textContent = sevLabels[s] || '—'; dSe.className = 'diff-delta';
+  dTe.textContent = 'Stopień ' + t; dTe.className = 'diff-delta';
+  dFe.textContent = f + '/10'; dFe.className = 'diff-delta' + (f <= 4 ? ' neg' : '');
+
+  var msg = document.getElementById('finalMsgSC');
+  if (s <= 2 && t <= 2) {
+    msg.innerHTML = 'Łagodny do umiarkowanego profil + niski stopień intensywności — klasyczna ścieżka samopomocy lub krótkiej terapii CBT. Bibliotherapy + 8–12 sesji typowo daje d=1.2 na RSES (Waite i in. 2012). Monitoruj RSES co 2–4 tygodnie.';
+  } else if (s >= 3 && t <= 2) {
+    msg.innerHTML = 'Głęboki profil + niski stopień intensywności — możliwa niedopasowanie. Sygnały: trauma rozwojowa, komorbidność, istotne upośledzenie funkcjonowania zwykle wymagają stopnia 3+. Konkretny krok: konsultacja u terapeuty CBT/CFT z doświadczeniem w pracy z traumą.';
+  } else if (s <= 2 && t >= 4) {
+    msg.innerHTML = 'Łagodny profil + wysoki stopień intensywności — możliwa nadinwestycja. Zwykle wystarczy stopień 1 lub 2.';
+  } else if (f <= 4) {
+    msg.innerHTML = 'Niski realizm dostępności — adekwatny stopień jest poza zasięgiem. Praktyczne strategie: niższy stopień jako mostek; lista oczekujących NFZ równolegle; konsultacje online; krótkie konsultacje (jednorazowe wizyty diagnostyczne).';
+  } else {
+    msg.innerHTML = 'Profil i stopień są dopasowane, dostępność OK. Konkretne kroki w nadchodzącym tygodniu zgodnie z wybranym stopniem. Pamiętaj o monitoringu (RSES) i o regule eskalacji.';
+  }
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    var id = e.target.id;
+    var out = document.getElementById(id + 'val');
+    if (out) out.textContent = e.target.value;
+    if (curStep === 5) updateDiff();
+  }
+});
+
+function onReset() {
+  ['severity','myStep','feasibility','readiness'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      var v = el.getAttribute('data-default') || '5';
+      el.value = v;
+      var out = document.getElementById(id + 'val');
+      if (out) out.textContent = v;
+    }
+  });
+  ['dS','dT','dF'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = 'diff-delta'; }
+  });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_se_stepped_care — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_se_stepped_care";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

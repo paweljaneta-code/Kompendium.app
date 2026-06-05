@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Przeniesienie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.signal-grid { display: grid; gap: 6px; margin: 12px 0; }
+.signal-row { background: rgba(184,197,168,0.12); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: left; color: var(--ink); width: 100%; border: 1px solid var(--sage); display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; font-size: 12.5px; }
+.signal-row:hover, .signal-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.signal-icon { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+
+.tlink-box { background: rgba(184,197,168,0.18); border: 2px solid var(--sage-deep); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.tlink-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+.tlink-tri { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.7; color: var(--ink); padding: 8px 0; }
+.tlink-tri strong { color: var(--sage-deep); font-style: normal; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.compare-cell { padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+.compare-cell.bad { background: rgba(201,165,114,0.14); border: 1px solid var(--warm); }
+.compare-cell.good { background: rgba(184,197,168,0.20); border: 1px solid var(--sage-deep); }
+.compare-tag { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.compare-cell.bad .compare-tag { color: var(--warm); }
+.compare-cell.good .compare-tag { color: var(--sage-deep); }
+.compare-cell strong { color: var(--ink); }
+
+@media (max-width: 380px) {
+  .compare-row { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Przeniesienie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie — dla terapeuty</div>
+    <h1 class="card-prompt">Przeniesienie — <em>laboratorium</em> wzorca relacyjnego</h1>
+    <p class="card-detail">To narzędzie jest przeznaczone dla klinicystów. Przeniesienie (transference; Freud, 1912; Gill, 1982) to nieświadome powtarzanie przez klienta wzorców z wcześniejszych relacji w relacji z terapeutą. W kontekście motywacji: bierność klienta na sesji często <em>nie dotyczy</em> „problemu" — dotyczy <em>relacji z terapeutą</em>. Klient, który w dzieciństwie doświadczał krytyki za inicjatywę, spodziewa się krytyki od terapeuty i jest bierny. Klient z kontrolującym rodzicem odbiera terapeutę jako kontrolującego i opiera się „zadaniom domowym". Klient zaniedbany nie wierzy, że terapeuta naprawdę się interesuje, i nie angażuje się. Gill (1982): przeniesienie to <em>nie</em> „błąd" klienta — to najcenniejsze źródło informacji o jego wzorcach relacyjnych. Levenson (2017, Time-Limited Dynamic Psychotherapy): terapia jest „laboratorium" — przeniesienie pozwala zobaczyć wzorzec na żywo i zmienić go w relacji. Høglend i wsp. (2006, 2008, FEST trial — First Experimental Study of Transference Work): praca z przeniesieniem istotnie skuteczniejsza niż pomijanie go u pacjentów ze słabymi relacjami obiektowymi i u kobiet; efekty utrzymywały się 3 lata po zakończeniu terapii. Malan (1979) opracował T-link (transference link) jako narzędzie łączące teraźniejszość z przeszłością przez relację terapeutyczną.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary pracy z przeniesieniem motywacyjnym</div>
+      <div class="element-row">
+        <span class="element-icon">🔍</span>
+        <span class="element-text"><strong>Rozpoznawanie</strong> — przeniesienie ujawnia się przez konkretne zachowania klienta wobec terapeuty: niewykonywanie zadań, bierność na sesji, spóźnienia, idealizacja, testowanie. Te same zachowania, które blokują terapię, blokują życie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🗣️</span>
+        <span class="element-text"><strong>Tu-i-teraz</strong> — interpretacja przeniesienia musi być zlokalizowana <em>w tej sesji, między nami</em>. „Zauważam, że gdy proponuję ćwiczenie...", a nie „przenosisz na mnie obraz ojca". Pierwsze jest dostępne, drugie — odpychające.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔗</span>
+        <span class="element-text"><strong>T-link Malana</strong> — łączenie tu-i-teraz z przeszłością i z innymi obecnymi relacjami. Trójkąt: relacja z terapeutą (T) — relacja z rodzicem/innymi z przeszłości (P) — inne aktualne relacje (O).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌱</span>
+        <span class="element-text"><strong>Korektywne doświadczenie</strong> — Alexander i French (1946): klient oczekuje krytyki — terapeuta oferuje akceptację. Klient oczekuje kontroli — autonomię. Klient oczekuje zaniedbania — konsekwentną obecność. Nowe doświadczenie zmienia wzorzec.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Przeniesienie to nie problem do usunięcia. To najcenniejszy materiał terapeutyczny — wzorzec, który klient powtarza w życiu, ujawniony tu, gdzie możesz nad nim pracować."
+      <span class="frame-quote-attr">— Gill (1982, Analysis of Transference)</span>
+    </div>
+
+    <div class="tlink-box">
+      <div class="tlink-h">📐 Trójkąt Malana — T-link</div>
+      <div class="tlink-tri"><strong>(T) Tu-i-teraz, między nami</strong> — co dzieje się w tej sesji?<br><strong>(P) Przeszłość, z opiekunami</strong> — kto pierwszy reagował tak?<br><strong>(O) Inne aktualne relacje</strong> — z kim jeszcze klient powtarza wzorzec?</div>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: paradoks pracy z przeniesieniem — najtrudniejsze sesje (opór, bierność, testowanie) są często <em>najważniejsze</em>. Klient powtarza wzorzec, którego sam nie widzi. Twoja zdolność rozpoznania go i nazwania w bezpiecznej formie jest aktem terapeutycznym, który rzadko zdarza się w innych relacjach klienta. To jest miejsce, gdzie wzorzec może się zmienić.</div>
+
+    <div class="term-note"><strong>📌 Reguła autorefleksji</strong>: przeniesienie często wywołuje przeciwprzeniesienie — Twoja reakcja emocjonalna mówi o klientcie więcej niż jego słowa. Frustracja wobec biernego klienta to często odbicie jego frustracji wobec siebie. Czujność wobec własnych emocji jest narzędziem diagnostycznym.</div>
+
+    <div class="src">Freud (1912, The Dynamics of Transference) · Gill (1982, Analysis of Transference) · Malan (1979, Individual Psychotherapy and the Science of Psychodynamics) · Høglend i wsp. (2006, 2008, American Journal of Psychiatry, FEST trial) · Levenson (2017, Time-Limited Dynamic Psychotherapy) · Alexander i French (1946, Psychoanalytic Therapy) · Safran i Muran (2000, Negotiating the Therapeutic Alliance)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Sygnały przeniesienia motywacyjnego</div>
+    <h1 class="card-prompt">Zaznacz <em>sygnały</em>, które rozpoznajesz u tego klienta</h1>
+    <p class="card-detail">Pomyśl o konkretnym kliencie, którego bierność lub opór trwa pomimo Twoich różnych interwencji. Zaznacz sygnały przeniesienia motywacyjnego, które obserwujesz. Im więcej zaznaczonych, tym wyraźniejsze, że to, co dzieje się w gabinecie, jest powtórzeniem wzorca z życia klienta.</p>
+
+    <div class="signal-grid">
+      <button type="button" class="signal-row" id="sg1" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">📋</span>
+        <span>Klient nie wykonuje zadań domowych pomimo deklaracji „spróbuję" / „dobrze".</span>
+      </button>
+      <button type="button" class="signal-row" id="sg2" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">🪑</span>
+        <span>Klient jest bierny na sesji — czeka, aż terapeuta „poprowadzi", proponuje, sugeruje.</span>
+      </button>
+      <button type="button" class="signal-row" id="sg3" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">⏰</span>
+        <span>Klient spóźnia się, odwołuje sesje, „zapomina" terminy bez wyraźnego powodu.</span>
+      </button>
+      <button type="button" class="signal-row" id="sg4" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">🧪</span>
+        <span>Klient testuje — „i tak nic nie działa", „inni terapeuci też nie pomogli", „po co to robić".</span>
+      </button>
+      <button type="button" class="signal-row" id="sg5" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">⭐</span>
+        <span>Klient idealizuje — „pan/pani jest taki/a mądra", „proszę mi powiedzieć, co robić".</span>
+      </button>
+      <button type="button" class="signal-row" id="sg6" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">🚪</span>
+        <span>Klient grozi przerwaniem terapii — szczególnie po sesji, na której coś się ruszyło.</span>
+      </button>
+      <button type="button" class="signal-row" id="sg7" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+        <span class="signal-icon">🤐</span>
+        <span>Klient milczy długo, opowiada banalne historie, unika tematów, które wcześniej były ważne.</span>
+      </button>
+    </div>
+
+    <textarea class="thought-input" id="kontekstKlienta" placeholder="KLIENT — co o jego historii relacyjnej już wiesz? Jaki rodzic / opiekun? Jakie wczesne doświadczenia? np. „X — ojciec krytyczny, mama emocjonalnie zaniedbująca. W dzieciństwie próby były wyśmiewane: 'ty dasz radę?' z drwiną""  rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Rozpoznanie przeniesienia PRZED — „widzę wzorzec w naszej relacji"</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełne</span></div>
+      <input type="range" class="scale-input" id="rozpoznPrzed" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Wartość</span><span id="rozpoznPrzedVal">3</span></div>
+    </div>
+
+    <div class="term-note"><strong>📊 Reguła „wzorzec ≠ pojedynczy incydent"</strong>: jeden niezaadresowany mail nie jest przeniesieniem. Powtarzający się wzorzec — kilka tygodni „nie dam rady" pomimo różnych interwencji — wskazuje na przeniesienie. Diagnoza opiera się na powtarzalności, nie na intensywności pojedynczej sytuacji.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Łączenie z historią — T-link</div>
+    <h1 class="card-prompt">Połącz <em>tu-i-teraz</em> z przeszłością i innymi relacjami</h1>
+    <p class="card-detail">T-link Malana łączy trzy wierzchołki: tu-i-teraz w gabinecie (T), przeszłość z opiekunami (P), aktualne inne relacje (O). Hipoteza pracująca: ten sam wzorzec, który klient odtwarza ze mną, ma swoje korzenie w (P) i powtarza się w (O). Sformułowanie tej hipotezy jest pracą terapeutyczną — interpretacja, która łączy trzy wierzchołki, otwiera klientowi dostęp do mechanizmu.</p>
+
+    <textarea class="thought-input" id="punktT" placeholder="(T) TU-I-TERAZ — co konkretnie dzieje się w naszej relacji? Konkretne zachowanie klienta wobec Ciebie. np. „Klient mówi 'spróbuję' do każdego ćwiczenia, ale nigdy nie wykonuje. Na sesjach powolny, długie milczenia. Szczególnie po sesjach, gdzie coś się ruszyło — odwołuje""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="punktP" placeholder="(P) PRZESZŁOŚĆ — kto wcześniej reagował tak, że klient nauczył się tej obrony? Konkretne osoby, sytuacje. np. „Ojciec — gdy klient pokazywał pracę, ojciec sapał: 'no co znowu, daj mi spokój'. Mama — nigdy nie pochwalała inicjatywy, mówiła: 'lepiej nie wystawaj'""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="punktO" placeholder="(O) INNE RELACJE — z kim jeszcze klient powtarza wzorzec? Partner, szef, przyjaciele. np. „Z partnerem: mówi 'zrobię' i nie robi, partner się wycofuje. W pracy: nie zgłasza pomysłów na zebraniach, choć w rozmowach prywatnych ma świetne pomysły""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="hipotezaTPO" placeholder="HIPOTEZA T-PO — sformułuj wzorzec łączący trzy wierzchołki. np. „Klient w (P) doświadczył ośmieszenia za inicjatywę. Nauczył się: nie próbuj naprawdę, mów że spróbujesz, schowaj się. Ten sam wzorzec teraz pojawia się ze mną (T) i z innymi (O). Bierność jest mostem — chroni przed kolejnym ośmieszeniem""  rows="6"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła ostrożnej hipotezy</strong>: T-link to <em>hipoteza pracująca</em>, nie pewność. Może być błędna. Wartość polega nie na trafności, lecz na <em>otwarciu rozmowy</em> — klient sam doprecyzuje, jeśli hipoteza jest blisko. Jeśli daleko — odrzuci, i ta odmowa też jest informacją.</div>
+
+    <div class="term-note"><strong>📌 Reguła sygnałów potwierdzenia</strong>: gdy interpretacja T-link trafia, pojawiają się sygnały: klient milknie, łzy, nagła zmiana postawy ciała, „nigdy o tym tak nie myślałem", głębsze westchnięcie. Brak tych sygnałów + intelektualna zgoda („ciekawe") sugeruje, że interpretacja minęła emocjonalny rdzeń.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Interpretacja + nowe doświadczenie</div>
+    <h1 class="card-prompt">Sformułuj <em>delikatną</em> interpretację — i zaplanuj korekt. doświadczenie</h1>
+    <p class="card-detail">Sama interpretacja przeniesienia rzadko wystarczy. Klient potrzebuje <em>nowego doświadczenia</em> — Reakcji od Ciebie, która jest <em>inna</em> od oczekiwanej. Klient oczekuje krytyki — Ty oferujesz akceptację. Oczekuje kontroli — autonomię. Oczekuje zaniedbania — konsekwentną obecność. Alexander i French (1946): „to, czego klient doświadcza, jest ważniejsze niż to, co rozumie".</p>
+
+    <div class="compare-row">
+      <div class="compare-cell bad">
+        <span class="compare-tag">❌ Interpretacja interpretująca</span>
+        <strong>„Przenosisz na mnie obraz ojca."</strong> Etykieta, dystans, poczucie analizowania zamiast bycia z klientem.
+      </div>
+      <div class="compare-cell good">
+        <span class="compare-tag">✅ Interpretacja zapraszająca</span>
+        <strong>„Zauważam, że gdy proponuję ćwiczenie, mówisz 'spróbuję' — i nie wykonujesz. Zastanawiam się: czy ktoś ważny w Twoim życiu reagował krytycznie, gdy próbowałeś naprawdę? Czy jest możliwe, że spodziewasz się tego ode mnie?"</strong>
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="interpretacja" placeholder="INTERPRETACJA — sformułuj zapraszającą wersję dla swojego klienta. Tu-i-teraz + delikatne odwołanie do przeszłości. np. „Zauważam, że odwołujesz sesje po naszych głębszych rozmowach. Pytanie: czy ktoś w Twoim życiu odsuwał się, gdy się otwierałeś? Czy przyjmujesz, że ja zrobię to samo?""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="nowedosw" placeholder="NOWE DOŚWIADCZENIE — co konkretnie zaoferujesz, by klient doświadczył innej reakcji niż oczekiwana? np. „Klient oczekuje krytyki za inicjatywę. Oferuję: na każdą próbę, choćby drobną, autentyczne uznanie 'widzę, że to było trudne i to zrobiłeś'. Konsekwentnie, sesja po sesji""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="meta" placeholder="META-KOMUNIKACJA — pytania, które otworzą rozmowę o relacji terapeutycznej. np. „Co dzieje się teraz między nami? Jak czujesz się w tej relacji? Czy jest coś, co chciałbyś mi powiedzieć, ale się nie odważasz?""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="zerwanie" placeholder="ZERWANIE SOJUSZU — jeśli zauważysz w sesji moment napięcia, dystansu, demobilizacji — Safran i Muran (2000) traktują to jako szansę. Co zrobisz, gdy zauważysz zerwanie? np. „Powiem: 'Wydaje mi się, że coś się między nami zmieniło. Czy mogę zapytać, co Cię uderzyło w tym, co powiedziałem?'""  rows="5"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła doświadczenia ważniejszego niż słowa</strong>: klient w terapii powtarza wzorzec setki razy. Dziesiątki Twoich konsekwentnych, autentycznych reakcji <em>innych</em> od oczekiwanej powoli zmieniają wewnętrzny model relacji. Nie mów, że klient może Ci ufać — <em>bądź</em> godny zaufania w sposób powtarzalny i przewidywalny. Doświadczenie, nie dyskurs, jest mechanizmem zmiany.</div>
+
+    <div class="term-note"><strong>📌 Reguła zerwania sojuszu</strong>: Safran i Muran (2000): zerwania sojuszu (alliance ruptures) — momenty napięcia, dystansu, niezgody — są <em>szansą</em>, nie problemem. Naprawa zerwania jest jednym z najsilniejszych mechanizmów zmiany w terapii. Klient doświadcza, że konflikt nie kończy relacji — jest częścią dojrzałej relacji.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja rozpoznania</div>
+    <h1 class="card-prompt">Sprawdź <em>swoje</em> rozpoznanie przeniesienia po refleksji</h1>
+    <p class="card-detail">Po zaznaczeniu sygnałów, sformułowaniu T-link i zaplanowaniu interpretacji + korektywnego doświadczenia — gdzie jesteś teraz w skali rozpoznania przeniesienia z tym klientem? Cel nie jest 10. Cel: konkretny plan na następną sesję plus świadomość własnego przeciwprzeniesienia.</p>
+
+    <div class="scale">
+      <div class="scale-title">Rozpoznanie przeniesienia PO ćwiczeniu</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełne</span></div>
+      <input type="range" class="scale-input" id="rozpoznPo" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wartość</span><span id="rozpoznPoVal">6</span></div>
+    </div>
+
+    <div id="przDiff"></div>
+
+    <textarea class="thought-input" id="planSesja" placeholder="PLAN NA NASTĘPNĄ SESJĘ — co konkretnie zrobisz? Sformułowanie interpretacji + moment, w którym ją wprowadzisz. np. „Po pierwszych 10 minutach, gdy klient powie 'znowu nie zrobiłem ćwiczenia' — zamiast pytać dlaczego, zapytam o relację: 'co dzieje się między nami, gdy proponuję pracę domową?'""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="moaPrzeciw" placeholder="MOJE PRZECIWPRZENIESIENIE — co czuję wobec tego klienta? Frustrację, bezradność, opiekuńczość, irytację? Co ta emocja może mówić o nim? np. „Czuję frustrację — chciałabym 'pchnąć' go do działania. To być może odbicie jego własnej frustracji — i zarazem wzorzec wcześniejszych relacji, gdzie ktoś go pchał""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="superwizja" placeholder="SUPERWIZJA — kiedy omówisz tego klienta? Jakie konkretne pytanie? np. „Czwartek 16:00 — superwizja. Pytanie: jak zachować równowagę między wymaganiem zmiany a ryzykiem powtórzenia krytyki ojca?""  rows="4"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: praca z przeniesieniem motywacyjnym jest długoterminowa. Pierwsze interpretacje T-link mogą wywołać opór („to nie jest tak", „nie chcę o tym") — to typowa reakcja na trafną interpretację. Po 4—6 powtórzeniach interpretacja zaczyna się integrować — klient sam zauważa wzorzec. Po 6—12 miesiącach świadomej pracy z przeniesieniem pojawia się przesunięcie: klient zaczyna w innych relacjach (partner, szef) reagować inaczej, bo ma już model relacji, w której można <em>nie</em> spodziewać się krytyki.
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: rozpoznanie przeniesienia rośnie z czasem pracy z konkretnym klientem. Pierwszych kilka sesji daje hipotezę; po 10—15 sesjach widzisz wzorzec wyraźnie; po 25—30 możesz pracować z nim regularnie. Cierpliwość wobec tempa rozwoju rozpoznania jest częścią pracy.</div>
+
+    <div class="term-note"><strong>📊 Reguła własnej terapii</strong>: praca z przeniesieniem wymaga, byś jako terapeuta miał/a doświadczenie własnej terapii — bez tego trudno odróżnić własne reakcje od projekcji klienta. Własna terapia (najlepiej psychodynamiczna, by pracować z przeniesieniem od wewnątrz), regularna superwizja indywidualna, grupa Balinta — są warunkami profesjonalnej pracy z przeniesieniem.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Przeniesienie to <strong>laboratorium</strong>, nie problem. Bierność klienta w terapii jest powtórzeniem wzorca z życia. <em>T-link Malana</em>: tu-i-teraz (T) — przeszłość (P) — inne relacje (O). Interpretacja zapraszająca + nowe doświadczenie (klient oczekuje X — oferujesz nie-X). Zerwanie sojuszu jest szansą, nie porażką. Własna terapia + superwizja są warunkiem profesjonalnej pracy.</div>
+    </div>
+
+    <div class="src">Freud (1912, The Dynamics of Transference) · Gill (1982, Analysis of Transference) · Malan (1979, Individual Psychotherapy and the Science of Psychodynamics) · Høglend i wsp. (2006, 2008, American Journal of Psychiatry, FEST trial) · Levenson (2017, Time-Limited Dynamic Psychotherapy) · Alexander i French (1946, Psychoanalytic Therapy) · Safran i Muran (2000, Negotiating the Therapeutic Alliance)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updatePrzVals() {
+  ['rozpoznPrzed','rozpoznPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderPrzDiff();
+}
+
+function renderPrzDiff() {
+  const a = document.getElementById('rozpoznPrzed');
+  const b = document.getElementById('rozpoznPo');
+  const d = document.getElementById('przDiff');
+  if (!a || !b || !d) return;
+  const delta = parseInt(b.value) - parseInt(a.value);
+  const sign = delta > 0 ? '+' : '';
+  const cls = delta < 0 ? ' neg' : '';
+  d.innerHTML = '<div class="diff-list"><div class="diff-row"><strong>Rozpoznanie przeniesienia</strong><span class="diff-delta' + cls + '">' + a.value + ' → ' + b.value + ' (' + sign + delta + ')</span></div></div>';
+}
+
+function onStepChange(step) {
+  if (step === 5) updatePrzVals();
+}
+
+function onReset() {
+  const d = document.getElementById('przDiff');
+  if (d) d.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_stpp_przeniesienie — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_stpp_przeniesienie";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updatePrzVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

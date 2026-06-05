@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mechanizm telefonu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.mech-card { background: rgba(184,197,168,0.12); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin: 10px 0; }
+.mech-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.mech-body { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.mech-body strong { color: var(--ink); font-weight: 600; }
+
+.cycle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.cycle-cell { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 10px 12px; border-radius: 10px; }
+.cycle-h { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.cycle-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.cycle-body strong { color: var(--ink); font-weight: 600; }
+
+.score-banner { background: rgba(184,197,168,0.22); border-left: 3px solid var(--sage-deep); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+.score-banner-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--sage-deep); margin-bottom: 4px; }
+.score-banner-body { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.score-banner-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mechanizm telefonu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Dlaczego nie możesz <em>odłożyć</em> telefonu</h1>
+  <p class="card-detail">Nie sięgasz po telefon dlatego, że jesteś słaby/a. Sięgasz, bo telefon jest zaprojektowany jak <strong>jednoręki bandyta</strong>: nieprzewidywalna nagroda (lajk, wiadomość, nowy obraz) uderza w ten sam układ dopaminergiczny, co hazard. Wzór znany od Skinnera (1957): zmienne wzmocnienie (variable ratio reinforcement) jest <em>najsilniej</em> uzależniającym schematem nagród. Brand i in. (2016, 2019) opisali to w modelu I-PACE — interakcja predyspozycji, afektu, poznania i kontroli wykonawczej.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cykl uzależnienia behawioralnego (Montag i in., 2019)</div>
+    <div class="element-row">
+      <span class="element-icon">⚡</span>
+      <span class="element-text"><strong>Wyzwalacz</strong> — nuda, lęk, samotność, stres. Niewielki dyskomfort wewnętrzny uruchamia odruch sięgnięcia po telefon.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎰</span>
+      <span class="element-text"><strong>Nagroda nieprzewidywalna</strong> — czasem lajk, czasem wiadomość, czasem nic. Mózg uczy się sprawdzać CIĄGLE, bo nigdy nie wie, kiedy przyjdzie nagroda.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📈</span>
+      <span class="element-text"><strong>Tolerancja</strong> — ten sam dawka stymulacji daje coraz mniej. Sięgasz częściej, scrollujesz dłużej, instalujesz nowe aplikacje.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌀</span>
+      <span class="element-text"><strong>Objawy odłączenia</strong> — niepokój, FOMO (Fear Of Missing Out — lęk przed pominięciem), fantomowe wibracje, sprawdzanie telefonu co kilka minut.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Każde powiadomienie to mała maszyna do losowania. Mózg wie, że czasem wygra — więc sprawdza znowu i znowu, nawet kiedy chce przestać.”
+    <span class="frame-quote-attr">— Tristan Harris (2016, Center for Humane Technology, parafraza)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: telefon nie jest <em>zły</em> — jest precyzyjnie zaprojektowany, by hakować Twój układ nagrody. To inżynieria, nie Twoja słabość. Świadomość mechanizmu jest pierwszym krokiem, by odzyskać kontrolę.</div>
+
+  <div class="src">Skinner (1957, schedules of reinforcement); Brand i in. (2016, 2019, model I-PACE — Neuroscience &amp; Biobehavioral Reviews); Montag i in. (2019); Harris (2016, Center for Humane Technology); Meng i in. (2022, meta-analiza, 507 badań)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twój cykl</div>
+  <h1 class="card-prompt">Co Cię <em>wyzwala</em>?</h1>
+  <p class="card-detail">Cykl zaczyna się od konkretnego stanu wewnętrznego — nie „przypadkowo”. Zaznacz wyzwalacze, które najczęściej u Ciebie uruchamiają sięgnięcie po telefon. Zaznacz tyle, ile zauważasz u siebie.</p>
+
+  <div class="examples-h">Najczęstsze wyzwalacze (kliknij swoje)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="trgNuda" onclick="this.classList.toggle('picked');save();">😐 Nuda — pusta minuta</button>
+    <button class="example-chip" id="trgLek" onclick="this.classList.toggle('picked');save();">😰 Lęk lub niepokój</button>
+    <button class="example-chip" id="trgSamot" onclick="this.classList.toggle('picked');save();">🌑 Samotność</button>
+    <button class="example-chip" id="trgStres" onclick="this.classList.toggle('picked');save();">⚡ Stres lub presja</button>
+    <button class="example-chip" id="trgUnik" onclick="this.classList.toggle('picked');save();">🚪 Unikanie zadania</button>
+    <button class="example-chip" id="trgZmecz" onclick="this.classList.toggle('picked');save();">😴 Zmęczenie wieczorem</button>
+    <button class="example-chip" id="trgRano" onclick="this.classList.toggle('picked');save();">🌅 Pierwsza minuta po przebudzeniu</button>
+    <button class="example-chip" id="trgPocz" onclick="this.classList.toggle('picked');save();">🔔 Powiadomienie</button>
+    <button class="example-chip" id="trgKolej" onclick="this.classList.toggle('picked');save();">⏳ Każda chwila bezczynności (kolejka, winda)</button>
+  </div>
+
+  <div class="cycle-grid">
+    <div class="cycle-cell">
+      <div class="cycle-h">Wyzwalacz wewnętrzny</div>
+      <div class="cycle-body">Stan ciała lub emocja. <strong>Pojawia się PRZED</strong> sięgnięciem.</div>
+    </div>
+    <div class="cycle-cell">
+      <div class="cycle-h">Wyzwalacz zewnętrzny</div>
+      <div class="cycle-body">Powiadomienie, widok telefonu, dźwięk. <strong>Działa odruchowo</strong>.</div>
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:12px;font-size:13px;">A teraz opisz <strong>jeden konkretny moment</strong> z ostatnich 24 godzin, kiedy sięgnęłaś/sięgnąłeś po telefon — co czułaś/eś sekundę WCZEŚNIEJ?</p>
+  <textarea class="thought-input" id="momentTriger" placeholder="np. „Zaczynałem trudną wiadomość do kolegi z pracy, czułem napięcie w klatce — nagle byłem na Instagramie, choć nie pamiętam, kiedy go otworzyłem.”" rows="4"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła pomiaru</strong>: wyzwalacz to <em>uczucie</em>, nie sytuacja. „Praca” nie wyzwala — <em>napięcie przed trudnym zadaniem</em> wyzwala. Im precyzyjniej nazwiesz uczucie, tym łatwiej rozpoznasz cykl, zanim się uruchomi.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Skala kompulsywności</div>
+  <h1 class="card-prompt">Jak <em>silny</em> jest Twój cykl?</h1>
+  <p class="card-detail">Skala SAS-SV (Smartphone Addiction Scale — krótka skala uzależnienia od telefonu, Kwon i in., 2013) mierzy, na ile cykl uruchamia się <em>automatycznie</em>. Oceń każdy z trzech wymiarów na własnym przykładzie.</p>
+
+  <div class="scale">
+    <div class="scale-title">Trudność z odłożeniem — gdy chcesz przestać</div>
+    <div class="scale-bounds"><span>(odkładam łatwo)</span><span>(prawie niemożliwe)</span></div>
+    <input type="range" class="scale-input" id="sasOdl" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('sasOdlVal').textContent=this.value;updateSasSum();">
+    <div class="scale-readout"><span>Twój wynik</span><span id="sasOdlVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Częstotliwość sprawdzania — bez konkretnego powodu</div>
+    <div class="scale-bounds"><span>(rzadko)</span><span>(co kilka minut)</span></div>
+    <input type="range" class="scale-input" id="sasCzes" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('sasCzesVal').textContent=this.value;updateSasSum();">
+    <div class="scale-readout"><span>Twój wynik</span><span id="sasCzesVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Niepokój gdy nie masz telefonu — albo bateria pada</div>
+    <div class="scale-bounds"><span>(spokój)</span><span>(wyraźny niepokój)</span></div>
+    <input type="range" class="scale-input" id="sasNiep" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('sasNiepVal').textContent=this.value;updateSasSum();">
+    <div class="scale-readout"><span>Twój wynik</span><span id="sasNiepVal">5</span></div>
+  </div>
+
+  <div class="score-banner">
+    <div class="score-banner-h" id="sasSumH">Suma orientacyjna: 15 / 30</div>
+    <div class="score-banner-body" id="sasSumBody">Suwaki ustaw na własne wartości — pole zaktualizuje się automatycznie.</div>
+  </div>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: kompulsywność rośnie nie z <em>ilości</em> używania, ale z <em>automatyzmu</em>. Pięć godzin świadomego użycia (rozmowa, zdjęcia, mapy) szkodzi mniej niż dwie godziny nieprzytomnego scrollowania. Pełna skala SAS-SV ma 10 pytań — wynik ≥31 (mężczyźni) / ≥33 (kobiety) wskazuje ryzyko (Kwon, 2013).</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praca z cyklem</div>
+  <h1 class="card-prompt">Gdzie <em>przerwać</em> pętlę?</h1>
+  <p class="card-detail">Cykl ma cztery ogniwa — pętlę można przerwać w każdym z nich. Najtrwalsza zmiana zachodzi <em>najwcześniej</em> w cyklu: zanim sięgniesz po telefon, nie po. Wybierz jedną interwencję na najbliższy tydzień.</p>
+
+  <button class="rel-btn" id="intvWyzw" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">⚡ Praca z wyzwalaczem (najwcześniej)</span>
+    <span class="rel-desc">Gdy poczujesz napięcie/nudę/lęk — zatrzymaj się na 3 oddechy, NAZWIJ uczucie, dopiero potem podejmij decyzję. „Zauważam nudę. Czego naprawdę potrzebuję — bodźca czy odpoczynku?”</span>
+  </button>
+
+  <button class="rel-btn" id="intvNagr" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">🎰 Zmiana środowiska nagrody</span>
+    <span class="rel-desc">Wyłącz wszystkie powiadomienia (oprócz połączeń od bliskich). Tryb skali szarości. Aplikacje społecznościowe na 2. ekran lub w folderze. Cel: zmniejsz nieprzewidywalność nagrody, którą Twój mózg sprawdza.</span>
+  </button>
+
+  <button class="rel-btn" id="intvTole" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">📈 Limit dawki (tolerancja)</span>
+    <span class="rel-desc">Ustaw twardy limit czasu w aplikacji Screen Time / Digital Wellbeing — np. 30 min/dzień social media. Nie negocjuj z sobą po wyczerpaniu — limit działa jak ściana, nie jak prośba.</span>
+  </button>
+
+  <button class="rel-btn" id="intvOdla" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">🌀 Trening tolerowania odłączenia</span>
+    <span class="rel-desc">Zaplanuj 1 godzinę dziennie BEZ telefonu (telefon w innym pokoju). Pierwsze 15 min: niepokój, fantomowe wibracje. Po 20–30 min: spada. Buduje się tolerancja na bycie offline.</span>
+  </button>
+
+  <textarea class="thought-input" id="intvKiedy" placeholder="Kiedy konkretnie zaczniesz? np. „Jutro o 8:00 wyłączam wszystkie powiadomienia oprócz telefonu i SMS-ów od żony.”" rows="3"></textarea>
+
+  <div class="term-note"><strong>🔑 Mechanizm zmiany</strong>: sam mózg nie zmieni nawyku — <em>środowisko</em> go zmienia. Alter (2017): „architektura środowiska bije siłę woli”. Łatwiej usunąć pokusę z pola widzenia niż wciąż się jej opierać. Każda interwencja w cyklu osłabia inne — efekt domina.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po tygodniu</div>
+  <h1 class="card-prompt">Co się <em>zmieniło</em>?</h1>
+  <p class="card-detail">Po 7 dniach pracy z wybraną interwencją wróć tu i przesuń dwa suwaki. Zmiana niewielka też się liczy — to <em>kumulacja</em> mikrozwycięstw przebudowuje cykl, nie pojedyncze heroiczne wysiłki.</p>
+
+  <div class="scale">
+    <div class="scale-title">Trudność z odłożeniem — PO tygodniu</div>
+    <div class="scale-bounds"><span>(łatwo)</span><span>(prawie niemożliwe)</span></div>
+    <input type="range" class="scale-input" id="postOdl" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('postOdlVal').textContent=this.value;updateDelta();">
+    <div class="scale-readout"><span>Wynik</span><span id="postOdlVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość wyzwalacza — gdy sięgam po telefon, zauważam to</div>
+    <div class="scale-bounds"><span>(automat)</span><span>(zauważam za każdym razem)</span></div>
+    <input type="range" class="scale-input" id="postSwia" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('postSwiaVal').textContent=this.value;updateDelta();">
+    <div class="scale-readout"><span>Wynik</span><span id="postSwiaVal">5</span></div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+
+  <div class="final-msg" id="finalMsg">
+    Najważniejszy nie jest spadek liczby godzin — ważny jest wzrost <em>świadomości</em> wyzwalacza. Gdy zauważasz moment przed sięgnięciem, masz wybór. Gdy działasz odruchowo, wyboru nie ma.
+  </div>
+
+  <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: cykl nie znika po tygodniu — słabnie. Każde świadome przerwanie wzmacnia ścieżkę „zauważam — wybieram”, każde sięgnięcie odruchowe wzmacnia ścieżkę „sięgam — scrolluję”. 5–10 powtórzeń (kilka tygodni) zostawia trwały ślad neuroplastyczny, dane na podstawie pracy z nawykami uzależniającymi (Volkow i in., 2016).</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Telefon nie jest <em>nawykiem</em> — jest <strong>cyklem behawioralnym</strong> z czterema ogniwami: wyzwalacz, nagroda, tolerancja, odłączenie. Pętlę przerywasz <em>najwcześniej</em>, jak potrafisz: w wyzwalaczu, nie w nagrodzie. Świadomość momentu „TUŻ PRZED” jest największą dźwignią zmiany.</div>
+  </div>
+
+  <div class="src">Skinner (1957, schedules of reinforcement, Appleton-Century-Crofts); Brand i in. (2019, model I-PACE — Neuroscience &amp; Biobehavioral Reviews); Montag i in. (2019, frontiers in psychology); Kwon i in. (2013, SAS-SV — PLoS ONE); Harris (2016, Center for Humane Technology); Alter (2017, Irresistible — Penguin Press); Volkow, Koob, McLellan (2016, NEJM, neurobiologia uzależnienia); Meng i in. (2022, meta-analiza); Andreassen i in. (2016, BSMAS)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateSasSum() {
+  var s1 = parseInt(document.getElementById('sasOdl').value) || 0;
+  var s2 = parseInt(document.getElementById('sasCzes').value) || 0;
+  var s3 = parseInt(document.getElementById('sasNiep').value) || 0;
+  var sum = s1 + s2 + s3;
+  var hEl = document.getElementById('sasSumH');
+  var bEl = document.getElementById('sasSumBody');
+  if (hEl) hEl.textContent = 'Suma orientacyjna: ' + sum + ' / 30';
+  if (!bEl) return;
+  if (sum <= 9) {
+    bEl.innerHTML = '<strong>Niska kompulsywność.</strong> Cykl uruchamia się okazjonalnie — jeśli zauważasz koszty, warto pracować profilaktycznie.';
+  } else if (sum <= 18) {
+    bEl.innerHTML = '<strong>Średnia kompulsywność.</strong> Cykl działa kilka razy dziennie automatycznie. Praca z wyzwalaczem i środowiskiem przyniesie szybki efekt.';
+  } else if (sum <= 24) {
+    bEl.innerHTML = '<strong>Podwyższona kompulsywność.</strong> Cykl jest silnie utrwalony. Wskazana praca strukturalna: limity, środowisko, świadomość wyzwalacza.';
+  } else {
+    bEl.innerHTML = '<strong>Wysoka kompulsywność.</strong> Cykl prawdopodobnie ma negatywne konsekwencje (sen, relacje, praca). Rozważ rozmowę z psychoterapeutą — szczególnie jeśli próbowałaś/eś już ograniczyć i nie działało.';
+  }
+}
+
+function updateDelta() {
+  var preOdl = parseInt(document.getElementById('sasOdl').value) || 5;
+  var preSwia = 0;
+  var postOdl = parseInt(document.getElementById('postOdl').value) || 5;
+  var postSwia = parseInt(document.getElementById('postSwia').value) || 5;
+  var diffOdl = preOdl - postOdl;
+  var diffSwia = postSwia - preSwia;
+  var html = '';
+  html += '<div class="diff-row"><strong>Trudność z odłożeniem</strong> <span class="diff-delta' + (diffOdl >= 0 ? '' : ' neg') + '">' + (diffOdl > 0 ? '↓ ' + diffOdl : (diffOdl < 0 ? '↑ ' + Math.abs(diffOdl) : '0')) + '</span></div>';
+  html += '<div class="diff-row"><strong>Świadomość wyzwalacza</strong> <span class="diff-delta' + (diffSwia >= 0 ? '' : ' neg') + '">' + (diffSwia > 0 ? '↑ ' + diffSwia : (diffSwia < 0 ? '↓ ' + Math.abs(diffSwia) : '0')) + '</span></div>';
+  document.getElementById('diffList').innerHTML = html;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_psu_czym — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_psu_czym";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+function onStepChange(s) {
+  if (s === 3) updateSasSum();
+  if (s === 5) updateDelta();
+}
+function onReset() {
+  updateSasSum();
+  updateDelta();
+}
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

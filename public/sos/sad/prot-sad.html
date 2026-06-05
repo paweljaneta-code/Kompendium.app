@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mapa terapii</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === PROTOCOL-LIST === */
+.proto-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.proto-card { padding: 14px; background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.proto-card:hover, .proto-card:active { background: rgba(122,146,112,0.06); }
+.proto-card.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.proto-h { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.proto-icon { font-size: 20px; flex-shrink: 0; }
+.proto-name { font-size: 13.5px; font-weight: 700; flex: 1; color: var(--ink); }
+.proto-tick { font-size: 16px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.proto-card.picked .proto-tick { opacity: 1; }
+.proto-meta { font-size: 11px; color: var(--ink-mute); margin-top: 4px; padding-left: 30px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.proto-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 30px; margin-top: 4px; }
+.proto-desc strong { color: var(--ink); }
+
+/* === PHASE-CARD === */
+.phase-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin-bottom: 8px; }
+.phase-card:last-child { margin-bottom: 0; }
+.phase-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.phase-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--warm); flex-shrink: 0; }
+.phase-title { font-size: 13px; font-weight: 700; color: var(--bg); }
+.phase-sessions { font-size: 11px; color: var(--sage); margin-left: auto; padding: 2px 8px; background: rgba(122,146,112,0.2); border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.phase-content { font-size: 12px; color: rgba(244,241,234,0.85); line-height: 1.5; padding-left: 28px; margin-bottom: 8px; }
+.phase-tools { padding: 8px 10px; background: rgba(244,241,234,0.06); border-radius: 6px; font-size: 11.5px; color: rgba(244,241,234,0.9); margin-left: 28px; }
+.phase-tools strong { color: var(--bg); }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mapa terapii</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Mapa <em>terapii</em> SAD</h1>
+    <p class="card-detail"><strong>Dwa złote standardy</strong> psychoterapii SAD: <strong>terapia poznawcza Clarka</strong> (CT, Cognitive Therapy) (Clark i in. 2003) — <em>indywidualna terapia poznawcza</em>, 12-16 sesji, oparta na modelu Clarka i Wellsa (1995). Najsilniejsze dowody empiryczne (Mayo-Wilson i in. 2014, meta-analiza Lancet Psychiatry). <strong>grupowa CBT Heimberga</strong> (CBGT, Cognitive Behavioral Group Therapy) (Heimberg i in. 1998) — <em>terapia poznawczo-behawioralna grupowa</em>, 12 sesji × 2,5 godziny. Dobrze udokumentowana, kosztowo efektywna. NICE CG159 rekomenduje obie. To narzędzie opisuje <strong>mapę procesu</strong>: gdzie jesteś w terapii, co cię czeka, kiedy spodziewać się postępu. Dla osób <em>w terapii</em> i tych, którzy ją <em>rozważają</em>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy mapy terapii</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🗺</span>
+          <span class="element-text"><strong>Wybór protokołu</strong> = CT Clarka (indywidualny) vs CBGT Heimberga (grupowy)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📍</span>
+          <span class="element-text"><strong>Lokalizacja</strong> = w której fazie terapii jesteś (1-4)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Cel fazy</strong> = co konkretnie ma się wydarzyć w bieżącej fazie</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📊</span>
+          <span class="element-text"><strong>Postęp</strong> = pomiar (LSAS — kwestionariusz Liebowitza), spodziewany efekt, kalibracja</span>
+        </div>
+      </div>
+      <div class="frame-quote">„CT Clarka to <em>najsilniejsza interwencja</em> w fobii społecznej według dostępnych meta-analiz — silniejsza niż SSRI, silniejsza niż MBSR.”
+        <span class="frame-quote-attr">— Mayo-Wilson i in. (2014, Lancet Psychiatry)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: to narzędzie NIE jest substytutem terapii. <em>Jest mapą</em>. Mapa pomaga zrozumieć, co cię czeka i kiedy. Sama terapia odbywa się <strong>z terapeutą</strong> — bez relacji terapeutycznej (sojuszu) protokoły nie działają (Wampold 2015). Mapa pozwala zaprojektować rozmowę z terapeutą, ocenić postęp, zauważyć, gdy coś idzie nie tak.</div>
+    
+    <div class="src">Clark i in. (2003, CT for SAD) · Heimberg i in. (1998, CBGT) · Mayo-Wilson i in. (2014, Lancet Psychiatry) · NICE CG159 (2013)</div>
+  </section>
+  <!-- 2: WYBÓR PROTOKOŁU -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Wybór protokołu</div>
+    <h1 class="card-prompt">CT Clarka <em>czy</em> CBGT Heimberga?</h1>
+    <p class="card-detail">Dwa różne protokoły, podobne wyniki, <strong>różny format i koszt</strong>. CT Clarka — silniejsze dowody (efekt 1.4 SD), wymaga indywidualnego terapeuty (drożej, dłużej w kolejce). CBGT — efekt 1.0 SD, ale w grupie (cena niższa, dostęp łatwiejszy). Wybierz świadomie.</p>
+    
+    <div class="term-note"><strong>Reguła wyboru</strong>: <em>nie</em> wybieraj protokołu na podstawie samej skuteczności (oba działają). Wybieraj na podstawie <strong>dostępności + dopasowania do siebie</strong>. CT, do którego nie pójdziesz przez 6 miesięcy = mniej skuteczny niż CBGT, w którą wszedłeś za 2 tygodnie. <em>Najlepsza terapia to ta, którą zaczniesz</em>.</div>
+    
+    <div class="proto-list">
+      <div class="proto-card" onclick="pickProto(this, 'ct')">
+        <div class="proto-h">
+          <span class="proto-icon">👤</span>
+          <span class="proto-name">CT Clarka — terapia indywidualna</span>
+          <span class="proto-tick">✓</span>
+        </div>
+        <div class="proto-meta">12-16 sesji · 1:1 · 50 min/sesja · 4-6 miesięcy</div>
+        <div class="proto-desc"><strong>Mocne strony</strong>: najwyższa skuteczność udokumentowana, intensywna praca z modelem Clarka i Wellsa, informacja zwrotna z nagrania, modyfikacja obrazów, indywidualne tempo. <strong>Słabe</strong>: koszt (200-400 zł/sesja w Polsce), dostępność (kolejki 3-6 miesięcy do specjalistów CT), wymaga zaufania w relacji 1:1.</div>
+      </div>
+      
+      <div class="proto-card" onclick="pickProto(this, 'cbgt')">
+        <div class="proto-h">
+          <span class="proto-icon">👥</span>
+          <span class="proto-name">CBGT Heimberga — terapia grupowa</span>
+          <span class="proto-tick">✓</span>
+        </div>
+        <div class="proto-meta">12 sesji · grupa 5-7 osób · 2,5h/sesja · 3 miesiące</div>
+        <div class="proto-desc"><strong>Mocne strony</strong>: tańsze (50-100 zł/sesja), grupa to <em>naturalne pole eksperymentów behawioralnych</em>, normalizacja („inni mają to samo”), psychoedukacja w grupie. <strong>Słabe</strong>: rzadziej dostępne, stałe godziny, mniejsza indywidualizacja, dla wielu — sama grupa to ekspozycja.</div>
+      </div>
+      
+      <div class="proto-card" onclick="pickProto(this, 'ssri')">
+        <div class="proto-h">
+          <span class="proto-icon">💊</span>
+          <span class="proto-name">SSRI (Selective Serotonin Reuptake Inhibitors) + krótka CBT (poziom 3)</span>
+          <span class="proto-tick">✓</span>
+        </div>
+        <div class="proto-meta">SSRI 6-12 mc + CBT 8-12 sesji</div>
+        <div class="proto-desc"><strong>Wskazania</strong>: ciężki SAD (LSAS &gt; 70), współistniejąca depresja, brak dostępu do pełnej CT. SSRI (Selective Serotonin Reuptake Inhibitors — inhibitory zwrotnego wychwytu serotoniny): sertralina, paroksetyna, escitalopram (NICE CG159). <strong>Słabe</strong>: efekty leku po 4-8 tyg, rezydualne objawy, możliwe nawroty po odstawieniu bez psychoterapii.</div>
+      </div>
+      
+      <div class="proto-card" onclick="pickProto(this, 'self')">
+        <div class="proto-h">
+          <span class="proto-icon">📚</span>
+          <span class="proto-name">Samopomoc / samopomoc kierowana</span>
+          <span class="proto-tick">✓</span>
+        </div>
+        <div class="proto-meta">8-12 tygodni · samodzielnie lub z minimalnym wsparciem</div>
+        <div class="proto-desc"><strong>Wskazania</strong>: łagodny SAD, brak natychmiastowego dostępu do terapii, etap przygotowawczy. <strong>Materiały</strong>: Antony i Swinson „The Shyness and Social Anxiety Workbook”; artykuły Clarka i Wellsa; aplikacje (Woebot, MoodKit). <strong>Słabe</strong>: 30-40% skuteczności (vs 70-80% pełnej CT), wysoki wskaźnik porzucania.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twój wybór i powód</div>
+    <textarea class="thought-input" id="protoChoiceInput" placeholder="np. „CT Clarka — koszt do udźwignięcia, mam terapeutę, który stosuje. Plus: trudne mi się dzielić w grupie. Plan: 16 sesji, 1× tygodniowo, od września”" / „CBGT — dostępna grupa w mieście, niższy koszt, plus chcę poznać innych z SAD”..." rows="4"></textarea>
+  </section>
+  <!-- 3: MAPA FAZ CT CLARKA -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Mapa faz CT Clarka</div>
+    <h1 class="card-prompt">Cztery <em>fazy</em></h1>
+    <p class="card-detail">Pełna mapa CT Clarka — 4 fazy w 12-16 sesji. Każda ma <strong>specyficzny cel</strong> i konkretne narzędzia. Sprawdź, w której jesteś / którą zaczynasz.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: jeśli jesteś w terapii i <em>nie wiesz</em>, w której fazie jesteś — to ważny sygnał. Dobry terapeuta CT rysuje formulację Clarka i Wellsa na początku i <strong>regularnie wraca</strong> do mapy. Brak takiej mapy może oznaczać: terapeuta nie stosuje CT, lub stosuje, ale bez świadomego prowadzenia. Zapytaj na następnej sesji.</div>
+    
+    <div class="phase-card">
+      <div class="phase-h">
+        <span class="phase-num">1.</span>
+        <span class="phase-title">Mapowanie modelu i edukacja</span>
+        <span class="phase-sessions">Sesje 1-3</span>
+      </div>
+      <div class="phase-content">Klient i terapeuta budują <em>indywidualizowany model</em> SAD — z konkretnych sytuacji klienta. Edukacja na temat uwagi skierowanej na siebie, zachowań zabezpieczających i przetwarzania po sytuacji. Pierwsze pomiary (LSAS — Liebowitz Social Anxiety Scale, BFNE — Brief Fear of Negative Evaluation).</div>
+      <div class="phase-tools"><strong>Narzędzia</strong>: mapowanie modelu Clarka i Wellsa, pomiar nasilenia (LSAS), psychoedukacja</div>
+    </div>
+    
+    <div class="phase-card">
+      <div class="phase-h">
+        <span class="phase-num">2.</span>
+        <span class="phase-title">Praca z uwagą i obrazem siebie</span>
+        <span class="phase-sessions">Sesje 4-7</span>
+      </div>
+      <div class="phase-content">Trening uwagi skierowanej na zewnątrz. Eksperymenty A/B uwagi. Video-feedback (najsilniejszy element CT). Modyfikacja obrazów (imagery rescripting) wczesnych traumatycznych wspomnień (Wild i Clark 2011). Rezygnacja z jednego zachowania zabezpieczającego.</div>
+      <div class="phase-tools"><strong>Narzędzia</strong>: eksperyment A/B uwagi, trening uwagi zewnętrznej, informacja zwrotna z nagrania, audyt obrazu siebie</div>
+    </div>
+    
+    <div class="phase-card">
+      <div class="phase-h">
+        <span class="phase-num">3.</span>
+        <span class="phase-title">Eksperymenty behawioralne i ekspozycja</span>
+        <span class="phase-sessions">Sesje 8-12</span>
+      </div>
+      <div class="phase-content">Eksperymenty behawioralne (metoda ankiety, niedoskonałość, ankieta społeczna). Hierarchia ekspozycji. Ekspozycje in vivo z rezygnacją ze wszystkich zachowań zabezpieczających. Praca z ruminacją po sytuacji (czas na zmartwienia).</div>
+      <div class="phase-tools"><strong>Narzędzia</strong>: eksperymenty behawioralne, eksperyment niedoskonałości, ankieta społeczna, hierarchia ekspozycji, praca z ruminacją</div>
+    </div>
+    
+    <div class="phase-card">
+      <div class="phase-h">
+        <span class="phase-num">4.</span>
+        <span class="phase-title">Konsolidacja i profilaktyka nawrotów</span>
+        <span class="phase-sessions">Sesje 13-16</span>
+      </div>
+      <div class="phase-content">Plan utrzymania. Karta wsparcia (sygnały, działania, kontakty). Sesje przypominające co 1-3 miesiące przez pierwszy rok po terapii.</div>
+      <div class="phase-tools"><strong>Narzędzia</strong>: profilaktyka nawrotów, plan utrzymania</div>
+    </div>
+    
+    <div class="examples-h">W której fazie jesteś / którą zaczynasz?</div>
+    <textarea class="thought-input" id="phaseInput" placeholder="np. „Aktualnie faza 2 (sesja 5/16). Pracujemy nad informacją zwrotną z nagrania — w środę nagrałem prezentację, w piątek oglądamy z terapeutą”"..." rows="3"></textarea>
+  </section>
+  <!-- 4: TWÓJ POSTĘP -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Twój postęp</div>
+    <h1 class="card-prompt">Czy <em>idziesz</em> do przodu?</h1>
+    <p class="card-detail">Spodziewane efekty CT Clarka (Clark i in. 2003 RCT): <strong>spadek LSAS o 40-50%</strong> w 16 sesjach. Bez efektu po 8 sesjach = sygnał ostrzegawczy. Pomiar postępu daje <em>obiektywny obraz</em> — niezależny od subiektywnego „czuję się gorzej / lepiej”".</p>
+    
+    <div class="term-note"><strong>Reguła oceny postępu</strong>: spadek o <em>1.5+ punktu</em> w 4 tygodnie = klinicznie znacząca poprawa (NICE 2013). <em>0-1 punkt</em> w 8 tygodni = sygnał ostrzegawczy — porozmawiaj z terapeutą o modyfikacji. <em>Wzrost</em> w trakcie terapii = aktywuj plan profilaktyczny + konsultacja superwizyjna terapeuty.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">LSAS przed terapią (jeśli pamiętasz lub wypełniłeś kwestionariusz LSAS)</div>
+      <div class="scale-label"><span>0 — bez SAD</span><span>10 — ciężki SAD</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="lsasBefore" oninput="document.getElementById('lsasBVal').textContent=this.value">
+      <div class="scale-readout"><span class="scale-val" id="lsasBVal">7</span><span> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">LSAS aktualnie</div>
+      <div class="scale-label"><span>0 — bez SAD</span><span>10 — ciężki SAD</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="lsasNow" oninput="updateLsas(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="lsasNVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Liczba zakończonych sesji terapeutycznych</div>
+      <div class="scale-label"><span>0</span><span>20+</span></div>
+      <input type="range" min="0" max="20" value="6" class="scale-input" id="sessions" oninput="document.getElementById('sessVal').textContent=this.value">
+      <div class="scale-readout"><span class="scale-val" id="sessVal">6</span><span> sesji</span></div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Konkretne sukcesy z ostatnich 4 tygodni</div>
+    <textarea class="thought-input" id="winsInput" placeholder="np. „Zrobiłem prezentację w pracy (5 osób, 10 minut) — przeżyłem przy SUDS 7. Wcześniej unikałem. Plus: zaproponowałem koledze lunch (pierwszy raz od 3 lat)”"..." rows="4"></textarea>
+    
+    <div class="examples-h">Co jeszcze nie działa? Z czym zostaje praca?</div>
+    <textarea class="thought-input" id="stuckInput" placeholder="np. „Większe grupy (8+ osób) — dalej pełen skupienie na sobie. Spotkania rodzinne z teściową — nie potrafię odpalić uwagi zewnętrznej. Praca seksualna z partnerką — wstydzę się”..." rows="3"></textarea>
+  </section>
+  <!-- 5: PLAN NA NASTĘPNE 4 TYGODNIE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Plan na następne 4 tygodnie</div>
+    <h1 class="card-prompt">Twoje <em>kolejne kroki</em></h1>
+    <p class="card-detail">Konkretny plan na <strong>4 tygodnie do przodu</strong>. Cele specyficzne, mierzalne, sprawdzalne. To <em>nie</em> zadanie domowe od terapeuty — to twoja własna mapa drogi.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: <em>terapia kończy się — leczenie nie</em>. Po 16 sesjach CT — sesja przypominająca co 3 miesiące w 1. roku, co 6 miesięcy w 2. roku. To <strong>standard</strong>, nie nadmiar. Bez sesji przypominających: 30% pełnych nawrotów w 12 miesięcy. Z sesjami przypominającymi: 10%. Mapa nie kończy się na sesji 16 — ciągnie się w plan utrzymania.</div>
+    
+    <div class="examples-h">Cele na 4 tygodnie — co konkretnie ma się zmienić?</div>
+    <textarea class="thought-input" id="goalsInput" placeholder="np. „1. Skończyć fazę 2 — opanować uwaga skierowana na zewnątrz w spotkaniach 1:1 (komfort 7/10).
+2. Rozpocząć fazę 3 — zaplanować z terapeutą pierwszy eksperyment behawioralny (typ: niedoskonałość).
+3. LSAS: spadek z 5.5 do 4.5 (1 punkt)”"..." rows="5"></textarea>
+    
+    <div class="examples-h">Praca między sesjami — jakie ćwiczenia?</div>
+    <textarea class="thought-input" id="homeworkInput" placeholder="np. „Codziennie: trening uwagi zewnętrznej (kotwica 4 — słuchanie). Wieczorem: 5-min rejestr SUDS dnia.
+Tydzień 1-2: eksperyment niedoskonałości (1×).
+Tydzień 3-4: ankieta społeczna (przygotowanie)”..." rows="5"></textarea>
+    
+    <div class="examples-h">Kiedy następny review tego planu?</div>
+    <input type="text" class="thought-input" id="reviewDate" placeholder="np. „Sobota za 4 tygodnie — 30 maja. Wtedy: powtórzenie tego mapowania, pomiar LSAS, modyfikacja celów”"" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="examples-h" style="margin-top:10px">Jeśli postęp się zatrzyma — co zrobisz?</div>
+    <textarea class="thought-input" id="stuckPlanInput" placeholder="np. „Jeśli LSAS nie spadnie po 4 tygodniach: 1) szczera rozmowa z terapeutą o stanie terapii, 2) konsultacja superwizyjna, 3) rozważenie dołączenia SSRI (augmentacja), 4) sesja przypominająca CT (nie zmiana terapii)”..." rows="4"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Terapia SAD <em>działa</em>: 70-80% osób z CT Clarka osiąga znaczącą poprawę w 16 sesjach (Clark i in. 2003 RCT). To <em>nie magia</em> — to <strong>konkretna sekwencja</strong> 4 faz, z konkretnymi narzędziami, konkretnymi pomiarami. Mapa pozwala <em>świadomie iść</em> tym torem, oceniać postęp, modyfikować plan, gdy coś idzie nie tak. Bez mapy: <em>plątanina sesji</em>. Z mapą: <strong>świadoma droga</strong>.</div>
+    </div>
+    
+    <div class="src">Clark i in. (2003, CT for SAD) · Heimberg i in. (1998, CBGT) · Mayo-Wilson i in. (2014, Lancet) · NICE CG159 · Wampold (2015, terapeutyczny sojusz)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('protoChoiceInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('phaseInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('winsInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('stuckInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('goalsInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('homeworkInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('reviewDate'); if (el) el.value = ''; }
+    { const el = document.getElementById('stuckPlanInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('lsasBefore'); if (el) el.value = 7; }
+    { const el = document.getElementById('lsasNow'); if (el) el.value = 5; }
+    { const el = document.getElementById('sessions'); if (el) el.value = 6; }
+    document.querySelectorAll('.proto-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {}
+
+function pickProto(el, type) {
+  document.querySelectorAll('.proto-card').forEach(c => c.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function updateLsas(v) {
+  document.getElementById('lsasNVal').textContent = v;
+}
+
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel1 = '.proto-card';
+  var KEY = "sos-prot-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c1: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.proto-card')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

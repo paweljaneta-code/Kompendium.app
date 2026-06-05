@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Modele przetwarzania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.therapy-card { border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+.therapy-pe { background: rgba(214,160,140,0.18); border: 1px solid rgba(214,160,140,0.5); }
+.therapy-cpt { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); }
+.therapy-emdr { background: rgba(168,184,210,0.18); border: 1px solid rgba(168,184,210,0.5); }
+.therapy-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.therapy-sub { font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; font-style: italic; }
+.therapy-body { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.therapy-body strong { color: var(--ink); }
+.therapy-meta { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; font-size: 11px; color: var(--ink-mute); }
+.therapy-meta span { background: rgba(0,0,0,0.04); padding: 3px 8px; border-radius: 6px; }
+.match-card { background: rgba(184,197,168,0.12); border-left: 3px solid var(--sage-deep); padding: 12px 14px; margin: 8px 0; border-radius: 0 8px 8px 0; }
+.match-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.match-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.proto-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.proto-rule { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Modele przetwarzania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Trzy zwalidowane drogi <em>z PTSD do remisji</em></h1>
+  <p class="card-detail">Trzy terapie pierwszego wyboru — PE (ekspozycja przedłużona), CPT (terapia przetwarzania poznawczego) i EMDR — łączy jedna zasada: <strong>wspomnienie traumatyczne wymaga <em>ponownego przetworzenia</em> w bezpiecznym kontekście</strong>. Każda działa innym kanałem (ekspozycja, restrukturyzacja, bilateralna stymulacja), wszystkie osiągają 50–70% remisji po 8–15 sesjach (NICE NG116, 2018; Bisson i in., 2013).</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Wspólny mianownik trzech metod</div>
+    <div class="element-row">
+      <span class="element-icon">🧠</span>
+      <span class="element-text"><strong>Pamięć przed</strong> — fragmentaryczna, sensoryczna, bez metki „kiedyś". Wraca jako „TERAZ".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔄</span>
+      <span class="element-text"><strong>Praca z pamięcią</strong> — wielokrotny powrót w bezpiecznych warunkach (z terapeutą, z narzędziami regulacji, w fazie stabilizacji).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📅</span>
+      <span class="element-text"><strong>Pamięć po</strong> — narracyjna, datowana, z kontekstem. Może wracać, ale już nie pochłania ciała.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📊</span>
+      <span class="element-text"><strong>Skuteczność</strong> — 50–70% remisji (NICE Level A). Wszystkie trzy → porównywalne wyniki (Bisson i in., 2013).</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Mózg utknął ze zdjęciem bez daty. Terapia traumy nie wymazuje zdjęcia — dodaje datę i kontekst, dzięki czemu wraca już jako wspomnienie, a nie jako <em>teraz</em>."
+    <span class="frame-quote-attr">— metafora używana w psychoedukacji PE/CPT/EMDR (za Foa &amp; Kozak, 1986)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: krótkoterminowy wzrost dystresu w trakcie terapii prowadzi do długoterminowej ulgi. Unikanie wspomnienia <em>podtrzymuje</em> PTSD — przetwarzanie je <em>kończy</em>. To sprzeczne z intuicją, ale potwierdzone w setkach RCT.</div>
+
+  <div class="src">Foa, E. &amp; Kozak, M. (1986). Emotional processing of fear. <em>Psychological Bulletin</em>, 99, 20–35. · NICE NG116 (2018). Post-traumatic stress disorder. · Bisson, J. i in. (2013). Psychological therapies for chronic PTSD. <em>Cochrane Review</em>.</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja gotowość</div>
+  <h1 class="card-prompt">Ile masz <em>gotowości</em>, żeby zacząć?</h1>
+  <p class="card-detail">Gotowość do terapii traumy nie musi być wysoka, żeby zacząć — wystarczy, że jest. Oceń ją uczciwie. To nie test, to punkt startowy.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — wzdragam się</span><span>10 — chcę zacząć</span></div>
+    <input type="range" id="preGot" class="scale-input" min="0" max="10" value="3" data-default="3" oninput="document.getElementById('preGotVal').textContent=this.value;">
+    <div class="scale-readout"><span>gotowość teraz:</span><span id="preGotVal">3</span></div>
+  </div>
+
+  <p class="card-detail" style="margin-top:10px;">Co najbardziej dominuje w twoim PTSD — fragmenty pamięci czy ciężkie oceny?</p>
+  <div class="example-chips">
+    <button id="prof-pamiec" class="example-chip profile" onclick="pickProf(this);">🧠 dominują fragmenty (flashbacki, koszmary, intruzje)</button>
+    <button id="prof-oceny" class="example-chip profile" onclick="pickProf(this);">⚖️ dominują oceny („to moja wina", „nie zasługuję")</button>
+    <button id="prof-rowne" class="example-chip profile" onclick="pickProf(this);">⚖️🧠 mniej więcej po równo</button>
+    <button id="prof-niewiem" class="example-chip profile" onclick="pickProf(this);">🤔 jeszcze nie umiem rozróżnić</button>
+  </div>
+
+  <p class="card-detail" style="margin-top:10px;">Co by ci dało komfort — gdybyś miał/a wybierać?</p>
+  <div class="example-chips">
+    <button id="g-prywatnosc" class="example-chip" onclick="pickGoal(this);">spisanie / opowiedzenie historii</button>
+    <button id="g-myslenie" class="example-chip" onclick="pickGoal(this);">analiza myśli i przekonań</button>
+    <button id="g-bezsl" class="example-chip" onclick="pickGoal(this);">praca bez konieczności mówienia</button>
+    <button id="g-cialo" class="example-chip" onclick="pickGoal(this);">praca z ciałem</button>
+    <button id="g-konkr" class="example-chip" onclick="pickGoal(this);">konkretny protokół, znany z góry</button>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: profil odpowiedzi <em>wskazuje</em> ścieżki, ale nie wyklucza żadnej. Ostatecznie wybór robi się z terapeutą, na podstawie szerszej oceny.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Trzy ścieżki — porównanie</div>
+  <h1 class="card-prompt">PE, CPT, EMDR — <em>jak działają i czym się różnią</em></h1>
+  <p class="card-detail">Czytaj wolno. Każda ścieżka ma inny rdzeń, inne wymagania od pacjenta i inne tempo.</p>
+
+  <div class="therapy-card therapy-pe">
+    <div class="therapy-h">🎬 PE — Prolonged Exposure</div>
+    <div class="therapy-sub">Foa i in., 2007 · Ekspozycja przedłużona</div>
+    <div class="therapy-body"><strong>Rdzeń</strong>: wielokrotne, szczegółowe opowiadanie traumy z terapeutą (45–60 min, nagrywane), słuchanie nagrania w domu. Plus ekspozycja in vivo na unikane miejsca/sytuacje.<br><br><strong>Mechanizm</strong>: habituacja + nowe uczenie („wspomnienie ≠ aktualne zagrożenie"). Hipokamp dostaje czas i przestrzeń, żeby oznaczyć materiał jako „przeszły".<br><br><strong>Profil pasujący</strong>: dominują fragmenty pamięci (flashbacki, koszmary), gotowość do mówienia o szczegółach, brak ostrej dysocjacji.</div>
+    <div class="therapy-meta"><span>10–15 sesji</span><span>RCT: ~60–70% remisji</span><span>NICE Level A</span></div>
+  </div>
+
+  <div class="therapy-card therapy-cpt">
+    <div class="therapy-h">📝 CPT — Cognitive Processing Therapy</div>
+    <div class="therapy-sub">Resick i in., 2016 · Terapia przetwarzania poznawczego</div>
+    <div class="therapy-body"><strong>Rdzeń</strong>: pisanie <em>impact statement</em> (jak trauma zmieniła moje rozumienie świata), identyfikacja <em>stuck points</em> (utkniętych przekonań), restrukturyzacja w 5 obszarach: bezpieczeństwo, zaufanie, władza/kontrola, wartość, bliskość.<br><br><strong>Mechanizm</strong>: integracja informacji korygujących z istniejącym schematem. Przekonania, które „blokują" przetworzenie, zostają przepracowane jeden po drugim.<br><br><strong>Profil pasujący</strong>: dominują ciężkie oceny i wstyd/wina, łatwiej pisać niż mówić, wybór dla osób z silnymi „stuck points" („to moja wina", „nikomu nie można ufać").</div>
+    <div class="therapy-meta"><span>12 sesji</span><span>RCT: ~60% remisji</span><span>NICE Level A</span></div>
+  </div>
+
+  <div class="therapy-card therapy-emdr">
+    <div class="therapy-h">👁️ EMDR — Eye Movement Desensitization &amp; Reprocessing</div>
+    <div class="therapy-sub">Shapiro, 2001 · Odczulanie i przetwarzanie z ruchem oczu</div>
+    <div class="therapy-body"><strong>Rdzeń</strong>: 8 faz, w fazie 4 — przetwarzanie wspomnień z towarzyszącą stymulacją bilateralną (ruchy oczu, naprzemienne tapowanie, dźwięki). Pacjent NIE musi opowiadać wspomnienia w detalach.<br><br><strong>Mechanizm</strong>: prawdopodobnie aktywacja sieci pamięci + jej rekonsolidacja. Bilateralna stymulacja zdaje się przyspieszać integrację (Shapiro, 2001; van der Kolk, 2014).<br><br><strong>Profil pasujący</strong>: trudność z mówieniem o traumie, dominacja sensoryczna (obrazy/dźwięki), preferencja dla pracy „z ciałem" niż „z analizą".</div>
+    <div class="therapy-meta"><span>6–12 sesji</span><span>RCT: ~60% remisji</span><span>NICE Level A · WHO 2013</span></div>
+  </div>
+
+  <div class="term-note"><strong>Punkt równoległy</strong>: trzy metody → porównywalna skuteczność (Bisson i in., 2013, Cochrane). Wybór zależy od profilu, preferencji i dostępności wykwalifikowanego terapeuty. Każda z nich wymaga FAZY STABILIZACJI przed rozpoczęciem (grounding, okno tolerancji, bezpieczne miejsce).</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Dopasowanie</div>
+  <h1 class="card-prompt">Która ścieżka <em>brzmi najbliżej ciebie</em>?</h1>
+  <p class="card-detail">To NIE jest decyzja — to materiał do rozmowy z terapeutą. Wpisz odpowiedzi szczerze; im konkretniej, tym lepiej.</p>
+
+  <div class="match-card">
+    <div class="match-h">🎬 Co przyciąga w PE</div>
+    <div class="match-body">Lubię konkretny harmonogram, gotowy/a jestem opowiadać szczegóły, ufam, że „im więcej razy, tym mniej obciąża", chcę pracować <em>z</em> wspomnieniem zamiast <em>obok</em>.</div>
+  </div>
+  <div class="proto-card">
+    <p class="proto-rule">Co odpychało/przyciągało cię w PE? Pisz krótko.</p>
+  </div>
+  <textarea id="myPE" class="thought-input" placeholder="np. boję się opowiadać szczegóły, ale rozumiem, dlaczego to działa. Plus terapeuty wybór: ktoś przeszkolony PE..."></textarea>
+
+  <div class="match-card">
+    <div class="match-h">📝 Co przyciąga w CPT</div>
+    <div class="match-body">Mam mocne „stuck points" — zdania, które się powtarzają i blokują. Łatwiej mi pisać niż opowiadać. Chcę zrozumieć, jak myślę i co zmienić.</div>
+  </div>
+  <div class="proto-card">
+    <p class="proto-rule">Co odpychało/przyciągało cię w CPT?</p>
+  </div>
+  <textarea id="myCPT" class="thought-input" placeholder="np. lubię analizę, ale boję się, że to za suche dla mojego ciała..."></textarea>
+
+  <div class="match-card">
+    <div class="match-h">👁️ Co przyciąga w EMDR</div>
+    <div class="match-body">Trudno mi opowiadać. Pamięć wraca obrazami i odczuciami ciała, nie zdaniami. Wolę pracę „z ciałem" niż „z głową". Nie muszę mieć szczegółowej narracji.</div>
+  </div>
+  <div class="proto-card">
+    <p class="proto-rule">Co odpychało/przyciągało cię w EMDR?</p>
+  </div>
+  <textarea id="myEMDR" class="thought-input" placeholder="np. dziwnie brzmi z tymi ruchami oczu, ale czytałam dobre opinie..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">Pytanie końcowe — co byś chciał/a zapytać terapeutę?</div>
+    <p class="proto-rule">Zanotuj 2–3 pytania, które przyniesiesz na konsultację. To jest <em>twoje prawo</em> — terapeuta ma obowiązek wyjaśnić, jak pracuje i dlaczego.</p>
+  </div>
+  <textarea id="myPyt" class="thought-input" placeholder="np. ile sesji potrzeba? Czy w jednej terapii można łączyć metody? Jak wygląda faza stabilizacji?..."></textarea>
+
+  <div class="term-note"><strong>Reguła wyboru</strong>: NIE ma „lepszej" metody — jest <em>lepsza dla ciebie i dla terapeuty, którego masz pod ręką</em>. Każda działa, jeśli prowadzona przez kogoś przeszkolonego i jeśli pacjent ma narzędzia regulacji.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar końcowy</div>
+  <h1 class="card-prompt">Ile gotowości <em>zostało</em> teraz?</h1>
+  <p class="card-detail">Ta sama skala gotowości. Cel: wzrost o 1–3 punkty po jednej sesji edukacyjnej. Pełna gotowość rośnie powoli, zwykle przez kilka konsultacji.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — wzdragam się</span><span>10 — chcę zacząć</span></div>
+    <input type="range" id="postGot" class="scale-input" min="0" max="10" value="6" data-default="6" oninput="document.getElementById('postGotVal').textContent=this.value;">
+    <div class="scale-readout"><span>gotowość po:</span><span id="postGotVal">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Ustaw skalę — pojawi się komentarz dopasowany do twojej zmiany.</div>
+
+  <div class="term-note"><strong>Reguła kontaktu</strong>: następny konkretny krok to umówienie konsultacji u terapeuty przeszkolonego w jednej z tych trzech metod. Bazy: PTT (psychoterapia poznawczo-behawioralna), EMDR Polska, certyfikowani terapeuci CT-PTSD/CPT.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>Trzy zwalidowane drogi: PE, CPT, EMDR.</strong> Każda działa, każda ≈ 50–70% remisji (NICE NG116 Level A). Wybór zależy od profilu, preferencji i terapeuty. Krótkoterminowy dyskomfort → długoterminowa ulga. Unikanie podtrzymuje, przetwarzanie kończy.</div>
+  </div>
+
+  <div class="src">Foa, E. i in. (2007). <em>Prolonged Exposure Therapy for PTSD: Therapist Guide</em>. · Resick, P. i in. (2016). <em>Cognitive Processing Therapy for PTSD</em>. · Shapiro, F. (2001). <em>Eye Movement Desensitization and Reprocessing</em>. · NICE NG116 (2018). · Bisson, J. i in. (2013). <em>Cochrane Review of Psychological Treatments for PTSD</em>. · van der Kolk, B. (2014). <em>The Body Keeps the Score</em>.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickProf(el) {
+  document.querySelectorAll('.example-chip.profile').forEach(function(c){ c.classList.remove('picked'); });
+  el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function pickGoal(el) {
+  el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var pre = parseInt(document.getElementById('preGot').value, 10);
+    var post = parseInt(document.getElementById('postGot').value, 10);
+    var diff = post - pre;
+    var msg = document.getElementById('finalMsg');
+    if (msg) {
+      if (diff >= 3) msg.innerHTML = '<strong>Wzrost gotowości o ' + diff + ' punktów.</strong> Wiedza o tym, że istnieją trzy zwalidowane drogi (PE/CPT/EMDR) i że można wybrać tę pasującą do siebie, zwykle łagodzi opór. Następny krok: rozmowa z terapeutą o tym, która ścieżka brzmi najbliżej twojego profilu.';
+      else if (diff >= 1) msg.innerHTML = '<strong>Wzrost o ' + diff + '.</strong> Częściowe ułożenie — gotowość rośnie powoli, kiedy wyobraźnia o terapii staje się konkretniejsza. Wracaj do tego narzędzia, ilekroć opór wraca.';
+      else if (diff === 0) msg.innerHTML = '<strong>Bez zmiany.</strong> Może masz pytania, na które nie ma tutaj odpowiedzi — zapisz je i przynieś na konsultację. Czasem opór jest <em>strażnikiem</em>, który chroni do czasu, aż znajdziesz właściwego terapeutę.';
+      else msg.innerHTML = '<strong>Spadek gotowości.</strong> To może oznaczać, że materiał uruchomił lęk przed kontaktem z traumą — to sam w sobie objaw PTSD (unikanie). NIE jest to znak, że terapia ci nie pomoże. Daj sobie czas i wróć do <em>fazy stabilizacji</em>.';
+    }
+  }
+}
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(function(c){ c.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_modele_przetwarzania — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_modele_przetwarzania";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

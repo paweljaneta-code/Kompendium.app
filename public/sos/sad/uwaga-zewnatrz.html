@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Uwaga zewnętrzna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === STRATEGY-LIST === */
+.strat-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.strat-card { padding: 14px; background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.strat-card:hover, .strat-card:active { background: rgba(122,146,112,0.06); }
+.strat-card.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.strat-h { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.strat-icon { font-size: 20px; flex-shrink: 0; }
+.strat-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--ink); }
+.strat-tick { font-size: 16px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.strat-card.picked .strat-tick { opacity: 1; }
+.strat-howto { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 30px; }
+.strat-howto strong { color: var(--ink); }
+
+/* === ATT-CARD === */
+.att-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.att-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.att-row { padding: 10px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.att-row strong { color: var(--bg); }
+
+/* === DIFF === */
+.diff-block { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 14px; background: rgba(122,146,112,0.06); border-radius: 12px; margin: 8px 0 10px; }
+.diff-side { text-align: center; flex: 1; }
+.diff-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.diff-num.warm { color: var(--warm); }
+.diff-num.sage { color: var(--sage-deep); }
+.diff-lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; font-weight: 600; }
+.diff-arrow { font-size: 22px; color: var(--ink-mute); }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Uwaga zewnętrzna</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Uwaga <em>zewnętrzna</em> — praktyka</h1>
+    <p class="card-detail"><strong>Uwaga skierowana na zewnątrz</strong> (Clark i Wells 1995; Wells i Papageorgiou 1998, ATT — Attention Training Technique, trening uwagi) — <em>najskuteczniejszy element</em> CBT Clarka, bezpośrednio rozbijający kluczowy mechanizm SAD (uwaga skierowana na siebie). To NIE jest „nie myśl o sobie” — to <strong>aktywne, świadome przekierowanie uwagi</strong> na rozmówcę, treść, otoczenie. Wells i Papageorgiou udokumentowali, że <em>trening uwagi</em> (ATT) — codzienna 12-minutowa praktyka — obniża SAD o 35-40% w 6 tygodniach. Oto <strong>4 strategie</strong> przekierowania uwagi w realnych sytuacjach społecznych — do treningu codziennego.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy treningu uwagi</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Cel</strong> = nie „brak myśli o sobie”, lecz <em>uwaga zakotwiczona na zewnątrz</em></span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">👀</span>
+          <span class="element-text"><strong>4 kotwice</strong> = wzrok, treść, otoczenie, reakcje rozmówcy</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔁</span>
+          <span class="element-text"><strong>Powrót</strong> = uwaga zawraca do siebie — zauważasz i wracasz na zewnątrz</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">⏱</span>
+          <span class="element-text"><strong>Trening</strong> = codzienne 5-10 min × 6 tygodni = nawyk automatyczny</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Trening uwagi jest <em>najskuteczniejszym elementem</em> terapii poznawczej w fobii społecznej — silniejszym niż restrukturyzacja przekonań.”
+        <span class="frame-quote-attr">— Adrian Wells i Costas Papageorgiou (1998, ATT)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: ten trening uwagi różni się od <em>eksperymentu A/B uwagi</em>. Tam <strong>testujesz</strong> różnicę uwaga skierowana na siebie kontra uwaga skierowana na zewnątrz. Tu <strong>trenujesz</strong> uwagę skierowaną na zewnątrz jako codzienny nawyk. Pierwszy daje wgląd, drugi daje zmianę. Razem są kompletne.</div>
+    
+    <div class="src">Wells i Papageorgiou (1998, ATT) · Clark i Wells (1995) · Bogels i Mansell (2004, meta-analiza) · Wells (2009, MCT)</div>
+  </section>
+  <!-- 2: TWOJA SYTUACJA -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+    <h1 class="card-prompt">Gdzie <em>trenujesz</em>?</h1>
+    <p class="card-detail">Wybierz <strong>regularnie powtarzającą się</strong> sytuację społeczną — taką, w której będziesz miał wiele okazji do treningu w najbliższych 2 tygodniach. Trening wymaga <em>powtórzeń</em>, nie pojedynczych prób.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: zacznij od sytuacji <em>niskiego ryzyka</em>. Codzienna rozmowa z partnerką jest lepszym treningiem niż prezentacja w pracy. Trening uwagi w łatwych sytuacjach <em>buduje nawyk</em>, którego potem używasz w trudnych. <strong>Nie zaczynaj od najtrudniejszego</strong>.</div>
+    
+    <div class="examples-h">Twoja sytuacja — konkret regularny</div>
+    <textarea class="thought-input" id="situationInput" placeholder="np. „Codzienne rozmowy z partnerką wieczorem (45 min)” / „Spotkania zespołu w pracy — wtorek, czwartek, 30 min” / „Sklep osiedlowy — codziennie kupuję pieczywo, kasa zajmuje 2 min”..." rows="3"></textarea>
+    
+    <div class="examples-h">Najczęstsze sytuacje treningowe — stuknij, jeśli pasuje</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useSit(this)">Rozmowa z partnerem/ką</div>
+      <div class="example-chip" onclick="useSit(this)">Spotkania zespołu w pracy</div>
+      <div class="example-chip" onclick="useSit(this)">Lunch z kolegami</div>
+      <div class="example-chip" onclick="useSit(this)">Codzienny telefon do bliskiej osoby</div>
+      <div class="example-chip" onclick="useSit(this)">Zakupy / płacenie w kasie</div>
+      <div class="example-chip" onclick="useSit(this)">Rozmowa z sąsiadem</div>
+    </div>
+    
+    <div class="scale-card" style="margin-top:14px">
+      <div class="scale-h">Aktualny poziom skupienia na sobie w tej sytuacji</div>
+      <div class="scale-label"><span>Niski</span><span>Bardzo wysoki</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="sfBefore" oninput="document.getElementById('sfBeforeVal').textContent=this.value">
+      <div class="scale-readout"><span class="scale-val" id="sfBeforeVal">7</span><span> / 10</span></div>
+    </div>
+  </section>
+  <!-- 3: WYBÓR STRATEGII -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór strategii</div>
+    <h1 class="card-prompt">4 <em>kotwice</em> uwagi</h1>
+    <p class="card-detail">Wybierz <strong>jedną kotwicę</strong> na początek — najprostszą do zastosowania w twojej sytuacji. W kolejnych tygodniach dodajesz pozostałe.</p>
+    
+    <div class="term-note"><strong>Reguła wyboru</strong>: zacznij od <em>kotwicy 2</em> (słuchanie). Pasuje do każdej sytuacji, nie wymaga „aktywnego” wkładu, sprawdzalna (test: o czym mówiła osoba?). Po 1 tygodniu praktyki dodaj kotwicę 4 (reakcja). Po 2 tygodniach masz pełen zestaw.</div>
+    
+    <div class="strat-list">
+      <div class="strat-card" onclick="pickStrat(this)">
+        <div class="strat-h">
+          <span class="strat-icon">👁</span>
+          <span class="strat-name">Kotwica 1: Wzrok na rozmówcę</span>
+          <span class="strat-tick">✓</span>
+        </div>
+        <div class="strat-howto"><strong>Jak</strong>: skup wzrok na <em>brwiach lub kącikach ust</em> rozmówcy (nie wprost w oczy — za intensywne). Trzymaj 3-5 sekund, potem naturalna zmiana. Zauważaj <em>subtelne zmiany</em> wyrazu twarzy.</div>
+      </div>
+      
+      <div class="strat-card" onclick="pickStrat(this)">
+        <div class="strat-h">
+          <span class="strat-icon">👂</span>
+          <span class="strat-name">Kotwica 2: Słuchanie treści</span>
+          <span class="strat-tick">✓</span>
+        </div>
+        <div class="strat-howto"><strong>Jak</strong>: skoncentruj się na <em>konkretnych słowach</em> rozmówcy. Mentalnie powtarzaj kluczowe słowa. Test: po 30 sek możesz powiedzieć, o czym mówiła ta osoba? Jeśli nie — wracasz do uwagi.</div>
+      </div>
+      
+      <div class="strat-card" onclick="pickStrat(this)">
+        <div class="strat-h">
+          <span class="strat-icon">🌳</span>
+          <span class="strat-name">Kotwica 3: Otoczenie sensoryczne</span>
+          <span class="strat-tick">✓</span>
+        </div>
+        <div class="strat-howto"><strong>Jak</strong>: zauważ <em>3 rzeczy</em> w otoczeniu — kolor ściany, dźwięk w tle, zapach kawy. Co 2 minuty <em>odśwież</em> listę. To „kotwica peryferyjna” — uzupełnia kontakt wzrokowy.</div>
+      </div>
+      
+      <div class="strat-card" onclick="pickStrat(this)">
+        <div class="strat-h">
+          <span class="strat-icon">💬</span>
+          <span class="strat-name">Kotwica 4: Reakcja na treść</span>
+          <span class="strat-tick">✓</span>
+        </div>
+        <div class="strat-howto"><strong>Jak</strong>: aktywnie <em>reaguj na to, co usłyszałeś</em> — pytanie pogłębiające, podzielenie się reakcją, parafraza. To zmusza mózg do skupienia na rozmówcy. Najsilniejsza kotwica długoterminowo.</div>
+      </div>
+    </div>
+  </section>
+  <!-- 4: PRAKTYKA — PROTOKÓŁ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — protokół</div>
+    <h1 class="card-prompt">10 minut <em>treningu</em></h1>
+    <p class="card-detail">Konkretny protokół 10-minutowego treningu uwagi w wybranej sytuacji. <strong>Reguły</strong>: świadomość kotwicy → jeden ruch w stronę kotwicy → zauważanie powrotu do siebie → ponowny ruch. To <em>cykliczny trening</em> — nie pojedyncza próba.</p>
+    
+    <div class="term-note"><strong>Reguła Wellsa</strong>: <em>uwaga zawraca do siebie 30-50 razy</em> w 10 minutach pierwszego treningu. To <strong>normalne</strong>. Sukces nie polega na braku powrotów — polega na <em>liczbie powrotów na zewnątrz</em>. Każdy powrót = trening. Im więcej powrotów, tym silniejszy mięsień.</div>
+    
+    <div class="att-card">
+      <div class="att-h">Protokół 10 minut treningu</div>
+      <div class="att-row"><strong>Minuta 0</strong>: świadomy start. „Teraz trenuję uwagę zewnętrzną przez 10 min”. Włącz cichy timer.</div>
+      <div class="att-row"><strong>Minuta 0-2</strong>: <em>jeden cykl</em> kotwicy. Wzrok / słuchanie / otoczenie / reakcja. 30 sek na każdym.</div>
+      <div class="att-row"><strong>Minuta 2-7</strong>: <em>powtarzaj</em> kotwicę. Gdy uwaga zawraca do siebie (a będzie!) — zauważasz bez oceny i wracasz.</div>
+      <div class="att-row"><strong>Minuta 7-10</strong>: <em>zwolnienie</em>. Mniej intensywnie, naturalnie. Kończysz spokojnie.</div>
+      <div class="att-row"><strong>Po sytuacji</strong>: notatka 30 sek — ile razy uwaga wróciła do siebie? Co pamiętasz z rozmowy?</div>
+    </div>
+    
+    <div class="examples-h">Twoja konkretna kotwica + plan na ten tydzień</div>
+    <textarea class="thought-input" id="planInput" placeholder="np. „Kotwica 2 (słuchanie). W każdej rozmowie z partnerką wieczorem — 10 min świadomego treningu. Notatka po: o czym mówiła? ile razy zawróciłem do siebie?”..." rows="3"></textarea>
+    
+    <div class="examples-h">Częstotliwość — ile razy w tygodniu?</div>
+    <input type="text" class="thought-input" id="frequencyInput" placeholder="np. „6× w tygodniu (codziennie wieczorem) + bonus: spotkanie zespołu we wtorek”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="examples-h" style="margin-top:10px">Co zrobisz, gdy uwaga zawraca silnie do siebie?</div>
+    <textarea class="thought-input" id="returnInput" placeholder="np. „Zauważam: ”tu jest skupienie na sobie, witam„. Bez oceny. Wracam do brwi rozmówcy. Nie walczę z myślami o sobie — zauważam i wracam”..." rows="3"></textarea>
+  </section>
+  <!-- 5: POMIAR I KONSOLIDACJA -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Pomiar i konsolidacja</div>
+    <h1 class="card-prompt">Czy <em>działa</em>?</h1>
+    <p class="card-detail">Po tygodniu treningu — sprawdź <strong>spadek skupienia na sobie</strong>. Wells i Papageorgiou (1998): redukcja o 1-2 punkty po 7 dniach, 3-4 punkty po 6 tygodniach. Plus: <em>zwiększona pamięć rozmów</em> (twardy wskaźnik, że uwaga jest na zewnątrz).</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: <em>codziennie</em>, <em>6 tygodni</em>, <em>w realnych sytuacjach</em>. Nie sztuczny trening medytacyjny — <strong>w rozmowach z ludźmi</strong>. Pierwsze 2 tygodnie: świadomy wysiłek. 3-4: zaczyna być automatyczne w niektórych sytuacjach. 5-6: nawyk dominujący. To inwestycja zwracająca się przez lata.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Skupienie na sobie TERAZ — po tygodniu treningu</div>
+      <div class="scale-label"><span>Niski</span><span>Bardzo wysoki</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="sfAfter" oninput="updateAfter(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="sfAfterVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="diff-block">
+      <div class="diff-side">
+        <div class="diff-num warm" id="diffBefore">—</div>
+        <div class="diff-lbl">Przed</div>
+      </div>
+      <div class="diff-arrow">→</div>
+      <div class="diff-side">
+        <div class="diff-num sage" id="diffAfter">—</div>
+        <div class="diff-lbl">Po tygodniu</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twardy wskaźnik: pamiętasz treść rozmów lepiej?</div>
+    <textarea class="thought-input" id="memoryInput" placeholder="np. „Tak — tydzień temu nie pamiętałem, o czym mówiła Anna w środę. Po 7 dniach treningu pamiętam 80% jej historii o pracy. To dowód, że uwaga zaczyna być zewnętrzna”..." rows="3"></textarea>
+    
+    <div class="examples-h">Co się sprawdziło, co wymaga dalszej pracy?</div>
+    <textarea class="thought-input" id="lessonInput" placeholder="np. „Kotwica 2 (słuchanie) działa świetnie w 1:1. W grupach (3+ osoby) wciąż skupienie na sobie. Następny tydzień: dodaję kotwicę 4 (reakcja) w grupach”..." rows="3"></textarea>
+    
+    <div class="examples-h">Plan na 6 tygodni</div>
+    <textarea class="thought-input" id="planLongInput" placeholder="np. „Tygodnie 1-2: kotwica 2 (słuchanie). 3-4: dodaję 4 (reakcja). 5-6: dodaję 1 (wzrok) i 3 (otoczenie). Pełen zestaw od 6. tygodnia”..." rows="4"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Uwaga skierowana na siebie to <em>najsilniejszy mechanizm</em> utrzymujący SAD. Uwaga skierowana na zewnątrz to <strong>najsilniejszy lek</strong>. Trening musi być <em>codzienny</em> i <em>długoterminowy</em>: 6 tygodni codziennego ćwiczenia = trwała zmiana nawyku uwagi (Wells i Papageorgiou 1998, RCT). To <strong>fundament</strong> długoterminowego leczenia SAD — najsilniejsza dźwignia, jaką znamy.</div>
+    </div>
+    
+    <div class="src">Wells i Papageorgiou (1998, ATT) · Clark i Wells (1995) · Bogels i Mansell (2004) · Wells (2009, MCT)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('situationInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('planInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('frequencyInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('returnInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('memoryInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('lessonInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('planLongInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('sfBefore'); if (el) el.value = 7; }
+    { const el = document.getElementById('sfAfter'); if (el) el.value = 5; }
+    document.querySelectorAll('.strat-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) {
+    document.getElementById('diffBefore').textContent = document.getElementById('sfBefore').value + '/10';
+    document.getElementById('diffAfter').textContent = document.getElementById('sfAfter').value + '/10';
+  }
+}
+
+function useSit(el) {
+  const t = document.getElementById('situationInput');
+  if (t.value.trim()) t.value += '\n';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function pickStrat(el) {
+  document.querySelectorAll('.strat-card').forEach(c => c.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function updateAfter(v) {
+  document.getElementById('sfAfterVal').textContent = v;
+  document.getElementById('diffBefore').textContent = document.getElementById('sfBefore').value + '/10';
+  document.getElementById('diffAfter').textContent = v + '/10';
+}
+
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel1 = '.strat-card';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-uwaga-zewnatrz-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c1: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.strat-card, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

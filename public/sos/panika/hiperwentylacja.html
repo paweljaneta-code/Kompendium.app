@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Kontrola oddechu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.breath-circle { display: flex; flex-direction: column; align-items: center; padding: 20px 16px; margin: 12px 0 14px; background: rgba(184,197,168,0.18); border-radius: 14px; border: 1px solid var(--sage); }
+.breath-circle .bc-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage-deep); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+.breath-circle .bc-rhythm { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.breath-circle .bc-step { display: flex; flex-direction: column; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.7); border-radius: 12px; min-width: 90px; }
+.breath-circle .bc-step .bc-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; color: var(--warm); line-height: 1; }
+.breath-circle .bc-step .bc-label { font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+.breath-circle .bc-step .bc-via { font-size: 11.5px; color: var(--ink); font-weight: 600; margin-top: 2px; }
+.breath-circle .bc-arrow { font-size: 18px; color: var(--sage-deep); opacity: 0.6; }
+.breath-circle .bc-foot { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; line-height: 1.45; }
+.breath-circle .bc-foot strong { color: var(--ink); font-weight: 600; }
+
+.symptom-flip { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 14px; }
+.sf-row { display: flex; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.5); border: 1px solid var(--sage); border-radius: 10px; cursor: pointer; transition: all 0.2s; align-items: flex-start; }
+.sf-row:hover, .sf-row.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.sf-row .sf-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.sf-row .sf-content { flex: 1; }
+.sf-row .sf-myth { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.sf-row .sf-myth em { color: var(--warm); font-style: italic; font-weight: 700; }
+.sf-row .sf-fact { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+.sf-row.picked .sf-myth, .sf-row.picked .sf-fact, .sf-row.picked .sf-myth em { color: var(--bg) !important; }
+.sf-row.picked .sf-fact { color: rgba(244,241,234,0.9) !important; }
+
+.warn-block { background: rgba(201,165,114,0.18); border-left: 3px solid var(--warm); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.warn-block strong { color: var(--ink); font-weight: 600; }
+
+.timer-display { display: flex; flex-direction: column; align-items: center; padding: 18px 16px; margin: 10px 0 14px; background: var(--ink); color: var(--bg); border-radius: 12px; }
+.timer-display .td-num { font-family: 'Fraunces', serif; font-size: 48px; font-weight: 700; color: var(--bg); line-height: 1; }
+.timer-display .td-phase { font-size: 13px; color: var(--sage); margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+.timer-display .td-cycle { font-size: 11.5px; color: rgba(244,241,234,0.7); margin-top: 4px; }
+.timer-controls { display: flex; gap: 10px; margin: 8px 0 14px; }
+.timer-btn { flex: 1; padding: 12px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(184,197,168,0.18); color: var(--ink); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.timer-btn:hover { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.timer-btn.active { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Kontrola oddechu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Hiperwentylacja — paradoks <em>„za dużo tlenu"</em></h1>
+  <p class="card-detail">Hiperwentylacja to zbyt szybki i głęboki oddech, który obniża stężenie dwutlenku węgla we krwi (hipokapnia). Ley (1985) opisał pierwszy model hiperwentylacji w panice; Clark i in. (1985) zaproponowali oddychanie kontrolowane (breathing retraining) jako standardową technikę. Meuret i in. (2010, RCT — randomizowane badanie kontrolowane) zrewolucjonizowali podejście wprowadzając kapnometrię — obiektywny pomiar CO₂ wydechowego.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery zasady oddychania kontrolowanego</div>
+    <div class="element-row">
+      <span class="element-icon">🫁</span>
+      <span class="element-text"><strong>Wolniej, nie głębiej</strong> — pogłębianie oddechu nasila hipokapnię. Cel: 6–8 oddechów na minutę.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⏱️</span>
+      <span class="element-text"><strong>Wydech dłuższy od wdechu</strong> — wdech 4 s, wydech 6 s. Wydech aktywuje przywspółczulny.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🤲</span>
+      <span class="element-text"><strong>Brzuch, nie klatka</strong> — ruch przepony, nie barków. Klatka stoi w miejscu.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📅</span>
+      <span class="element-text"><strong>Codziennie, profilaktycznie</strong> — 5 min × 2 dziennie. Nawyk, nie ratunek w panice.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„W panice oddychasz za szybko i za głęboko — masz za dużo tlenu, nie za mało. Spowolnij oddech zamiast pogłębiać".
+    <span class="frame-quote-attr">— Ley (1985, „Blood, breath, and fears: A hyperventilation theory of panic")</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: jeśli czujesz, że <em>brakuje powietrza</em> w trakcie ataku — zwykle masz go <em>za dużo</em>. Spadek dwutlenku węgla daje paradoksalne uczucie duszności. Spowolnienie oddechu podnosi dwutlenek węgla i objawy ustępują.</div>
+
+  <div class="src">Ley (1985, „Hyperventilation theory of panic"); Clark i in. (1985); Meuret i in. (2010, RCT — capnometry-assisted respiratory training); Schmidt i in. (2000); Barlow i in. (2000) JAMA.</div>
+</section>
+
+<!-- ============== KROK 2 — Mit vs fakt ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Mit vs fakt</div>
+  <h1 class="card-prompt">Pięć objawów hipokapnii — <em>nie</em> to, co myślisz</h1>
+  <p class="card-detail">Każdy z tych objawów wygląda jak początek katastrofy — ale wszystkie pochodzą z jednego mechanizmu: spadku dwutlenku węgla. Zaznacz, który z nich najczęściej Cię przeraża.</p>
+
+  <div class="symptom-flip">
+    <div class="sf-row" id="sf1" onclick="pickFlip('sf1')">
+      <span class="sf-icon">🌪️</span>
+      <div class="sf-content">
+        <div class="sf-myth"><em>Mit:</em> zawroty głowy = „zaraz zemdleję / udar"</div>
+        <div class="sf-fact"><strong>Fakt:</strong> spadek dwutlenku węgla wywołuje skurcz drobnych naczyń mózgowych. Mija po unormowaniu oddechu. W panice ciśnienie rośnie — do omdlenia potrzebny spadek.</div>
+      </div>
+    </div>
+    <div class="sf-row" id="sf2" onclick="pickFlip('sf2')">
+      <span class="sf-icon">⚡</span>
+      <div class="sf-content">
+        <div class="sf-myth"><em>Mit:</em> mrowienie rąk i twarzy = „udar / paraliż"</div>
+        <div class="sf-fact"><strong>Fakt:</strong> zasadowica oddechowa obniża stężenie wapnia zjonizowanego — stąd mrowienie kończyn. Mija w sekundy po unormowaniu oddechu.</div>
+      </div>
+    </div>
+    <div class="sf-row" id="sf3" onclick="pickFlip('sf3')">
+      <span class="sf-icon">😮‍💨</span>
+      <div class="sf-content">
+        <div class="sf-myth"><em>Mit:</em> uczucie braku powietrza = „uduszę się"</div>
+        <div class="sf-fact"><strong>Fakt:</strong> nadmiar tlenu paradoksalnie odczuwany jest jako brak. Receptory chemiczne mózgu reagują na poziom dwutlenku węgla, nie tlenu — dlatego pogłębianie oddechu pogarsza objawy.</div>
+      </div>
+    </div>
+    <div class="sf-row" id="sf4" onclick="pickFlip('sf4')">
+      <span class="sf-icon">💪</span>
+      <div class="sf-content">
+        <div class="sf-myth"><em>Mit:</em> skurcze mięśni / drżenie = „atak nerwowy"</div>
+        <div class="sf-fact"><strong>Fakt:</strong> ten sam mechanizm wapniowy daje skurcze. Tężyczka hiperwentylacyjna jest niegroźna i ustępuje, gdy oddech zwolni.</div>
+      </div>
+    </div>
+    <div class="sf-row" id="sf5" onclick="pickFlip('sf5')">
+      <span class="sf-icon">🌫️</span>
+      <div class="sf-content">
+        <div class="sf-myth"><em>Mit:</em> nierealność / „za szkłem" = „zwariuję"</div>
+        <div class="sf-fact"><strong>Fakt:</strong> obniżony przepływ krwi w korze mózgowej (skutek hipokapnii) daje uczucie depersonalizacji. Mija po ataku.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="term-note"><strong>📌 Wskazówka</strong>: gdy w panice pojawia się <em>kilka</em> tych objawów naraz, mózg interpretuje to jako sygnał poważnej choroby. Wystarczy zrozumieć wspólny mechanizm — niski dwutlenek węgla — by interpretacja zniknęła.</div>
+</section>
+
+<!-- ============== KROK 3 — Rytm 4-6 ============== -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Rytm 4–6</div>
+  <h1 class="card-prompt">Wdech <em>4 s</em>, wydech <em>6 s</em>, brzuchem</h1>
+  <p class="card-detail">Standardowy rytm oddychania kontrolowanego dla zaburzenia panicznego. Niższy niż naturalny (12–16 oddechów na minutę), wydech dłuższy od wdechu — to klucz dla aktywacji układu przywspółczulnego.</p>
+
+  <div class="breath-circle">
+    <div class="bc-h">Rytm oddechu</div>
+    <div class="bc-rhythm">
+      <div class="bc-step">
+        <div class="bc-num">4</div>
+        <div class="bc-label">sekundy</div>
+        <div class="bc-via">wdech nosem</div>
+      </div>
+      <div class="bc-arrow">→</div>
+      <div class="bc-step">
+        <div class="bc-num">6</div>
+        <div class="bc-label">sekundy</div>
+        <div class="bc-via">wydech ustami</div>
+      </div>
+    </div>
+    <div class="bc-foot">10 cykli = 90 s · 6 oddechów / min · <strong>brzuch się wypycha, klatka stoi</strong></div>
+  </div>
+
+  <div class="warn-block"><strong>⚠️ Ważne:</strong> nie pogłębiaj oddechu. Ludzie intuicyjnie biorą głębokie wdechy myśląc, że „dotleniają" — w panice to <em>pogarsza</em> objawy, bo nasila hipokapnię. Cel: <em>spowolnij</em>, nie <em>powiększ</em>.</div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Wskazówki techniczne</strong> — zaznacz, które stosujesz lub planujesz wdrożyć:</p>
+  <div class="example-chips">
+    <button class="example-chip" id="t1" onclick="togTip('t1')">Ręka na brzuchu, druga na klatce</button>
+    <button class="example-chip" id="t2" onclick="togTip('t2')">Wydech przez ściśnięte usta (jak gwizdnięcie)</button>
+    <button class="example-chip" id="t3" onclick="togTip('t3')">Liczę w głowie 4–6, nie patrzę na zegar</button>
+    <button class="example-chip" id="t4" onclick="togTip('t4')">Pozycja siedząca, plecy proste, ramiona luźne</button>
+    <button class="example-chip" id="t5" onclick="togTip('t5')">Aplikacja na telefon (Breathwrk, Calm) jako licznik</button>
+  </div>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: Meuret i in. (2010) wykazali, że oddychanie kontrolowane <em>bez</em> pomiaru dwutlenku węgla działa słabiej niż <em>z pomiarem</em> kapnometrem. Co to znaczy w praktyce: licz oddechy na zegarze albo używaj aplikacji — nie polegaj na „czuciu, że dobrze oddycham".</div>
+</section>
+
+<!-- ============== KROK 4 — Praktyka ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka</div>
+  <h1 class="card-prompt">10 cykli — <em>licznik</em> ręczny</h1>
+  <p class="card-detail">Spróbuj teraz. Naciśnij start — pojawi się prosty licznik z fazami wdech/wydech. 10 cykli = 90 sekund. Po praktyce zapisz, jak Twoje ciało zareagowało.</p>
+
+  <div class="timer-display">
+    <div class="td-num" id="tdNum">0</div>
+    <div class="td-phase" id="tdPhase">Naciśnij start</div>
+    <div class="td-cycle" id="tdCycle">cykl 0 / 10</div>
+  </div>
+
+  <div class="timer-controls">
+    <button class="timer-btn" id="btnStart" onclick="startBreath()">▶ Start (10 cykli)</button>
+    <button class="timer-btn" id="btnStop" onclick="stopBreath()">⏸ Stop</button>
+  </div>
+
+  <p class="card-detail" style="margin-top:6px"><strong>Po praktyce</strong> — co zauważyłeś?</p>
+  <textarea class="thought-input" id="afterPractice" placeholder="np. „Zawroty głowy zaczęły ustępować w 5. cyklu; uczucie braku powietrza minęło w 8.""></textarea>
+
+  <div class="term-note"><strong>🧠 Sprawdzenie</strong>: jeśli w trakcie praktyki pojawiło się <em>więcej</em> objawów hipokapnii (mrowienie, zawroty), to znaczy że oddychasz <em>za głęboko</em>, nie za szybko. Następnym razem zmniejsz głębokość — wdech ledwo zauważalny, wydech naturalnie dłuższy.</div>
+</section>
+
+<!-- ============== KROK 5 — Plan + ostrzeżenie ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Plan + ostrzeżenie</div>
+  <h1 class="card-prompt">Codzienny <em>nawyk</em> — nie ratunek</h1>
+  <p class="card-detail">Najważniejsza zasada: oddychanie kontrolowane to higiena codzienna, jak mycie zębów — nie broń przeciwko panice. Używanie go tylko „w razie czego" zamienia narzędzie w zachowanie zabezpieczające.</p>
+
+  <div class="examples-h">Twój plan profilaktyczny</div>
+  <div class="example-chips">
+    <button class="example-chip" id="p1" onclick="togPlan('p1')">5 min rano, 5 min wieczorem (codziennie)</button>
+    <button class="example-chip" id="p2" onclick="togPlan('p2')">Aplikacja z przypomnieniem</button>
+    <button class="example-chip" id="p3" onclick="togPlan('p3')">Po dłuższym stresie — 3 cykle reset</button>
+    <button class="example-chip" id="p4" onclick="togPlan('p4')">Wieczorem przed snem — 10 cykli wyciszenia</button>
+    <button class="example-chip" id="p5" onclick="togPlan('p5')">Zapis postępów w dzienniku paniki</button>
+  </div>
+
+  <div class="warn-block"><strong>⚠️ Ostrzeżenie kliniczne:</strong> Barlow i in. (2000, JAMA) wykazali, że u części pacjentów trening oddechowy <em>pogarsza</em> wyniki — bo utrwala schemat „moim ciałem trzeba sterować". Jeśli zauważysz, że używasz oddechu jako tarczy przy każdym kołataniu serca — przejdź do <em>ekspozycji interoceptywnej</em>, gdzie celowo wytrzymasz odczucie <em>bez</em> kontroli oddechu.</div>
+
+  <div class="scale">
+    <div class="scale-label"><span>Pewność, że <em>nie</em> użyję oddechu jako zabezpieczenia w panice</span></div>
+    <input type="range" min="0" max="100" value="60" class="scale-input" id="convB" data-default="60" oninput="document.getElementById('convBR').textContent=this.value+'%'">
+    <div class="scale-readout"><span>0%</span><span id="convBR">60%</span><span>100%</span></div>
+  </div>
+
+  <div class="final-msg">Test różnicowy: oddychanie kontrolowane <em>profilaktyczne</em> = aktywuje przywspółczulny, buduje rezerwę regulacyjną, odruch odporności na stres. Oddychanie <em>w panice</em> = łatwo staje się rytuałem zabezpieczającym, blokuje uczenie się przez ekspozycję. Praktyka codzienna, nie awaryjna.</div>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: 8 tygodni codziennej praktyki buduje automatyczny dostęp do spowolnionego oddechu pod stresem. Wcześniej narzędzie istnieje, ale nie aktywuje się w trudnym momencie. Bez praktyki — w panice nie pamiętasz nawet, że masz tę technikę.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">W panice masz <strong>za dużo tlenu, nie za mało</strong>. Spowolnij oddech zamiast pogłębiać. Wdech 4 s nosem, wydech 6 s ustami, brzuchem. <em>Nie</em> używaj jako tarczy w trudnej sytuacji — to higiena codzienna, nie ratunek.</div>
+  </div>
+
+  <div class="src">Ley (1985, „Hyperventilation theory of panic"); Clark i in. (1985, „A breathing technique for panic"); Meuret i in. (2010, J Consult Clin Psychol — kapnometria w terapii paniki); Schmidt i in. (2000); Barlow i in. (2000) JAMA; Hofmann i in. (2007, meta-analiza); NICE (2011) CG113.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickFlip(id) {
+  document.querySelectorAll('.sf-row').forEach(b => b.classList.remove('picked'));
+  var el = document.getElementById(id);
+  if (el) el.classList.add('picked');
+}
+
+function togTip(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+function togPlan(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+var breathTimer = null;
+var breathState = { sec: 0, cycle: 0, phase: 'wdech', running: false };
+
+function tickBreath() {
+  if (!breathState.running) return;
+  breathState.sec++;
+  var num = document.getElementById('tdNum');
+  var ph = document.getElementById('tdPhase');
+  var cy = document.getElementById('tdCycle');
+  if (!num || !ph || !cy) return;
+
+  if (breathState.phase === 'wdech') {
+    if (breathState.sec > 4) {
+      breathState.phase = 'wydech';
+      breathState.sec = 1;
+    }
+  } else {
+    if (breathState.sec > 6) {
+      breathState.phase = 'wdech';
+      breathState.sec = 1;
+      breathState.cycle++;
+      if (breathState.cycle >= 10) {
+        stopBreath();
+        ph.textContent = 'Gotowe ✨';
+        cy.textContent = '10 / 10 cykli ukończonych';
+        num.textContent = '✓';
+        return;
+      }
+    }
+  }
+  num.textContent = breathState.sec;
+  ph.textContent = breathState.phase === 'wdech' ? '🫁 Wdech (nosem)' : '😮‍💨 Wydech (ustami)';
+  cy.textContent = 'cykl ' + (breathState.cycle + 1) + ' / 10';
+}
+
+function startBreath() {
+  if (breathState.running) return;
+  breathState = { sec: 0, cycle: 0, phase: 'wdech', running: true };
+  document.getElementById('btnStart').classList.add('active');
+  breathTimer = setInterval(tickBreath, 1000);
+}
+
+function stopBreath() {
+  breathState.running = false;
+  if (breathTimer) clearInterval(breathTimer);
+  breathTimer = null;
+  var btn = document.getElementById('btnStart');
+  if (btn) btn.classList.remove('active');
+}
+
+function onReset() {
+  stopBreath();
+  document.querySelectorAll('.sf-row, .example-chip').forEach(el => el.classList.remove('picked'));
+  var num = document.getElementById('tdNum');
+  var ph = document.getElementById('tdPhase');
+  var cy = document.getElementById('tdCycle');
+  if (num) num.textContent = '0';
+  if (ph) ph.textContent = 'Naciśnij start';
+  if (cy) cy.textContent = 'cykl 0 / 10';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_hiperwentylacja — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_hiperwentylacja";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

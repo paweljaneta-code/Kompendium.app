@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · STOP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative; }
+.frame-card::before { content: "✦ CHOICE POINT"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; }
+.frame-flow { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.flow-node { background: rgba(244,241,234,0.08); border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: 600; }
+.flow-node.warm { background: rgba(201,122,82,0.2); color: var(--warm); }
+.flow-node.sage { background: rgba(122,146,112,0.25); color: var(--sage); }
+.flow-arrow { color: rgba(244,241,234,0.5); font-size: 14px; }
+.frame-flow-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; text-align: center; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+
+/* === TRIGGER PICKER === */
+.trigger-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.trigger-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.trigger-block:hover { background: var(--sage-soft); }
+.trigger-block.active { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 9px; }
+.trigger-h { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+.trigger-icon { font-size: 14px; }
+.trigger-name { font-size: 12.5px; font-weight: 700; flex: 1; }
+.trigger-desc { font-size: 11px; color: var(--ink-soft); font-style: italic; line-height: 1.35; }
+
+/* === STOP PROTOCOL with timing === */
+.stop-grid {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 8px 0 12px;
+}
+.stop-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-left: 4px solid var(--sage);
+  border-radius: 12px;
+  padding: 12px 14px;
+  align-items: start;
+}
+.stop-row.observe { border-left-color: var(--warm); background: rgba(201,122,82,0.05); }
+.stop-letter { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; color: var(--sage-deep); text-align: center; line-height: 1; }
+.stop-row.observe .stop-letter { color: var(--warm); }
+.stop-content { display: flex; flex-direction: column; gap: 4px; }
+.stop-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.stop-time { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.stop-instruction { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+.stop-instruction strong { color: var(--ink); font-style: normal; font-weight: 700; }
+
+/* === O FIELDS (3 areas) === */
+.o-fields { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.o-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warm);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.o-card-h { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+.o-card-icon { font-size: 14px; }
+.o-card-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm); font-weight: 700; flex: 1; }
+.o-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink);
+}
+.o-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm)); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm)); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+
+.delta-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 16px 20px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14.5px; line-height: 1.5; }
+.delta-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.delta-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === DAILY === */
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>STOP</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: BODZIEC → PAUZA → WYBÓR -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Przestrzeń <em>między</em></h1>
+    <p class="card-detail"><strong>STOP</strong> (Stahl, Goldstein 2010, MBSR Workbook; w nurcie <strong>ACT</strong> — terapia akceptacji i zaangażowania — używana jako <em>interwencja w punkcie wyboru</em>) — najkrótsza formalna praktyka uważności. 4 kroki, 60 sekund. Mikro-przerwanie autopilota. Tworzy <strong>przestrzeń między bodźcem a reakcją</strong> — serce każdej zmiany behawioralnej.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Choice point — Russ Harris</div>
+      
+      <div class="frame-flow-label">Bez STOP</div>
+      <div class="frame-flow">
+        <div class="flow-node warm">bodziec</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node warm">reakcja automatyczna</div>
+      </div>
+      
+      <div class="frame-flow-label" style="margin-top:10px">Z STOP</div>
+      <div class="frame-flow">
+        <div class="flow-node warm">bodziec</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node sage">PAUZA</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node sage">obserwacja</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node sage">wybór</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node">działanie</div>
+      </div>
+      
+      <div class="frame-quote">„W jednej minucie zyskujesz podmiotowość, która była nieobecna w autopilocie."</div>
+    </div>
+    
+    <div class="term-note"><strong>Neurobiologia</strong>: Tang i wsp. (2015, Nature Reviews Neuroscience) — krótkie praktyki uważności aktywują insulę i ACC (przednią korę obręczy). Meta-analiza Gotink i wsp. (2016): nawet 3-minutowe praktyki 3× dziennie dają mierzalne efekty neurofunkcjonalne po 4 tygodniach.</div>
+    
+    <div class="src">Stahl, Goldstein (2010, MBSR Workbook) · Tang i wsp. (2015) · Harris (2017)</div>
+  </section>
+
+  <!-- 2: TRIGGER POINTS -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Punkty wyzwalające</div>
+    <h1 class="card-prompt">Kiedy <em>włączyć</em> STOP?</h1>
+    <p class="card-detail">STOP działa najlepiej, gdy jest podpięty do <strong>powtarzalnych momentów reaktywności</strong>. Wybierz 3-4 punkty, w których najczęściej działasz na autopilocie albo reagujesz impulsywnie.</p>
+    
+    <div class="trigger-grid">
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">💬</span><span class="trigger-name">Przed rozmową</span></div>
+        <div class="trigger-desc">Spotkanie, telefon, wystąpienie — pauza zanim zaczniesz</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">🍽</span><span class="trigger-name">Przed posiłkiem</span></div>
+        <div class="trigger-desc">Pierwszy kęs uważnie — zamiast scrollowania</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">📱</span><span class="trigger-name">Po wybudzeniu telefonu</span></div>
+        <div class="trigger-desc">Każde podniesienie ekranu — sprawdzasz świadomie?</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">📧</span><span class="trigger-name">Po pingu maila</span></div>
+        <div class="trigger-desc">Zanim otworzysz powiadomienie</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">🔥</span><span class="trigger-name">Przed odpowiedzią w stresie</span></div>
+        <div class="trigger-desc">Krytyka, konflikt — pauza przed reakcją</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">🔁</span><span class="trigger-name">Przy zmianie zadania</span></div>
+        <div class="trigger-desc">Zmiana zadań niesie stres — STOP go redukuje</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">🚪</span><span class="trigger-name">Na progu (dom/biuro)</span></div>
+        <div class="trigger-desc">Wejście/wyjście — granica między światami</div>
+      </div>
+      <div class="trigger-block" onclick="toggleTrigger(this)">
+        <div class="trigger-h"><span class="trigger-icon">⚡</span><span class="trigger-name">Gdy zauważysz napięcie</span></div>
+        <div class="trigger-desc">Ramiona, szczęka, oddech — sygnał ciała</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: 3-4 triggery to optimum. Wybierz takie, które masz <em>codziennie kilka razy</em>. Lepiej STOP po pingu maila (10× dziennie) niż „przed wystąpieniem publicznym" (raz na miesiąc).</div>
+  </section>
+
+  <!-- 3: STOP PROTOCOL + EXEC -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Protokół + wykonanie</div>
+    <h1 class="card-prompt">Cztery <em>kroki</em></h1>
+    <p class="card-detail">Wykonaj STOP teraz. Po każdym kroku zauważ, co się dzieje. Krok <strong>O (Observe)</strong> jest najważniejszy — to tu rodzi się świadomość.</p>
+    
+    <div class="stop-grid">
+      <div class="stop-row">
+        <div class="stop-letter">S</div>
+        <div class="stop-content">
+          <div class="stop-name">STOP</div>
+          <div class="stop-time">3 sekundy</div>
+          <div class="stop-instruction">Przerwij to, co robisz. Dosłownie: pisanie, mówienie, chodzenie.</div>
+        </div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-letter">T</div>
+        <div class="stop-content">
+          <div class="stop-name">TAKE A BREATH</div>
+          <div class="stop-time">10-15 sekund</div>
+          <div class="stop-instruction">Jeden pełny oddech: <strong>wdech 4 sek, wydech 6 sek</strong>. Aktywuje nerw błędny.</div>
+        </div>
+      </div>
+      <div class="stop-row observe">
+        <div class="stop-letter">O</div>
+        <div class="stop-content">
+          <div class="stop-name">OBSERVE — najważniejszy</div>
+          <div class="stop-time">30-40 sekund</div>
+          <div class="stop-instruction">Trzy obszary: <strong>myśli · emocje · ciało</strong>. Krótko, bez analizy.</div>
+        </div>
+      </div>
+      <div class="stop-row">
+        <div class="stop-letter">P</div>
+        <div class="stop-content">
+          <div class="stop-name">PROCEED</div>
+          <div class="stop-time">5 sekund</div>
+          <div class="stop-instruction">Wróć do działania, ale <strong>świadomie</strong>. Wybór, nie autopilot.</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Co zauważyłeś/aś podczas O (Observe)?</div>
+    <div class="o-fields">
+      <div class="o-card">
+        <div class="o-card-h"><span class="o-card-icon">💭</span><span class="o-card-label">Myśli</span></div>
+        <input type="text" class="o-input" id="oThoughts" placeholder="np. „muszę się spieszyć", „on znowu coś zrobił", planowanie...">
+      </div>
+      <div class="o-card">
+        <div class="o-card-h"><span class="o-card-icon">🌊</span><span class="o-card-label">Emocje</span></div>
+        <input type="text" class="o-input" id="oEmotions" placeholder="np. zniecierpliwienie, lekki niepokój, frustracja...">
+      </div>
+      <div class="o-card">
+        <div class="o-card-h"><span class="o-card-icon">🫀</span><span class="o-card-label">Ciało</span></div>
+        <input type="text" class="o-input" id="oBody" placeholder="np. napięte ramiona, płytki oddech, zaciśnięta szczęka...">
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: IMPULSIVITY MEASURE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Pomiar wyboru</div>
+    <h1 class="card-prompt">Autopilot <em>czy wybór</em>?</h1>
+    <p class="card-detail">STOP buduje przestrzeń wyboru. Przed STOP byłeś/aś <strong>impulsywny/a</strong> wobec sytuacji — działałeś/aś na autopilocie. Po STOP masz <em>opcje</em>: możesz wybrać, jak zareagować.</p>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak impulsywnie reagowałeś/aś PRZED STOP</div>
+      <div class="scale-label"><span>świadomy wybór</span><span>autopilot</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="beforeImp" oninput="updateImpulsivity()">
+      <div class="scale-readout"><span id="beforeImpVal">7</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak impulsywnie reagujesz TERAZ — po STOP</div>
+      <div class="scale-label"><span>świadomy wybór</span><span>autopilot</span></div>
+      <input type="range" min="0" max="10" value="3" class="scale-input" id="afterImp" oninput="updateImpulsivity()">
+      <div class="scale-readout"><span id="afterImpVal">3</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="delta-summary" id="impSummary">
+      Spadek impulsywności o <span class="num">4 punkty</span> — <strong>STOP otworzyło przestrzeń wyboru</strong>. Tu rodzi się różnica między reakcją a działaniem.
+    </div>
+    
+    <div class="examples-h">Co wybierasz teraz świadomie (zamiast autopilota)?</div>
+    <textarea class="thought-input" id="conscious" placeholder="np. „rozluźniam barki przed odpowiedzią" / „odkładam telefon zamiast scrollować" / „odpisuję na maila spokojniej"..." rows="2"></textarea>
+  </section>
+
+  <!-- 5: PLAN + DIFFICULTIES -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan tygodnia</div>
+    <h1 class="card-prompt">10 razy <em>dziennie</em></h1>
+    <p class="card-detail">Cel pierwszego tygodnia: <strong>10 STOP-ów dziennie</strong>. To nie liczba rekordowa — to próg, przy którym mikropraktyka zaczyna realnie zmieniać autopilot. Mniej = za mało, by zauważyć efekt.</p>
+    
+    <div class="day-h">Mój plan triggerów</div>
+    <textarea class="thought-input" id="plan" placeholder="np. „każde otwarcie maila = STOP" / „przed każdym spotkaniem zoom" / „po każdej zmianie zadania"..." rows="2"></textarea>
+    
+    <div class="day-h">Wsparcie wdrożenia</div>
+    <div class="term-note">
+      <strong>Przypomnienia w telefonie</strong>: 3-5 alarmów dziennie z napisem „STOP".<br>
+      <strong>Wizualne wskaźniki</strong>: kropka na zegarku, tapeta, karteczka na laptopie.<br>
+      <strong>Towarzysz</strong>: partner robi STOP w tym samym czasie co ty.<br>
+      <strong>Aplikacje</strong>: Insight Timer, Smiling Mind, Waking Up — funkcja „mindful moments".
+    </div>
+    
+    <div class="day-h">Typowe trudności</div>
+    <div class="term-note">
+      <strong>Zapominanie</strong> — normalne. 10 zapomnień, 1 wykonane = sukces w pierwszym tygodniu.<br>
+      <strong>„Nie ma czasu"</strong> — STOP trwa <em>60 sekund</em>. Czas jest zawsze.<br>
+      <strong>Skracanie do 5 sek</strong> — STOP traci moc. Trzymaj się 30-60 sek.<br>
+      <strong>Brak efektu</strong> — efekt nie jest natychmiastowy. Akumulacja po 4 tygodniach.
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body">Każda chwila to <strong>potencjalny punkt wyboru</strong> między autopilotem (reaktywnością) a wartościowym działaniem. STOP tworzy właśnie tę przestrzeń. <em>To, co robisz w sekundach po STOP, definiuje, kim jesteś</em> — zgodnie z wartościami, czy z lęku.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 4) updateImpulsivity();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.trigger-block.active').forEach(b => b.classList.remove('active'));
+    ['oThoughts','oEmotions','oBody','conscious','plan'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('beforeImp').value = 7;
+    document.getElementById('afterImp').value = 3;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleTrigger(el) { el.classList.toggle('active'); }
+
+function updateImpulsivity() {
+  const before = parseInt(document.getElementById('beforeImp').value);
+  const after = parseInt(document.getElementById('afterImp').value);
+  document.getElementById('beforeImpVal').textContent = before;
+  document.getElementById('afterImpVal').textContent = after;
+  
+  const delta = before - after;
+  const summary = document.getElementById('impSummary');
+  
+  if (delta >= 4) {
+    summary.innerHTML = `Spadek impulsywności o <span class="num">${delta} punktów</span> — <strong>STOP otworzyło przestrzeń wyboru</strong>. Tu rodzi się różnica między reakcją a działaniem.`;
+  } else if (delta >= 1) {
+    summary.innerHTML = `Spadek o <span class="num">${delta} ${delta === 1 ? 'punkt' : 'punkty'}</span>. Realna zmiana, choć subtelna. Powtórz STOP za 5 minut — z czasem przestrzeń wyboru się pogłębia.`;
+  } else if (delta === 0) {
+    summary.innerHTML = `Bez zmiany (<span class="num">${before}</span> = <span class="num">${after}</span>). Możliwe powody: (a) byłeś/aś już w stanie świadomym; (b) STOP było zbyt krótkie — wydłuż krok O do 40 sek; (c) trigger był zbyt słaby.`;
+  } else {
+    summary.innerHTML = `Wzrost (<span class="num">${before}</span> → <span class="num">${after}</span>) — STOP <em>uświadomiło</em> impulsywność, której wcześniej nie zauważałeś/aś. To <strong>sukces</strong>, nie porażka — zauważenie autopilota to pierwszy krok do jego przerwania.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_stop";
+  var clickSel0 = '.trigger-block';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.trigger-block')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Informacja zwrotna z nagrania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === MULTI-SCALE GRID (kroki 1, 3) === */
+.multi-scale { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 12px; padding: 14px 16px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; }
+.multi-scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.ms-row { display: flex; align-items: center; gap: 10px; }
+.ms-label { font-size: 11.5px; color: var(--ink-soft); flex: 1; min-width: 0; }
+.ms-label strong { color: var(--ink); font-weight: 700; }
+.ms-input { flex: 1.5; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.ms-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: var(--sage-deep); border-radius: 50%; cursor: grab; }
+.ms-input::-moz-range-thumb { width: 18px; height: 18px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.ms-val { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--sage-deep); min-width: 30px; text-align: right; }
+
+/* === PROTOCOL-CARD (krok 2) === */
+.protocol-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.protocol-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.protocol-row { display: flex; gap: 12px; padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; align-items: flex-start; }
+.protocol-row:last-child { margin-bottom: 0; }
+.protocol-num { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--warm); flex-shrink: 0; min-width: 22px; line-height: 1.4; }
+.protocol-text { font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); flex: 1; }
+.protocol-text strong { color: var(--bg); }
+
+/* === OBS-CARD (krok 4) === */
+.obs-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 10px; }
+.obs-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.obs-h::before { content: "👤"; font-size: 16px; }
+
+/* === TRIPLE-COMPARE (krok 5) === */
+.triple-block { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0 12px; }
+.triple-side { padding: 12px 8px; border-radius: 10px; text-align: center; }
+.triple-side.A { background: rgba(201,122,82,0.10); border: 1.5px solid var(--warm); }
+.triple-side.B { background: rgba(201,122,82,0.05); border: 1px solid var(--ink-mute); }
+.triple-side.C { background: rgba(122,146,112,0.12); border: 1.5px solid var(--sage-deep); }
+.triple-h { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 700; margin-bottom: 4px; }
+.triple-h.A { color: var(--warm); }
+.triple-h.C { color: var(--sage-deep); }
+.triple-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.triple-num.A { color: var(--warm); }
+.triple-num.B { color: var(--ink); }
+.triple-num.C { color: var(--sage-deep); }
+.triple-lbl { font-size: 9px; color: var(--ink-mute); margin-top: 3px; letter-spacing: 0.04em; }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Informacja zwrotna z nagrania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Informacja zwrotna <em>z nagrania</em></h1>
+    <p class="card-detail"><strong>Informacja zwrotna z nagrania</strong> (Harvey, Clark, Ehlers, Rapee 2000) — <em>najsilniejszy empirycznie</em> sposób korygowania zniekształconego obrazu siebie w SAD. W lęku społecznym łatwo być <strong>przekonanym</strong>, że wyglądasz znacznie gorzejj niż w rzeczywistości — czerwoni, drżący, zestresowani, niekompetentni. Warnock-Parkes i in. (2017) udokumentowali w RCT: <em>jedna sesja informacji zwrotnej z nagrania redukuje przekonanie o nieprawidłowym wyglądzie o 40%</em>. Mechanizm: <strong>konfrontacja wewnętrznego obrazu z obiektywną rzeczywistością</strong>. Zazwyczaj odkrycie: „wyglądam normalnie, znacznie spokojniej niż się czuję”.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy eksperymentu</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">📸</span>
+          <span class="element-text"><strong>Prognoza</strong> = zapisz, jak <em>czujesz</em>, że wyglądasz w sytuacji społecznej</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🎬</span>
+          <span class="element-text"><strong>Nagranie</strong> = realna sytuacja społeczna nagrana wideo (5–10 minut)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">👀</span>
+          <span class="element-text"><strong>Obserwacja</strong> = oglądasz nagranie z dystansu („jakby kogoś innego”)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📊</span>
+          <span class="element-text"><strong>Rozbieżność</strong> = porównanie wewnętrznego obrazu z obiektywnym widokiem</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Pacjenci z fobią społeczną <em>przekonani są</em>, że ich lęk jest widoczny. Wideo udowadnia, że <em>nie jest</em> — i to obala kluczowe przekonanie utrzymujące zaburzenie.”
+        <span class="frame-quote-attr">— Warnock-Parkes i in. (2017, Clinical Psychology Review)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: <em>kluczową fazą</em> jest <strong>oglądanie z dystansu</strong> — jak kogoś obcego. Nie „znajdowanie błędów”, nie krytykowanie. Pytanie brzmi: <em>„czy ta osoba wygląda na nadmiernie zestresowaną, niekompetentną, z widocznym rumieńcem?”</em>. Większość osób odpowiada: <strong>„nie. Wygląda normalnie”</strong>.</div>
+    
+    <div class="src">Harvey, Clark, Ehlers, Rapee (2000) · Warnock-Parkes i in. (2017) · Clark i Wells (1995) · Rapee i Hayman (1996)</div>
+  </section>
+  <!-- 2: PROGNOZA WEWNĘTRZNA -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Prognoza wewnętrzna</div>
+    <h1 class="card-prompt">Twój <em>wewnętrzny obraz</em></h1>
+    <p class="card-detail">Przed nagraniem — zapisz, jak <em>czujesz, że wyglądasz</em> w sytuacjach społecznych. Im bardziej dosłowny opis, tym silniejsza będzie korekta po obejrzeniu nagrania.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: prognozę zapisz <em>przed</em> nagraniem. Zapisana prognoza nie da się <em>pomylić</em> z faktyczną obserwacją po fakcie. Bez zapisu mózg po obejrzeniu nagrania powie <em>„właściwie wiedziałem, że tak będzie”</em> — co rujnuje eksperyment.</div>
+    
+    <div class="examples-h">Twoja prognoza — jak myślisz, że wyglądasz?</div>
+    <textarea class="thought-input" id="imgInput" placeholder="np. „Spocony, czerwony na twarzy, drżące ręce, zacinający się głos, sztywne ruchy, widoczny strach w oczach”..." rows="3"></textarea>
+    
+    <div class="examples-h">Najczęstsze prognozy w SAD — stuknij, jeśli pasuje</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useImg(this)">Zaczerwieniona twarz</div>
+      <div class="example-chip" onclick="useImg(this)">Drżący głos</div>
+      <div class="example-chip" onclick="useImg(this)">Trzęsące się ręce</div>
+      <div class="example-chip" onclick="useImg(this)">Zacinanie się w słowach</div>
+      <div class="example-chip" onclick="useImg(this)">Widoczne napięcie / sztywność</div>
+      <div class="example-chip" onclick="useImg(this)">Spocone czoło / plamy</div>
+      <div class="example-chip" onclick="useImg(this)">Niepewny wzrok</div>
+    </div>
+    
+    <div class="multi-scale" style="margin-top:14px">
+      <div class="multi-scale-h">Prognoza intensywności — jak silnie czujesz, że to widać?</div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Czerwoność</strong> twarzy</span>
+        <input type="range" min="0" max="10" value="7" class="ms-input" id="pPol" oninput="document.getElementById('pPolVal').textContent=this.value">
+        <span class="ms-val" id="pPolVal">7</span>
+      </div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Drżenie</strong> głosu / rąk</span>
+        <input type="range" min="0" max="10" value="6" class="ms-input" id="pDrz" oninput="document.getElementById('pDrzVal').textContent=this.value">
+        <span class="ms-val" id="pDrzVal">6</span>
+      </div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Napięcie</strong> / sztywność</span>
+        <input type="range" min="0" max="10" value="7" class="ms-input" id="pNap" oninput="document.getElementById('pNapVal').textContent=this.value">
+        <span class="ms-val" id="pNapVal">7</span>
+      </div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Niekompetencja</strong> ogólna</span>
+        <input type="range" min="0" max="10" value="6" class="ms-input" id="pKomp" oninput="document.getElementById('pKompVal').textContent=this.value">
+        <span class="ms-val" id="pKompVal">6</span>
+      </div>
+    </div>
+  </section>
+  <!-- 3: PROTOKÓŁ NAGRYWANIA I OBSERWACJI -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Protokół nagrywania i obserwacji</div>
+    <h1 class="card-prompt">Jak <em>wykonać</em>?</h1>
+    <p class="card-detail">Konkretny protokół Warnock-Parkes (2017) — sprawdzony empirycznie. <strong>Nagranie</strong> 5-10 minut realnej sytuacji społecznej, <strong>oglądane</strong> z dystansu, jakby kogoś innego. To 2 fazy — każda z konkretnymi zasadami.</p>
+    
+    <div class="term-note"><strong>Reguła Warnock-Parkes</strong>: <em>nigdy</em> nie oglądaj nagrania <strong>od razu po</strong>. Świeże emocje (przetwarzanie po sytuacji) zniekształcają percepcję — będziesz widzieć więcej deficytów niż obiektywnie jest. <strong>24-godzinny odstęp</strong> daje dystans potrzebny do trzeźwej obserwacji.</div>
+    
+    <div class="protocol-card">
+      <div class="protocol-h">Faza 1 — nagrywanie</div>
+      <div class="protocol-row">
+        <span class="protocol-num">1.</span>
+        <span class="protocol-text"><strong>Realna sytuacja</strong> społeczna — rozmowa z partnerem/ką, telefon do mamy, prezentacja na próbę. Nie sztuczne nagrywanie się w lustrze.</span>
+      </div>
+      <div class="protocol-row">
+        <span class="protocol-num">2.</span>
+        <span class="protocol-text"><strong>5–10 minut</strong> — wystarczy. Krótsze daje za mało materiału, dłuższe utrudnia oglądanie.</span>
+      </div>
+      <div class="protocol-row">
+        <span class="protocol-num">3.</span>
+        <span class="protocol-text"><strong>Telefon w stojaku</strong>, twarz w kadrze. Naturalny dźwięk, naturalne światło.</span>
+      </div>
+      <div class="protocol-row">
+        <span class="protocol-num">4.</span>
+        <span class="protocol-text"><strong>Bez rewolucji w wyglądzie</strong>: ubranie typowe, bez specjalnego makijażu. Cel: nagranie typowej sytuacji.</span>
+      </div>
+    </div>
+    
+    <div class="protocol-card" style="margin-top:8px">
+      <div class="protocol-h">Faza 2 — oglądanie z dystansu</div>
+      <div class="protocol-row">
+        <span class="protocol-num">A.</span>
+        <span class="protocol-text"><strong>Odczekaj 24h</strong> przed pierwszym obejrzeniem. Świeże emocje zniekształcają percepcję.</span>
+      </div>
+      <div class="protocol-row">
+        <span class="protocol-num">B.</span>
+        <span class="protocol-text"><strong>Oglądaj jakby kogoś obcego</strong> — wyobraź sobie, że to kolega z pracy, którego widzisz pierwszy raz. Co byś zauważył?</span>
+      </div>
+      <div class="protocol-row">
+        <span class="protocol-num">C.</span>
+        <span class="protocol-text"><strong>Dwa razy</strong> — pierwszy raz całość, drugi raz z notowaniem konkretów (sekunda 23: rumieniec? widoczny? niewidoczny?).</span>
+      </div>
+      <div class="protocol-row">
+        <span class="protocol-num">D.</span>
+        <span class="protocol-text"><strong>Nie szukaj błędów</strong> — szukasz <em>obiektywnych obserwacji</em>. Czy ta osoba wygląda na spiętą? Na naturalną? Na niekompetentną? Na normalną?</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Plan nagrania — kiedy i co?</div>
+    <textarea class="thought-input" id="planRecord" placeholder="np. „Środa 19:00 — rozmowa z bratem przez Skype'a, 7 minut. Telefon na półce, kadr twarz + górna połowa ciała. Oglądanie w niedzielę”..." rows="3"></textarea>
+  </section>
+  <!-- 4: PO OBEJRZENIU — OBSERWACJA -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Po obejrzeniu — obserwacja</div>
+    <h1 class="card-prompt">Co <em>obiektywnie</em> widzisz?</h1>
+    <p class="card-detail">Po obejrzeniu nagrania — zapisz, co <strong>obiektywnie</strong> widać na ekranie. Bez „pewnie myślą, że…”, bez interpretacji. Tylko fakty: <em>widać czerwień? na ile? widać drżenie? jak bardzo?</em></p>
+    
+    <div class="term-note"><strong>Pułapka samokrytyka</strong>: oglądając siebie na nagraniu, mózg w SAD <em>znajdzie</em> jakieś deficyty (uniesione brwi, dziwny gest). To <strong>nie</strong> są obiektywne objawy lęku — to <em>twoja standardowa filtracja</em>. Pytanie brzmi: <em>„czy obcy widz oceniłby tę osobę jako wyraźnie zestresowaną?”</em> — najczęściej odpowiedź to NIE.</div>
+    
+    <div class="multi-scale">
+      <div class="multi-scale-h">Obiektywna obserwacja — co widać NA NAGRANIU?</div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Czerwoność</strong> twarzy — widoczna?</span>
+        <input type="range" min="0" max="10" value="2" class="ms-input" id="sPol" oninput="document.getElementById('sPolVal').textContent=this.value">
+        <span class="ms-val" id="sPolVal">2</span>
+      </div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Drżenie</strong> głosu / rąk — słyszalne?</span>
+        <input type="range" min="0" max="10" value="2" class="ms-input" id="sDrz" oninput="document.getElementById('sDrzVal').textContent=this.value">
+        <span class="ms-val" id="sDrzVal">2</span>
+      </div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Napięcie</strong> / sztywność — widoczne?</span>
+        <input type="range" min="0" max="10" value="3" class="ms-input" id="sNap" oninput="document.getElementById('sNapVal').textContent=this.value">
+        <span class="ms-val" id="sNapVal">3</span>
+      </div>
+      <div class="ms-row">
+        <span class="ms-label"><strong>Niekompetencja</strong> — widać?</span>
+        <input type="range" min="0" max="10" value="2" class="ms-input" id="sKomp" oninput="document.getElementById('sKompVal').textContent=this.value">
+        <span class="ms-val" id="sKompVal">2</span>
+      </div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Feedback od 1-3 osób (jeśli pokazałeś nagranie)</div>
+    <div class="obs-card">
+      <div class="obs-h">Osoba 1</div>
+      <textarea class="thought-input" id="obs1Note" placeholder="np. „Marek (kolega): nie widzę żadnych objawów lęku. Wyglądasz normalnie”..." rows="2" style="margin:0"></textarea>
+      <div class="multi-scale" style="margin:8px 0 0;padding:8px;background:transparent;border:none">
+        <div class="ms-row">
+          <span class="ms-label">Ocena widoczności napięcia (0-10)</span>
+          <input type="range" min="0" max="10" value="2" class="ms-input" id="obs1Vis" oninput="document.getElementById('obs1VisVal').textContent=this.value">
+          <span class="ms-val" id="obs1VisVal">2</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="obs-card">
+      <div class="obs-h">Osoba 2</div>
+      <textarea class="thought-input" id="obs2Note" placeholder="np. „Anna (siostra): widzę spięty głos w pierwszej minucie, potem normalnie”..." rows="2" style="margin:0"></textarea>
+      <div class="multi-scale" style="margin:8px 0 0;padding:8px;background:transparent;border:none">
+        <div class="ms-row">
+          <span class="ms-label">Ocena widoczności napięcia (0-10)</span>
+          <input type="range" min="0" max="10" value="3" class="ms-input" id="obs2Vis" oninput="document.getElementById('obs2VisVal').textContent=this.value">
+          <span class="ms-val" id="obs2VisVal">3</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="obs-card">
+      <div class="obs-h">Osoba 3</div>
+      <textarea class="thought-input" id="obs3Note" placeholder="np. „Tomek (przyjaciel): wyglądasz spokojniej niż w realu — mowa płynna”..." rows="2" style="margin:0"></textarea>
+      <div class="multi-scale" style="margin:8px 0 0;padding:8px;background:transparent;border:none">
+        <div class="ms-row">
+          <span class="ms-label">Ocena widoczności napięcia (0-10)</span>
+          <input type="range" min="0" max="10" value="2" class="ms-input" id="obs3Vis" oninput="document.getElementById('obs3VisVal').textContent=this.value">
+          <span class="ms-val" id="obs3VisVal">2</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- 5: TRZY PERSPEKTYWY -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Trzy perspektywy</div>
+    <h1 class="card-prompt">Skala <em>rozbieżności</em></h1>
+    <p class="card-detail">Porównanie <strong>3 perspektyw</strong>: A) jak <em>czuję</em>, że wyglądam, B) jak <em>obiektywnie</em> wyglądam na nagraniu, C) jak <em>oceniają mnie inni</em>. Większość osób odkrywa: <strong>perspektywa A jest 2-4× bardziej negatywna</strong> niż B i C — to twardy dowód na zniekształcenie obrazu siebie w SAD.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: jedno nagranie = otwarcie. <em>3-5 nagrań w 2 miesiącach</em> = trwała korekta. Notuj średnie A vs B vs C po każdym nagraniu — z czasem rozbieżność <em>maleje</em>, bo wewnętrzny obraz zaczyna się dostosowywać do faktów. To naukowy proces, nie magia. Działa.</div>
+    
+    <div class="examples-h">Średnia z 4 wymiarów per perspektywa</div>
+    
+    <div class="triple-block">
+      <div class="triple-side A">
+        <div class="triple-h A">A. Czuję</div>
+        <div class="triple-num A" id="avgPred">—</div>
+        <div class="triple-lbl">Wewnętrzny<br>obraz</div>
+      </div>
+      <div class="triple-side B">
+        <div class="triple-h">B. Widzę</div>
+        <div class="triple-num B" id="avgSelf">—</div>
+        <div class="triple-lbl">Nagranie<br>obiektywnie</div>
+      </div>
+      <div class="triple-side C">
+        <div class="triple-h C">C. Inni</div>
+        <div class="triple-num C" id="avgObs">—</div>
+        <div class="triple-lbl">Średnia<br>obserwatorów</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoja interpretacja rozbieżności</div>
+    <textarea class="thought-input" id="lessonInput" placeholder="np. „Wewnętrzny obraz: 6.5/10 napięcia. Obiektywnie na nagraniu: 2.3/10. Inni: 2.3/10. Mój termometr jest 3× zawyżony. Zaczynam ufać obiektywnym danym, nie wewnętrznemu uczuciu”..." rows="4"></textarea>
+    
+    <div class="examples-h">Co to zmienia w twoim zachowaniu?</div>
+    <textarea class="thought-input" id="behaviorChange" placeholder="np. „Mogę wziąć udział w prezentacji w przyszłym tygodniu. Wewnętrzne uczucie ”widać, że się stresuję„ nie odpowiada rzeczywistości. Nie muszę się chować”..." rows="3"></textarea>
+    
+    <div class="examples-h">Następne nagranie — kiedy?</div>
+    <input type="text" class="thought-input" id="nextRec" placeholder="np. „Za 2 tygodnie — nagranie spotkania zespołu (krótka wypowiedź) + porównanie z dzisiejszym”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Twój wewnętrzny obraz to <strong>nie rzeczywistość</strong> — to <em>halucynacja</em> oparta na pamięci dawnych traum społecznych. Wideo i obserwatorzy dostarczają <strong>twardych danych</strong>, że <em>obraz jest zniekształcony</em>. Po <em>3-5 nagraniach</em> w 2 miesiące przekonanie „wyglądam okropnie w sytuacjach społecznych” traci 50–70% mocy. To <strong>najsilniej empirycznie udokumentowany</strong> sposób rekalibracji obrazu siebie w SAD (Warnock-Parkes 2017, RCT).</div>
+    </div>
+    
+    <div class="src">Harvey, Clark, Ehlers, Rapee (2000) · Warnock-Parkes i in. (2017) · Clark i Wells (1995) · Rapee i Hayman (1996)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('imgInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('planRecord'); if (el) el.value = ''; }
+    { const el = document.getElementById('obs1Note'); if (el) el.value = ''; }
+    { const el = document.getElementById('obs2Note'); if (el) el.value = ''; }
+    { const el = document.getElementById('obs3Note'); if (el) el.value = ''; }
+    { const el = document.getElementById('lessonInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('behaviorChange'); if (el) el.value = ''; }
+    { const el = document.getElementById('nextRec'); if (el) el.value = ''; }
+    { const el = document.getElementById('pPol'); if (el) el.value = 7; }
+    { const el = document.getElementById('pDrz'); if (el) el.value = 6; }
+    { const el = document.getElementById('pNap'); if (el) el.value = 7; }
+    { const el = document.getElementById('pKomp'); if (el) el.value = 6; }
+    { const el = document.getElementById('sPol'); if (el) el.value = 2; }
+    { const el = document.getElementById('sDrz'); if (el) el.value = 2; }
+    { const el = document.getElementById('sNap'); if (el) el.value = 3; }
+    { const el = document.getElementById('sKomp'); if (el) el.value = 2; }
+    { const el = document.getElementById('obs1Vis'); if (el) el.value = 2; }
+    { const el = document.getElementById('obs2Vis'); if (el) el.value = 3; }
+    { const el = document.getElementById('obs3Vis'); if (el) el.value = 2; }
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) updateAvgs();
+}
+
+function useImg(el) {
+  const t = document.getElementById('imgInput');
+  if (t.value.trim()) t.value += ', ';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function updateAvgs() {
+  const pred = (parseInt(document.getElementById('pPol').value) +
+                parseInt(document.getElementById('pDrz').value) +
+                parseInt(document.getElementById('pNap').value) +
+                parseInt(document.getElementById('pKomp').value)) / 4;
+  const self = (parseInt(document.getElementById('sPol').value) +
+                parseInt(document.getElementById('sDrz').value) +
+                parseInt(document.getElementById('sNap').value) +
+                parseInt(document.getElementById('sKomp').value)) / 4;
+  const obs = (parseInt(document.getElementById('obs1Vis').value) +
+               parseInt(document.getElementById('obs2Vis').value) +
+               parseInt(document.getElementById('obs3Vis').value)) / 3;
+  document.getElementById('avgPred').textContent = pred.toFixed(1);
+  document.getElementById('avgSelf').textContent = self.toFixed(1);
+  document.getElementById('avgObs').textContent = obs.toFixed(1);
+}
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-sad-be-videofeedback-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

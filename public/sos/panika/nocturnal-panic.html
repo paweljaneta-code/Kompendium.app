@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Atak nocny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Atak nocny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Atak <em>nocny</em> — nie koszmar, nie zawał</h1>
+  <p class="card-detail">Atak paniki nocnej (<em>nocturnal panic attack</em>) to wybudzenie z fazy NREM-2 lub przejścia NREM-3 w pełnym ataku paniki, <strong>bez treści snu</strong> (Craske i Barlow, 1989). Dotyka 25–70% pacjentów zaburzenia panicznego — często mylone z zawałem, koszmarem, „paraliżem sennym". Mechanizm i leczenie: identyczne jak w atakach dziennych.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Co odróżnia atak nocny od podobnych zdarzeń</div>
+    <div class="element-row"><span class="element-icon">😱</span><div class="element-text"><strong>Atak paniki nocny</strong> — pełna kaskada walcz/uciekaj, bez treści snu, w pierwszych 1–4 godzinach snu. Pacjent budzi się w panice, nie ze snu o panice.</div></div>
+    <div class="element-row"><span class="element-icon">😴</span><div class="element-text"><strong>Koszmar</strong> — w fazie REM (druga połowa nocy), z fabułą, intensywnymi obrazami. Po obudzeniu pamiętasz „o czym był sen".</div></div>
+    <div class="element-row"><span class="element-icon">🌀</span><div class="element-text"><strong>Paraliż senny</strong> — niemożność poruszenia się przy zaśnięciu/budzeniu, często z halucynacjami. Krótki (sekundy–minuty), bez kaskady adrenaliny.</div></div>
+    <div class="element-row"><span class="element-icon">💤</span><div class="element-text"><strong>Lęki nocne (pavor nocturnus)</strong> — głównie u dzieci, w fazie głębokiego NREM, z pobudzeniem ruchowym, ale <em>bez świadomości</em>. Nie pamiętane.</div></div>
+  </div>
+
+  <div class="frame-quote">„Atak paniki nocnej nie wymaga treści, by się wydarzyć. Mózg może uruchomić pełną kaskadę walcz/uciekaj na podstawie samych zmian fizjologicznych — przede wszystkim spadku CO₂, drobnych skurczy mięśni, zmiany pozycji."<span class="frame-quote-attr">— Craske i Barlow (2008, Treating Panic Disorder)</span></div>
+
+  <div class="term-note"><strong>Klucz</strong>: ataki nocne nie są oznaką niczego gorszego niż dzienne. To <em>ten sam mechanizm</em>, tylko wyzwolony przez zmiany fizjologiczne snu (a nie myśli o czymś).</div>
+
+  <div class="term-note"><strong>Statystyki</strong>: 25–70% osób z zaburzeniem panicznym ma ataki nocne; ok. 10% ma <em>tylko</em> nocne (Craske i Barlow, 1989). Częste szczególnie u osób, które w dzień intensywnie unikają objawów cielesnych.</div>
+
+  <div class="term-note"><strong>Pierwsze 30 sekund</strong>: dezorientacja po wybudzeniu, walka „co się stało?". To moment największej katastrofizacji. Stąd waga psychoedukacji — zaplanowana odpowiedź ratuje noc.</div>
+
+  <div class="term-note"><strong>Czemu po obudzeniu</strong>: w przejściu NREM-2 → NREM-3 zachodzi spadek aktywności współczulnej i drobne zmiany CO₂. U osób z nadwrażliwością interoceptywną (jak w panice) te subtelne zmiany mogą być odczytane jako alarm.</div>
+
+  <div class="term-note"><strong>Zalecenie kliniczne</strong>: jeśli ataki nocne pojawiły się w izolacji (bez ataków dziennych) — wskazane wykluczenie zaburzeń snu (bezdech senny, RLS, parasomnie REM). W razie kołatania ze szczytem >180/min, konsultacja kardiologiczna (wykluczyć arytmię).</div>
+
+  <div class="src">Craske, M. G. i Barlow, D. H. (1989). <em>Nocturnal panic.</em> Journal of Nervous and Mental Disease, 177(3), 160–167. · Craske, M. G. i Tsao, J. C. (2005). <em>Assessment and treatment of nocturnal panic attacks.</em> Sleep Medicine Reviews, 9(3), 173–184. · Mellman, T. A. i Uhde, T. W. (1989). <em>Sleep panic attacks: New clinical findings and theoretical implications.</em> American Journal of Psychiatry, 146(9), 1204–1207.</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Audyt — co dzieje się w nocy</div>
+  <h1 class="card-prompt">Wzór <em>twoich</em> ataków nocnych</h1>
+  <p class="card-detail">Spisz ostatni atak nocny z możliwie największą precyzją. Cel: rozróżnić atak paniki od koszmaru/paraliżu/zwykłego wybudzenia.</p>
+
+  <div class="term-note"><strong>O której porze (od zaśnięcia)</strong>: typowy atak paniki nocny — w pierwszych 1–4 godzinach. Koszmar — częściej w drugiej połowie nocy.</div>
+  <textarea id="czas" class="thought-input" placeholder="np. „Zasnęłam ok. 23:00, wybudzenie ok. 01:30."" rows="2"></textarea>
+
+  <div class="term-note"><strong>Pierwsza myśl po obudzeniu</strong>: czy pamiętasz fabułę snu, czy budzisz się „od razu w panice"? Jeśli pamiętasz fabułę — to koszmar. Jeśli nie — atak paniki.</div>
+  <textarea id="myslPo" class="thought-input" placeholder="np. „Nie pamiętam żadnego snu. Obudziłam się z waleniem serca i myślą «zawał»."" rows="2"></textarea>
+
+  <div class="term-note"><strong>Objawy</strong>: jakie odczucia ciała? (klasyczne dla paniki: kołatanie, duszność, pocenie, drżenie)</div>
+  <textarea id="objawyN" class="thought-input" placeholder="np. „Walenie serca, duszność, mokra koszula, drżenie."" rows="2"></textarea>
+
+  <div class="term-note"><strong>Co zrobiłaś/eś</strong>: spojrzałaś/eś na zegarek, wstałaś/eś, włączyłaś/eś światło, zmierzyłaś/eś tętno?</div>
+  <textarea id="reakcjaN" class="thought-input" placeholder="np. „Włączyłam światło, sprawdziłam tętno, zaczęłam głęboko oddychać."" rows="2"></textarea>
+
+  <div class="term-note"><strong>Reguła</strong>: jeśli (a) wybudzenie z pełnym kompletem objawów, (b) bez treści snu, (c) w pierwszych 4 h snu — to klasyczny atak paniki nocnej. Mechanizm: identyczny jak w dziennych.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Plan na noc</div>
+  <h1 class="card-prompt">Przygotuj <em>scenariusz</em> reakcji</h1>
+  <p class="card-detail">Pod wpływem szoku nocnego (dezorientacja + adrenalina) trudno wymyślić plan na bieżąco. Zaplanuj reakcję teraz — i postaw plan na piśmie obok łóżka.</p>
+
+  <button class="rel-btn" id="n1" onclick="this.classList.toggle('picked')">
+    <span class="rel-name">NIE wstaję natychmiast</span>
+    <span class="rel-desc">Wstanie aktywuje układ współczulny. Zostań w łóżku 2–3 minuty, oddychaj wolno.</span>
+  </button>
+  <button class="rel-btn" id="n2" onclick="this.classList.toggle('picked')">
+    <span class="rel-name">NIE włączam światła w pierwszej chwili</span>
+    <span class="rel-desc">Pełne światło utrudnia powrót do snu (melatonina). Słabe światło (lampka, telefon w trybie nocnym) wystarczy.</span>
+  </button>
+  <button class="rel-btn" id="n3" onclick="this.classList.toggle('picked')">
+    <span class="rel-name">Nazwę: „atak paniki, nie zawał"</span>
+    <span class="rel-desc">Affect labeling skraca atak (Lieberman i in., 2007). Nazwa = pierwsza interwencja.</span>
+  </button>
+  <button class="rel-btn" id="n4" onclick="this.classList.toggle('picked')">
+    <span class="rel-name">Spowolniony oddech 4–7 przez 5 minut</span>
+    <span class="rel-desc">Aktywuje nerw błędny, hamuje hiperwentylację. W pozycji leżącej działa szybciej niż siedząc.</span>
+  </button>
+  <button class="rel-btn" id="n5" onclick="this.classList.toggle('picked')">
+    <span class="rel-name">NIE sprawdzam tętna ani ciśnienia</span>
+    <span class="rel-desc">Skanowanie ciała wzmacnia uwagę selektywną. „Sprawdzanie czy nadal żyję" = tworzenie nawyku.</span>
+  </button>
+
+  <div class="term-note"><strong>Twoja kartka przy łóżku</strong>: zapisz dokładny plan w 4 krokach, w kolejności wykonania. Połóż kartkę na szafce nocnej.</div>
+  <textarea id="kartka" class="thought-input" placeholder="np. „1. Zostaję w łóżku. 2. Mówię: «atak paniki, niegroźny». 3. Oddech 4–7, 5 min. 4. Czekam na opadanie."" rows="4"></textarea>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Higiena snu — prewencja</div>
+  <h1 class="card-prompt">Czego <em>unikać</em> przed snem</h1>
+  <p class="card-detail">Ataki nocne częściej zdarzają się przy pewnych czynnikach. Eliminacja ich obniża prawdopodobieństwo wybudzenia.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Czynniki sprzyjające — eliminuj</div>
+    <div class="element-row"><span class="element-icon">☕</span><div class="element-text"><strong>Kofeina po 14:00</strong> — okres półtrwania kofeiny u dorosłego: 5–6 godzin. Resztki w nocy podtrzymują tachykardię.</div></div>
+    <div class="element-row"><span class="element-icon">🍷</span><div class="element-text"><strong>Alkohol wieczorem</strong> — przyspiesza zasypianie, ale w drugiej połowie nocy daje rebound (więcej REM, więcej wybudzeń).</div></div>
+    <div class="element-row"><span class="element-icon">🍕</span><div class="element-text"><strong>Ciężki posiłek 3 godziny przed snem</strong> — wzdęcie, refluks, zwiększone tętno spoczynkowe.</div></div>
+    <div class="element-row"><span class="element-icon">📱</span><div class="element-text"><strong>Telefon/seriale „dla relaksu"</strong> — przy panice często zwiększają arousal, zamiast obniżać. Test: jeśli wstajesz „z pobudzonym sercem", zmień rytuał.</div></div>
+  </div>
+
+  <div class="examples-h">Co warto wprowadzić wieczorem</div>
+  <div class="example-chips">
+    <button class="example-chip" id="hs1" onclick="this.classList.toggle('picked')">Stała godzina snu (±30 min)</button>
+    <button class="example-chip" id="hs2" onclick="this.classList.toggle('picked')">15 min ćwiczenia oddechowego przed snem</button>
+    <button class="example-chip" id="hs3" onclick="this.classList.toggle('picked')">Książka zamiast ekranu (45 min przed snem)</button>
+    <button class="example-chip" id="hs4" onclick="this.classList.toggle('picked')">Sypialnia chłodniejsza (18–19°C)</button>
+    <button class="example-chip" id="hs5" onclick="this.classList.toggle('picked')">„Park martwień" — spis listy zmartwień rano</button>
+  </div>
+
+  <div class="term-note"><strong>Twój wieczorny rytuał</strong>: zapisz, co konkretnie wprowadzasz na ten tydzień. Jeden, najwyżej dwa nawyki naraz.</div>
+  <textarea id="rytual" class="thought-input" placeholder="np. „Bez kawy po 14:00. 15 min oddech 4–7 o 22:00. Telefon z sypialni do salonu."" rows="3"></textarea>
+
+  <div class="term-note"><strong>Reguła</strong>: efekt higieny snu jest skumulowany. Pierwszy tydzień: 10–15% mniej wybudzeń. Po 4 tygodniach: 30–50%. Cierpliwość wymagana.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po tygodniu</div>
+  <h1 class="card-prompt">Zmiana <em>w nocy</em> — pomiar</h1>
+  <p class="card-detail">Po tygodniu nowych nawyków + planu nocnego — wróć tu i oceń. Cel: nie „brak ataków" (to drugi etap), tylko „krótszy/słabszy atak + szybszy powrót do snu".</p>
+
+  <div class="scale">
+    <div class="scale-title">Liczba wybudzeń panicznych w tygodniu</div>
+    <input type="range" min="0" max="14" value="2" data-default="2" id="liczbaN" class="scale-input" oninput="document.getElementById('liczbaNR').textContent=this.value">
+    <div class="scale-readout"><span>0</span><span id="liczbaNR">2</span><span>14+</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Średni czas powrotu do snu (minuty)</div>
+    <input type="range" min="0" max="180" value="40" data-default="40" id="powrot" class="scale-input" oninput="document.getElementById('powrotR').textContent=this.value+' min'">
+    <div class="scale-readout"><span>0</span><span id="powrotR">40 min</span><span>180</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Lęk przed pójściem spać (0–10)</div>
+    <input type="range" min="0" max="10" value="5" data-default="5" id="lekSen" class="scale-input" oninput="document.getElementById('lekSenR').textContent=this.value">
+    <div class="scale-readout"><span>0</span><span id="lekSenR">5</span><span>10</span></div>
+  </div>
+
+  <div class="term-note"><strong>Co się zmieniło</strong>: które elementy planu zadziałały, które wymagają poprawki. Czy ataki są nadal paniczne, czy zmienia się ich charakter?</div>
+  <textarea id="zmianaN" class="thought-input" placeholder="np. „Zostawanie w łóżku zadziałało — wracam do snu w 30 zamiast 90 minut."" rows="3"></textarea>
+
+  <div class="final-msg">Najważniejszą zmianą w terapii ataków nocnych jest <strong>odzyskanie zaufania do nocy</strong>. Lęk przed snem znika nie wtedy, gdy ataki znikają — tylko wtedy, gdy mózg uczy się: „nawet jeśli atak przyjdzie, mam plan i przeżyję".</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: redukcja ataków nocnych zachodzi w 6–12 tygodniach przy konsekwentnym stosowaniu CBT-P (Craske i Tsao, 2005). Pierwsze tygodnie: rośnie poczucie kontroli, dopiero później spada częstość.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Atak paniki nocnej to <strong>ten sam mechanizm</strong> co dzienny — bez treści snu, w fazie NREM. Nie jest oznaką niczego gorszego. Plan + higiena snu + pozostanie w łóżku — wystarcza w większości przypadków bez leków.</div>
+  </div>
+
+  <div class="src">Craske, M. G. i Barlow, D. H. (1989). <em>Nocturnal panic.</em> Journal of Nervous and Mental Disease, 177(3), 160–167. · Craske, M. G. i Tsao, J. C. (2005). <em>Assessment and treatment of nocturnal panic attacks.</em> Sleep Medicine Reviews, 9(3), 173–184. · Mellman, T. A. i Uhde, T. W. (1989). <em>Sleep panic attacks.</em> American Journal of Psychiatry, 146(9), 1204–1207. · Lieberman, M. D. i in. (2007). <em>Putting feelings into words.</em> Psychological Science, 18(5), 421–428. · Craske, M. G. i Barlow, D. H. (2008). <em>Mastery of Your Anxiety and Panic</em>, 4th ed. Oxford.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_nocturnal_panic — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_nocturnal_panic";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Ruminacja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === DIAG-LIST (krok 2) === */
+.diag-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.diag-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.diag-item:hover, .diag-item:active { background: rgba(122,146,112,0.06); }
+.diag-item.checked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-left: 3px solid var(--sage-deep); }
+.diag-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.diag-item.checked .diag-tick { background: var(--sage-deep); border-color: var(--sage-deep); }
+.diag-item.checked .diag-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.diag-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.diag-text strong { color: var(--ink); font-weight: 700; }
+.diag-verdict { padding: 12px 14px; background: var(--sage-deep); color: var(--bg); border-radius: 10px; font-size: 13px; line-height: 1.5; margin-top: 8px; min-height: 50px; display: flex; align-items: center; }
+.diag-verdict.empty { background: rgba(122,146,112,0.1); color: var(--ink-mute); font-style: italic; }
+.diag-verdict strong { color: var(--bg); }
+
+/* === INTERRUPT-LIST (krok 3) === */
+.interrupt-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 14px; }
+.interrupt-btn { background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s; text-align: left; font-family: inherit; }
+.interrupt-btn:hover, .interrupt-btn:active { background: rgba(201,122,82,0.08); border-color: var(--warm); }
+.interrupt-btn.picked { background: rgba(201,122,82,0.12); border-color: var(--warm); border-width: 2.5px; }
+.interrupt-icon { font-size: 18px; margin-bottom: 4px; }
+.interrupt-name { font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+.interrupt-desc { font-size: 11px; color: var(--ink-soft); line-height: 1.4; }
+
+/* === WORRY-TIME-CARD (krok 4) === */
+.worry-time-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.worry-time-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.worry-time-rule { padding: 10px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; }
+.worry-time-rule-h { font-size: 12px; font-weight: 700; color: var(--bg); margin-bottom: 4px; }
+.worry-time-rule-body { font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+
+/* === ACTIVITY-CARD (krok 5) === */
+.activity-card { background: linear-gradient(135deg, rgba(122,146,112,0.08), rgba(216,225,205,0.4)); border: 1px solid var(--sage-soft); border-radius: 14px; padding: 14px 16px; margin: 6px 0 12px; }
+.activity-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Ruminacja</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Ruminacja <em>post-mortem</em></h1>
+    <p class="card-detail"><strong>Przetwarzanie po sytuacji</strong> (post-event processing) (Clark i Wells 1995) — kluczowy mechanizm utrzymujący SAD. Po sytuacji społecznej mózg <em>odtwarza</em> ją wielokrotnie z perspektywy obserwatora, skupiając się na deficytach. <strong>Terapia metapoznawcza</strong> (MCT — Metacognitive Therapy, Wells 2009): ruminacja to <em>nawyk myślenia</em>, nie myślenie. Nolen-Hoeksema (1991) udowodniła: każda runda ruminacji <strong>pogarsza nastrój o 1–2 punkty</strong>, niezależnie od treści. To pętla, nie analiza.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy ruminacji</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🔁</span>
+          <span class="element-text"><strong>Pętla</strong> = wracam do tej samej sytuacji 5, 10, 50 razy bez nowych wniosków</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📉</span>
+          <span class="element-text"><strong>Spirala</strong> = z każdą rundą czuję się GORZEJ, nie lepiej</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Selekcja</strong> = pamiętam tylko deficyty, ignoruję dobre momenty</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🚪</span>
+          <span class="element-text"><strong>Wyjście</strong> = przerwanie pętli przez aktywność, nie przez „lepsze” myślenie</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Ruminacja to <em>nawyk myślenia</em>, nie myślenie. Nie rozwiązuje — pogłębia.”
+        <span class="frame-quote-attr">— Adrian Wells (2009, MCT)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: ruminacja wygląda jak <em>analiza</em> („muszę zrozumieć, co poszło nie tak”). Ale po 3 rundach <strong>nie pojawiają się nowe wnioski</strong> — tylko ten sam obraz, ta sama emocja, ten sam wniosek. <em>To nie myślenie — to nawyk</em>.</div>
+    
+    <div class="src">Wells (2009, Metacognitive Therapy) · Nolen-Hoeksema (1991) · Clark i Wells (1995, kognitywny model SAD) · Borkovec i in. (1983)</div>
+  </section>
+  <!-- 2: DIAGNOZA -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Diagnoza</div>
+    <h1 class="card-prompt">Czy to <em>ruminacja</em>, czy refleksja?</h1>
+    <p class="card-detail">Ruminacja i konstruktywna refleksja wyglądają podobnie — <strong>różnią się efektem</strong>. Zaznacz to, co opisuje <em>twoje myślenie z ostatnich 30 minut</em>. 3+ pierwsze pozycje = ruminacja.</p>
+    
+    <div class="term-note"><strong>Test różnicowy</strong>: <em>refleksja</em> daje wnioski po 1-2 rundach, można ją kontrolować, kończy się ulgą. <em>Ruminacja</em> nie daje nowych wniosków po 3 rundach, wraca mimo wysiłków, kończy się gorszym samopoczuciem.</div>
+    
+    <div class="diag-list">
+      <div class="diag-item" onclick="toggleDiag(this, 'rum')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Wracam do <strong>tych samych momentów</strong> wielokrotnie</div>
+      </div>
+      <div class="diag-item" onclick="toggleDiag(this, 'rum')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Z każdą rundą czuję się <strong>gorzej</strong>, nie lepiej</div>
+      </div>
+      <div class="diag-item" onclick="toggleDiag(this, 'rum')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Skupiam się <strong>tylko na deficytach</strong> (co zrobiłem źle, jak wyglądałem)</div>
+      </div>
+      <div class="diag-item" onclick="toggleDiag(this, 'rum')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Dodaję <strong>interpretacje</strong>, których nie miałem na żywo</div>
+      </div>
+      <div class="diag-item" onclick="toggleDiag(this, 'rum')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Widzę siebie <strong>z perspektywy obserwatora</strong> (jak na nagraniu)</div>
+      </div>
+      <div class="diag-item" onclick="toggleDiag(this, 'ref')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Po jakimś czasie czuję, że <strong>coś rozumiem</strong> lepiej</div>
+      </div>
+      <div class="diag-item" onclick="toggleDiag(this, 'ref')">
+        <div class="diag-tick"></div>
+        <div class="diag-text">Mogę <strong>łatwo przerwać</strong>, gdy muszę zająć się czym innym</div>
+      </div>
+    </div>
+    
+    <div class="diag-verdict empty" id="verdict">Zaznacz, co pasuje — pojawi się diagnoza.</div>
+  </section>
+  <!-- 3: WYBIERZ PRZERWANIE -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybierz przerwanie</div>
+    <h1 class="card-prompt">Co <em>wybije</em> cię z pętli?</h1>
+    <p class="card-detail">Z ruminacji <em>nie wyjdziesz</em> przez „lepsze myślenie” (Wells 2009). Wyjdziesz przez <strong>zmianę modalności</strong> — z myślenia w działanie/zmysły. Wybierz JEDNĄ technikę i zastosuj.</p>
+    
+    <div class="term-note"><strong>Reguła Wellsa</strong>: <em>nie próbuj „uspokoić się myślami”</em>. Mózg nie wyłącza ruminacji innym wątkiem werbalnym — wyłącza ją <strong>zmianą modalności</strong> (sensoryczna, motoryczna, interpersonalna).</div>
+    
+    <div class="interrupt-list">
+      <button class="interrupt-btn" onclick="pickInterrupt(this)">
+        <div class="interrupt-icon">🚿</div>
+        <div class="interrupt-name">Zimna woda na twarz</div>
+        <div class="interrupt-desc">15 sek pod kranem. Aktywuje nerw błędny — natychmiastowy reset.</div>
+      </button>
+      <button class="interrupt-btn" onclick="pickInterrupt(this)">
+        <div class="interrupt-icon">🏃</div>
+        <div class="interrupt-name">Ruch fizyczny — 5 minut</div>
+        <div class="interrupt-desc">Spacer, pompki, taniec. Aktywuje korę motoryczną → wycisza pętlę myślową.</div>
+      </button>
+      <button class="interrupt-btn" onclick="pickInterrupt(this)">
+        <div class="interrupt-icon">📞</div>
+        <div class="interrupt-name">Telefon do bliskiej osoby</div>
+        <div class="interrupt-desc">Realna rozmowa o czymkolwiek innym. Mózg nie utrzyma 2 wątków.</div>
+      </button>
+      <button class="interrupt-btn" onclick="pickInterrupt(this)">
+        <div class="interrupt-icon">🎵</div>
+        <div class="interrupt-name">Głośna muzyka 3 min</div>
+        <div class="interrupt-desc">Słuchawki, ulubiona piosenka, śpiewaj na głos. Zalewa pamięć roboczą.</div>
+      </button>
+      <button class="interrupt-btn" onclick="pickInterrupt(this)">
+        <div class="interrupt-icon">🥕</div>
+        <div class="interrupt-name">5 zmysłów (5-4-3-2-1)</div>
+        <div class="interrupt-desc">5 rzeczy, które widzisz · 4 słyszysz · 3 dotykasz · 2 czujesz węchem · 1 smak.</div>
+      </button>
+      <button class="interrupt-btn" onclick="pickInterrupt(this)">
+        <div class="interrupt-icon">🔢</div>
+        <div class="interrupt-name">Zadanie liczbowe</div>
+        <div class="interrupt-desc">100 minus 7 (93, 86, 79, 72…). Zajmuje pamięć roboczą — pętla nie ma miejsca.</div>
+      </button>
+    </div>
+  </section>
+  <!-- 4: CZAS NA ZMARTWIENIA — KONTROLOWANE MARTWIENIE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Czas na zmartwienia — kontrolowane martwienie</div>
+    <h1 class="card-prompt">Ostatnia <em>świadoma</em> runda</h1>
+    <p class="card-detail">Jeśli ruminacja wraca uparcie — zastosuj <strong>czas na zmartwienia</strong> (Borkovec). Wyznacz <em>konkretny czas</em> w ciągu dnia (np. 18:00–18:15) i tylko WTEDY pozwalaj sobie na ruminację. Poza tym — odkładaj: „o tym pomyślę o 18:00”.</p>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: czas na zmartwienia działa, bo <em>zmienia relację</em> z ruminacją. Z „muszę o tym myśleć teraz” → „mogę odłożyć do 18:00”. Po 2 tygodniach większość ludzi <strong>nie potrzebuje już czas na zmartwienia</strong> — odkładanie samo wycisza pętlę.</div>
+    
+    <div class="worry-time-card">
+      <div class="worry-time-h">Reguły czas na zmartwienia</div>
+      <div class="worry-time-rule">
+        <div class="worry-time-rule-h">⏰ Stała godzina i miejsce</div>
+        <div class="worry-time-rule-body">Codziennie ten sam slot, np. 18:00–18:15 przy biurku. <strong>Nie</strong> w łóżku, <strong>nie</strong> przed snem.</div>
+      </div>
+      <div class="worry-time-rule">
+        <div class="worry-time-rule-h">⏱ Twardy limit czasowy</div>
+        <div class="worry-time-rule-body">Stoper na <strong>15 minut</strong>. Po dzwonku — koniec. Niezależnie czy „doszedłeś do wniosku”.</div>
+      </div>
+      <div class="worry-time-rule">
+        <div class="worry-time-rule-h">📝 Pisz, nie myśl</div>
+        <div class="worry-time-rule-body">Spisuj myśli na papierze. Pisanie spowalnia, daje dystans. Mózg nie potrafi pisać i ruminować jednocześnie.</div>
+      </div>
+      <div class="worry-time-rule">
+        <div class="worry-time-rule-h">🚪 Poza czas na zmartwienia — odkładaj</div>
+        <div class="worry-time-rule-body">Gdy myśl wraca o 11:00: <em>„O tym pomyślę o 18:00”</em>. Zapisz hasło i wracaj do działania. To uczy mózg, że ruminacja może czekać.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Mój slot czas na zmartwienia</div>
+    <textarea class="thought-input" id="worrySlot" placeholder="np. „codziennie 18:00–18:15, przy biurku w gabinecie, dziennik pod ręką”..." rows="2"></textarea>
+    
+    <div class="examples-h">Co wpiszę dzisiaj</div>
+    <textarea class="thought-input" id="todayWorry" placeholder="np. „rozmowa z szefem — co go zdenerwowało, czy mnie zwolni, jak rzucić drugi temat”..." rows="3"></textarea>
+  </section>
+  <!-- 5: PO PRZERWANIU — SPRAWDŹ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po przerwaniu — sprawdź</div>
+    <h1 class="card-prompt">Jak się teraz <em>czuję</em>?</h1>
+    <p class="card-detail">Sprawdź <strong>nastrój przed</strong> ruminacją (typowo 5/10) i <strong>po</strong> jej przerwaniu. Jeśli interwencja zadziałała — różnica będzie widoczna. Jeśli dalej spada — wróć do kroku 3 i wybierz inną technikę.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: jeden epizod = nic. <em>30 dni z rzędu z aktywnym przerywaniem ruminacji</em> = realna zmiana neuronalna. Mózg fizycznie odzwyczaja się od pętli. To <strong>trening</strong>, nie pojedyncze zwycięstwo.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Nastrój teraz, po przerwaniu pętli</div>
+      <div class="scale-label"><span>Fatalnie</span><span>OK</span></div>
+      <input type="range" min="0" max="10" value="6" class="scale-input" id="moodEnd" oninput="updateMood(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="moodEndVal">6</span><span> / 10</span></div>
+    </div>
+    
+    <div class="activity-card">
+      <div class="activity-h">Następna konkretna aktywność</div>
+      <textarea class="thought-input" id="nextActivity" placeholder="np. „idę zrobić obiad i zadzwonić do brata” / „wracam do projektu, 25 min Pomodoro”..." rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="activity-h" style="margin-top:8px">Co zrobię, jeśli pętla wróci</div>
+      <textarea class="thought-input" id="ifReturn" placeholder="np. „Powiem ”o 18:00 będzie czas — teraz wracam do tego, co robię„” / „idę pod prysznic, zimna woda na twarz, 1 min”..." rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Ruminacja <strong>nie</strong> rozwiązuje — pogłębia. Aktywność <strong>tak</strong>. Z każdą interwencją mózg uczy się, że pętla <em>nie jest jedynym wyjściem</em>. Po 2 tygodniach konsekwentnego przerywania — odruch ruminacji słabnie o 40% (Wells 2009).</div>
+    </div>
+    
+    <div class="src">Wells (2009) · Nolen-Hoeksema (1991) · Clark i Wells (1995) · Borkovec i in. (1983)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('worrySlot'); if (el) el.value = ''; }
+    { const el = document.getElementById('todayWorry'); if (el) el.value = ''; }
+    { const el = document.getElementById('nextActivity'); if (el) el.value = ''; }
+    { const el = document.getElementById('ifReturn'); if (el) el.value = ''; }
+    { const el = document.getElementById('moodEnd'); if (el) el.value = 6; }
+    document.querySelectorAll('.diag-item').forEach(b => b.classList.remove('checked'));
+    document.querySelectorAll('.interrupt-btn').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+let rumCount = 0;
+let refCount = 0;
+
+function onStepChange() {
+  // verdict resync
+  if (curStep === 2) updateVerdict();
+}
+
+function toggleDiag(el, type) {
+  el.classList.toggle('checked');
+  recountDiag();
+}
+
+function recountDiag() {
+  rumCount = document.querySelectorAll('.diag-item.checked[onclick*="rum"]').length;
+  refCount = document.querySelectorAll('.diag-item.checked[onclick*="ref"]').length;
+  updateVerdict();
+}
+
+function updateVerdict() {
+  const v = document.getElementById('verdict');
+  if (rumCount === 0 && refCount === 0) {
+    v.className = 'diag-verdict empty';
+    v.textContent = 'Zaznacz, co pasuje — pojawi się diagnoza.';
+  } else if (rumCount >= 3) {
+    v.className = 'diag-verdict';
+    v.innerHTML = `<strong>To ruminacja</strong> (${rumCount}/5 sygnałów). Idź do kroku 3 i wybierz przerwanie.`;
+  } else if (rumCount >= 1 && refCount >= 1) {
+    v.className = 'diag-verdict';
+    v.innerHTML = `<strong>Mieszanka</strong>. Częściowo refleksja, częściowo pętla. Zastosuj przerwanie z kroku 3 — refleksja zostanie.`;
+  } else if (refCount >= 1) {
+    v.className = 'diag-verdict';
+    v.innerHTML = `<strong>Refleksja, nie ruminacja</strong>. Daj sobie 5 minut i kontynuuj. Jeśli sytuacja się zmieni — wróć tu.`;
+  } else {
+    v.className = 'diag-verdict empty';
+    v.textContent = 'Zaznacz więcej pozycji.';
+  }
+}
+
+function pickInterrupt(el) {
+  document.querySelectorAll('.interrupt-btn').forEach(b => b.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function updateMood(v) { document.getElementById('moodEndVal').textContent = v; }
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.diag-item';
+  var clickSel1 = '.interrupt-btn';
+  var KEY = "sos-ruminacja-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {}, c1: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.diag-item, .interrupt-btn')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

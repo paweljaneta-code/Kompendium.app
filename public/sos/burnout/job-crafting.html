@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Job crafting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.craft-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.craft-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.craft-card.picked .craft-d { color: rgba(244,241,234,0.85); }
+.craft-h { font-weight: 600; font-size: 13.5px; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
+.craft-d { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; }
+.energy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.energy-block { padding: 12px 14px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; min-height: 110px; }
+.energy-green { background: rgba(184,197,168,0.25); border-left: 3px solid var(--sage-deep); }
+.energy-red { background: rgba(212,168,168,0.18); border-left: 3px solid #b86060; }
+.energy-block strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; opacity: 0.8; }
+@media (max-width: 600px) { .energy-grid { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Job crafting</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Pracę można <em>zmienić</em> bez zmiany pracy</h1>
+  <p class="card-detail">Amy Wrzesniewski i Jane Dutton — psycholożki organizacji z Yale i University of Michigan — w 2001 roku w pracy „Crafting a Job: Revisioning Employees as Active Crafters of Their Work" wprowadziły pojęcie <strong>job crafting</strong>: proaktywnej, oddolnej zmiany własnej pracy. Centralna teza: pracownik nie jest pasywnym wykonawcą opisu stanowiska. Każda osoba w każdej roli wykonuje (świadomie lub nie) drobne zmiany — w tym, jakie zadania bierze, jak budują relacje, jak interpretuje sens pracy. Pytanie nie jest „czy crafting jest możliwy?", lecz „czy robisz to świadomie?".</p>
+  <p class="card-detail">Maria Tims, Arnold Bakker i Daantje Derks — w 2012 roku w pracy „Development and validation of the job crafting scale" — operacjonalizowali model w ramach <strong>JD-R</strong> (Job Demands-Resources, Bakker &amp; Demerouti 2007). Job crafting to praktyka <em>zwiększania zasobów</em> (autonomia, wsparcie, sens, rozwój) i <em>zmniejszania wymagań</em> (przeciążenie, niejednoznaczność, konflikt). Lichtenthaler &amp; Fischbach (2019) w metaanalizie 122 badań pokazali, że job crafting koreluje z dobrostanem (r = .35), zaangażowaniem (r = .42) i obniżeniem wypalenia (r = -.28). Mała zmiana, duży efekt — bo dotyka mechanizmów codziennego doświadczenia pracy, a nie struktur formalnych.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Trzy formy job craftingu (Wrzesniewski &amp; Dutton 2001)</div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Task crafting</strong> — zmiana <em>zakresu zadań</em>. Dodawanie zadań, które dają energię (mentoring, projekt poboczny). Redukowanie tych, które wyczerpują (delegowanie, automatyzacja, negocjacja).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🤝</span>
+      <span class="element-text"><strong>Relational crafting</strong> — zmiana <em>relacji</em>. Budowanie kontaktów z osobami, które są źródłem energii. Ograniczanie kontaktu z osobami toksycznymi. Tworzenie nowych mostów między działami.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🧠</span>
+      <span class="element-text"><strong>Cognitive crafting</strong> — zmiana <em>sensu</em> pracy. „Nie kładę cegły — buduję katedrę". Reframe codziennych zadań w ramach większej funkcji. Łączenie pracy z wartościami i beneficjentami.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚡</span>
+      <span class="element-text"><strong>Mechanizm JD-R</strong> — wszystkie trzy formy zmieniają bilans wymagania/zasoby. Mniej wymagań przeciążających + więcej zasobów aktywujących = mniej wypalenia + więcej zaangażowania.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Job crafting jest <em>redesignem od dołu</em> — nie czekasz na szefa, by zmienił opis stanowiska. Sam/a kształtujesz swoją rolę w ramach autonomii, którą już masz, a której często nie zauważasz."
+    <span class="frame-quote-attr">— Amy Wrzesniewski &amp; Jane Dutton (2001, Acad Manag Rev)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: pracownik wypalony często mówi „nie mogę nic zmienić w tej pracy". Najczęściej to nieprawda — istnieje <em>zakres autonomii</em>, który nie został rozpoznany. Pierwsze pytanie diagnostyczne: jakie decyzje podejmujesz w ciągu dnia, których nikt cię nie pyta? Jaki czas przeznaczasz na co? Z kim spędzasz najwięcej minut? Te codzienne decyzje są materiałem do craftingu.</div>
+
+  <div class="src">Wrzesniewski &amp; Dutton (2001, Acad Manag Rev) · Tims, Bakker, Derks (2012, J Vocat Behav, JCS) · Bakker, Tims, Derks (2012, Hum Relat) · Bakker &amp; Demerouti (2007, JD-R) · Lichtenthaler &amp; Fischbach (2019, meta-analiza 122 badań) · Berg, Wrzesniewski, Dutton (2010, J Organ Behav)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Mapa energii</div>
+  <h1 class="card-prompt">Co w pracy <em>daje</em> energię, a co ją <em>zabiera</em>?</h1>
+  <p class="card-detail">Pierwszy krok craftingu — zinwentaryzowanie swojej pracy pod kątem energii. Nie chodzi o „lubię / nie lubię". Chodzi o <em>obserwację</em>: po jakich zadaniach mam więcej energii niż przed, a po jakich mniej. Z kim wychodzę z rozmowy zasilona/y, a z kim zmęczona/y. Wypisz konkrety — bez ogólnikowych kategorii.</p>
+
+  <div class="energy-grid">
+    <div class="energy-block energy-green">
+      <strong>🟢 Daje energię</strong>
+      Zadania, w trakcie których czas mija szybko. Rozmowy, po których jestem ożywiona/y. Aspekty pracy, których wykonywanie nie wymaga „motywacji" — robię je naturalnie. Pole do <em>rozszerzania</em>.
+    </div>
+    <div class="energy-block energy-red">
+      <strong>🔴 Zabiera energię</strong>
+      Zadania, które odsuwam, prokrastynuję, robię „bo trzeba". Rozmowy, po których jestem wykończona/y. Aspekty pracy, które wymagają wewnętrznego przymuszania. Pole do <em>redukowania</em> lub <em>delegowania</em>.
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="energiaGreen" rows="4" placeholder="🟢 Co daje energię (konkretnie): np. „Mentoring młodszych analityków (środa rano). Praca nad nowym dashboardem (deep work, 2 godz.). Rozmowy 1:1 z 3 osobami z mojego zespołu. Pisanie raportu metodologicznego (kreatywne porządkowanie). Rozmowy z klientką K. (entuzjastka).""></textarea>
+
+  <textarea class="thought-input" id="energiaRed" rows="4" placeholder="🔴 Co zabiera energię (konkretnie): np. „Spotkania statusowe wtorek + czwartek (po 1,5 godz., bez decyzji). Maile od działu compliance (rozliczanie procedur). Praca z kolegą B. (drażniący ton). Wieczorne przeglądanie pochłania 2 godz. dziennie i nie daje informacji.""></textarea>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — głównie zabiera</span><span>10 — głównie daje</span></div>
+    <input type="range" class="scale-input" id="energiaBilans" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>📊 Aktualny bilans energetyczny pracy</span><span id="energiaBilansVal">4</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła interpretacji</strong>: bilans 0–3 — praca dominująco wyczerpująca, crafting może dać dużo poprawy. Bilans 4–6 — mieszana, klasyczny obszar craftingu. Bilans 7+ — praca w sumie energetyzująca, problem leży gdzie indziej (zwykle w nadmiarze obciążenia lub poza-zawodowo). Liczba pozycji w „daje" mniejsza niż 3 = sygnał ostrzegawczy: może być potrzebna szersza diagnoza (sens, wartości, fit zawodowy).</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Trzy formy craftingu</div>
+  <h1 class="card-prompt">Którą <em>formę</em> craftingu zaczniesz?</h1>
+  <p class="card-detail">Trzy formy job craftingu — różne mechanizmy działania, różne progi wejścia. Wybierz <em>jedną</em> na początek. Po 4–8 tygodniach automatyzacji można dodać drugą.</p>
+
+  <div class="craft-card" id="craftTask" onclick="pickCraft('Task')">
+    <div class="craft-h">🎯 Task crafting (zmień zakres)</div>
+    <div class="craft-d">Konkretne zmiany w tym, co robisz: dodanie 1 zadania energetyzującego (mentoring, projekt poboczny, nowa kompetencja), redukcja 1 wyczerpującego (delegowanie, automatyzacja, rezygnacja po negocjacji). Najbardziej widoczna forma — wymaga negocjacji z przełożonym lub samodzielnej zmiany w obszarach autonomii.</div>
+  </div>
+
+  <div class="craft-card" id="craftRel" onclick="pickCraft('Rel')">
+    <div class="craft-h">🤝 Relational crafting (zmień relacje)</div>
+    <div class="craft-d">Zmiana sieci kontaktów: zwiększenie czasu z osobami energetyzującymi (regularne lunche / kawy z 2 osobami), zmniejszenie kontaktu z toksycznymi (kanał komunikacji asynchroniczny zamiast synchronicznego, krótsze spotkania). Najmniej widoczna forma — najczęściej w pełni w obszarze autonomii pracownika.</div>
+  </div>
+
+  <div class="craft-card" id="craftCog" onclick="pickCraft('Cog')">
+    <div class="craft-h">🧠 Cognitive crafting (zmień widzenie)</div>
+    <div class="craft-d">Zmiana <em>perspektywy</em> bez zmiany zakresu zadań. Reframe codziennych obowiązków w kategoriach większej funkcji. „Wypełniam tabelki" → „Tworzę porządek w danych, na których ludzie podejmują decyzje". Wizualizacja beneficjentów (Adam Grant). Najtańsza forma — w pełni wewnętrzna, ale wymaga regularnej praktyki.</div>
+  </div>
+
+  <div class="examples-h">Konkretne mikro-zmiany do wyboru</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="mikro1" onclick="pickMikro('1')">🎯 Dodaj 1 zadanie z listy „daje energię" (1× tydz.)</button>
+    <button type="button" class="example-chip" id="mikro2" onclick="pickMikro('2')">🚫 Deleguj 1 zadanie z listy „zabiera energię"</button>
+    <button type="button" class="example-chip" id="mikro3" onclick="pickMikro('3')">📅 Lunch 1× tydz. z osobą energetyzującą</button>
+    <button type="button" class="example-chip" id="mikro4" onclick="pickMikro('4')">📞 Kontakt z trudną osobą — kanał asynchroniczny</button>
+    <button type="button" class="example-chip" id="mikro5" onclick="pickMikro('5')">🎓 Nowa kompetencja: 30 min nauki tygodniowo</button>
+    <button type="button" class="example-chip" id="mikro6" onclick="pickMikro('6')">🤝 1 mentoring relacja (mentor lub mentorowanie)</button>
+    <button type="button" class="example-chip" id="mikro7" onclick="pickMikro('7')">🧠 Codzienny zapis: 1 beneficjent mojej pracy</button>
+    <button type="button" class="example-chip" id="mikro8" onclick="pickMikro('8')">📋 Reframe 1 zadania tygodniowo (większa funkcja)</button>
+  </div>
+
+  <div class="term-note"><strong>Reguła „małych zmian"</strong>: Berg, Wrzesniewski, Dutton (2010) wykazali, że największe efekty job craftingu pochodzą z mikro-zmian, które nie wymagają zgody przełożonego — pracownicy często myślą „muszę poprosić" tam, gdzie autonomia istnieje. Sama decyzja, by lunch jeść z X zamiast Y, lub zacząć dzień od projektu Z zamiast maila, jest już craftingiem. Nie czekaj na zgodę dla zmian, które nikogo nie obchodzą oprócz ciebie.</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan craftingu na 28 dni</div>
+  <h1 class="card-prompt">Jakie <em>3 mikro-zmiany</em> wprowadzisz?</h1>
+  <p class="card-detail">Job crafting buduje się stopniowo. Plan na 28 dni: 3 konkretne mikro-zmiany. Jedna w obszarze, w którym masz pełną autonomię (relational lub cognitive). Druga wymagająca krótkiej rozmowy z przełożonym (task crafting). Trzecia jako rezerwa — jeśli pierwsze dwie automatyzują się szybko.</p>
+
+  <textarea class="thought-input" id="craftPlan" rows="6" placeholder="Plan na 28 dni: np. „Mikro-zmiana 1 (cognitive, autonomia 100%): codzienny zapis końca dnia — 1 beneficjent mojej pracy. Notatnik na biurku. Mikro-zmiana 2 (task, wymaga rozmowy): proszę przełożonego o przekazanie odpowiedzi na mailing compliance koleżance R. (jej domena). Plan rozmowy: piątek 10:30. Mikro-zmiana 3 (relational, autonomia 100%): lunch wtorek z M. (jest energetyzujący po rozmowie z nim — generuje pomysły).""></textarea>
+
+  <div class="examples-h">Pierwszy krok każdej formy (na ten tydzień)</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="krok1" onclick="pickKrok('1')">📝 Lista 3 zadań energetyzujących (do dodania)</button>
+    <button type="button" class="example-chip" id="krok2" onclick="pickKrok('2')">📝 Lista 3 zadań do delegowania (negocjacja)</button>
+    <button type="button" class="example-chip" id="krok3" onclick="pickKrok('3')">📅 Lunch z osobą energetyzującą (zaplanować)</button>
+    <button type="button" class="example-chip" id="krok4" onclick="pickKrok('4')">📞 Zmiana kanału z osobą toksyczną</button>
+    <button type="button" class="example-chip" id="krok5" onclick="pickKrok('5')">🎯 Reframe 1 zadania (zapis w notatniku)</button>
+    <button type="button" class="example-chip" id="krok6" onclick="pickKrok('6')">🤝 Rozmowa z przełożonym o crafting</button>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „muszę przekonać szefa"</strong>: część craftingu wymaga rozmowy z przełożonym, ale duża część nie. Pacjenci często blokują się na pierwszej części i odrzucają cały crafting. Rozdziel: co mogę zrobić bez konsultacji + co wymaga rozmowy. Zacznij od pierwszej kategorii — zysk natychmiastowy, koszt zero.</div>
+
+  <div class="term-note"><strong>Pułapka „bezradność wyuczona"</strong>: pracownicy w późnym wypaleniu często mówią „nic się nie da zmienić, próbowałam/em". Sprawdź: czy próbowałam/em w ciągu ostatnich 3 miesięcy? Czy próby dotyczyły tej konkretnej osoby / sytuacji? Bezradność wyuczona uogólnia się — „ten pracodawca" → „każdy pracodawca". Crafting jest rekalibracją: małe zmiany dają dowód, że <em>coś</em> się da. To często pierwszy krok do większych decyzji.</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po czterech tygodniach</div>
+  <h1 class="card-prompt">Czy bilans <em>energii</em> się zmienił?</h1>
+  <p class="card-detail">Po 28 dniach craftingu wróć tu i powtórz pomiar bilansu energetycznego. Najczęstszy mierzalny efekt: bilans rośnie o 1–2 punkty, co subiektywnie odpowiada „mniej wieczorów z poczuciem wykończenia". Drugie pytanie: które z mikro-zmian zadziałały, a które się nie utrzymały.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez zmian</span><span>10 — wyraźna poprawa</span></div>
+    <input type="range" class="scale-input" id="craftImprove" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Subiektywna poprawa bilansu energii</span><span id="craftImproveVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — porzucone</span><span>10 — wszystkie 3 utrzymane</span></div>
+    <input type="range" class="scale-input" id="craftExec" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Realizacja mikro-zmian</span><span id="craftExecVal">5</span></div>
+  </div>
+
+  <textarea class="thought-input" id="craftReflect" rows="3" placeholder="Co się stało? np. „3 mikro-zmiany. (1) Cognitive — codzienny zapis beneficjenta: wykonana 22 z 28 dni, lista 22 osób, wniosek: pomagam więcej niż mi się wydawało. (2) Task — przekazanie compliance koleżance R.: poszło dobrze, R. miała kompetencje, mam wolne 2 godz./tydz. (3) Relational — lunch z M.: 3 razy w 4 tyg., daje energię, zostaję. Bilans: 4→6/10. Plan: dodaję mentoring 1 osoby.""></textarea>
+
+  <div class="final-msg" id="finalMsg">Wpisz oba pomiary, by zobaczyć podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła „efekt kuli śnieżnej"</strong>: pierwsze udane mikro-zmiany budują wiarę w sprawczość. Sprawczość zwiększa motywację do kolejnych zmian. Po 2–3 cyklach (każdy 4–8 tygodni) crafting staje się stylem pracy, nie ćwiczeniem. Pracownik aktywnie kształtujący rolę jest bardziej odporny na wypalenie niż pasywny wykonawca opisu stanowiska — niezależnie od obciążenia.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Job crafting (Wrzesniewski 2001) to <strong>oddolna zmiana</strong> pracy bez zmiany pracy. Trzy formy: <em>task crafting (zakres), relational crafting (relacje), cognitive crafting (sens)</em>. Mechanizm JD-R: zwiększenie zasobów + zmniejszenie wymagań. Mała zmiana, duży efekt — bo dotyka codziennego doświadczenia. Mapa energii (zielone / czerwone) to materiał do craftingu. Większość zmian nie wymaga zgody przełożonego — szukaj autonomii, którą już masz.</div>
+  </div>
+
+  <div class="src">Wrzesniewski &amp; Dutton (2001) · Tims, Bakker, Derks (2012, JCS) · Bakker, Tims, Derks (2012) · Lichtenthaler &amp; Fischbach (2019, meta) · Berg i in. (2010) · Bakker &amp; Demerouti (2007, JD-R)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['energiaBilans','craftImprove','craftExec'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; if (id === 'craftImprove' || id === 'craftExec') updateFinalMsg(); });
+    }
+  });
+}
+
+function pickCraft(code) {
+  var el = document.getElementById('craft' + code);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickMikro(n) {
+  var el = document.getElementById('mikro' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickKrok(n) {
+  var el = document.getElementById('krok' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function updateFinalMsg() {
+  var imp = parseInt(document.getElementById('craftImprove').value, 10);
+  var exec = parseInt(document.getElementById('craftExec').value, 10);
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  if (imp === 5 && exec === 5) {
+    fm.innerHTML = 'Wpisz oba pomiary, by zobaczyć podsumowanie.';
+    return;
+  }
+  var msg = '';
+  if (exec >= 7 && imp >= 6) msg = '<strong>Crafting działa, bilans się przesuwa</strong> — kontynuuj kolejne 4 tygodnie. Następny krok: zwiększ skalę. Z mikro-zmian → 1 zmiana strukturalna (np. negocjacja zmiany roli, dodanie projektu strategicznego).';
+  else if (exec >= 7 && imp < 4) msg = '<strong>Zmiany wykonane, ale bilans bez poprawy</strong> — możliwe, że wymagania pracy są tak duże, że mikro-craft nie wystarcza. Rozważ rozmowę z przełożonym o redukcji obciążenia (zadanie, cel kwartalny). Crafting nie naprawi przeciążenia o czynnik 2x.';
+  else if (exec < 4) msg = '<strong>Mikro-zmiany głównie nie wykonane</strong> — najczęściej powód: wybrane zmiany za duże. Spróbuj 1 zmiany cognitive (najmniejszy próg, autonomia 100%) — np. tygodniowy zapis 1 beneficjenta. To 5 minut tygodniowo.';
+  else msg = 'Częściowy ruch — kontynuuj. Cel: 2 z 3 mikro-zmian utrzymanych w kolejnym cyklu. Crafting buduje się przez powtarzalność.';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateFinalMsg();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_job_crafting — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_job_crafting";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Surfowanie na impulsie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.wave-svg { display: block; margin: 12px auto; max-width: 100%; }
+.step-card { background: rgba(255,255,255,0.5); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.step-num { display: inline-block; font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); margin-right: 8px; font-size: 16px; }
+.step-h { font-size: 13px; font-weight: 600; color: var(--ink); display: inline-block; }
+.step-d { font-size: 12px; color: var(--ink-soft); line-height: 1.5; margin-top: 4px; padding-left: 24px; }
+.step-d strong { color: var(--sage-deep); }
+.timer-box { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; text-align: center; }
+.timer-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage); margin-bottom: 8px; }
+.timer-row { padding: 6px 0; border-top: 1px solid rgba(244,241,234,0.1); font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.timer-row:first-of-type { border-top: none; }
+.timer-row strong { color: var(--bg); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Surfowanie na impulsie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Impulsy są <em>falami</em>, nie stałymi stanami</h1>
+  <p class="card-detail">Urge surfing — Marlatt i Gordon (1985), pierwotnie profilaktyka nawrotów dla uzależnień, zaadaptowana dla prokrastynacji. Kluczowa obserwacja: <strong>impulsy do ucieczki są falami</strong>, nie stałymi stanami. Rosną, osiągają szczyt, opadają. Jeśli nie ulegniesz — przechodzą same w 15-30 minut. Jeśli ulegniesz — wzmacniasz neuronalny wzorzec „impuls → ulga = obowiązek". MBRP (Mindfulness-Based Relapse Prevention, Bowen i in. 2010): urge surfing + uważność redukuje nawroty w uzależnieniach o <strong>40%</strong> po 6 miesiącach.</p>
+
+  <svg class="wave-svg" viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="wg" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#4a6347" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="#b8c5a8" stop-opacity="0.2"/>
+      </linearGradient>
+    </defs>
+    <path d="M0,80 Q40,80 60,70 T120,30 T180,30 T240,55 T320,80 L320,100 L0,100 Z" fill="url(#wg)"/>
+    <path d="M0,80 Q40,80 60,70 T120,30 T180,30 T240,55 T320,80" fill="none" stroke="#4a6347" stroke-width="2"/>
+    <text x="60" y="95" font-family="DM Sans" font-size="9" fill="#7a8a82">0-3 min: rośnie</text>
+    <text x="140" y="22" font-family="DM Sans" font-size="9" fill="#4a6347">5-10 min: szczyt</text>
+    <text x="240" y="95" font-family="DM Sans" font-size="9" fill="#7a8a82">15-30 min: opada</text>
+  </svg>
+
+  <div class="frame-card">
+    <div class="frame-h">Mechanizm Marlatta</div>
+    <div class="element-row"><div class="element-icon">📈</div><div class="element-text"><strong>Impuls rośnie</strong> 3-5 minut — od pierwszego sygnału do szczytu</div></div>
+    <div class="element-row"><div class="element-icon">⛰️</div><div class="element-text"><strong>Szczyt</strong> trwa 5-10 minut — najbardziej „przymusowe" uczucie; wtedy łatwo ulec</div></div>
+    <div class="element-row"><div class="element-icon">📉</div><div class="element-text"><strong>Fala opada</strong> samodzielnie w 15-30 minut <em>bez reakcji</em></div></div>
+    <div class="element-row"><div class="element-icon">🔁</div><div class="element-text"><strong>Z reakcją</strong> (uleganie) — mózg uczy się: „impuls = konieczność". Wzmacnia wzorzec</div></div>
+  </div>
+
+  <div class="frame-quote">„Alkoholicy wracający do picia często ulegali »przemożnemu impulsowi«, który w rzeczywistości był 20-minutową falą. Sama świadomość »to jest fala« daje kontrolę."<span class="frame-quote-attr">— parafraza obserwacji Marlatta i Gordon (1985), <em>Relapse Prevention</em></span></div>
+
+  <div class="term-note"><strong>Klucz</strong>: dla prokrastynacji impuls „sprawdzę telefon" / „obejrzę tylko 1 odcinek" / „zrobię to za chwilę" czuje się jak konieczność. W rzeczywistości jest 15-minutową falą. Po fali można spokojnie wrócić do pracy. Sama wiedza, że to <em>fala</em>, jest 50% zwycięstwa.</div>
+
+  <div class="src">Marlatt i Gordon (1985). <em>Relapse Prevention</em>. Guilford. · Bowen, Chawla i Marlatt (2010). <em>Mindfulness-Based Relapse Prevention for Addictive Behaviors</em>. Guilford.</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje fale</div>
+  <h1 class="card-prompt">Jak <em>czuje się</em> fala u Ciebie?</h1>
+  <p class="card-detail">Każda osoba ma własny profil fali. Dla większości impuls najsilniej manifestuje się w ciele (napięcie, niepokój), w głowie (obrazy ucieczki), lub w działaniach (ręka sięgająca po telefon). Spróbuj zauważyć, jak Twoja fala rośnie — kiedyś bezwiednie, teraz świadomie.</p>
+
+  <textarea id="impuls" class="thought-input" placeholder="Konkretny impuls, który najczęściej rozprasza Cię od zadania: ..."></textarea>
+
+  <div class="examples-h">Najczęstsze impulsy ucieczki w prokrastynacji</div>
+  <div class="example-chips">
+    <button id="i1" class="example-chip">Telefon / scrollowanie</button>
+    <button id="i2" class="example-chip">Lodówka / przekąska</button>
+    <button id="i3" class="example-chip">YouTube / serial</button>
+    <button id="i4" class="example-chip">Szybka gra</button>
+    <button id="i5" class="example-chip">Sprzątanie / „pożyteczne"</button>
+    <button id="i6" class="example-chip">Drzemka</button>
+    <button id="i7" class="example-chip">Inne łatwe zadanie</button>
+    <button id="i8" class="example-chip">Email / wiadomości</button>
+  </div>
+
+  <textarea id="cialo_f" class="thought-input" placeholder="Gdzie w ciele pojawia się sygnał impulsu? (np. „napięcie w klatce", „mrowienie w rękach", „pustka w żołądku")"></textarea>
+
+  <textarea id="myśli_f" class="thought-input" placeholder="Jakie myśli towarzyszą fali? (np. „tylko zerknę", „zaraz wracam", „zasłużyłem/am")"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Jak długo zwykle ulegasz po pierwszym sygnale</div>
+    <div class="scale-bounds"><span>(natychmiast)</span><span>(5+ min czekam)</span></div>
+    <input type="range" class="scale-input" id="ulec" min="0" max="10" step="1" value="2" data-default="2">
+    <div class="scale-readout"><span>Skala</span><span id="ulecval">2</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: większość osób ulega w ciągu 30-60 sekund od pierwszego sygnału — zwykle bez świadomości, że <em>jest</em> sygnał. Cel surfingu: rozpoznawać sygnał coraz wcześniej (10s → 30s → 1 min → 5 min) i wytrzymywać coraz dłużej, aż fala opadnie sama.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 5 kroków surfingu</div>
+  <h1 class="card-prompt">Protokół <em>obserwacji</em> fali</h1>
+  <p class="card-detail">Pięć kroków surfingu — Marlatt + Bowen. Łącznie 10-20 minut, ale po kilku praktykach zwykle wystarcza 5-7 minut, bo fala opada szybciej z każdym treningiem.</p>
+
+  <div class="step-card">
+    <span class="step-num">1.</span><span class="step-h">Zauważ falę</span>
+    <div class="step-d">Gdy czujesz impuls — <strong>zatrzymaj się</strong>. Nie reaguj automatycznie. Powiedz mentalnie: „Zauważam falę". Sama nazwa już daje dystans (technika defuzji + uważność jednocześnie).</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">2.</span><span class="step-h">Obserwacja ciała</span>
+    <div class="step-d">Gdzie w ciele czujesz impuls? Klatka, brzuch, ramiona, gardło? <strong>Zostań tam uwagą</strong>, jakbyś badał/a ciekawe zjawisko fizyczne. Ile centymetrów zajmuje? Pulsuje czy stoi?</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">3.</span><span class="step-h">Metafora fali (oceanu)</span>
+    <div class="step-d">Wyobraź sobie ocean. Twój impuls to <strong>fala</strong>. Stoisz na desce surfingowej. Fala rośnie — Ty na niej. Fala wzbiera — Ty obserwujesz. Fala opada — Ty zostajesz. Nie walczysz z falą, jeździsz na niej.</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">4.</span><span class="step-h">Oddech 4-6-8</span>
+    <div class="step-d">Wdech 4 sekundy → wstrzymanie 6 sekund → wydech 8 sekund. <strong>Wydłużony wydech</strong> aktywuje przywspółczulny układ nerwowy, obniża pobudzenie. Wykonaj 4-6 cykli.</div>
+  </div>
+
+  <div class="step-card">
+    <span class="step-num">5.</span><span class="step-h">Czekaj — timer 10-20 min</span>
+    <div class="step-d">Ustaw <strong>timer</strong> na 15 minut. Twoje zadanie: nie reagować, dopóki nie zadzwoni. Możesz dalej obserwować falę, oddychać, używać metafory. Po timerze sprawdź, jak silny jest impuls — zwykle dramatycznie słabszy lub zniknął.</div>
+  </div>
+
+  <div class="timer-box">
+    <div class="timer-h">Domyślny timer surfingu</div>
+    <div class="timer-row"><strong>Pierwsze podejścia:</strong> 15 min</div>
+    <div class="timer-row"><strong>Po 1-2 tyg. praktyki:</strong> 10 min</div>
+    <div class="timer-row"><strong>Doświadczeni:</strong> 5-7 min wystarcza</div>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: większość osób raportuje, że fala opada w ciągu <strong>15 minut</strong> przy pierwszych praktykach. Po 2-3 tygodniach regularnego surfingu fala często opada w 5-7 minut — bo mózg uczy się, że impuls nie jest „katastrofą wymagającą natychmiastowej ulgi", lecz <em>sygnałem do obserwacji</em>.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Test teraz</div>
+  <h1 class="card-prompt">Wykonaj <em>jeden</em> krótki surfing</h1>
+  <p class="card-detail">Praktyka, nie teoria. Wybierz zadanie, którego unikasz, i wyobraź sobie moment, w którym pojawi się impuls ucieczki. Następnie wykonaj 5 kroków surfingu w wyobraźni — albo, jeśli realna fala jest <em>teraz</em>, na żywo.</p>
+
+  <textarea id="zadanie_t" class="thought-input" placeholder="Zadanie, przy którym najczęściej pojawia się impuls ucieczki: ..."></textarea>
+
+  <textarea id="krok1_obs" class="thought-input" placeholder="Krok 1 — co zauważasz, gdy fala się pojawia? (Pierwszy sygnał: impuls do telefonu? niepokój w klatce?)"></textarea>
+
+  <textarea id="krok2_cialo" class="thought-input" placeholder="Krok 2 — gdzie konkretnie w ciele to czujesz?"></textarea>
+
+  <textarea id="krok3_metafora" class="thought-input" placeholder="Krok 3 — opisz wewnętrznie metaforę: jaka to jest fala? (mała szybka? duża wolna? potężna?)"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Intensywność fali — w szczycie</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="szczyt" min="0" max="10" step="1" value="7" data-default="7">
+    <div class="scale-readout"><span>Szczyt</span><span id="szczytval">7</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Intensywność fali — po 15 minutach (oszacowanie)</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="po_15" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Po</span><span id="po_15val">3</span></div>
+  </div>
+
+  <div class="examples-h">Co pomaga w trakcie czekania na timer</div>
+  <div class="example-chips">
+    <button id="po1" class="example-chip">Picie wody</button>
+    <button id="po2" class="example-chip">Spacer 5 min</button>
+    <button id="po3" class="example-chip">Liczenie oddechów</button>
+    <button id="po4" class="example-chip">Stopy na podłodze</button>
+    <button id="po5" class="example-chip">Patrzenie w okno</button>
+    <button id="po6" class="example-chip">Cicha muzyka</button>
+  </div>
+
+  <div class="term-note"><strong>Mechanizm</strong>: każde przesurfowanie fali bez reakcji „uczy" mózg, że impuls <em>nie jest przymusem</em> — jest <em>opcją</em>. Po 5-7 takich doświadczeniach mózg zaczyna automatycznie traktować impulsy mniej dramatycznie. To jest neuroplastyczność w działaniu.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Plan tygodniowy</div>
+  <h1 class="card-prompt">Praktyka <em>5-7 razy</em> w tygodniu</h1>
+  <p class="card-detail">Pojedynczy surfing nie zmienia automatu. Cel: 5-7 świadomych surfingów w tygodniu — najlepiej za każdym razem, gdy zauważysz impuls przy zadaniu. Nie wszystkie muszą być pełne (15 min) — pierwsze pół minuty pauzy też się liczy.</p>
+
+  <textarea id="plan_s" class="thought-input" placeholder="Konkretny plan: ile surfingów dziennie / w jakich sytuacjach / z jakim timerem (5/10/15 min): ..."></textarea>
+
+  <div class="examples-h">Wyzwalacze do uważności</div>
+  <div class="example-chips">
+    <button id="w1" class="example-chip">Na początku pomodoro</button>
+    <button id="w2" class="example-chip">Przy otwarciu pliku</button>
+    <button id="w3" class="example-chip">Po przerwie</button>
+    <button id="w4" class="example-chip">Wieczorem przed zadaniem</button>
+    <button id="w5" class="example-chip">Po obiedzie</button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Realność praktyki 5+ surfingów w tygodniu</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="real_s" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Realność</span><span id="real_sval">6</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Spadek ulegania impulsom — szacunkowo, za 4 tygodnie</div>
+    <div class="scale-bounds"><span>(0 — bez zmiany)</span><span>(10 — duży spadek)</span></div>
+    <input type="range" class="scale-input" id="spadek_s" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Spadek</span><span id="spadek_sval">6</span></div>
+  </div>
+
+  <textarea id="zobow_s" class="thought-input" placeholder="Konkretne zobowiązanie na ten tydzień: ..."></textarea>
+
+  <div class="final-msg">Surfing nie eliminuje impulsów — uczy <strong>nową relację</strong> z nimi. Impulsy wciąż się pojawiają, ale przestają być „rozkazami", stają się obserwowalnymi sygnałami. Po 4-6 tygodniach regularnej praktyki większość osób raportuje, że impulsy są krótsze, słabsze, i że łatwiej wybrać działanie zamiast ulegania. To jest jeden z najmocniejszych praktycznych narzędzi z literatury MBRP.</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: Bowen, Chawla i Marlatt (2010, RCT): MBRP redukuje nawroty w uzależnieniach o 40% po 6 miesiącach. W prokrastynacji efekt jest analogiczny — surfing jako element codziennej praktyki zmniejsza częstość ulegania impulsom ucieczki o 30-50% po 4-6 tygodniach.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Impulsy są <em>falami</em>: rosną 3-5 min, kulminują 5-10 min, opadają w 15-30 min — bez reakcji. <strong>Pięć kroków surfingu</strong>: zauważ, obserwuj ciało, metafora fali, oddech 4-6-8, czekaj na timer. Powtórzone 5-7 razy w tygodniu przez miesiąc — strukturalnie zmienia automat.</div>
+  </div>
+
+  <div class="src">Marlatt i Gordon (1985). <em>Relapse Prevention: Maintenance Strategies in the Treatment of Addictive Behaviors</em>. Guilford. · Bowen, Chawla i Marlatt (2010). <em>Mindfulness-Based Relapse Prevention for Addictive Behaviors</em>. Guilford. · Bowen i in. (2014). Relative efficacy of mindfulness-based relapse prevention. <em>JAMA Psychiatry</em>, 71(5). · Witkiewitz, Marlatt i Walker (2005). Mindfulness-based relapse prevention for alcohol and substance use disorders. <em>Journal of Cognitive Psychotherapy</em>, 19(3). · Pychyl (2013). <em>Solving the Procrastination Puzzle</em>. TarcherPerigee.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_proc_surfing — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_proc_surfing";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* v589 fix (procrast only): TOGGLE klasy .picked dla klikalnych elementów. Paczka procrast nie miała
+       inline onclick ani funkcji pickX(), więc kliknięcia kafelków nie skutkowały zaznaczeniem.
+       closest() pokrywa też kliki w span/em wewnątrz buttonu. */
+    var pickable = e.target.closest('.example-chip, .rel-btn');
+    if (pickable) pickable.classList.toggle('picked');
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u). */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

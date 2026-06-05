@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wrażliwość na odrzucenie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === Skala fali RSD === */
+.rsd-marker { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; color: var(--ink-mute); margin-top: -4px; margin-bottom: 8px; }
+
+/* === Interpretation-card === */
+.int-card { background: rgba(184,197,168,0.15); padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; }
+.int-h { font-weight: 600; font-size: 12.5px; color: var(--sage-deep); margin-bottom: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+.int-h.warn { color: var(--warm); }
+.int-h.kind { color: var(--sage-deep); }
+.int-text { font-size: 13px; line-height: 1.55; color: var(--ink); }
+
+/* === Compassion-quote === */
+.comp-quote { background: var(--sage-deep); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.comp-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.comp-body { font-size: 13.5px; line-height: 1.6; color: rgba(244,241,234,0.95); font-style: italic; font-family: 'Fraunces', serif; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wrażliwość na odrzucenie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Wrażliwość na <em>odrzucenie</em> — fala niewspółmierna</h1>
+    <p class="card-detail">Wrażliwość dysforyczna na odrzucenie (RSD — <em>Rejection Sensitive Dysphoria</em>) to intensywna, trudna do zniesienia reakcja na rzeczywiste lub <em>postrzegane</em> odrzucenie, krytykę albo porażkę. Termin wprowadził Dodson (2017) — opisuje go jako jeden z najczęściej pomijanych objawów <strong>ADHD</strong> (zespół nadpobudliwości psychoruchowej z deficytem uwagi). Dotyczy ok. 70% dorosłych z ADHD. Mechanizm to dysregulacja emocjonalna (Barkley, 2015) plus historia chronicznych porażek od dzieciństwa, która wytrenowała mózg w „uczuleniu" na sygnały odrzucenia. Gao i wsp. (2023) w meta-analizie pokazali podwyższoną reaktywność na negatywną informację zwrotną (d=0.58) i obniżoną tolerancję na frustrację (d=0.72).</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery sygnały ataku RSD</div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>Sekundy do zalewania</strong> — od neutralnej rozmowy do paniki/wściekłości w 5–10 sekundach.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📉</span>
+        <span class="element-text"><strong>Niewspółmiernie do bodźca</strong> — komentarz, krzywe spojrzenie, brak emoji w wiadomości — fala 8/10.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌀</span>
+        <span class="element-text"><strong>Dwa typy reakcji</strong> — introvert (wstyd, wycofanie, „nikt mnie nie lubi") lub extrovert (gniew, agresja defensywna).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⏱️</span>
+        <span class="element-text"><strong>Krótkotrwałe, ale powracające</strong> — pojedyncza fala 1–2 godziny, ale temat „nikt mnie nie chce" wraca tygodniami.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„RSD nie jest «nadwrażliwością». To biologiczna cecha mózgu z ADHD — Twoja reakcja na krytykę jest silniejsza niż u osób neurotypowych, i to fakt do uznania, a nie do zwalczenia."
+      <span class="frame-quote-attr">— Dodson (2019, „How ADHD Amplifies Painful Emotions")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: RSD to nie zaburzenie osobowości borderline (BPD), choć wygląda podobnie. Różnica: w RSD fala jest <em>szybka i krótka</em> (minuty–godziny) i wyzwalają ją sygnały odrzucenia; w BPD jest <em>intensywna i długotrwała</em> z wyraźnym tłem relacyjnym. Mylenie tych dwóch obrazów to częsty błąd diagnostyczny.</div>
+
+    <div class="src">Dodson (2017, 2019) · Barkley (2015, DESR) · Gao i wsp. (2023, meta-analiza) · Bedrossian (2021, RSD review) · Posner i wsp. (2011, neurobiologia)</div>
+  </section>
+
+  <!-- ============== KROK 2 — Rozpoznanie ataku ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Rozpoznanie ataku</div>
+    <h1 class="card-prompt">Po czym <em>poznajesz</em>, że to RSD?</h1>
+    <p class="card-detail">Pomyśl o ostatniej fali — sytuacja, która Cię zalała. Opisz konkretny wyzwalacz oraz fizyczne i myślowe sygnały, po których RSD się rozpoznaje.</p>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Wyzwalacz</strong> — co dokładnie zostało powiedziane/zrobione/napisane:</p>
+    <textarea class="thought-input" id="trigger" placeholder="np. „Koleżanka napisała na grupie «pomyślę o tym» zamiast «super, idziemy». Bez emoji."" rows="3"></textarea>
+
+    <p class="examples-h">Sygnały fizyczne</p>
+    <div class="example-chips">
+      <button id="f1" class="example-chip" onclick="this.classList.toggle('picked')">Nagłe gorąco/zimno</button>
+      <button id="f2" class="example-chip" onclick="this.classList.toggle('picked')">Ucisk w klatce</button>
+      <button id="f3" class="example-chip" onclick="this.classList.toggle('picked')">Łzy bez ostrzeżenia</button>
+      <button id="f4" class="example-chip" onclick="this.classList.toggle('picked')">Drżenie rąk</button>
+      <button id="f5" class="example-chip" onclick="this.classList.toggle('picked')">Skurcz żołądka</button>
+      <button id="f6" class="example-chip" onclick="this.classList.toggle('picked')">Pulsująca głowa</button>
+      <button id="f7" class="example-chip" onclick="this.classList.toggle('picked')">Pustka, oderwanie</button>
+    </div>
+
+    <p class="examples-h" style="margin-top:14px">Pierwsze myśli</p>
+    <div class="example-chips">
+      <button id="m1" class="example-chip" onclick="this.classList.toggle('picked')">„Nikt mnie nie lubi"</button>
+      <button id="m2" class="example-chip" onclick="this.classList.toggle('picked')">„Znowu zawiodłem"</button>
+      <button id="m3" class="example-chip" onclick="this.classList.toggle('picked')">„Jestem do dupy"</button>
+      <button id="m4" class="example-chip" onclick="this.classList.toggle('picked')">„Już po mnie"</button>
+      <button id="m5" class="example-chip" onclick="this.classList.toggle('picked')">„Nienawidzą mnie"</button>
+      <button id="m6" class="example-chip" onclick="this.classList.toggle('picked')">„Jestem nikim"</button>
+      <button id="m7" class="example-chip" onclick="this.classList.toggle('picked')">„Muszę odejść"</button>
+      <button id="m8" class="example-chip" onclick="this.classList.toggle('picked')">„Nigdy się nie nauczę"</button>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Intensywność fali (0 spokój → 10 zalewa)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="intensRSD" class="scale-input" min="0" max="10" value="8" data-default="8">
+      <div class="scale-readout"><span>Twoja fala:</span><span id="intensRSDV">8</span></div>
+    </div>
+    <div class="rsd-marker"><span>5+ = atak RSD</span><span>↑ wymaga 90 sek pauzy</span></div>
+
+    <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: jeśli w ciągu sekund pojawia się fizyczny sygnał plus myśl typu „jestem niczym/nikt mnie nie lubi", a wyzwalacz to drobny komentarz lub jego brak — to <em>najprawdopodobniej</em> RSD, nie rzeczywistość. Sama nazwa odbiera sile fali ~30% (Lieberman i wsp., 2007).</div>
+  </section>
+
+  <!-- ============== KROK 3 — Restrukturyzacja interpretacji ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Trzy interpretacje</div>
+    <h1 class="card-prompt">Co <em>jeszcze</em> mogło się stać?</h1>
+    <p class="card-detail">Po 90 sekundach pauzy spróbuj rozpisać trzy interpretacje wyzwalacza — najgorszą (jaką już masz w głowie), neutralną (z perspektywy obserwatora) i życzliwą. Cel: zauważyć, że pierwsza nie jest jedyna.</p>
+
+    <div class="int-card">
+      <div class="int-h warn">🔴 Interpretacja katastroficzna</div>
+      <div class="int-text">To, co właśnie czujesz/myślisz — najgorszy scenariusz, który widzi mózg w fali RSD.</div>
+      <textarea class="thought-input" id="iKat" placeholder="np. „Marta mnie zignorowała, bo już mnie nie chce w grupie. Wszyscy inni o tym wiedzą i się zgadzają."" rows="3" style="margin-top:8px"></textarea>
+    </div>
+
+    <div class="int-card">
+      <div class="int-h">⚪ Interpretacja neutralna</div>
+      <div class="int-text">Tylko fakty — co dosłownie zostało powiedziane/napisane, bez interpretacji intencji.</div>
+      <textarea class="thought-input" id="iNeu" placeholder="np. „Marta napisała «pomyślę o tym» o 15:30. Nie odpisała mi do tej pory."" rows="3" style="margin-top:8px"></textarea>
+    </div>
+
+    <div class="int-card">
+      <div class="int-h kind">🟢 Interpretacja życzliwa (równie prawdopodobna)</div>
+      <div class="int-text">Jaki niewinny powód mógłby być? Co by powiedział życzliwy obserwator?</div>
+      <textarea class="thought-input" id="iZyc" placeholder="np. „Marta jest w pracy, ma deadline, odpisała pierwszą myślą. Pomyśli i odpisze konkretnie wieczorem. Nie ma to nic wspólnego ze mną."" rows="3" style="margin-top:8px"></textarea>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Z trzech interpretacji która jest <em>najbardziej prawdopodobna</em> obiektywnie — i o ile?</p>
+    <div class="scale">
+      <div class="scale-title">Prawdopodobieństwo katastroficznej (%)</div>
+      <div class="scale-bounds"><span>0</span><span>100</span></div>
+      <input type="range" id="probKat" class="scale-input" min="0" max="100" value="60" data-default="60">
+      <div class="scale-readout"><span>Szansa:</span><span id="probKatV">60%</span></div>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm restrukturyzacji</strong>: w RSD mózg <em>nie generuje</em> alternatyw — domyślnie działa katastroficznie. Wymuszenie trzech interpretacji rozszerza pole widzenia. Nie chodzi o „pozytywne myślenie" — chodzi o <em>uczciwe</em> mapowanie tego, co możliwe.</div>
+  </section>
+
+  <!-- ============== KROK 4 — Samowspółczucie i historia ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Samowspółczucie</div>
+    <h1 class="card-prompt">Co byś powiedział/a <em>przyjaciółce</em> w tej fali?</h1>
+    <p class="card-detail">Terapia skoncentrowana na współczuciu (<strong>CFT</strong> — terapia skoncentrowana na współczuciu, Gilbert 2010) pokazuje, że samokrytyka <em>karmi</em> falę RSD, a życzliwy ton wewnętrzny ją skraca. Wyobraź sobie, że osoba bliska przeżywa to, co Ty teraz — co byś jej powiedział/a?</p>
+
+    <textarea class="thought-input" id="doPrzyj" placeholder="np. „Magda, to boli, wiem. Twój mózg ma teraz lawinę bo dostał sygnał «odrzucenie» — to nie mówi prawdy o Twojej wartości, mówi o starym wzorze. Daj sobie godzinę. Marta cię lubi — wiesz to z 50 innych dowodów."" rows="5"></textarea>
+
+    <div class="comp-quote">
+      <div class="comp-h">Praktyka: powtórz to <em>do siebie</em></div>
+      <div class="comp-body">Trzy zdania powyżej, ale skierowane do siebie. „To boli — wiem. Mózg ma lawinę odrzucenia. To stare programowanie, nie prawda."</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja historia odrzuceń</strong> — jakie wcześniejsze doświadczenie Twój mózg <em>teraz</em> odpala? (jedno zdanie)</p>
+    <textarea class="thought-input" id="historia" placeholder="np. „W podstawówce nie zaprosili mnie na urodziny — dowiedziałam się od mamy. Czuję dokładnie to samo, co wtedy."" rows="3"></textarea>
+
+    <p class="examples-h" style="margin-top:8px">Strategia w tej chwili</p>
+    <div class="example-chips">
+      <button id="s1" class="example-chip" onclick="this.classList.toggle('picked')">Nie odpowiadam 30 minut</button>
+      <button id="s2" class="example-chip" onclick="this.classList.toggle('picked')">Wychodzę na spacer</button>
+      <button id="s3" class="example-chip" onclick="this.classList.toggle('picked')">Zimna woda na twarz</button>
+      <button id="s4" class="example-chip" onclick="this.classList.toggle('picked')">Telefon do kogoś bezpiecznego</button>
+      <button id="s5" class="example-chip" onclick="this.classList.toggle('picked')">Zapis 3 zdań przyjaciółce</button>
+      <button id="s6" class="example-chip" onclick="this.classList.toggle('picked')">Dłuższy oddech 4-6</button>
+      <button id="s7" class="example-chip" onclick="this.classList.toggle('picked')">Praca fizyczna 10 min</button>
+      <button id="s8" class="example-chip" onclick="this.classList.toggle('picked')">Sen — przed reakcją</button>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: życzliwy ton aktywuje system spokojnego przywiązania (Gilbert 2010), który neurochemicznie hamuje system zagrożenia. Samokrytyka aktywuje <em>ten sam</em> system zagrożenia, na który już reagujesz — czyli karmi falę. To nie afirmacje, to neurobiologia regulacji.</div>
+  </section>
+
+  <!-- ============== KROK 5 — Kalibracja ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po godzinie</div>
+    <h1 class="card-prompt">Co <em>zostało</em> z fali?</h1>
+    <p class="card-detail">Po 60 minutach pauzy wracaj tu i sprawdzaj. Cel to <em>nie</em> zniknięcie emocji, tylko ścieśnienie różnicy między falą w szczycie a falą po godzinie.</p>
+
+    <div class="scale">
+      <div class="scale-title">Intensywność po godzinie</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="intensPo" class="scale-input" min="0" max="10" value="3" data-default="3">
+      <div class="scale-readout"><span>Po godzinie:</span><span id="intensPoV">3</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Co się <em>rozjaśniło</em> w interpretacji? Czy katastroficzna wersja dalej trzyma — czy zaczyna pękać?</p>
+    <textarea class="thought-input" id="rozjasn" placeholder="np. „Marta odpisała o 19:00 — «przepraszam, deadline mnie zjadł, oczywiście idę». Katastroficzna wersja okazała się nieprawdziwa, dokładnie jak interpretacja życzliwa."" rows="4"></textarea>
+
+    <p class="card-detail" style="margin-top:8px">Co bierzesz z tej fali do następnej?</p>
+    <textarea class="thought-input" id="lekcja" placeholder="np. „«Pomyślę o tym» bez emoji to NIE odrzucenie — to deadline u kogoś. Następnym razem pauza godzina, nie sekunda."" rows="3"></textarea>
+
+    <div class="final-msg" id="finalMsg">Ustaw skale powyżej i wpisz interpretacje w kroku 3 — tu pojawi się Twoja konkretna obserwacja zmiany przed/po.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: po 5–10 falach RSD, w których pauza zadziałała, mózg zaczyna ufać <em>tej regule</em> bardziej niż katastrofie. To długi proces — nie liczbą tygodni, ale liczbą powtórzonych doświadczeń. Wracasz tu po każdej fali, dopóki różnica między „w szczycie" a „po godzinie" nie stanie się oczywistym wzorem.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">RSD to <strong>biologia, nie prawda</strong>. Pierwsza katastroficzna interpretacja nie jest jedyną — i zwykle nie jest najbardziej prawdopodobna. <em>Pauza, trzy interpretacje, życzliwy ton.</em> Mózg uczy się tego ciałem, nie słowem — przez powtarzanie po każdej fali.</div>
+    </div>
+
+    <div class="src">Dodson (2017, 2019) · Barkley (2015, DESR) · Gao i wsp. (2023, meta-analiza) · Gilbert (2010, „The Compassionate Mind") · Lieberman i wsp. (2007) · Posner i wsp. (2011) · Beck (2011, „Cognitive Behavior Therapy")</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function refreshScales() {
+  ['intensRSD','intensPo'].forEach(function(id){
+    var s = document.getElementById(id);
+    var v = document.getElementById(id+'V');
+    if (s && v) v.textContent = s.value;
+  });
+  var p = document.getElementById('probKat');
+  var pv = document.getElementById('probKatV');
+  if (p && pv) pv.textContent = p.value + '%';
+  buildFinalMsg();
+}
+
+function buildFinalMsg() {
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var pre = document.getElementById('intensRSD');
+  var post = document.getElementById('intensPo');
+  var prob = document.getElementById('probKat');
+  if (!pre || !post) return;
+  var preV = parseInt(pre.value, 10);
+  var postV = parseInt(post.value, 10);
+  var diff = preV - postV;
+  var probV = prob ? parseInt(prob.value, 10) : 60;
+
+  var msg = '<strong>Fala RSD:</strong> ' + preV + ' → ' + postV + ' (różnica ' + (diff > 0 ? '−' : (diff < 0 ? '+' : '')) + Math.abs(diff) + '). ';
+  msg += '<strong>Szansa katastrofy:</strong> ' + probV + '%. ';
+  if (diff >= 4) msg += '<em>Fala wyraźnie opadła — restrukturyzacja działa. Odpowiadasz teraz z bezpiecznego miejsca, nie z lawiny.</em>';
+  else if (diff >= 2) msg += '<em>Fala częściowo opadła — daj jej jeszcze 30 minut, sprawdź czy interpretacja życzliwa nie jest bliższa prawdy.</em>';
+  else msg += '<em>Fala trzyma — sprawdź, czy nie karmi jej ruminacja. Wyjdź fizycznie z miejsca, gdzie się stała.</em>';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5 || step === 2 || step === 3) refreshScales();
+}
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) refreshScales();
+});
+
+setTimeout(refreshScales, 60);
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_adhd_rsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_adhd_rsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

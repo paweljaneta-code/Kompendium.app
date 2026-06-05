@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Antykalendarz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.flip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.flip-card { padding: 12px; border-radius: 10px; font-size: 12px; line-height: 1.5; }
+.flip-card.old { background: rgba(201,165,114,0.22); border: 1px solid var(--warm); }
+.flip-card.new { background: rgba(184,197,168,0.25); border: 1px solid var(--sage-deep); }
+.flip-h { font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+.flip-card.old .flip-h { color: #8a6020; }
+.flip-card.new .flip-h { color: var(--sage-deep); }
+.flip-card ul { list-style: none; padding: 0; margin: 0; }
+.flip-card li { padding: 3px 0 3px 12px; position: relative; }
+.flip-card li:before { content: '·'; position: absolute; left: 4px; font-weight: 700; }
+.zycie-card { background: rgba(255,255,255,0.5); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; font-size: 12.5px; line-height: 1.5; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; }
+.zycie-icon { font-size: 18px; text-align: center; }
+.zycie-d strong { color: var(--ink); }
+.zycie-d em { color: var(--ink-soft); font-style: italic; font-size: 11.5px; }
+.principle-box { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.principle-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage); margin-bottom: 8px; }
+.principle-row { padding: 6px 0; border-top: 1px solid rgba(244,241,234,0.1); font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.principle-row:first-of-type { border-top: none; }
+.principle-row strong { color: var(--bg); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Antykalendarz</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Zaplanuj <em>przyjemność</em>, nie pracę</h1>
+  <p class="card-detail">Unschedule (Fiore, 2007, „The Now Habit") — odwrócony kalendarz. Zamiast planować <strong>pracę</strong> (i czuć przytłoczenie) — zaplanuj <strong>przyjemności i życie</strong>, a wolne bloki traktuj jako <em>okazje</em> na pracę. Założenie psychologiczne: prokrastynatorzy buntują się przeciw kalendarzowi pełnemu obowiązków (reactance theory — Brehm, 1966). Unschedule daje <strong>poczucie wolności</strong> — praca staje się wyborem, nie przymusem. Szczególnie skuteczny u osób z perfekcjonizmem i chronicznym obciążeniem.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Dlaczego tradycyjny kalendarz zawodzi</div>
+    <div class="element-row"><div class="element-icon">🚫</div><div class="element-text"><strong>Kalendarz pełen zobowiązań</strong> → psychologiczny opór (reactance)</div></div>
+    <div class="element-row"><div class="element-icon">📋</div><div class="element-text"><strong>„To-do list" to lista porażki</strong> — nigdy nie skończysz wszystkiego, codziennie czujesz się „w tyle"</div></div>
+    <div class="element-row"><div class="element-icon">⏰</div><div class="element-text"><strong>Planujesz 8 godzin pracy</strong> → robisz 2 godziny rzeczywistej pracy → wina za 6 godzin</div></div>
+    <div class="element-row"><div class="element-icon">😞</div><div class="element-text"><strong>Wyczerpanie</strong> przez ciągłe „powinienem" / „muszę" / „za mało zrobiłem/am"</div></div>
+  </div>
+
+  <div class="frame-quote">„Im bardziej coś musisz, tym bardziej chcesz tego uniknąć. Unschedule eliminuje to »musisz« — i prokrastynacja słabnie sama."<span class="frame-quote-attr">— parafraza zasady z Neil Fiore (2007), <em>The Now Habit</em></span></div>
+
+  <div class="principle-box">
+    <div class="principle-h">Paradoks empiryczny Fiore (1989)</div>
+    <div class="principle-row">Studenci używający Unschedule pracowali <strong>15-20 godzin tygodniowo produktywniej</strong></div>
+    <div class="principle-row">…niż ci planujący <strong>40 godzin pracy</strong> w tradycyjnym kalendarzu</div>
+    <div class="principle-row"><em>Mniej</em> godzin w planie + <em>więcej</em> przestrzeni życia = wyższa jakość pracy</div>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: Unschedule jest najskuteczniejszy u osób, które już są wyczerpane i czują „nic mi nie wychodzi mimo planowania". Jeśli Twoje listy zadań rosną szybciej, niż zdążasz je odhaczać, jeśli kalendarz wygląda jak labirynt obowiązków — Unschedule może być najszybszym wyjściem ze spirali.</div>
+
+  <div class="src">Fiore (2007). <em>The Now Habit: A Strategic Program for Overcoming Procrastination and Enjoying Guilt-Free Play</em>. Tarcher. · Brehm (1966). <em>A Theory of Psychological Reactance</em>. Academic Press.</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Tradycyjnie vs Unschedule</div>
+  <h1 class="card-prompt">Dwa sposoby <em>budowania</em> tygodnia</h1>
+  <p class="card-detail">Tradycyjny kalendarz vs Unschedule — to nie jest tylko kosmetyka. To inna logika planowania. W tradycyjnym kalendarzu praca jest centralną kategorią, a życie „wciska się" w wolne luki. W Unschedule jest odwrotnie: życie jest centralne, praca wypełnia wolne bloki.</p>
+
+  <div class="flip-grid">
+    <div class="flip-card old">
+      <div class="flip-h">⚠️ Tradycyjny kalendarz</div>
+      <ul>
+        <li>Najpierw blokujesz <strong>pracę</strong></li>
+        <li>Życie wciska się w wolne luki</li>
+        <li>Każde nieudane zadanie = <strong>wina</strong></li>
+        <li>Język: „muszę", „powinienem"</li>
+        <li>Aktywuje <strong>reactance</strong> (bunt)</li>
+        <li>Po dniu czujesz: „za mało zrobiłem/am"</li>
+      </ul>
+    </div>
+    <div class="flip-card new">
+      <div class="flip-h">💚 Unschedule (Fiore)</div>
+      <ul>
+        <li>Najpierw blokujesz <strong>życie</strong></li>
+        <li>Praca wypełnia wolne bloki</li>
+        <li>Każde wykonane zadanie = <strong>sukces</strong></li>
+        <li>Język: „mogę", „wybiorę"</li>
+        <li>Aktywuje <strong>autonomię</strong> (chęć)</li>
+        <li>Po dniu czujesz: „zrobiłem/am to, co dałem/am radę"</li>
+      </ul>
+    </div>
+  </div>
+
+  <textarea id="moj_kalend" class="thought-input" placeholder="Jak teraz wygląda mój tydzień? Czy bardziej jak lewa, czy prawa kolumna? Konkretne sygnały: ..."></textarea>
+
+  <div class="examples-h">Sygnały reactance w Twoim życiu</div>
+  <div class="example-chips">
+    <button id="r1" class="example-chip">Łapię się na „nie chcę"</button>
+    <button id="r2" class="example-chip">Bunt wobec list zadań</button>
+    <button id="r3" class="example-chip">Robię wszystko poza pracą</button>
+    <button id="r4" class="example-chip">Skreślam zadania → smutek</button>
+    <button id="r5" class="example-chip">Niedziela = lęk przed jutrem</button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Jak mocno odczuwasz „muszę" wobec swoich zadań</div>
+    <div class="scale-bounds"><span>(0 — neutralnie)</span><span>(10 — silny bunt)</span></div>
+    <input type="range" class="scale-input" id="must" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>„Muszę"</span><span id="mustval">6</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: Unschedule jest <em>nie dla wszystkich</em>. Jeśli żyjesz w stylu „za mało odpoczywam, zbyt dużo pracuję" — bardzo Ci pomoże. Jeśli żyjesz w stylu „odkładam zadania bez listy obowiązków, bo nigdy się nie pojawiają na liście" — Unschedule może pogłębić problem. Test: czy listy zadań przytłaczają Cię, czy chronią?</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Najpierw życie</div>
+  <h1 class="card-prompt">Wpisz <em>najpierw</em> elementy nieprzesuwalne</h1>
+  <p class="card-detail">Pierwszy krok Unschedule: wpisz do kalendarza wszystkie <strong>elementy życia</strong>, które są nieprzesuwalne. Sen, posiłki, przemieszczanie się, ćwiczenia, relaks, hobby, spotkania towarzyskie. To one chronią Cię przed wypaleniem — i oni są <em>fundamentem</em>, nie dodatkiem.</p>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">😴</div>
+    <div class="zycie-d"><strong>Sen 7-9 godzin</strong> <em>nieprzesuwalne; krótszy sen = niższa wydajność, więcej prokrastynacji</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">🍽️</div>
+    <div class="zycie-d"><strong>Trzy posiłki dziennie, 30-60 min każdy</strong> <em>regenerują uwagę, kotwiczą rytm dobowy</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">🚇</div>
+    <div class="zycie-d"><strong>Dojazdy / przemieszczanie</strong> <em>realny czas, nie idealny</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">🏃</div>
+    <div class="zycie-d"><strong>Ćwiczenia 3-5 × tygodniowo, 30-60 min</strong> <em>chronią mózg przed wypaleniem; nie negocjowalne</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">🛋️</div>
+    <div class="zycie-d"><strong>Relaks 2 godziny dziennie</strong> <em>seriale, książki, nicnierobienie — bez wyrzutów sumienia</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">👥</div>
+    <div class="zycie-d"><strong>Spotkania towarzyskie 2-3 × tygodniowo</strong> <em>profilaktyka samotności i rumiacji</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">🎨</div>
+    <div class="zycie-d"><strong>Hobby 3-5 godzin tygodniowo</strong> <em>aktywność dla siebie, bez celu produkcyjnego</em></div>
+  </div>
+
+  <textarea id="zycie_lista" class="thought-input" placeholder="Wypisz swoje nieprzesuwalne kategorie z konkretnymi godzinami w tygodniu: ..."></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Ile godzin tygodniowo zajmuje życie nieprzesuwalne</div>
+    <div class="scale-bounds"><span>(40)</span><span>(120)</span></div>
+    <input type="range" class="scale-input" id="zycie_h" min="40" max="120" step="2" value="100" data-default="100">
+    <div class="scale-readout"><span>Godziny</span><span id="zycie_hval">100</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: typowy tydzień ma 168 godzin (24 × 7). Życie nieprzesuwalne (sen + posiłki + ćwiczenia + relaks + spotkania + dojazdy) zwykle zajmuje 100-120 godzin. <strong>Pozostaje 48-68 godzin „wolnych"</strong> — z tego maksymalnie 25-35 godzin pracy realnej. To jest realność. Planowanie 50+ godzin pracy = planowanie wypalenia.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Wolne bloki = okazje</div>
+  <h1 class="card-prompt">„Mogę pracować", nie „muszę"</h1>
+  <p class="card-detail">Najtrudniejsza zmiana mentalna w Unschedule: <strong>wolne bloki nie są obowiązkiem</strong>. Są <em>okazjami</em>. Język ma znaczenie — „mogę" aktywuje autonomię, „muszę" aktywuje bunt. Każdy wolny blok to wybór: pracować lub odpoczywać. Oba są w porządku.</p>
+
+  <div class="flip-grid">
+    <div class="flip-card old">
+      <div class="flip-h">⚠️ Stare myślenie</div>
+      <ul>
+        <li>„Mam wolny blok 14-16, muszę pracować"</li>
+        <li>„Powinienem teraz robić X"</li>
+        <li>Wina za nieprzepracowany blok</li>
+        <li>Skupienie na NIE-zrobionym</li>
+      </ul>
+    </div>
+    <div class="flip-card new">
+      <div class="flip-h">💚 Nowe myślenie</div>
+      <ul>
+        <li>„Mam wolny blok 14-16, MOGĘ pracować"</li>
+        <li>„Wybieram, czy chcę pracować"</li>
+        <li>Bez winy — wybór jest prawomocny</li>
+        <li>Skupienie na zrobionym</li>
+      </ul>
+    </div>
+  </div>
+
+  <textarea id="moje_okno" class="thought-input" placeholder="Konkretny wolny blok jutro: od ___ do ___. Co MOGĘ w nim zrobić (nie muszę): ..."></textarea>
+
+  <textarea id="alt_blok" class="thought-input" placeholder="Alternatywa, jeśli nie zechcę pracować w tym bloku: ..."></textarea>
+
+  <div class="examples-h">Najczęstsze pułapki językowe</div>
+  <div class="example-chips">
+    <button id="p1" class="example-chip">„Powinienem" → „Wybieram"</button>
+    <button id="p2" class="example-chip">„Muszę" → „Mogę"</button>
+    <button id="p3" class="example-chip">„Nie zrobiłem" → „Zrobiłem co innego"</button>
+    <button id="p4" class="example-chip">„Za mało" → „Tyle, ile mogłem"</button>
+    <button id="p5" class="example-chip">„Lenistwo" → „Regeneracja"</button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Trudność akceptacji „mogę, nie muszę"</div>
+    <div class="scale-bounds"><span>(0 — łatwa)</span><span>(10 — bardzo trudna)</span></div>
+    <input type="range" class="scale-input" id="trud" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Trudność</span><span id="trudval">6</span></div>
+  </div>
+
+  <div class="term-note"><strong>Mechanizm</strong>: reactance (Brehm, 1966) jest automatyczną reakcją mózgu na zagrożenie autonomii. „Muszę pracować" sygnalizuje, że ktoś (ja sam/a) odbiera mi wolność wyboru — mózg odpowiada buntem. „Mogę pracować" sygnalizuje, że nadal jestem wolny/a — mózg się uspokaja. To nie miękkość; to mechanika reakcji obronnej.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Plan tygodnia w Unschedule</div>
+  <h1 class="card-prompt">Pierwszy <em>tydzień</em> antykalendarza</h1>
+  <p class="card-detail">Pierwszy tydzień Unschedule wygląda inaczej niż każdy poprzedni. Plan: zaprojektuj dzień, w którym najpierw blokujesz życie, potem oznaczasz wolne bloki jako „okazje na pracę". Po wykonanej pracy — odhaczaj. Liczysz wykonane bloki, nie nieukończone zadania.</p>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">📋</div>
+    <div class="zycie-d"><strong>Krok 1</strong> <em>w niedzielę wieczorem zaplanuj cały tydzień: blokuj sen, posiłki, ćwiczenia, relaks, spotkania, dojazdy</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">🎯</div>
+    <div class="zycie-d"><strong>Krok 2</strong> <em>oznacz wolne bloki jako „okazje na pracę" — bez przypisywania konkretnego zadania</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">✅</div>
+    <div class="zycie-d"><strong>Krok 3</strong> <em>po każdej wykonanej godzinie pracy — odhacz blok jako sukces</em></div>
+  </div>
+
+  <div class="zycie-card">
+    <div class="zycie-icon">📊</div>
+    <div class="zycie-d"><strong>Krok 4</strong> <em>na koniec tygodnia policz: ile godzin pracy zrobiłem/am? (zwykle 15-25 — to normalne)</em></div>
+  </div>
+
+  <textarea id="plan_un" class="thought-input" placeholder="Kiedy wieczorem zaplanuję tydzień + ile chcę godzin pracy realnej osiągnąć (15-25): ..."></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Realność testu Unschedule przez 7 dni</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="real_un" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Realność</span><span id="real_unval">6</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Spadek poczucia winy / przymusu — szacunkowo, po 7 dniach</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="spadek_un" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Spadek</span><span id="spadek_unval">6</span></div>
+  </div>
+
+  <div class="final-msg">Pierwszy tydzień Unschedule często jest <strong>zaskakujący</strong> — zwykle wykonujesz <em>więcej</em>, nie mniej. Bez ciężaru „muszę całe 8 godzin", praca w bloku 2-3 godzin staje się intensywna i jakościowa. Nie chodzi o robienie mniej — chodzi o robienie z <strong>autonomii</strong>, nie z przymusu.</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: jeśli po 7 dniach Unschedule wykonujesz mniej niż przed — sprawdź, czy nie używasz go jako wymówki („mogę nie pracować"). Unschedule nie eliminuje pracy; eliminuje <em>winę</em>. Praca nadal musi się wydarzyć w wolnych blokach. Jeśli to nie działa — wróć do tradycyjnego kalendarza z mniejszym obciążeniem.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Unschedule (Fiore, 2007) = <em>najpierw życie, potem praca</em>. Reactance (Brehm, 1966): „muszę" aktywuje bunt; „mogę" aktywuje autonomię. Wolne bloki = <strong>okazje na pracę</strong>, nie obowiązek. Realne 15-25 godzin pracy / tydzień to dużo — nie obwiniaj się za nieosiąganie 40.</div>
+  </div>
+
+  <div class="src">Fiore (2007). <em>The Now Habit: A Strategic Program for Overcoming Procrastination and Enjoying Guilt-Free Play</em>. Tarcher. · Brehm (1966). <em>A Theory of Psychological Reactance</em>. Academic Press. · Newport (2016). <em>Deep Work: Rules for Focused Success in a Distracted World</em>. Grand Central Publishing. · Pychyl (2013). <em>Solving the Procrastination Puzzle</em>. TarcherPerigee. · Steel (2007). The nature of procrastination: A meta-analytic and theoretical review of quintessential self-regulatory failure. <em>Psychological Bulletin</em>, 133(1).</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_pr_unschedule — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_pr_unschedule";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* v589 fix (procrast only): TOGGLE klasy .picked dla klikalnych elementów. Paczka procrast nie miała
+       inline onclick ani funkcji pickX(), więc kliknięcia kafelków nie skutkowały zaznaczeniem.
+       closest() pokrywa też kliki w span/em wewnątrz buttonu. */
+    var pickable = e.target.closest('.example-chip, .rel-btn');
+    if (pickable) pickable.classList.toggle('picked');
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u). */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

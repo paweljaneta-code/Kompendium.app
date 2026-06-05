@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Sortowanie kart wartości</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative; }
+.frame-card::before { content: "✦ WYBÓR, NIE ODKRYCIE"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === SORTING UI === */
+.sort-instr {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.sort-instr strong { color: var(--ink); font-weight: 700; }
+
+.pile-counters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.pile-counter {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pile-counter.bardzo { border-color: var(--sage-deep); background: rgba(122,146,112,0.1); }
+.pile-counter.wazne { border-color: var(--warm); background: rgba(201,122,82,0.06); }
+.pile-counter.mniej { border-color: var(--ink-mute); background: rgba(138,144,137,0.06); }
+.pile-counter.active { box-shadow: 0 0 0 2px var(--ink); }
+.pile-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 700; margin-bottom: 2px; }
+.pile-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--ink); font-feature-settings: 'tnum' 1; line-height: 1; }
+.pile-counter.bardzo .pile-num { color: var(--sage-deep); }
+.pile-counter.wazne .pile-num { color: var(--warm); }
+
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+  min-height: 50px;
+}
+.value-card {
+  background: rgba(255,255,255,0.7);
+  border: 1.5px solid var(--line);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.value-card:hover { background: var(--sage-soft); }
+.value-card.bardzo { background: rgba(122,146,112,0.18); border-color: var(--sage-deep); border-left: 3px solid var(--sage-deep); padding-left: 8px; }
+.value-card.wazne { background: rgba(201,122,82,0.12); border-color: var(--warm); border-left: 3px solid var(--warm); padding-left: 8px; }
+.value-card.mniej { background: rgba(138,144,137,0.1); border-color: var(--ink-mute); opacity: 0.6; text-decoration: line-through; }
+.cards-h { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); font-weight: 700; margin: 8px 0 6px; display: flex; align-items: center; gap: 6px; }
+.cards-h::before { content: ""; display: inline-block; width: 14px; height: 1px; background: var(--ink-mute); }
+
+/* === TOP 5 PICKER === */
+.top5-list {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 4px 0 12px;
+}
+.top5-row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.top5-num {
+  font-family: 'Fraunces', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--sage-deep);
+  text-align: center;
+  font-feature-settings: 'tnum' 1;
+}
+.top5-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.top5-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === SLIDER ROW === */
+.slider-row {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.slider-name { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.slider-name em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.slider-input { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: grab; }
+.slider-input::-webkit-slider-runnable-track { height: 4px; background: linear-gradient(to right, var(--warm), var(--sage)); border-radius: 2px; }
+.slider-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -9px; box-shadow: 0 1px 4px rgba(28,38,32,0.2); }
+.slider-input::-moz-range-track { height: 4px; background: linear-gradient(to right, var(--warm), var(--sage)); border-radius: 2px; }
+.slider-input::-moz-range-thumb { width: 18px; height: 18px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.slider-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 2px; }
+.slider-readout .val { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: var(--ink); font-feature-settings: 'tnum' 1; }
+
+/* === COMMITMENT === */
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Sortowanie wartości</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: VALUES = CHOICE, NOT DISCOVERY -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Wartości to <em>wybór</em></h1>
+    <p class="card-detail"><strong>Values Card Sort</strong> (Miller 2001; Wilson, Personal Values Questionnaire; Harris 2009) — interaktywne ćwiczenie klaryfikacji wartości w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). Dostajesz listę wartości, sortujesz na 3 stosy, wybierasz <strong>TOP 5</strong>. Lepsze niż lista — bo angażuje <em>cielesną</em> intuicję, nie tylko refleksję werbalną.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Wartości — wybór, nie odkrycie</div>
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">Naiwny model</div>
+          <div class="frame-text">„Muszę <strong>odkryć</strong> swoje prawdziwe wartości — gdzieś we mnie jest lista."</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">Model ACT</div>
+          <div class="frame-text">Wartości to <strong>wybór</strong>. Sam akt wybierania <em>tworzy</em> wartość — przez działanie, nie przez introspekcję.</div>
+        </div>
+      </div>
+      <div class="frame-quote">„»Wszystko jest ważne« = paraliż. Sortowanie zmusza do priorytetyzacji — to akt etycznej dojrzałości."
+      <span class="frame-quote-attr">— Russ Harris (2009)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: gdy wszystkie wartości są tak samo ważne, <em>żadna</em> nie kieruje działaniem. Bez priorytetów reagujesz na to, co najgłośniejsze (lęk, presja, krytyka). Sortowanie tworzy <strong>hierarchię</strong> — która następnie staje się kompasem.</div>
+    
+    <div class="src">Miller (2001, PVC) · Wilson (PVQ) · Harris (2009, ACT Made Simple)</div>
+  </section>
+
+  <!-- 2: SORT 35 VALUES -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Sortowanie</div>
+    <h1 class="card-prompt">Trzy <em>stosy</em></h1>
+    <p class="card-detail">Klikaj kartę, by przesunąć ją na kolejny stos: <strong>Bardzo ważne</strong> → <strong>Ważne</strong> → <strong>Mniej ważne</strong>. Każdy klik = przesunięcie. Gotowych odpowiedzi nie ma — kieruj się intuicją, nie powinnościami.</p>
+    
+    <div class="sort-instr">
+      <strong>Tryb pracy</strong>: kliknij kartę raz — trafia do „bardzo ważne". Kliknij ponownie — do „ważne". Trzeci klik — do „mniej ważne". Czwarty — wraca do nieprzypisanych.
+    </div>
+    
+    <div class="pile-counters">
+      <div class="pile-counter bardzo">
+        <div class="pile-label">Bardzo ważne</div>
+        <div class="pile-num" id="cBardzo">0</div>
+      </div>
+      <div class="pile-counter wazne">
+        <div class="pile-label">Ważne</div>
+        <div class="pile-num" id="cWazne">0</div>
+      </div>
+      <div class="pile-counter mniej">
+        <div class="pile-label">Mniej ważne</div>
+        <div class="pile-num" id="cMniej">0</div>
+      </div>
+    </div>
+    
+    <div class="cards-grid" id="cardsGrid">
+      <!-- Generated by JS -->
+    </div>
+    
+    <div class="term-note"><strong>Cel</strong>: do „bardzo ważne" powinno trafić <em>maksymalnie 8-12</em> wartości. Jeśli masz 20 — przesuń część do „ważne". Sztywna selekcja jest istotą ćwiczenia. Nie wszystko może być najwyżej.</div>
+  </section>
+
+  <!-- 3: TOP 5 -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">TOP 5</div>
+    <h1 class="card-prompt">Pięć <em>fundamentów</em></h1>
+    <p class="card-detail">Z stosu „bardzo ważne" wybierz <strong>TOP 5</strong> — fundamenty, na których budujesz codzienne decyzje. Ranguj: 1 to absolutnie kluczowa wartość, 5 jest też ważna, ale schodzi na drugi plan w razie konfliktu.</p>
+    
+    <div class="day-h">Twoje top 5 wartości w hierarchii</div>
+    
+    <div class="top5-list">
+      <div class="top5-row">
+        <span class="top5-num">1</span>
+        <input type="text" class="top5-input" id="top1" placeholder="najbardziej fundamentalna wartość...">
+      </div>
+      <div class="top5-row">
+        <span class="top5-num">2</span>
+        <input type="text" class="top5-input" id="top2" placeholder="druga w hierarchii...">
+      </div>
+      <div class="top5-row">
+        <span class="top5-num">3</span>
+        <input type="text" class="top5-input" id="top3" placeholder="trzecia...">
+      </div>
+      <div class="top5-row">
+        <span class="top5-num">4</span>
+        <input type="text" class="top5-input" id="top4" placeholder="czwarta...">
+      </div>
+      <div class="top5-row">
+        <span class="top5-num">5</span>
+        <input type="text" class="top5-input" id="top5" placeholder="piąta...">
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Hierarchia w konflikcie</strong>: gdy wartość #1 zderzy się z #4, idziesz za #1. To nie znaczy, że #4 nie ma znaczenia — znaczy tylko, że <em>w sytuacji wyboru</em> wybór jest jasny. Hierarchia istnieje po to, żeby decyzja nie wymagała od ciebie analizy za każdym razem.</div>
+  </section>
+
+  <!-- 4: COMPATIBILITY TEST -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Test zgodności</div>
+    <h1 class="card-prompt">Jak <em>żyjesz</em> tym?</h1>
+    <p class="card-detail">Najtrudniejszy krok. Dla każdej z TOP 5 oceń, w jakim stopniu <strong>realizujesz tę wartość w codziennych decyzjach</strong>. 0 = totalnie nie żyję tym, 10 = pełna zgodność. Bądź szczery/a.</p>
+    
+    <div id="sliderRows">
+      <!-- Generated dynamically when entering this step -->
+    </div>
+    
+    <div class="term-note"><strong>Diagnostyka luk</strong>: największa <em>różnica</em> między rangą wartości a oceną realizacji = obszar, gdzie wartość jest deklarowana, ale nie wprowadzana w życie. Klasyczny przypadek: TOP 1 = „bliskość", ocena realizacji = 3/10. To nie hipokryzja — to <em>luka, nad którą warto pracować</em>.</div>
+  </section>
+
+  <!-- 5: ONE STEP -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Działanie</div>
+    <h1 class="card-prompt">Jeden <em>krok</em> w służbie</h1>
+    <p class="card-detail">Wybierz <strong>jedną wartość z najmniejszym współczynnikiem realizacji</strong>. To priorytet — bo największy potencjał wzrostu. Plan: jeden konkretny krok w tym tygodniu w jej służbie.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Plan tygodnia</div>
+      
+      <div class="commit-prompt-label">Najbardziej zaniedbana wartość z TOP 5</div>
+      <textarea class="thought-input" id="neglected" placeholder="np. „Odwaga — TOP 3, ocena 3/10. Unikam trudnych rozmów"..." rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Konkretne działanie w jej służbie (kiedy, gdzie, co)</div>
+      <textarea class="thought-input" id="action" placeholder="np. „w środę powiem szefowi, że potrzebuję 2 dni urlopu mimo presji projektu" / „w piątek wieczorem zadzwonię do brata po 6 miesiącach milczenia"..." rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Jak poznam, że krok się powiódł (mimo dyskomfortu)</div>
+      <textarea class="thought-input" id="success" placeholder="np. „nawet jeśli rozmowa się nie powiedzie — fakt, że ją odbyłem, jest dowodem życia w służbie odwagi"..." rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Powtarzanie ćwiczenia</div>
+    <div class="term-note">
+      <strong>Co 6 miesięcy</strong> — pełna rewizja. Wartości nie zmieniają się radykalnie, ale <em>hierarchia</em> ewoluuje wraz z etapami życia (kariera → dzieci → starość).<br>
+      <strong>Przy decyzji</strong> — wracaj do TOP 5. Każdą poważną decyzję filtruj przez pytanie: „która opcja realizuje moje top 3 wartości?".<br>
+      <strong>Test rocznicowy</strong> — porównaj oceny zgodności sprzed roku z dzisiejszymi. Trend pokazuje, czy zbliżasz się do swoich wartości czy oddalasz.
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body">Wartości żyją tylko w <strong>działaniu</strong>. Lista wartości na kartce = brak wartości. Wartością jest <em>to, jak działasz w sytuacji wyboru</em>. Sortowanie kart to start — nie cel. Cel to <strong>codzienne decyzje filtrowane przez TOP 5</strong>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const VALUES = [
+  'Autentyczność','Bezpieczeństwo','Bliskość','Cierpliwość','Ciekawość',
+  'Duchowość','Edukacja','Empatia','Harmonia','Honor',
+  'Humor','Kreatywność','Lojalność','Miłość','Niezależność',
+  'Odpowiedzialność','Odwaga','Piękno','Pokora','Przygoda',
+  'Rodzina','Rozwój','Sens życia','Służba innym','Spokój',
+  'Sprawiedliwość','Szacunek','Uczciwość','Wdzięczność','Wiedza',
+  'Wolność','Współczucie','Zaufanie','Zdrowie','Tradycja'
+];
+
+// State: each value can be in 'unsorted', 'bardzo', 'wazne', 'mniej'
+const state = {};
+VALUES.forEach(v => state[v] = 'unsorted');
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+buildCards();
+updateUI();
+
+function buildCards() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+  VALUES.forEach(v => {
+    const c = document.createElement('div');
+    c.className = 'value-card';
+    c.textContent = v;
+    c.onclick = () => cycleCard(v, c);
+    grid.appendChild(c);
+  });
+}
+
+function cycleCard(v, el) {
+  const order = ['unsorted','bardzo','wazne','mniej'];
+  const cur = state[v];
+  const next = order[(order.indexOf(cur) + 1) % order.length];
+  state[v] = next;
+  el.classList.remove('bardzo','wazne','mniej');
+  if (next !== 'unsorted') el.classList.add(next);
+  updateCounters();
+}
+
+function updateCounters() {
+  let cb = 0, cw = 0, cm = 0;
+  Object.values(state).forEach(s => {
+    if (s === 'bardzo') cb++;
+    else if (s === 'wazne') cw++;
+    else if (s === 'mniej') cm++;
+  });
+  document.getElementById('cBardzo').textContent = cb;
+  document.getElementById('cWazne').textContent = cw;
+  document.getElementById('cMniej').textContent = cm;
+}
+
+function buildSliders() {
+  const wrap = document.getElementById('sliderRows');
+  wrap.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const v = document.getElementById('top' + i).value.trim();
+    if (!v) continue;
+    
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    row.innerHTML = `
+      <div class="slider-name">${v} <em>— jak realizuję dziś</em></div>
+      <input type="range" min="0" max="10" value="5" class="slider-input" id="rate${i}" oninput="document.getElementById('rateVal${i}').textContent = this.value">
+      <div class="slider-readout">
+        <span>0 — wcale</span>
+        <span class="val" id="rateVal${i}">5</span>
+        <span>10 — pełna zgodność</span>
+      </div>
+    `;
+    wrap.appendChild(row);
+  }
+  if (wrap.children.length === 0) {
+    wrap.innerHTML = '<div class="term-note">Wpisz najpierw wartości w kroku 3 — TOP 5.</div>';
+  }
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 4) buildSliders();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    VALUES.forEach(v => state[v] = 'unsorted');
+    buildCards();
+    updateCounters();
+    ['top1','top2','top3','top4','top5','neglected','action','success'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+/* ===== AUTO-ZAPIS ===== */
+/* Dedykowany dla sortowanie-kart (dynamicznie generowane karty + 3-stanowy state).
+   Stan kart przechowywany w obiekcie state[v] = 'unsorted'/'bardzo'/'wazne'/'mniej'. */
+(function(){
+  var KEY = "sos_sortowanie_kart";
+  var areas = document.querySelectorAll("textarea");
+
+  // --- Odtworzenie ---
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  // Textareas
+  if (saved.t) {
+    for (var i = 0; i < areas.length; i++) {
+      var id = areas[i].id;
+      if (id && saved.t[id]) areas[i].value = saved.t[id];
+    }
+  }
+
+  // Stan kart - przywróć po buildCards()
+  if (saved.cards) {
+    // Czekamy aż grid jest zbudowany przez init buildCards()
+    setTimeout(function() {
+      var cards = document.querySelectorAll('#cardsGrid .value-card');
+      cards.forEach(function(el) {
+        var v = el.textContent.trim();
+        if (saved.cards[v]) {
+          state[v] = saved.cards[v];
+          el.classList.remove('bardzo','wazne','mniej');
+          if (saved.cards[v] !== 'unsorted') el.classList.add(saved.cards[v]);
+        }
+      });
+      if (typeof updateCounters === 'function') updateCounters();
+    }, 0);
+  }
+
+  // Suwaki w step 4 - dynamiczne (rate1-rate5). Przywracamy po buildSliders.
+  // Hook na buildSliders aby po wybudowaniu wstawić wartości.
+  if (saved.r) {
+    var origBuildSliders = window.buildSliders;
+    if (origBuildSliders) {
+      window.buildSliders = function() {
+        origBuildSliders.apply(this, arguments);
+        for (var i = 1; i <= 5; i++) {
+          var sl = document.getElementById('rate' + i);
+          if (sl && saved.r['rate' + i] !== undefined) {
+            sl.value = saved.r['rate' + i];
+            try { sl.dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+          }
+        }
+      };
+    }
+  }
+
+  // --- Zapis ---
+  function save() {
+    var d = { t: {}, cards: {}, r: {} };
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    // Zapisz stan kart z obiektu state
+    if (typeof state === 'object' && state) {
+      for (var k in state) {
+        if (state[k] && state[k] !== 'unsorted') d.cards[k] = state[k];
+      }
+    }
+    // Suwaki rate1-rate5 (jeśli istnieją - są dynamiczne)
+    var ranges = document.querySelectorAll('input[type="range"]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  // --- Listenery ---
+  for (var i = 0; i < areas.length; i++) areas[i].addEventListener("input", save);
+
+  // Hook na cycleCard - po każdym kliknięciu zapisujemy stan
+  if (typeof window.cycleCard === 'function') {
+    var origCycle = window.cycleCard;
+    window.cycleCard = function(v, el) {
+      origCycle.apply(this, arguments);
+      save();
+    };
+  }
+
+  // Listenery na suwaki dynamiczne - delegacja przez document
+  document.addEventListener('input', function(e) {
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'range') {
+      save();
+    }
+  });
+
+  // --- Hak na "Zacznij od nowa" ---
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+      try { localStorage.removeItem(KEY); } catch(e) {}
+    }
+    origNextStep.apply(this, arguments);
+  };
+
+  // --- Plakietka "Zapisano" ---
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Paraliż decyzyjny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.opt-card { background: rgba(255,255,255,0.5); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; }
+.opt-h { font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+.opt-d { color: var(--ink-soft); }
+.test-result { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.test-result-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage); margin-bottom: 6px; }
+.test-result-val { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: var(--sage); line-height: 1; margin-bottom: 6px; }
+.test-result-comm { font-size: 12.5px; color: rgba(244,241,234,0.85); line-height: 1.5; }
+.tech-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; }
+.tech-h { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); display: block; margin-bottom: 4px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Paraliż decyzyjny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Gdy odkładasz <em>decyzję</em>, nie działanie</h1>
+  <p class="card-detail">Paraliż decyzyjny (decisional procrastination — Ferrari, 1991) różni się od prokrastynacji „zwykłej": <strong>wiesz</strong>, co robić, ale nie umiesz <em>wybrać spośród opcji</em>. Schwartz (2004) — „Paradoks wyboru": zbyt wiele opcji paraliżuje. Iyengar i Lepper (2000) — w klasycznym eksperymencie z dżemami: 3% kupiło coś z 24 dżemów, 30% z 6. Im więcej wyboru, tym mniej decyzji.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery cechy paraliżu decyzyjnego</div>
+    <div class="element-row"><div class="element-icon">🤔</div><div class="element-text"><strong>„Nie mogę zdecydować, więc nie decyduję"</strong> — wstrzymanie wyboru zamiast wyboru</div></div>
+    <div class="element-row"><div class="element-icon">💭</div><div class="element-text"><strong>Lęk przed żalem</strong> — opcja A może wywołać żal, że nie wybrałem/am B; opcja B — odwrotnie</div></div>
+    <div class="element-row"><div class="element-icon">📈</div><div class="element-text"><strong>Im więcej opcji, tym mocniejszy paraliż</strong> — choice overload, efekt Iyengar-Lepper</div></div>
+    <div class="element-row"><div class="element-icon">⏳</div><div class="element-text"><strong>Niedecydowanie też jest decyzją</strong> — i to z reguły gorszą niż dowolna z odrzuconych opcji</div></div>
+  </div>
+
+  <div class="frame-quote">„Zwiększenie wyboru sprawia, że ludzie decydują rzadziej, decydują gorzej i są mniej zadowoleni z tego, co wybrali."<span class="frame-quote-attr">— Barry Schwartz (2004), parafraza tezy z „The Paradox of Choice"</span></div>
+
+  <div class="term-note"><strong>Klucz</strong>: paraliż decyzyjny działa przez lęk przed odpowiedzialnością za żal. Mózg „blokuje" decyzję, by uniknąć przyszłego: „mogłem/am wybrać inaczej". W rzeczywistości <em>niedecydowanie</em> generuje tę samą emocję — tylko rozmytą w czasie i bardziej dotkliwą.</div>
+
+  <div class="src">Schwartz (2004). <em>The Paradox of Choice</em>. Ecco. · Iyengar i Lepper (2000). When choice is demotivating. <em>Journal of Personality and Social Psychology</em>, 79(6).</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja decyzja</div>
+  <h1 class="card-prompt">Wybierz <em>jedną</em> odkładaną decyzję</h1>
+  <p class="card-detail">Pomyśl o jednej decyzji, której nie podejmujesz od dłuższego czasu. Nie chodzi o działanie („nie napisałem/am pracy"), tylko o wybór („nie wiem, czy zmienić pracę / wziąć kurs / wybrać kierunek"). Im konkretniej, tym łatwiej rozpoznać mechanizm.</p>
+
+  <textarea id="decyzja_p" class="thought-input" placeholder="Konkretna odkładana decyzja: ..."></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Ile rozważasz opcji</div>
+    <div class="scale-bounds"><span>(2-3)</span><span>(10+)</span></div>
+    <input type="range" class="scale-input" id="opcje" min="2" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Opcje</span><span id="opcjeval">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Jak długo już to rozważasz</div>
+    <div class="scale-bounds"><span>(dni)</span><span>(miesiące)</span></div>
+    <input type="range" class="scale-input" id="czas" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Skala</span><span id="czasval">5</span></div>
+  </div>
+
+  <textarea id="opcje_lista" class="thought-input" placeholder="Lista konkretnych opcji (skrócone): A. ... B. ... C. ... ..."></textarea>
+
+  <div class="examples-h">Co czujesz przy każdej z opcji?</div>
+  <div class="example-chips">
+    <button id="e1" class="example-chip">Lęk przed pomyłką</button>
+    <button id="e2" class="example-chip">Żal za odrzuconymi</button>
+    <button id="e3" class="example-chip">Brak różnicy</button>
+    <button id="e4" class="example-chip">Każda ma wadę</button>
+    <button id="e5" class="example-chip">Każda ma zaletę</button>
+    <button id="e6" class="example-chip">„A może jeszcze inna?"</button>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: jeśli rozważasz &gt; 5 opcji przez &gt; 4 tygodnie — masz klasyczny paraliż decyzyjny. Mózg ginie w porównaniach. Pierwsze działanie: <em>ograniczenie do 3 opcji</em> (krok 4) — to często rozwiązuje 70% problemu.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Test maximizer/satisficer</div>
+  <h1 class="card-prompt">Czy szukasz <em>najlepszego</em> czy <em>wystarczającego</em>?</h1>
+  <p class="card-detail">Schwartz (2002) wyróżnił dwie strategie wyboru. <strong>Maximizer</strong> szuka najlepszego — porównuje wszystko, zwleka, żałuje. <strong>Satisficer</strong> szuka wystarczająco dobrego — decyduje szybko, jest zadowolony. Badania: satysfakcjujący mają wyższą satysfakcję życiową, mniej depresji, mniej żalu (Schwartz, 2002). Test poniżej (skrócony, 6 pozycji). Każda 1-7 (zupełnie nie → zupełnie tak).</p>
+
+  <div class="opt-card">
+    <div class="opt-h">1. W restauracji sprawdzam wszystkie opcje w menu, zanim zamówię</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>(1)</span><span>(7)</span></div>
+    <input type="range" class="scale-input" id="m1" min="1" max="7" step="1" value="4" data-default="4" oninput="maxCalc()">
+    <div class="scale-readout"><span>Skala</span><span id="m1val">4</span></div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-h">2. Zakupy ubrań są dla mnie trudne — zawsze żałuję, że gdzieś indziej było lepsze</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>(1)</span><span>(7)</span></div>
+    <input type="range" class="scale-input" id="m2" min="1" max="7" step="1" value="4" data-default="4" oninput="maxCalc()">
+    <div class="scale-readout"><span>Skala</span><span id="m2val">4</span></div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-h">3. Gdy znajdę „dobrą" opcję, nadal szukam jeszcze lepszej</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>(1)</span><span>(7)</span></div>
+    <input type="range" class="scale-input" id="m3" min="1" max="7" step="1" value="4" data-default="4" oninput="maxCalc()">
+    <div class="scale-readout"><span>Skala</span><span id="m3val">4</span></div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-h">4. Czytam wszystkie recenzje przed zakupem — nawet drobnym</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>(1)</span><span>(7)</span></div>
+    <input type="range" class="scale-input" id="m4" min="1" max="7" step="1" value="4" data-default="4" oninput="maxCalc()">
+    <div class="scale-readout"><span>Skala</span><span id="m4val">4</span></div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-h">5. Zwykle żałuję podjętych decyzji — myślę o opcjach, które odrzuciłem/am</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>(1)</span><span>(7)</span></div>
+    <input type="range" class="scale-input" id="m5" min="1" max="7" step="1" value="4" data-default="4" oninput="maxCalc()">
+    <div class="scale-readout"><span>Skala</span><span id="m5val">4</span></div>
+  </div>
+
+  <div class="opt-card">
+    <div class="opt-h">6. Trudno mi się zatrzymać przy decyzji — myśl o niej wraca długo po wyborze</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>(1)</span><span>(7)</span></div>
+    <input type="range" class="scale-input" id="m6" min="1" max="7" step="1" value="4" data-default="4" oninput="maxCalc()">
+    <div class="scale-readout"><span>Skala</span><span id="m6val">4</span></div>
+  </div>
+
+  <div class="test-result">
+    <div class="test-result-h">Maximization Scale (skrócona, 6 pozycji)</div>
+    <div class="test-result-val"><span id="maxSum">24</span> / 42</div>
+    <div class="test-result-comm" id="maxComm">—</div>
+  </div>
+
+  <div class="term-note"><strong>Mechanizm</strong>: maksymalizatorzy mają wyższy poziom żalu po decyzji, więcej depresji, mniejszą satysfakcję — pomimo obiektywnie „lepszych" wyborów. Paradoks: szukanie najlepszego daje gorsze samopoczucie niż akceptacja wystarczająco dobrego.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Cztery techniki</div>
+  <h1 class="card-prompt">Konkretne <em>narzędzia</em> wyjścia z paraliżu</h1>
+  <p class="card-detail">Cztery sprawdzone techniki na paraliż decyzyjny. Nie chodzi o doskonałą decyzję — chodzi o <strong>jakąkolwiek decyzję</strong> w sensownej drodze. Możesz testować jedną na raz lub kilka razem.</p>
+
+  <div class="tech-card">
+    <span class="tech-h">A. Ograniczenie do 3 opcji</span>
+    Najprostsza technika choice-overload. Z dłuższej listy zostaw najlepsze trzy. Resztę usuń (zamknij karty, skreśl) — nawet jeśli czujesz, że „mogłabyś coś przegapić". Trzy to ilość, którą umysł umie porównać; pięć już nie.
+  </div>
+
+  <div class="tech-card">
+    <span class="tech-h">B. Satisficing — „wystarczająco dobre"</span>
+    Definiuj <em>z góry</em> kryteria, które dla Ciebie znaczą „wystarczająco dobre". Pierwsza opcja, która spełnia kryteria — wybrana. Bez czytania, czy gdzieś jest lepsza. To technika Schwartza dla maksymalizatorów.
+  </div>
+
+  <div class="tech-card">
+    <span class="tech-h">C. Deadline na decyzję</span>
+    Ustaw konkretną datę i godzinę: „decyzję podejmuję we wtorek o 18:00". Jeśli do tego momentu nie wybierzesz — losujesz. Tak. Naprawdę. Brzmi nieracjonalnie, ale skraca paraliż drastycznie. Wybór losowy zwykle jest <em>nie gorszy</em> niż wybór po 3 miesiącach analizy.
+  </div>
+
+  <div class="tech-card">
+    <span class="tech-h">D. Eksperyment „co najgorszego się stanie?"</span>
+    Dla każdej opcji wypisz najgorszy realistyczny scenariusz. Zwykle okazuje się, że nawet najgorszy scenariusz jest <em>do uniesienia</em>. To rozbraja katastrofizujące prognozy, które stoją za paraliżem.
+  </div>
+
+  <textarea id="moja_technika" class="thought-input" placeholder="Wybieram technikę: ... Zastosowanie do mojej decyzji: ..."></textarea>
+
+  <div class="examples-h">Pierwsza technika do testu w 24h</div>
+  <div class="example-chips">
+    <button id="t1" class="example-chip">A — ogranicz do 3</button>
+    <button id="t2" class="example-chip">B — satisficing</button>
+    <button id="t3" class="example-chip">C — deadline + loter.</button>
+    <button id="t4" class="example-chip">D — najgorszy scenar.</button>
+    <button id="t5" class="example-chip">A + B razem</button>
+  </div>
+
+  <textarea id="kryteria" class="thought-input" placeholder="(Jeśli technika B) Moje kryteria „wystarczająco dobre": ..."></textarea>
+
+  <div class="term-note"><strong>Reguła</strong>: meta-analiza Schwartza i Warda (2004): satysfakcjujący są o 30-40% bardziej zadowoleni z podjętych decyzji niż maksymalizatorzy — pomimo obiektywnie podobnych wyborów. To nie jest „obniżanie standardów" — to obrona przed pułapką nieskończonego porównywania.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Decyzja w 48h</div>
+  <h1 class="card-prompt">Konkretny <em>termin</em> i <em>plan B</em></h1>
+  <p class="card-detail">Najtrudniejszy krok przeciw paraliżowi: <strong>nazwij datę</strong>, do której podejmiesz decyzję. Bez tej daty paraliż wygrywa zawsze. 48 godzin to typowy próg — wystarczająco długo, by zebrać myśli, za krótko, by wpaść w nadanalitykę.</p>
+
+  <textarea id="data_decyzji" class="thought-input" placeholder="Decyzję podejmę: data + godzina (max 48h od teraz): ..."></textarea>
+
+  <textarea id="kryterium_decyzji" class="thought-input" placeholder="Kryterium, na podstawie którego wybiorę: ..."></textarea>
+
+  <textarea id="plan_b_d" class="thought-input" placeholder="Plan B (jeśli do deadline'u nadal nie wiem): np. „rzucam monetą" / „pierwsza opcja, której się chwycę po 5 min" / „pytam zaufaną osobę i akceptuję jej zdanie"."></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Pewność, że dotrzymam deadline'u</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="pewn_d" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Pewność</span><span id="pewn_dval">6</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Lęk przed deadline'em decyzji</div>
+    <div class="scale-bounds"><span>(0)</span><span>(10)</span></div>
+    <input type="range" class="scale-input" id="lek_d" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Lęk</span><span id="lek_dval">6</span></div>
+  </div>
+
+  <div class="final-msg">Najgorsza decyzja jest zwykle lepsza niż brak decyzji. Brak decyzji to <strong>aktywne odbieranie sobie</strong> czasu, energii i przestrzeni mentalnej. Każdy tydzień rozważania kosztuje więcej, niż mogłaby kosztować nieidealna opcja. „Wybrałem/am źle" jest okazją do nauki; „nie wybrałem/am" jest tylko kosztem.</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: po podjęciu decyzji zauważ, jak zmienia się ilość „mentalnego ciężaru". Nawet trudna decyzja zwykle <em>uwalnia</em> energię. Maksymalizatorzy często doświadczają tego po raz pierwszy — i wracają do techniki przy następnych decyzjach.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Paraliż decyzyjny = lęk przed żalem mnożony przez liczbę opcji. Cztery techniki: <em>ogranicz do 3, satisficing, deadline na decyzję, najgorszy realistyczny scenariusz</em>. Maksymalizatorzy są mniej zadowoleni z lepszych wyborów niż satysfakcjujący z „wystarczająco dobrych".</div>
+  </div>
+
+  <div class="src">Schwartz (2004). <em>The Paradox of Choice: Why More Is Less</em>. Ecco. · Iyengar i Lepper (2000). When choice is demotivating: Can one desire too much of a good thing? <em>Journal of Personality and Social Psychology</em>, 79(6). · Schwartz, Ward, Monterosso, Lyubomirsky, White i Lehman (2002). Maximizing versus satisficing: Happiness is a matter of choice. <em>Journal of Personality and Social Psychology</em>, 83(5). · Ferrari (1991). Compulsive procrastination: Some self-reported characteristics. <em>Psychological Reports</em>, 68. · Botti i Iyengar (2006). The dark side of choice. <em>Journal of Public Policy & Marketing</em>, 25.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function maxCalc() {
+  var ids = ['m1','m2','m3','m4','m5','m6'];
+  var sum = 0;
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) sum += parseFloat(el.value) || 0;
+  });
+  var box = document.getElementById('maxSum');
+  if (box) box.textContent = sum;
+  var comm = document.getElementById('maxComm');
+  if (comm) {
+    var msg;
+    if (sum >= 32) msg = 'Wynik silnie maksymalizatorski. To jest paliwo paraliżu — szukasz najlepszego, nie wystarczająco dobrego. Cztery techniki w kroku 4 są dla Ciebie.';
+    else if (sum >= 22) msg = 'Wynik na pograniczu. W niektórych obszarach maksymalizujesz, w innych satysfakcjujesz. Zauważ, w których obszarach paraliż występuje najczęściej.';
+    else msg = 'Wynik raczej satysfakcjonujący. Paraliż prawdopodobnie wynika z innych przyczyn (lęk, perfekcjonizm) — zobacz inne narzędzia.';
+    comm.textContent = msg;
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_proc_paraliz — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_proc_paraliz";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* v589 fix (procrast only): TOGGLE klasy .picked dla klikalnych elementów. Paczka procrast nie miała
+       inline onclick ani funkcji pickX(), więc kliknięcia kafelków nie skutkowały zaznaczeniem.
+       closest() pokrywa też kliki w span/em wewnątrz buttonu. */
+    var pickable = e.target.closest('.example-chip, .rel-btn');
+    if (pickable) pickable.classList.toggle('picked');
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u). */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+maxCalc();
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · TIPP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — emergency/cold blue === */
+.frame-card { 
+  background: linear-gradient(180deg, #1a3a55 0%, #0f1e30 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ KRYZYS SOMATYCZNY"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "❄"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 60px; opacity: 0.07; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.tipp-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.tipp-letter {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.tipp-l-row { display: flex; align-items: baseline; gap: 8px; }
+.tipp-l { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--warm); line-height: 1; }
+.tipp-name { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--bg); }
+.tipp-desc { font-size: 11px; color: rgba(244,241,234,0.7); line-height: 1.35; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === SUDS SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === PROTOCOL CARDS === */
+.proto-list { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 12px; }
+.proto-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  position: relative;
+}
+.proto-card.t { border-left: 4px solid #5a8aa8; }
+.proto-card.i { border-left: 4px solid var(--warm); }
+.proto-card.p1 { border-left: 4px solid var(--sage); }
+.proto-card.p2 { border-left: 4px solid var(--sage-deep); }
+.proto-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.proto-l { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; line-height: 1; }
+.proto-card.t .proto-l { color: #5a8aa8; }
+.proto-card.i .proto-l { color: var(--warm); }
+.proto-card.p1 .proto-l { color: var(--sage); }
+.proto-card.p2 .proto-l { color: var(--sage-deep); }
+.proto-name { font-size: 12.5px; font-weight: 700; flex: 1; }
+.proto-time { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.proto-howto { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 6px; }
+.proto-howto strong { color: var(--ink); font-weight: 700; }
+.proto-mech {
+  font-size: 11px; color: var(--ink-mute);
+  font-style: italic;
+  padding: 6px 10px;
+  background: rgba(122,146,112,0.08);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+.proto-mech::before { content: "🧠 "; }
+.proto-input {
+  width: 100%; padding: 7px 10px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 12.5px; color: var(--ink);
+}
+.proto-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === FIELD === */
+.field-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.field-card.warm { border-left-color: var(--warm); }
+.field-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.field-card.warm .field-h { color: var(--warm); }
+.field-q { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; margin-bottom: 6px; }
+
+/* === KIT (zaopatrzenie) === */
+.kit-list { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.kit-row {
+  display: grid; grid-template-columns: 26px 1fr;
+  gap: 10px; align-items: center;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.kit-row:hover { background: var(--sage-soft); }
+.kit-row.active { background: rgba(122,146,112,0.18); border-color: var(--sage-deep); border-left: 3px solid var(--sage-deep); padding-left: 9px; }
+.kit-icon { font-size: 16px; text-align: center; }
+.kit-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
+.kit-row.active .kit-text { color: var(--ink); }
+.kit-text strong { font-style: normal; font-weight: 700; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>TIPP</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: TIPP FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Reset <em>fizjologii</em></h1>
+    <p class="card-detail"><strong>TIPP</strong> (Linehan 1993, 2014) — sygnaturowa technika kryzysowa modułu <em>tolerancji dystresu</em> w nurcie <strong>DBT</strong> (terapia dialektyczno-behawioralna). Gdy emocje są na <strong>8-10/10</strong> (<strong>SUDS</strong> — subiektywna skala dystresu), techniki poznawcze nie działają — kora przedczołowa ofline. Najpierw <em>fizjologia</em>, potem <em>myślenie</em>. TIPP działa w 30-60 sekund.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">4 narzędzia somatyczne</div>
+      
+      <div class="tipp-grid">
+        <div class="tipp-letter">
+          <div class="tipp-l-row">
+            <span class="tipp-l">T</span>
+            <span class="tipp-name">Temperatura</span>
+          </div>
+          <span class="tipp-desc">zimna woda na twarz → odruch nurkowy</span>
+        </div>
+        <div class="tipp-letter">
+          <div class="tipp-l-row">
+            <span class="tipp-l">I</span>
+            <span class="tipp-name">Intensywny ruch</span>
+          </div>
+          <span class="tipp-desc">5-10 min wysiłku → spalenie adrenaliny</span>
+        </div>
+        <div class="tipp-letter">
+          <div class="tipp-l-row">
+            <span class="tipp-l">P</span>
+            <span class="tipp-name">Powolny oddech</span>
+          </div>
+          <span class="tipp-desc">wydech dłuższy niż wdech → nerw błędny</span>
+        </div>
+        <div class="tipp-letter">
+          <div class="tipp-l-row">
+            <span class="tipp-l">P</span>
+            <span class="tipp-name">Progresywna relaksacja</span>
+          </div>
+          <span class="tipp-desc">napinanie i rozluźnianie → reset napięcia</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„W kryzysie emocjonalnym ciało jest <em>łatwiejsze do zmiany</em> niż umysł. Zacznij od ciała — umysł podąży."
+      <span class="frame-quote-attr">— Marsha Linehan (2014)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: zimna woda na okolice oczu/czoła aktywuje <em>odruch nurkowy ssaków</em> (Foster, Sheel 2005) — bradykardia, skurcz naczyń obwodowych, redystrybucja krwi. <strong>Tętno spada w 15-30 sekund</strong>. To nie placebo — to fizjologia. Klient z atakiem paniki ma SUDS 9/10 → po 30s w zimnej wodzie SUDS 5/10. Tu zaczyna działać reszta DBT.</div>
+    
+    <div class="src">Linehan (1993, 2014, DBT Skills Manual) · Foster, Sheel (2005, diving response)</div>
+  </section>
+
+  <!-- 2: WHEN + KIT -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Kiedy używać + zaopatrzenie</div>
+    <h1 class="card-prompt">Próg <em>kryzysu</em></h1>
+    <p class="card-detail">TIPP jest narzędziem <em>ostatniej linii</em> — używamy go gdy SUDS ≥ 7/10. Przy niższym poziomie wystarczają <em>delikatniejsze techniki</em> (oddech, uważność). TIPP jest <strong>na ciężki ogień</strong>.</p>
+    
+    <div class="scale-card">
+      <div class="scale-h">SUDS — moja typowa skala kryzysu</div>
+      <div class="scale-label"><span>0 — spokój</span><span>10 — paroksyzm</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="suds" oninput="updateSuds()">
+      <div class="scale-readout"><span id="sudsVal">7</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="sudsVerdict">
+      SUDS <span class="num">7/10</span> — <strong>kryzys umiarkowany</strong>. TIPP zadziała, ale możliwe że wystarczy 1-2 narzędzia (np. T + P), bez pełnego protokołu.
+    </div>
+    
+    <div class="examples-h">Konkretne sytuacje, w których chcę użyć TIPP</div>
+    <textarea class="thought-input" id="situations" placeholder='np. „atak paniki w nocy", „silna złość po kłótni z partnerem", „chęć samouszkodzenia po wspomnieniu z dzieciństwa", „wyrwa pamięciowa po triggerze PTSD"...' rows="3"></textarea>
+    
+    <div class="day-h">Moje zaopatrzenie kryzysowe</div>
+    
+    <div class="kit-list">
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">❄</span>
+        <span class="kit-text"><strong>Kostki lodu</strong> w zamrażarce — natychmiast dostępne na T</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🥶</span>
+        <span class="kit-text"><strong>Cold pack</strong> w zamrażarce — owinięty w ścierkę, na kark/oczy</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🍦</span>
+        <span class="kit-text"><strong>Miska + zimna woda</strong> w łazience — zanurzanie twarzy</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🚿</span>
+        <span class="kit-text"><strong>Zimny prysznic</strong> — opcja, gdy w domu, pełen efekt diving response</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🧊</span>
+        <span class="kit-text"><strong>Butelka zimnej wody</strong> w lodówce w pracy — na nadgarstki, kark</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🪜</span>
+        <span class="kit-text"><strong>Schody w bloku</strong> — wszedłbym/abym 5 pięter szybko (na I)</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">⏱</span>
+        <span class="kit-text"><strong>Stoper w telefonie</strong> — odlicza 30s zimna / 1 min PMR</span>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: większość klientów <em>nie ma zaopatrzenia</em> w momencie pierwszego kryzysu. TIPP wymaga wcześniejszego przygotowania — kostki w zamrażarce, butelka w torbie. <strong>Decyzja o TIPP w spokojnym momencie</strong> jest warunkiem skuteczności w kryzysie.</div>
+  </section>
+
+  <!-- 3: PROTOCOL — 4 PILLARS -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Protokół wykonawczy</div>
+    <h1 class="card-prompt">Krok <em>po kroku</em></h1>
+    <p class="card-detail">Pełny protokół TIPP. Zwykle <strong>nie używasz wszystkich 4</strong> — wybierasz 1-2 najadekwatniejsze do sytuacji. Plan: zaplanować dziś sekwencję dla swojej najtrudniejszej sytuacji.</p>
+    
+    <div class="proto-list">
+      <div class="proto-card t">
+        <div class="proto-h-row">
+          <span class="proto-l">T</span>
+          <span class="proto-name">Temperatura — najszybszy reset</span>
+          <span class="proto-time">15-30s</span>
+        </div>
+        <div class="proto-howto"><strong>Kontakt z zimnem na twarzy</strong> — szczególnie okolice oczu i czoła. Miska z zimną wodą + zanurzenie. Albo <em>cold pack na powieki + czoło 30 sekund</em>.</div>
+        <div class="proto-mech">Aktywacja nerwu błędnego → bradykardia → spadek SUDS 9→5 w 30s</div>
+        <input type="text" class="proto-input" id="protoT" placeholder='Mój plan T — "co konkretnie, gdzie, kiedy"'>
+      </div>
+      
+      <div class="proto-card i">
+        <div class="proto-h-row">
+          <span class="proto-l">I</span>
+          <span class="proto-name">Intensywna aktywność</span>
+          <span class="proto-time">5-10 min</span>
+        </div>
+        <div class="proto-howto"><strong>Wysiłek, który podnosi tętno</strong> do max. 30 przysiadów + 30 pajacyków, sprint 100m, wbieganie po schodach. Cel: <em>wycieńczyć ciało fizycznie</em>.</div>
+        <div class="proto-mech">Spalenie adrenaliny i kortyzolu → reset układu autonomicznego</div>
+        <input type="text" class="proto-input" id="protoI" placeholder='Mój plan I — "co konkretnie, gdzie"'>
+      </div>
+      
+      <div class="proto-card p1">
+        <div class="proto-h-row">
+          <span class="proto-l">P</span>
+          <span class="proto-name">Powolny oddech</span>
+          <span class="proto-time">2-3 min</span>
+        </div>
+        <div class="proto-howto"><strong>Wydech DŁUŻSZY niż wdech</strong> — np. 4 sekundy wdech, 7 sekund wydech. 5-8 cykli. Skupiam uwagę na <em>wydechach</em> — to one uspokajają.</div>
+        <div class="proto-mech">Przewaga przywspółczulna → spadek tętna i ciśnienia → spokój</div>
+        <input type="text" class="proto-input" id="protoP1" placeholder='Mój wzorzec — "X sek wdech / Y sek wydech"'>
+      </div>
+      
+      <div class="proto-card p2">
+        <div class="proto-h-row">
+          <span class="proto-l">P</span>
+          <span class="proto-name">Progresywna relaksacja</span>
+          <span class="proto-time">5 min</span>
+        </div>
+        <div class="proto-howto"><strong>Napinanie i rozluźnianie grup mięśni</strong>: dłonie (zaciśnij pięści) 5s napięcia → rozluźnienie. Potem ramiona, twarz, brzuch. Skupienie na <em>kontraście</em>.</div>
+        <div class="proto-mech">Świadomość napięcia → świadome rozluźnienie → spadek tonusu autonomicznego</div>
+        <input type="text" class="proto-input" id="protoP2" placeholder='Moja kolejność grup mięśniowych'>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w realnym kryzysie zwykle wystarczają <strong>2 narzędzia w sekwencji</strong>. Najczęściej: <em>T → P</em> (zimna woda → powolny oddech). Albo: <em>I → P</em> (przysiady → relaksacja). Pełen protokół 4-elementowy — gdy SUDS ≥ 9/10.</div>
+  </section>
+
+  <!-- 4: WALK-THROUGH + OBSERVATION -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Praktyka w spokoju</div>
+    <h1 class="card-prompt">Wykonaj <em>teraz</em></h1>
+    <p class="card-detail">Wykonaj <strong>jedno narzędzie TIPP</strong> teraz, w spokoju. Cel: <em>nauczyć się wzorca w spokojnym momencie</em>, żeby w kryzysie ciało wiedziało, co robić. Bez treningu w spokoju, w kryzysie nie pomyślisz.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój trening dziś</div>
+      
+      <div class="commit-prompt-label">Wybrane narzędzie</div>
+      <textarea class="thought-input" id="chosen" placeholder='np. „T — kostka lodu na oczach przez 30 sekund" / „P — oddech 4-7 przez 3 minuty"...' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Mierzony SUDS przed wykonaniem (z poprzedniego kroku)</div>
+      <textarea class="thought-input" id="sudsBefore" placeholder='np. „obecnie 3/10 — bez kryzysu, ale ćwiczę"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co zauważam fizjologicznie podczas wykonania</div>
+      <textarea class="thought-input" id="duringObs" placeholder='np. „pierwsze 5s zimno = nieprzyjemne. Potem tętno faktycznie zwalnia. Po 20s ciało uspokojone"' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">SUDS po wykonaniu</div>
+      <textarea class="thought-input" id="sudsAfter" placeholder='np. „2/10 — bardziej obecny w ciele niż przed treningiem"' rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Klucz uczenia</strong>: zauważ, jak <em>twoje ciało reaguje</em> — nie cudze. Jedne osoby najszybciej reagują na T, inne na P. Kobiety w okresie często wolą P niż T (zimno bywa za mocne). Dzieci/nastolatki — I (ruch). <strong>Twój profil TIPP</strong> = wiesz, które narzędzie działa najszybciej u ciebie.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan kryzysowy</div>
+    <h1 class="card-prompt">Karta <em>na lodówce</em></h1>
+    <p class="card-detail">Stwórz <strong>krótki plan kryzysowy TIPP</strong> — sekwencja dla najtrudniejszej sytuacji. Wydrukowany, na lodówce / w portfelu / w telefonie. <em>Kiedy przyjdzie kryzys, nie pomyślisz — przeczytasz</em>.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój plan kryzysowy</div>
+      
+      <div class="commit-prompt-label">Najtrudniejsza sytuacja, na którą się przygotowuję</div>
+      <textarea class="thought-input" id="targetSit" placeholder='np. „atak paniki o 23 w sypialni" / „chęć samookaleczenia po krytycznej rozmowie z mamą"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Sekwencja TIPP (1-3 narzędzia w kolejności)</div>
+      <textarea class="thought-input" id="sequence" placeholder='np. „1) cold pack z zamrażarki na powieki + czoło 30s. 2) oddech 4-7 przez 3 min. 3) jeśli nadal SUDS 7+, miska zimnej wody na twarz"' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Mój kontakt awaryjny (osoba lub linia)</div>
+      <textarea class="thought-input" id="contact" placeholder='np. „siostra: 600 XXX XXX. Linia 116 123 (Telefon Zaufania) — gdy SUDS nadal 8+ po pełnym TIPP"' rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Codzienna higiena</div>
+    <div class="term-note">
+      <strong>Co tydzień</strong> — sprawdzam zaopatrzenie (kostki w zamrażarce, butelka w torbie)<br>
+      <strong>Co miesiąc</strong> — trening 1-narzędziowy w spokoju, żeby ciało pamiętało<br>
+      <strong>Po kryzysie</strong> — bez krytyki: które narzędzie zadziałało, które nie?<br>
+      <strong>Kwartalnie</strong> — czy mój plan kryzysowy jest aktualny? czy zmieniły się triggery?
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Linehan</div>
+      <div class="repeat-body">TIPP <strong>nie rozwiązuje problemu</strong> — pomaga przetrwać <em>najtrudniejsze 5 minut</em>. Po TIPP wraca dostęp do reszty umiejętności DBT (uważność, wartości, akceptacja). Bez TIPP — kryzys może wymusić <em>destrukcyjne zachowania</em> (samouszkodzenie, nadużywanie). <strong>TIPP = bramka do reszty terapii</strong>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateSuds();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.kit-row.active').forEach(b => b.classList.remove('active'));
+    ['situations','protoT','protoI','protoP1','protoP2','chosen','sudsBefore','duringObs','sudsAfter','targetSit','sequence','contact'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('suds').value = 7;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleKit(el) { el.classList.toggle('active'); }
+
+function updateSuds() {
+  const v = parseInt(document.getElementById('suds').value);
+  document.getElementById('sudsVal').textContent = v;
+  
+  const verdict = document.getElementById('sudsVerdict');
+  if (v >= 9) {
+    verdict.innerHTML = `SUDS <span class="num">${v}/10</span> — <strong>kryzys ekstremalny</strong>. Pełen protokół TIPP (T+I+P+P). Jeśli nadal &gt; 7 po 10 minutach — kontakt awaryjny.`;
+  } else if (v >= 7) {
+    verdict.innerHTML = `SUDS <span class="num">${v}/10</span> — <strong>kryzys ostry</strong>. TIPP wskazany. Sekwencja: T→P. Cel — spadek do 5 w ciągu 3 min.`;
+  } else if (v >= 5) {
+    verdict.innerHTML = `SUDS <span class="num">${v}/10</span> — <strong>kryzys umiarkowany</strong>. TIPP zadziała, ale możliwe że wystarczy 1-2 narzędzia (np. T + P), bez pełnego protokołu.`;
+  } else if (v >= 3) {
+    verdict.innerHTML = `SUDS <span class="num">${v}/10</span> — <strong>średnie napięcie</strong>. Delikatniejsze techniki (oddech, uważność, ACCEPTS) zwykle wystarczą. TIPP — overkill.`;
+  } else {
+    verdict.innerHTML = `SUDS <span class="num">${v}/10</span> — <strong>spokój</strong>. To dobry moment na <em>trening TIPP w spokoju</em> — żeby ciało pamiętało wzorzec na kryzys.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_dbt_tipp";
+  var clickSel0 = '.kit-row';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.kit-row')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

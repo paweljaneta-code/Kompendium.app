@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · RAIN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME === */
+.frame-card { 
+  background: linear-gradient(135deg, #4a3a4d 0%, #2a2230 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ RADYKALNA OBECNOŚĆ"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "💧"; position: absolute; bottom: 10px; right: 15px;
+  font-size: 70px; opacity: 0.07; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; position: relative; z-index: 1; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === STEP CARDS (R A I N) === */
+.rain-card {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-left: 5px solid var(--sage);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.rain-card.warm-border { border-left-color: var(--warm); }
+.rain-h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.rain-letter { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; color: var(--sage-deep); line-height: 1; }
+.rain-card.warm-border .rain-letter { color: var(--warm); }
+.rain-name { font-size: 13px; font-weight: 700; flex: 1; }
+.rain-time { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.rain-instruction { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 8px; }
+.rain-instruction strong { color: var(--ink); font-weight: 700; }
+
+.rain-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 8px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.rain-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+.rain-input::placeholder { color: var(--ink-mute); }
+
+.rain-input-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 6px; }
+
+/* === EMOTION CHIPS === */
+.emo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.emo-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.emo-chip:hover { background: var(--sage-soft); border-color: var(--sage); color: var(--ink); }
+.emo-chip.active { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+/* === ALLOW STATEMENT === */
+.allow-statement {
+  background: rgba(122,146,112,0.12);
+  border: 1.5px solid var(--sage-deep);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 8px 0 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  text-align: center;
+}
+.allow-statement strong { font-style: normal; font-weight: 700; }
+
+/* === NURTURE METHODS === */
+.nurture-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.nurture-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nurture-block:hover { background: var(--warm-soft); }
+.nurture-block.active { background: rgba(201,122,82,0.1); border-color: var(--warm); border-left: 4px solid var(--warm); padding-left: 11px; }
+.nurture-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.nurture-icon { font-size: 16px; }
+.nurture-name { font-size: 13px; font-weight: 700; flex: 1; }
+.nurture-desc { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; }
+
+/* === COMPARISON RAIN vs ACE === */
+.compare-table {
+  display: flex; flex-direction: column; gap: 6px;
+  margin: 4px 0 14px;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr;
+  gap: 10px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.compare-row.header {
+  background: var(--ink); color: var(--bg);
+  font-weight: 700;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.compare-row .lbl { font-weight: 700; color: var(--ink); }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--sage-soft); border-color: var(--sage); color: var(--ink); }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>RAIN</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: RAIN vs ACE — SELF-COMPASSION -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Schronienie <em>w obecności</em></h1>
+    <p class="card-detail"><strong>RAIN</strong> (Brach 2013, True Refuge; 2020, Radical Compassion) — 4-krokowa praktyka radykalnej obecności z trudną emocją. <strong>R</strong> — Recognize (rozpoznaj), <strong>A</strong> — Allow (pozwól), <strong>I</strong> — Investigate (zbadaj z łagodnością), <strong>N</strong> — Nurture (pielęgnuj siebie). Integruje uważność z samowspółczuciem (Neff, Gilbert). Standard nowoczesnej psychoterapii opartej na uważności, używana w MBCT, CFT, w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania).</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">RAIN kontra ACE — różnica klucza</div>
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">ACE (Harris)</div>
+          <div class="frame-text"><strong>Neutralny emocjonalnie</strong>. Cel: zakotwiczenie w teraźniejszości. Funkcjonalny w kryzysie, panice. 3-5 min.</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">RAIN (Brach)</div>
+          <div class="frame-text"><strong>Aktywnie ciepły</strong>, współczujący. Dodaje warstwę <em>samowspółczucia</em>. Głębszy, refleksyjny. 15-20 min.</div>
+        </div>
+      </div>
+      <div class="frame-quote">„Self-compassion to nie słabość ani pobłażanie. To siła — umiejętność towarzyszenia sobie w trudzie."
+      <span class="frame-quote-attr">— Tara Brach (2013)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Neurobiologia</strong>: Gilbert (2010, CFT) — 3 systemy regulacji emocji: zagrożenie (walka/ucieczka), popęd (osiągnięcia), bezpieczeństwo (ukojenie). RAIN aktywuje <em>system bezpieczeństwa</em>. Osoba z wysokim samokrytycyzmem żyje w trybie zagrożenia — system nerwowy w stałej mobilizacji. Ciepło i czułość = aktywacja nerwu błędnego, układu przywspółczulnego. Gilbert i wsp. (2013): 6 tygodni praktyki CFT redukuje kortyzol o 30% u pacjentów z depresją.</div>
+    
+    <div class="src">Brach (2013, True Refuge; 2020, Radical Compassion) · Neff (2003, 2011) · Gilbert (2010, CFT)</div>
+  </section>
+
+  <!-- 2: R + A -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">R + A</div>
+    <h1 class="card-prompt">Rozpoznaj <em>i pozwól</em></h1>
+    <p class="card-detail">Pierwsze dwa kroki. <strong>R</strong> — nazwij emocję krótko, po imieniu. <strong>A</strong> — przestań walczyć, pozwól żeby tu była. Nie musi się podobać. Pozwolenie ≠ aprobata.</p>
+    
+    <div class="rain-card">
+      <div class="rain-h">
+        <span class="rain-letter">R</span>
+        <span class="rain-name">Recognize — rozpoznaj co jest</span>
+        <span class="rain-time">2-3 min</span>
+      </div>
+      <div class="rain-instruction">Zadaj sobie pytanie: <strong>„co się we mnie dzieje teraz?"</strong>. Nazwij krótko, po imieniu — bez analizowania.</div>
+      
+      <div class="rain-input-label">Wybierz emocję — albo wpisz własną</div>
+      <div class="emo-chips">
+        <div class="emo-chip" onclick="selectEmo(this)">Lęk</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Smutek</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Złość</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Wstyd</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Wina</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Samotność</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Bezradność</div>
+        <div class="emo-chip" onclick="selectEmo(this)">Pustka</div>
+      </div>
+      <input type="text" class="rain-input" id="emotion" placeholder="albo wpisz własną — krótko, jednym słowem...">
+    </div>
+    
+    <div class="rain-card">
+      <div class="rain-h">
+        <span class="rain-letter">A</span>
+        <span class="rain-name">Allow — pozwól być</span>
+        <span class="rain-time">2-3 min</span>
+      </div>
+      <div class="rain-instruction">Powiedz w głowie zdanie pozwolenia. Nie musi się podobać — przestajesz <strong>walczyć</strong>.</div>
+      
+      <div class="allow-statement">
+        „<strong>To jest. Mogę pozwolić, żeby tu było.</strong>"
+      </div>
+      
+      <div class="rain-input-label">Co najtrudniej pozwolić?</div>
+      <textarea class="rain-input" id="allowResistance" placeholder="np. „że się wstydzę za reakcję wczoraj" / „że jestem zazdrosna o przyjaciółkę"..." rows="2"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Pozwolenie ≠ aprobata</strong>. „Pozwalam, żeby tu była" nie znaczy „lubię to" ani „zgadzam się z tym, co mówi". Znaczy: „nie marnuję energii na walkę z czymś, co już jest". Walka z emocją <em>wzmacnia ją</em> (paradoks tłumienia, Wegner 1987).</div>
+  </section>
+
+  <!-- 3: I - INVESTIGATE -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">I — Investigate</div>
+    <h1 class="card-prompt">Zbadaj <em>z łagodnością</em></h1>
+    <p class="card-detail">Trzeci krok — <strong>nie analizuj, badaj</strong>. Cztery pytania prowadzą do głębszego kontaktu z emocją: gdzie w ciele, jak się czuje, co MI MÓWI, czego POTRZEBUJE.</p>
+    
+    <div class="rain-card">
+      <div class="rain-h">
+        <span class="rain-letter">I</span>
+        <span class="rain-name">Investigate — zbadaj z łagodnością</span>
+        <span class="rain-time">3-5 min</span>
+      </div>
+      <div class="rain-instruction">Pytania <strong>otwarte</strong>, nie diagnostyczne. „Co czuję" zamiast „dlaczego się tak czuję". Łagodność oznacza: zatrzymujesz się przy odpowiedziach, nie wyciągasz wniosków.</div>
+      
+      <div class="rain-input-label">1. GDZIE w ciele to czujesz?</div>
+      <input type="text" class="rain-input" id="iWhere" placeholder="np. ścisk w klatce piersiowej / pustka w żołądku / gula w gardle...">
+      
+      <div class="rain-input-label">2. JAK to się czuje? (jakość)</div>
+      <input type="text" class="rain-input" id="iHow" placeholder="np. ścisk, gorąco, pustka, ciężar, drżenie, kłucie...">
+      
+      <div class="rain-input-label">3. Co ta część MI MÓWI? (jaką ma wiadomość — czasem to „młoda część")</div>
+      <textarea class="rain-input" id="iSays" placeholder="np. „nikt mnie nie chce" / „jestem za mała" / „nie poradzę sobie sama"..." rows="2"></textarea>
+      
+      <div class="rain-input-label">4. Czego ta część POTRZEBUJE?</div>
+      <textarea class="rain-input" id="iNeeds" placeholder="np. spokoju / obecności / uznania / potwierdzenia / czułości..." rows="2"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Klucz Brach</strong>: pytanie „co MI MÓWI" otwiera kontakt z <em>młodszą częścią</em> ciebie. Często emocje dorosłych są echem doświadczeń z dzieciństwa. Pozwól tej części się odezwać — bez oceniania, bez próby przekonywania, że „już jest dobrze".</div>
+  </section>
+
+  <!-- 4: N - NURTURE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">N — Nurture</div>
+    <h1 class="card-prompt">Pielęgnuj <em>siebie</em></h1>
+    <p class="card-detail"><strong>Najtrudniejszy krok</strong> — szczególnie dla osób z silnym samokrytycyzmem i deprywacją emocjonalną. Nie pytasz <em>jak się dla siebie być dobrym</em>, tylko <em>kim mogę pożyczyć ciepło</em>. Brach: weź ciepło PRZEZ inną postać.</p>
+    
+    <div class="day-h">Wybierz metodę dostarczania ciepła</div>
+    
+    <div class="nurture-list">
+      <div class="nurture-block" onclick="selectNurture(this, 'hand')">
+        <div class="nurture-h">
+          <span class="nurture-icon">🤲</span>
+          <span class="nurture-name">Ręka na sercu</span>
+        </div>
+        <div class="nurture-desc">Połóż dłoń na klatce piersiowej. Aktywuje nerw błędny przez dotyk własny. Powiedz w głowie: <em>„słyszę cię. Jesteś ze mną. Jestem tu."</em></div>
+      </div>
+      
+      <div class="nurture-block" onclick="selectNurture(this, 'loving')">
+        <div class="nurture-h">
+          <span class="nurture-icon">💝</span>
+          <span class="nurture-name">Oczyma kochającej osoby</span>
+        </div>
+        <div class="nurture-desc">Wyobraź <em>osobę / zwierzę / postać</em>, która kocha cię bezwarunkowo. Co by ci powiedzieli widząc cię w tej chwili? Powiedz to sobie.</div>
+      </div>
+      
+      <div class="nurture-block" onclick="selectNurture(this, 'child')">
+        <div class="nurture-h">
+          <span class="nurture-icon">🧒</span>
+          <span class="nurture-name">List do dziecka w sobie</span>
+        </div>
+        <div class="nurture-desc">Wyobraź sobie siebie jako 5-7-letnie dziecko, przeżywające to, co teraz. Co byś mu/jej powiedział/a? Napisz to, kierując do siebie obecnej/obecnego.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Co powiedział/abym sobie / ta osoba / temu dziecku?</div>
+    <textarea class="thought-input" id="nWords" placeholder="np. „Wiem, że to jest trudne. Nie jesteś sam/a. Jestem tu z tobą. To minie." / „Kocham cię, nawet teraz, gdy się boisz."..." rows="3"></textarea>
+    
+    <div class="term-note"><strong>Najtrudniejszy krok — dlaczego</strong>: dla osób z deprywacją, traumą, samokrytyką pytanie „jak być dla siebie dobrym?" jest <em>obco brzmiące</em>. Odpowiedź Brach: <strong>weź ciepło PRZEZ inną postać</strong> niż bezpośrednio. Łatwiej ci być dobrym dla wyobrażonego dziecka niż dla siebie obecnego/ej.</div>
+  </section>
+
+  <!-- 5: PLAN + COMPARISON -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan praktyki</div>
+    <h1 class="card-prompt">Schronienie, <em>nie naprawa</em></h1>
+    <p class="card-detail">RAIN to <strong>schronienie</strong> — nie technika rozwiązywania problemów. Po RAIN emocja może wciąż być, ale <em>relacja z nią</em> się zmieniła. Nie jesteś już sam/a z tym, co czujesz — towarzyszysz sobie.</p>
+    
+    <div class="day-h">Kiedy stosować RAIN</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useTrigger(this)">Wstyd po trudnej sytuacji</div>
+      <div class="example-chip" onclick="useTrigger(this)">Silna samokrytyka</div>
+      <div class="example-chip" onclick="useTrigger(this)">Reakcje traumy</div>
+      <div class="example-chip" onclick="useTrigger(this)">Wieczorem, jako bilans dnia</div>
+      <div class="example-chip" onclick="useTrigger(this)">Po konflikcie z bliską osobą</div>
+      <div class="example-chip" onclick="useTrigger(this)">Codziennie 15 min wieczorem</div>
+    </div>
+    <textarea class="thought-input" id="when" placeholder="lub własne sytuacje..." rows="2"></textarea>
+    
+    <div class="day-h">RAIN kontra ACE — kiedy co</div>
+    <div class="compare-table">
+      <div class="compare-row header">
+        <span></span>
+        <span>RAIN</span>
+        <span>ACE</span>
+      </div>
+      <div class="compare-row">
+        <span class="lbl">Cel</span>
+        <span>Współczujące towarzyszenie</span>
+        <span>Zakotwiczenie w teraźniejszości</span>
+      </div>
+      <div class="compare-row">
+        <span class="lbl">Ton</span>
+        <span>Ciepły, refleksyjny</span>
+        <span>Neutralny, funkcjonalny</span>
+      </div>
+      <div class="compare-row">
+        <span class="lbl">Czas</span>
+        <span>15-20 min</span>
+        <span>3-5 min</span>
+      </div>
+      <div class="compare-row">
+        <span class="lbl">Najlepsze</span>
+        <span>Wstyd, samokrytyka, trauma</span>
+        <span>Panika, kryzys, dysocjacja</span>
+      </div>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Brach</div>
+      <div class="repeat-body"><strong>RAIN to refuge</strong> — schronienie. Po RAIN emocja często nadal jest. Ale ty <em>jesteś przy sobie</em>, w niej. Nie sama. To jest cel — nie eliminacja emocji, tylko <em>obecność z nią, w sposób który niesie</em>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+let selectedNurture = null;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1; selectedNurture = null;
+    document.querySelectorAll('.emo-chip.active, .nurture-block.active').forEach(b => b.classList.remove('active'));
+    ['emotion','allowResistance','iWhere','iHow','iSays','iNeeds','nWords','when'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function selectEmo(el) {
+  document.querySelectorAll('.emo-chip').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('emotion').value = el.textContent;
+}
+
+function selectNurture(el, key) {
+  document.querySelectorAll('.nurture-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedNurture = key;
+}
+
+function useTrigger(el) {
+  const t = document.getElementById('when');
+  if (t.value.trim()) t.value += ', ';
+  t.value += el.textContent;
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_rain";
+  var clickSel0 = '.emo-chip, .nurture-block';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.emo-chip, .nurture-block')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

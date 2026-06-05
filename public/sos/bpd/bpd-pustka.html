@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · chroniczna pustka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.diff-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.diff-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.diff-table { width: 100%; }
+.diff-rowh { font-size: 12px; color: var(--sage); border-bottom: 1px solid rgba(244,241,234,0.18); padding-bottom: 6px; margin-bottom: 6px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.diff-cell { font-size: 12.5px; line-height: 1.45; padding: 6px 0; color: rgba(244,241,234,0.92); }
+.diff-data { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(244,241,234,0.08); }
+
+.fill-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.18s; }
+.fill-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.fill-card.picked .fill-d { color: rgba(244,241,234,0.85) !important; }
+.fill-h { font-weight: 700; font-size: 13.5px; margin-bottom: 4px; }
+.fill-d { font-size: 12px; color: var(--ink-mute); line-height: 1.45; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>chroniczna pustka</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Pustka — gdy <em>w środku</em> nic nie jest <em>moje</em></h1>
+  <p class="card-detail">Chroniczna pustka to siódme kryterium DSM-5 osobowości z pogranicza i jedno z najbardziej specyficznych dla BPD doświadczeń: 70–80% pacjentów (Klonsky, 2008). Pacjenci opisują ją jako „wydrążenie w środku", „czarną dziurę", „bycie obok własnego życia". Różni się od smutku, znudzenia i depresji — wymaga innej interwencji.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa zjawiska</div>
+    <div class="element-row"><span class="element-icon">🧬</span><span class="element-text"><strong>Geneza</strong> — splot trzech źródeł: brak wewnętrznej „kołyski" (chronicznie niebezpieczna baza przywiązania), dyfuzja tożsamości („nie wiem, kim jestem, więc nie wiem, czego chcę"), aleksytymia (utrudniony dostęp do subtelnych emocji).</span></div>
+    <div class="element-row"><span class="element-icon">⚙️</span><span class="element-text"><strong>Mechanizm</strong> — przy braku wartości będących kotwicą, każdy moment „bez bodźca" obnaża pustkę. Mózg interpretuje brak intensywnej emocji jako brak <em>siebie</em>.</span></div>
+    <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Kluczowe rozróżnienie</strong> — pustka NIE jest „nudą" ani „depresją". Nuda mówi „nie ma co robić". Depresja mówi „nic nie ma sensu". Pustka mówi „mnie samego/samej nie ma w tym, co robię".</span></div>
+    <div class="element-row"><span class="element-icon">🧠</span><span class="element-text"><strong>Neurobiologia</strong> — Stanley i Siever (2010): hipoteza dysregulacji endogennego układu opioidowego — niedobór wewnętrznych „opiatów więzi" tłumaczy potrzebę intensywnych bodźców (substancje, przygodne relacje, samouszkodzenia).</span></div>
+  </div>
+
+  <div class="frame-quote">„Pustka w BPD to nie nieobecność czegoś — to stała obecność czegoś, czego brak."<span class="frame-quote-attr">— David Klonsky (2008, Journal of Personality Disorders)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: pustki nie wypełnia <em>więcej bodźców</em> (zakupy, scrolling, alkohol). Wypełnia ją <em>jakość zaangażowania</em> — jedna głęboka rozmowa, jedna godzina pasji, jedno działanie zgodne z wartością.</div>
+
+  <div class="src">Klonsky (2008) · Miller i wsp. (2020, Clinical Psychology Review) · Stanley i Siever (2010) · Linehan (1993, DBT) · Herpertz i wsp. (2022, meta-analiza neurobiologii)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Diagnoza — to nie depresja, nie nuda</div>
+  <h1 class="card-prompt">Trzy <em>różne</em> stany — jak je odróżnić?</h1>
+  <p class="card-detail">Pustka, smutek/depresja i nuda mają różne przyczyny i wymagają różnych interwencji. Pomieszanie ich oznacza, że stosujesz nieskuteczne narzędzie. Zauważ różnicę przez treść myśli i typową strategię.</p>
+
+  <div class="diff-card">
+    <div class="diff-h">Trzy różne stany</div>
+    <div class="diff-rowh"><span>Pustka</span><span>Depresja</span><span>Nuda</span></div>
+    <div class="diff-data">
+      <div class="diff-cell"><strong>Myśl:</strong> „Nic nie jest moje, jestem obok siebie."</div>
+      <div class="diff-cell"><strong>Myśl:</strong> „Nic nie ma sensu, nigdy się nie zmieni."</div>
+      <div class="diff-cell"><strong>Myśl:</strong> „Nie ma co robić, jest mało stymulujące."</div>
+    </div>
+    <div class="diff-data">
+      <div class="diff-cell"><strong>Czas:</strong> nasila się w samotności i spokoju.</div>
+      <div class="diff-cell"><strong>Czas:</strong> ciągła, niezależna od bodźców.</div>
+      <div class="diff-cell"><strong>Czas:</strong> w bezczynności, znika z bodźcem.</div>
+    </div>
+    <div class="diff-data">
+      <div class="diff-cell"><strong>Lek:</strong> wartość + zaangażowanie + bliskość.</div>
+      <div class="diff-cell"><strong>Lek:</strong> aktywizacja behawioralna, terapia, lek.</div>
+      <div class="diff-cell"><strong>Lek:</strong> nowy bodziec, nowy projekt.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myState" placeholder="Opisz konkretny moment, który wziąłeś/aś za pustkę. Co konkretnie wtedy myślałeś/aś? Co robiłeś/aś?"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła diagnostyczna</strong>: jeśli wątpisz, czy to pustka — sprawdź odpowiedź na intensywny bodziec. Pustka NIE znika od kawy ani od filmu. Nuda — znika natychmiast.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór — jakość, nie ilość</div>
+  <h1 class="card-prompt">Co dla Ciebie znaczy <em>jakość</em>, nie <em>ilość</em>?</h1>
+  <p class="card-detail">Pustka odpowiada tylko na zaangażowanie zgodne z wartością — nie na intensywność bodźca. Wybierz JEDEN obszar, w którym chcesz w tym tygodniu zwiększyć jakość kosztem ilości.</p>
+
+  <div class="fill-card" id="f1" onclick="pickFill('f1')">
+    <div class="fill-h">🗣️ Bliskość — jedna głęboka rozmowa, nie dziesięć powierzchownych</div>
+    <div class="fill-d">Wybierz jedną osobę. Powiedz coś prawdziwego — strach, wstyd, radość. Nie odsuwaj rozmowy chatami i memami.</div>
+  </div>
+  <div class="fill-card" id="f2" onclick="pickFill('f2')">
+    <div class="fill-h">🎨 Pasja — godzina zanurzenia, nie pięć godzin scrollingu</div>
+    <div class="fill-d">Coś, co robisz dla samego robienia — gra, rzemiosło, ruch, gotowanie. Telefon w drugim pokoju.</div>
+  </div>
+  <div class="fill-card" id="f3" onclick="pickFill('f3')">
+    <div class="fill-h">💪 Ciało — 30 minut wysiłku, który czujesz</div>
+    <div class="fill-d">Nie „chodzenie po centrum handlowym" ani „lekkie ćwiczenia w aplikacji". Coś, co zmienia oddech, daje obecność w ciele.</div>
+  </div>
+  <div class="fill-card" id="f4" onclick="pickFill('f4')">
+    <div class="fill-h">🤲 Pomoc — konkretny gest dla konkretnej osoby</div>
+    <div class="fill-d">Nie „wolontariat ogólnie", lecz: przyniesienie zakupów sąsiadce, list do przyjaciela w trudnym momencie, obecność przy kimś chorym.</div>
+  </div>
+  <div class="fill-card" id="f5" onclick="pickFill('f5')">
+    <div class="fill-h">📚 Nauka — jeden temat na tydzień, do końca</div>
+    <div class="fill-d">Jeden artykuł przeczytany do końca, jeden rozdział, jedna umiejętność opanowana. Nie dziesięć rozpoczętych kursów.</div>
+  </div>
+
+  <textarea class="thought-input" id="customFill" placeholder="Inny obszar jakości, który zamierzasz testować — opisz konkretnie..."></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowa reakcja na pustkę to „rób więcej przyjemnych rzeczy" — sprawdza się w depresji, nasila pustkę. Mózg w BPD potrzebuje JAKOŚCI: zanurzenia, znaczenia, kontaktu.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — protokół wypełniania</div>
+  <h1 class="card-prompt">Cztery kroki: <em>od pustki do połączenia</em></h1>
+  <p class="card-detail">Pustka odpuszcza w trakcie zanurzenia, nie po nim. Te cztery kroki to mapa, jak wejść w zanurzenie świadomie, zamiast czekać na „odpowiedni nastrój" (który w pustce nigdy nie przyjdzie).</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Protokół wypełniania</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>Nazwij stan</strong> — „mam pustkę" (nie „jestem smutny/a", nie „nudzi mi się"). Sama nazwa zmniejsza dezorientację.</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>Odetnij szybkie wypełniacze</strong> — telefon do drugiego pokoju, alkohol odstaw, jedzenie z ekranem zamknij. To jest test — pustki nie wypełniają.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>Wykonaj wybrane działanie 30 minut</strong> — bez czekania na motywację. Działanie wyprzedza emocję. Po 10 minutach umysł się włączy.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>Zatrzymaj się przed końcem</strong> — gdy zauważysz, że jesteś „w tym", zostań jeszcze 5 minut. Mózg zapisuje wtedy ten stan jako dostępny — ułatwia wejście następnym razem.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myDate" placeholder="Konkretny dzień i godzina, w których zamierzasz wykonać działanie. Im konkretniej, tym większa szansa..."></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: pustka w BPD to deficyt jakości połączenia (z sobą, z innymi, z czynnością). Linehan (1993) nazywa to <em>building a life worth living</em> — życie, w którym jest się obecnym, a nie obok siebie.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po sytuacji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>poczucie obecności</em> się zmieniło?</h1>
+  <p class="card-detail">Wróć tu po wykonaniu działania (najlepiej w ciągu godziny po zakończeniu, dopóki ślad jest świeży). Mierzymy dwa wymiary — siłę pustki i poczucie połączenia. Oba są niezależne.</p>
+
+  <div class="scale">
+    <div class="scale-title">Siła pustki — przed</div>
+    <div class="scale-bounds"><span>0 — brak</span><span>10 — wydrążenie</span></div>
+    <input type="range" class="scale-input" id="bEmp" min="0" max="10" step="1" value="7" data-default="7">
+    <div class="scale-readout"><span>Wartość</span><span id="bEmpv">7</span></div>
+  </div>
+  <div class="scale">
+    <div class="scale-title">Siła pustki — po działaniu</div>
+    <div class="scale-bounds"><span>0 — brak</span><span>10 — wydrążenie</span></div>
+    <input type="range" class="scale-input" id="aEmp" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>Wartość</span><span id="aEmpv">4</span></div>
+  </div>
+  <div class="scale">
+    <div class="scale-title">Poczucie połączenia (z sobą / z czynnością) — przed</div>
+    <div class="scale-bounds"><span>0 — obok</span><span>10 — w środku</span></div>
+    <input type="range" class="scale-input" id="bConn" min="0" max="10" step="1" value="2" data-default="2">
+    <div class="scale-readout"><span>Wartość</span><span id="bConnv">2</span></div>
+  </div>
+  <div class="scale">
+    <div class="scale-title">Poczucie połączenia — po</div>
+    <div class="scale-bounds"><span>0 — obok</span><span>10 — w środku</span></div>
+    <input type="range" class="scale-input" id="aConn" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Wartość</span><span id="aConnv">5</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: pustka odpuszcza wolniej niż lęk czy gniew. Pełna zmiana wymaga 6–12 tygodni regularnej praktyki połączenia (Linehan, 2015). Pojedyncze zanurzenie daje przesunięcie 1–3 punkty — to wartość, nie mało.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Pustka NIE jest objawem braku stymulacji — jest objawem <em>braku ciągłości JA w tym, co robisz</em>. Lekiem jest jakość zaangażowania, nie ilość bodźców. <strong>Jedna głęboka godzina &gt; pięć godzin scrollingu</strong>.</div>
+  </div>
+
+  <div class="src">Klonsky (2008, Journal of Personality Disorders) · Miller, Townsend i wsp. (2020, Clinical Psychology Review) · Stanley i Siever (2010, hipoteza endogennego układu opioidowego) · Linehan (1993, Cognitive-Behavioral Treatment of Borderline Personality Disorder) · Linehan (2015, DBT Skills Training Manual) · Herpertz i wsp. (2022, neuroobrazowanie BPD)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickFill(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bE = parseInt(document.getElementById('bEmp').value || 0, 10);
+    var aE = parseInt(document.getElementById('aEmp').value || 0, 10);
+    var bC = parseInt(document.getElementById('bConn').value || 0, 10);
+    var aC = parseInt(document.getElementById('aConn').value || 0, 10);
+    var dE = bE - aE, dC = aC - bC;
+    var msg = '';
+    if (dE >= 2 && dC >= 2) msg = 'Pustka spadła o ' + dE + ', poczucie połączenia wzrosło o ' + dC + ' — działanie zgodne z wartością zadziałało jak kotwica.';
+    else if (dE >= 1 || dC >= 1) msg = 'Drobne przesunięcie — typowe po pierwszym wykonaniu. Powtarzaj 4–5 razy w tygodniu.';
+    else if (dE === 0 && dC === 0) msg = 'Bez zmian — możliwe, że wybrane działanie było zbyt powierzchowne lub robione „na siłę". Pustka odpowiada na jakość zaangażowania, nie ilość.';
+    else msg = 'Pustka wzrosła — to też informacja: działanie mogło być formą ucieczki od pustki, nie zaangażowania w wartość. Wróć do listy.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.fill-card.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bpd_pustka — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bpd_pustka";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bEmp','aEmp','bConn','aConn'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

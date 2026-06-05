@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Pięciofazowy cykl PPU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.phase-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.phase-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.phase-num {
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--sage-deep); color: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.phase-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.phase-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 6px; }
+.phase-arrow { text-align: center; color: var(--sage-deep); font-size: 18px; margin: 2px 0; font-family: 'Fraunces', serif; }
+
+.intervention-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.intervention-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.intervention-row {
+  padding: 8px 0; border-bottom: 1px dashed rgba(184,197,168,0.25);
+  display: grid; grid-template-columns: 80px 1fr; gap: 10px;
+  font-size: 12.5px; line-height: 1.55;
+}
+.intervention-row:last-child { border-bottom: none; }
+.intervention-where { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); }
+.intervention-text { color: rgba(244,241,234,0.92); }
+.intervention-text strong { color: var(--bg); display: block; margin-bottom: 2px; }
+.intervention-text em { color: var(--sage); font-style: italic; }
+
+.warn-clinical {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Pięciofazowy cykl PPU</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Pięć faz cyklu — <em>"po prostu się stało" to mit</em></h1>
+    <p class="card-detail">Patrick Carnes (1983, „Out of the Shadows") opisał klasyczny <strong>5-fazowy cykl</strong> kompulsywnych zachowań seksualnych: wyzwalacz → rytuał → akt → wstyd → reset. Paula Hall (2013) zaadaptowała ten model dla PPU. Kluczowa świadomość: PPU <em>nie</em> jest pojedynczym epizodem — jest <strong>cyklem z 5 fazami</strong>, a wstyd po akcie <em>napędza</em> kolejne wyzwalacze. Świadomość faz daje <em>punkty interwencji</em> — najwcześniejsze są najłatwiejsze do przerwania.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Pięć faz cyklu PPU (Carnes-adapt)</div>
+      <div class="element-row"><span class="element-icon">⚡</span><span class="element-text"><strong>Faza 1 — Wyzwalacz</strong> — emocja, sytuacja, fizjologia (samotność, nuda, stres, niedospanie). <em>Punkt wejścia</em> w cykl. Najłatwiejszy do przerwania.</span></div>
+      <div class="element-row"><span class="element-icon">🔍</span><span class="element-text"><strong>Faza 2 — Preokupacja / rytualizacja</strong> — myśli intruzywne, scrolling "niewinnych" treści, szukanie kontekstu. <em>Trwa minuty—godziny</em>. Możliwe do przerwania.</span></div>
+      <div class="element-row"><span class="element-icon">🎬</span><span class="element-text"><strong>Faza 3 — Akt</strong> — pornografia + masturbacja. <em>Najtrudniejszy moment do przerwania</em>. Dopaminowy reward. Krótka ulga emocjonalna.</span></div>
+      <div class="element-row"><span class="element-icon">😞</span><span class="element-text"><strong>Faza 4 — Wstyd</strong> — bezpośrednio po. "Zawiodłem", "znowu". Wzmacnia cykl: wstyd jest emocją, która <em>uruchamia</em> kolejne wyzwalacze.</span></div>
+      <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Faza 5 — Reset</strong> — obietnice "od jutra nigdy", licznik dni od zera, "tym razem skontroluję". <em>Resetuje świadomość</em>, przygotowuje grunt pod kolejny cykl.</span></div>
+    </div>
+
+    <div class="frame-quote">„Wstyd po akcie nie jest <em>końcem</em> cyklu — jest jego <em>napędem</em>. Dopóki wstyd jest jedyną reakcją po, kolejny wyzwalacz przyjdzie szybciej. Praca polega na <em>zastąpieniu</em> wstydu samowspółczuciem."
+      <span class="frame-quote-attr">— parafraza po Pauli Hall, „Understanding and Treating Sex and Pornography Addiction" (2013)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ten Karta wsparcia jest <em>narzędziem psychoedukacyjnym</em>, używanym <strong>na początku terapii</strong> lub gdy szukasz spójnej ramy "co się ze mną dzieje". Pomaga rozumieć PPU jako <em>cykl</em>, nie pojedyncze epizody. Każda z 5 faz ma swoje punkty interwencji — w kroku 4 dostaniesz konkretne narzędzia per faza. <strong>Najsilniejsza interwencja</strong>: faza 1 (wyzwalacz) i faza 5 (reset) — najłatwiejsze do świadomego przerwania.</div>
+
+    <div class="src">Carnes (1983, 2001 — wydanie rozszerzone, „Out of the Shadows: Understanding Sexual Addiction"); Carnes (2005, „Facing the Shadow"); Hall (2013, „Understanding and Treating Sex and Pornography Addiction" — adaptacja dla PPU); Marlatt &amp; Gordon (1985, RP — komplementarne ramy); krytyka i aktualizacje: Prause i in. (2019, „Critique of pornography addiction model"); SAA (Sex Addicts Anonymous) — empiryczna mądrość 12-step.</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twój osobisty cykl</div>
+    <h1 class="card-prompt">Zmapuj <em>swój</em> cykl 5-fazowy</h1>
+    <p class="card-detail">Każdy człowiek ma <strong>indywidualny cykl</strong> — wyzwalacze, rytuały, czas trwania faz są różne. Sprawdź, jak wygląda <em>twój</em> ostatni epizod fazy po fazie. Świadomość konkretnych szczegółów jest fundamentem interwencji.</p>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">1</span><span class="phase-name">Faza 1 — Wyzwalacz (twoje typowe)</span></div>
+      <div class="phase-desc">Co aktywuje cykl? Często emocja (samotność, nuda, stres) lub sytuacja (sam wieczorem, telefon w sypialni). Czasem fizjologia (niedospanie, alkohol).</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="t1" onclick="this.classList.toggle('picked')">Samotność wieczorna</button>
+        <button type="button" class="example-chip" id="t2" onclick="this.classList.toggle('picked')">Nuda chroniczna</button>
+        <button type="button" class="example-chip" id="t3" onclick="this.classList.toggle('picked')">Stres po pracy</button>
+        <button type="button" class="example-chip" id="t4" onclick="this.classList.toggle('picked')">Konflikt z partnerką</button>
+        <button type="button" class="example-chip" id="t5" onclick="this.classList.toggle('picked')">Niedospanie</button>
+        <button type="button" class="example-chip" id="t6" onclick="this.classList.toggle('picked')">Telefon w sypialni</button>
+        <button type="button" class="example-chip" id="t7" onclick="this.classList.toggle('picked')">Pusty dom (partnerka wyjechała)</button>
+        <button type="button" class="example-chip" id="t8" onclick="this.classList.toggle('picked')">"Zasłużyłem sobie" po sukcesie</button>
+      </div>
+    </div>
+
+    <div class="phase-arrow">↓</div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">2</span><span class="phase-name">Faza 2 — Preokupacja / rytuał (twój)</span></div>
+      <div class="phase-desc">Co się dzieje przed aktem? Scrolling "niewinnych" treści (Reddit, Instagram), szukanie kontekstu, fantazje, "tylko zerknę". Trwa minuty—godziny.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="r1" onclick="this.classList.toggle('picked')">Scrolling Reddit / Instagram / Twitter</button>
+        <button type="button" class="example-chip" id="r2" onclick="this.classList.toggle('picked')">Powracające myśli / fantazje</button>
+        <button type="button" class="example-chip" id="r3" onclick="this.classList.toggle('picked')">"Tylko zerknę" — testowanie</button>
+        <button type="button" class="example-chip" id="r4" onclick="this.classList.toggle('picked')">Zamykanie drzwi / sprawdzanie kontekstu</button>
+        <button type="button" class="example-chip" id="r5" onclick="this.classList.toggle('picked')">Wieczorne YouTube → niewinne treści sugestywne</button>
+        <button type="button" class="example-chip" id="r6" onclick="this.classList.toggle('picked')">Czas trwania: 15 min — 2 godz.</button>
+      </div>
+    </div>
+
+    <div class="phase-arrow">↓</div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">3</span><span class="phase-name">Faza 3 — Akt (twoja typowa długość, treść)</span></div>
+      <div class="phase-desc">PPU + masturbacja. Krótka ulga, dopaminowy reward. <em>Najtrudniejszy moment do przerwania</em>.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="a1" onclick="this.classList.toggle('picked')">Czas trwania 15—30 min</button>
+        <button type="button" class="example-chip" id="a2" onclick="this.classList.toggle('picked')">Czas trwania 1—2 godz.</button>
+        <button type="button" class="example-chip" id="a3" onclick="this.classList.toggle('picked')">Czas trwania ≥2 godz.</button>
+        <button type="button" class="example-chip" id="a4" onclick="this.classList.toggle('picked')">"Tunelowe widzenie" — zapominam o wszystkim</button>
+        <button type="button" class="example-chip" id="a5" onclick="this.classList.toggle('picked')">Eskalacja treści w trakcie</button>
+        <button type="button" class="example-chip" id="a6" onclick="this.classList.toggle('picked')">Krótka chwila ulgi po orgazmie</button>
+      </div>
+    </div>
+
+    <div class="phase-arrow">↓</div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">4</span><span class="phase-name">Faza 4 — Wstyd (twoja reakcja)</span></div>
+      <div class="phase-desc">Bezpośrednio po. "Znowu", "jestem beznadziejny", "zawiodłem partnerkę". Wstyd jest emocją, która <em>napędza</em> kolejne wyzwalacze (cykl się zamyka).</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="s1" onclick="this.classList.toggle('picked')">"Znowu, jestem beznadziejny"</button>
+        <button type="button" class="example-chip" id="s2" onclick="this.classList.toggle('picked')">"Cała praca poszła na marne"</button>
+        <button type="button" class="example-chip" id="s3" onclick="this.classList.toggle('picked')">"Zawiodłem partnerkę / Boga / siebie"</button>
+        <button type="button" class="example-chip" id="s4" onclick="this.classList.toggle('picked')">Fizyczne objawy wstydu (ucisk w klatce, mdłości)</button>
+        <button type="button" class="example-chip" id="s5" onclick="this.classList.toggle('picked')">Izolacja społeczna następnego dnia</button>
+        <button type="button" class="example-chip" id="s6" onclick="this.classList.toggle('picked')">Karzenie się fizycznie (głód, brak snu)</button>
+      </div>
+    </div>
+
+    <div class="phase-arrow">↓</div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">5</span><span class="phase-name">Faza 5 — Reset (twoja typowa)</span></div>
+      <div class="phase-desc">Obietnice "od jutra nigdy", licznik dni od zera, "tym razem skontroluję". <em>Resetuje świadomość</em> — przygotowuje grunt pod kolejny cykl.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="re1" onclick="this.classList.toggle('picked')">"Od jutra nigdy więcej"</button>
+        <button type="button" class="example-chip" id="re2" onclick="this.classList.toggle('picked')">Zerowanie licznika dni</button>
+        <button type="button" class="example-chip" id="re3" onclick="this.classList.toggle('picked')">"Tym razem skontroluję"</button>
+        <button type="button" class="example-chip" id="re4" onclick="this.classList.toggle('picked')">Plan radykalny ("90 dni, hard mode")</button>
+        <button type="button" class="example-chip" id="re5" onclick="this.classList.toggle('picked')">Pomijanie zaplanowanych aktywności</button>
+        <button type="button" class="example-chip" id="re6" onclick="this.classList.toggle('picked')">Brak kontaktu z osobą wsparcia</button>
+      </div>
+    </div>
+
+    <div class="examples-h">Twój ostatni cykl — przejdź przez 5 faz</div>
+    <textarea class="thought-input" id="myCycle" placeholder='Konkretnie. np. „1. WYZWALACZ: niedziela, 23:00, partnerka u rodziców, telefon w łóżku, niedospanie 3 noce + 2 piwa po obiedzie. 2. RYTUAŁ: 1 godz. scrollingu Reddita (»wątki o pareach«) → przejście na YouTube → reklamy sugestywne. 3. AKT: 45 min PPU. Tunelowe widzenie. 4. WSTYD: leżenie w łóżku 30 min, »znowu«, »jestem beznadziejny«. Pominięcie poniedziałkowego treningu. 5. RESET: »od jutra nigdy«, instalacja blokera, plan »90 dni hard mode«. Po 6 dniach — kolejny wyzwalacz, kolejny cykl.”' rows="9"></textarea>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Najsilniejsze ogniwo: faza 4 → 1</div>
+      <div class="warn-body">Wstyd po (faza 4) <em>uruchamia</em> kolejne wyzwalacze (faza 1) — bo wstyd jest emocją niespecyficzną, którą próbujesz "uregulować" tym samym mechanizmem, który ją wywołał (PPU). Klasyczna pułapka: <strong>wstyd → samotność → samokrytyka → wyzwalacz → cykl</strong>. Świadomość tego mechanizmu jest podstawą — przerwanie wstydu (faza 4) zatrzymuje cykl skuteczniej niż walka w fazie 3.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła obrazu</strong>: typowy obraz osoby z PPU: cykl 24—72 godziny od wyzwalacza do następnego wyzwalacza. Wstyd po (faza 4) trwa 12—24 godz., reset (faza 5) 12—48 godz., potem nowy wyzwalacz. Świadomość rytmu pomaga przewidywać i interweniować <em>zanim</em> wyzwalacz aktywuje cykl.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — punkty interwencji</div>
+    <h1 class="card-prompt">Pięć faz, <em>pięć punktów interwencji</em></h1>
+    <p class="card-detail">Każda z 5 faz ma <strong>specyficzne narzędzia interwencji</strong>. Carnes &amp; Hall: <em>najsilniejsze interwencje są w fazie 1 i 5</em> — bo świadomość jest najsilniejsza, a koszt psychiczny zatrzymania najmniejszy. Faza 3 (akt) jest <em>najtrudniejsza</em> do przerwania — bo dopaminowy "tunel" osłabia kontrolę.</p>
+
+    <div class="intervention-card">
+      <div class="intervention-h">Punkty interwencji per faza</div>
+      <div class="intervention-row">
+        <span class="intervention-where">Faza 1</span>
+        <span class="intervention-text"><strong>Wyzwalacz — najłatwiejszy</strong>Świadomość emocji + środowisko niesprzyjające + alternatywne strategie regulacji. <em>HALT, DBT TIP, NVC self-empathy, kontakt z osobą</em>.</span>
+      </div>
+      <div class="intervention-row">
+        <span class="intervention-where">Faza 2</span>
+        <span class="intervention-text"><strong>Rytuał — średnio łatwa</strong>Świadomość preokupacji ("zauważam, że scrolluję") + fizyczna zmiana lokalizacji + zatrzymanie urządzenia. <em>Urge surfing, environmental design</em>.</span>
+      </div>
+      <div class="intervention-row">
+        <span class="intervention-where">Faza 3</span>
+        <span class="intervention-text"><strong>Akt — najtrudniejsza</strong>Dopaminowy "tunel" osłabia świadomość. Interwencja: <em>fizyczne wycofanie</em> (zimna woda, spacer, zmiana pokoju). Trudne, ale możliwe w pierwszych minutach.</span>
+      </div>
+      <div class="intervention-row">
+        <span class="intervention-where">Faza 4</span>
+        <span class="intervention-text"><strong>Wstyd — kluczowa dla cyklu</strong>Zastąpienie wstydu samowspółczuciem. <em>Karta "AVE" + Karta "Samowspółczucie" Neff + Karta "Cykl wstydu" Brown</em>. Najważniejsza interwencja długoterminowo.</span>
+      </div>
+      <div class="intervention-row">
+        <span class="intervention-where">Faza 5</span>
+        <span class="intervention-text"><strong>Reset — łatwa</strong>Świadome zatrzymanie obietnic radykalnych ("od jutra nigdy"). Powrót do struktury <em>bez</em> dramatu. <em>Karta "Plan powrotu" — 6 kroków</em>.</span>
+      </div>
+    </div>
+
+    <div class="examples-h">Najsilniejsze ogniwo do przerwania — twoje</div>
+    <button type="button" class="rel-btn" id="ph1" onclick="pickPhase('1')">
+      <span class="rel-name">📍 Faza 1 — Wyzwalacz (najłatwiejsze)</span>
+      <span class="rel-desc">Świadomość emocji + środowisko + alternatywne strategie. Punkt wejścia w cykl.</span>
+    </button>
+    <button type="button" class="rel-btn" id="ph2" onclick="pickPhase('2')">
+      <span class="rel-name">📍 Faza 2 — Rytuał (średnio łatwa)</span>
+      <span class="rel-desc">Świadomość scrollingu + fizyczna zmiana lokalizacji. Trwa minuty—godziny.</span>
+    </button>
+    <button type="button" class="rel-btn" id="ph4" onclick="pickPhase('4')">
+      <span class="rel-name">📍 Faza 4 — Wstyd (kluczowa długoterminowo)</span>
+      <span class="rel-desc">Zastąpienie wstydu samowspółczuciem. Przerywa napęd cyklu.</span>
+    </button>
+    <button type="button" class="rel-btn" id="ph5" onclick="pickPhase('5')">
+      <span class="rel-name">📍 Faza 5 — Reset (łatwa)</span>
+      <span class="rel-desc">Plan powrotu zamiast obietnic radykalnych. Świadome wracanie do struktury.</span>
+    </button>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Praca tylko w fazie 3 jest mało skuteczna</div>
+      <div class="warn-body">Większość osób z PPU próbuje "powstrzymać się w momencie" (faza 3) — to <em>najtrudniejszy</em> moment. Dopaminowy "tunel" osłabia świadomość, a wola jest niewystarczająca. Lepsze podejście: <strong>interweniować wcześniej</strong> (fazy 1—2) lub <strong>przerwać napęd cyklu</strong> (faza 4 — wstyd). Faza 3 jest "ostatnią deską ratunku" — nie głównym polem pracy.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: pracuj <em>jednocześnie</em> w fazie 1 (wyzwalacz: świadomość + środowisko) i fazie 4 (wstyd: samowspółczucie + AVE). Ta kombinacja przerywa cykl <strong>na początku i przy zamknięciu</strong>. Faza 3 jako rezerwa, faza 2 i 5 jako wsparcie. Bez świadomej pracy w fazie 4 cykl się zamyka i napędza sam.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — narzędzia per faza</div>
+    <h1 class="card-prompt">Konkretne <em>interwencje</em> na każdą fazę</h1>
+    <p class="card-detail">Praktyczna część: konkretne narzędzia per faza. Wybierz <em>2—3 fazy</em> jako priorytet (najczęściej 1 + 4) i pracuj na nich systematycznie. Świadomość pozostałych jest zapasowa.</p>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">1</span><span class="phase-name">Narzędzia fazy 1 (wyzwalacz)</span></div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="i1A" onclick="this.classList.toggle('picked')">HALT — Hungry/Angry/Lonely/Tired (świadomość)</button>
+        <button type="button" class="example-chip" id="i1B" onclick="this.classList.toggle('picked')">DBT TIP — szybka regulacja emocji</button>
+        <button type="button" class="example-chip" id="i1C" onclick="this.classList.toggle('picked')">NVC self-empathy — zauważenie potrzeby</button>
+        <button type="button" class="example-chip" id="i1D" onclick="this.classList.toggle('picked')">Environmental: telefon poza sypialnią</button>
+        <button type="button" class="example-chip" id="i1E" onclick="this.classList.toggle('picked')">Kontakt z osobą wsparcia (SMS/telefon)</button>
+        <button type="button" class="example-chip" id="i1F" onclick="this.classList.toggle('picked')">Higiena snu, ruch, dieta (osłabienie podstawy)</button>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">2</span><span class="phase-name">Narzędzia fazy 2 (rytuał)</span></div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="i2A" onclick="this.classList.toggle('picked')">Urge surfing (Marlatt) — obserwowanie fali</button>
+        <button type="button" class="example-chip" id="i2B" onclick="this.classList.toggle('picked')">Bloker DNS / Covenant Eyes</button>
+        <button type="button" class="example-chip" id="i2C" onclick="this.classList.toggle('picked')">Fizyczna zmiana lokalizacji</button>
+        <button type="button" class="example-chip" id="i2D" onclick="this.classList.toggle('picked')">"Zauważam, że scrolluję" — etykietowanie</button>
+        <button type="button" class="example-chip" id="i2E" onclick="this.classList.toggle('picked')">If-then plan ("jeśli scrolluję 5 min, to wstaję")</button>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">3</span><span class="phase-name">Narzędzia fazy 3 (akt) — rezerwa</span></div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="i3A" onclick="this.classList.toggle('picked')">Zimna woda na twarz 30 sek</button>
+        <button type="button" class="example-chip" id="i3B" onclick="this.classList.toggle('picked')">Wyjście z pokoju</button>
+        <button type="button" class="example-chip" id="i3C" onclick="this.classList.toggle('picked')">Telefon do osoby wsparcia (jeśli możliwe)</button>
+        <button type="button" class="example-chip" id="i3D" onclick="this.classList.toggle('picked')">Świadomość: "jestem w fazie 3, mogę przerwać"</button>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">4</span><span class="phase-name">Narzędzia fazy 4 (wstyd) — kluczowe</span></div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="i4A" onclick="this.classList.toggle('picked')">Karta "Samowspółczucie" (Neff) — 3 zdania</button>
+        <button type="button" class="example-chip" id="i4B" onclick="this.classList.toggle('picked')">Karta "AVE" — przerwanie błędu poznawczego</button>
+        <button type="button" class="example-chip" id="i4C" onclick="this.classList.toggle('picked')">Karta "Cykl wstydu" (Brown) — shame resilience</button>
+        <button type="button" class="example-chip" id="i4D" onclick="this.classList.toggle('picked')">NVC self-connection — emocje + potrzeby</button>
+        <button type="button" class="example-chip" id="i4E" onclick="this.classList.toggle('picked')">Kontakt z osobą wsparcia w 24h (rozbicie izolacji)</button>
+        <button type="button" class="example-chip" id="i4F" onclick="this.classList.toggle('picked')">"Lapse jako informacja, nie klęska"</button>
+      </div>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-h"><span class="phase-num">5</span><span class="phase-name">Narzędzia fazy 5 (reset)</span></div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="i5A" onclick="this.classList.toggle('picked')">Karta "Plan powrotu" — 6 kroków</button>
+        <button type="button" class="example-chip" id="i5B" onclick="this.classList.toggle('picked')">Brak zerowania licznika dni</button>
+        <button type="button" class="example-chip" id="i5C" onclick="this.classList.toggle('picked')">Brak obietnic radykalnych ("od jutra nigdy")</button>
+        <button type="button" class="example-chip" id="i5D" onclick="this.classList.toggle('picked')">Powrót do zaplanowanych aktywności</button>
+        <button type="button" class="example-chip" id="i5E" onclick="this.classList.toggle('picked')">Analiza łańcucha 48—72h po (Marlatt)</button>
+      </div>
+    </div>
+
+    <div class="examples-h">Twoja konkretna praktyka — 2—3 fazy priorytetowe</div>
+    <textarea class="thought-input" id="myPractice" placeholder='Konkretnie. np. „PRIORYTETY: Faza 1 (wyzwalacz) + Faza 4 (wstyd). Praca 8 tyg.
+
+FAZA 1:
+- HALT codziennie wieczorem przed snem (1 minuta)
+- Telefon w kuchni od 21:30 absolutnie
+- Jeśli samotność wieczorna → SMS do brata zamiast scrollingu
+- Sen przed 23:00, redukcja alkoholu pn—czw
+
+FAZA 4 (kluczowa):
+- Po każdym lapsie: Karta »Samowspółczucie« Neff (3 zdania, głośno) — natychmiast
+- Karta »AVE« — reframing atrybucji (sytuacyjna, nie globalna)
+- Kontakt z bratem w 24h — SMS minimum
+- Brak zerowania licznika, brak »od jutra nigdy«
+
+FAZY 2, 3, 5 — świadomość + drobne narzędzia, ale nie główny obszar pracy.”' rows="12"></textarea>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Praca jednocześnie 1 + 4</div>
+      <div class="warn-body">Najsilniejsza kombinacja: <strong>faza 1 (wyzwalacz)</strong> + <strong>faza 4 (wstyd)</strong>. Bo: (1) faza 1 zapobiega wejściu w cykl; (2) faza 4 przerywa napęd cyklu (wstyd → wyzwalacz). Razem przerywają cykl <em>na początku i przy zamknięciu</em>. Bez fazy 4 nawet skuteczna praca w fazie 1 jest podważana przez wstyd po lapsach (które się zdarzają). Bez fazy 1 wstyd ma częste źródła do napędzania.</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: praca w 2—3 fazach jednocześnie + świadomość pozostałych = <strong>strukturalne przerwanie cyklu</strong>. Po 8—12 tyg. konsekwentnej pracy: cykl staje się rzadszy, krótszy, mniej intensywny. Kluczowe: <em>świadomość fazy w czasie rzeczywistym</em> ("jestem w fazie 2, mogę interweniować"). Bez świadomości techniki są arbitralne; ze świadomością — układają się w spójny system.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>cykl się zmienia</em>?</h1>
+    <p class="card-detail">Wróć tu po 6—10 tygodniach pracy z mapą 5-fazową. Praca z cyklem jest <em>średnio szybka</em> — pierwsze efekty po 4 tyg., znaczące po 3—6 mies.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy rozumiesz swój cykl świadomie?</span><span></span></div>
+      <input type="range" class="scale-input" id="postUnd" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postUndval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy zauważasz fazę w czasie rzeczywistym?</span><span></span></div>
+      <input type="range" class="scale-input" id="postAware" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postAwareval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy wstyd (faza 4) jest mniej dominujący?</span><span></span></div>
+      <input type="range" class="scale-input" id="postShame" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nadal mocny</span><span id="postShameval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Częstotliwość pełnego cyklu — teraz (na tydzień)</span><span></span></div>
+      <input type="range" class="scale-input" id="postFreq" min="0" max="10" step="1" value="2" data-default="2">
+      <div class="scale-readout"><span>0 = brak</span><span id="postFreqval">2</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: skuteczna praca z cyklem = <em>świadome rozumienie</em> ≥7 + <em>świadomość fazy w czasie rzeczywistym</em> ≥6 + <em>wstyd mniej dominujący</em> ≥5 + <em>spadek częstotliwości</em>. Najczęstsza luka: <em>brak pracy w fazie 4 (wstyd)</em> — bez niej cykl się zamyka i napędza sam, niezależnie od pracy w fazach 1—3.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">PPU jest <em>cyklem 5-fazowym</em> (Carnes, Hall): wyzwalacz → rytuał → akt → wstyd → reset. Klucz: <strong>wstyd po (faza 4) napędza wyzwalacze</strong> — cykl zamyka się sam, jeśli nie ma świadomej interwencji w fazie 4. <strong>Praca</strong>: 2—3 fazy jednocześnie, najczęściej <strong>faza 1 (wyzwalacz)</strong> + <strong>faza 4 (wstyd)</strong> — przerywają cykl na początku i przy zamknięciu. Faza 3 (akt) jest <em>najtrudniejsza</em> do przerwania — nie główne pole pracy. Faza 2 i 5 — wsparcie. <strong>Świadomość fazy w czasie rzeczywistym</strong> jest umiejętnością do trenowania — po kilku tygodniach codziennej refleksji (HALT, NVC, samowspółczucie) świadomość staje się automatyczna. Bez świadomości techniki są arbitralne; ze świadomością — układają się w spójny system. Pracuj z cyklem 6—12 mies. — efekty znaczące w 3—6 mies.</div>
+    </div>
+
+    <div class="src">Carnes (1983, 2001 — wydanie rozszerzone, „Out of the Shadows"); Carnes (2005, „Facing the Shadow"); Hall (2013, „Understanding and Treating Sex and Pornography Addiction"); Marlatt &amp; Gordon (1985, RP); Brown (2012, „Daring Greatly" — shame resilience); Neff (2003, Self-Compassion); krytyka i aktualizacje: Prause i in. (2019); SAA (Sex Addicts Anonymous).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['postUnd','postAware','postShame','postFreq'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedPhase = null;
+function pickPhase(code) {
+  window.pickedPhase = code;
+  ['ph1','ph2','ph4','ph5'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('ph' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var u = parseInt(document.getElementById('postUnd').value, 10);
+  var aw = parseInt(document.getElementById('postAware').value, 10);
+  var sh = parseInt(document.getElementById('postShame').value, 10);
+  var fr = parseInt(document.getElementById('postFreq').value, 10);
+
+  var rows = [];
+  var uW = u <= 3 ? 'nie' : (u <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Świadome rozumienie</strong><span class="diff-delta">' + u + '/10 — ' + uW + '</span></div>');
+  var awW = aw <= 3 ? 'nie' : (aw <= 6 ? 'czasem' : 'tak');
+  rows.push('<div class="diff-row"><strong>Świadomość fazy</strong><span class="diff-delta">' + aw + '/10 — ' + awW + '</span></div>');
+  var shW = sh <= 3 ? 'silny' : (sh <= 6 ? 'częściowo' : 'mniej');
+  rows.push('<div class="diff-row"><strong>Wstyd po (faza 4)</strong><span class="diff-delta">' + sh + '/10 — ' + shW + '</span></div>');
+  rows.push('<div class="diff-row"><strong>Częstotliwość/tydz.</strong><span class="diff-delta">' + fr + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (u >= 7 && aw >= 6 && sh >= 5 && fr <= 2) {
+      msg = '<strong>Cykl się zmienia.</strong> Świadome rozumienie, świadomość fazy w czasie rzeczywistym, wstyd słabnie, częstotliwość spada. <em>Kontynuuj 3—6 mies.</em>';
+    } else if (u >= 6 && aw >= 5) {
+      msg = '<strong>Pierwsze ruchy.</strong> Wzmocnij <em>fazę 4 (wstyd)</em> — najczęstsza luka. Bez pracy z fazą 4 cykl napędza sam siebie. Karta "Samowspółczucie" + Karta "AVE" jako codzienne narzędzia.';
+    } else if (u <= 3) {
+      msg = '<strong>Brak świadomego rozumienia cyklu — krytyczne.</strong> <em>W tym tygodniu</em>: zmapuj swój ostatni cykl 5-fazowo (krok 2). Bez tego praca jest na pojedynczych epizodach, nie strukturalna.';
+    } else if (sh <= 3) {
+      msg = '<strong>Wstyd po nadal silny.</strong> To napęd cyklu. Karta "Samowspółczucie" Neff + Karta "Cykl wstydu" Brown — codzienna praca przez 4—8 tyg. Po lapsie: 3 zdania samowspółczucia <em>natychmiast</em>, nie po godzinach.';
+    } else if (aw <= 3) {
+      msg = '<strong>Brak świadomości fazy w czasie rzeczywistym.</strong> To umiejętność do trenowania. Codziennie wieczorem 2 min: "w jakich fazach byłem dziś?". Po 4 tyg. świadomość staje się automatyczna.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Praca z cyklem wymaga 3—6 mies. dla znaczących efektów.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['t1','t2','t3','t4','t5','t6','t7','t8','r1','r2','r3','r4','r5','r6','a1','a2','a3','a4','a5','a6','s1','s2','s3','s4','s5','s6','re1','re2','re3','re4','re5','re6','i1A','i1B','i1C','i1D','i1E','i1F','i2A','i2B','i2C','i2D','i2E','i3A','i3B','i3C','i3D','i4A','i4B','i4C','i4D','i4E','i4F','i5A','i5B','i5C','i5D','i5E'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['ph1','ph2','ph4','ph5'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedPhase = null;
+}
+
+['postUnd','postAware','postShame','postFreq'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_cycle — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_cycle";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['1','2','4','5'].forEach(function(code){
+    var el = document.getElementById('ph' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedPhase = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Systemowa bezradność</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.map-grid { display: grid; gap: 8px; margin: 12px 0; }
+.map-card { padding: 11px 13px; border-radius: 10px; }
+.map-1 { background: rgba(201,165,114,0.14); border: 1px solid var(--warm); }
+.map-2 { background: rgba(184,197,168,0.20); border: 1px solid var(--sage-deep); border-left-width: 3px; }
+.map-3 { background: rgba(184,197,168,0.12); border: 1px dashed var(--sage); }
+.map-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.map-1 .map-h { color: var(--warm); }
+.map-2 .map-h { color: var(--sage-deep); }
+.map-3 .map-h { color: var(--ink-mute); }
+.map-icon { float: left; font-size: 22px; margin-right: 8px; line-height: 1.1; }
+.map-text { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.map-text strong { color: var(--ink); }
+
+.resource-grid { display: grid; gap: 6px; margin: 10px 0; }
+.resource-row { background: rgba(184,197,168,0.10); border-radius: 8px; padding: 9px 11px; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); display: flex; gap: 10px; align-items: flex-start; }
+.resource-icon { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+.resource-text strong { color: var(--ink); font-weight: 600; }
+.resource-num { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); }
+
+.warning-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.warning-cell { padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; }
+.warning-cell.bad { background: rgba(201,165,114,0.14); border: 1px solid var(--warm); }
+.warning-cell.good { background: rgba(184,197,168,0.20); border: 1px solid var(--sage-deep); }
+.warning-tag { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.warning-cell.bad .warning-tag { color: var(--warm); }
+.warning-cell.good .warning-tag { color: var(--sage-deep); }
+
+@media (max-width: 380px) {
+  .warning-row { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Systemowa bezradność</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Czasem bariery <em>są realne</em> — i to też trzeba zobaczyć</h1>
+    <p class="card-detail">Nie każda bezradność jest „wyuczona" w klasycznym Seligmanowskim sensie. Czasami bariery są <em>realne</em>: ubóstwo, dyskryminacja, niepełnosprawność, przemoc domowa, system prawny, brak dostępu do opieki medycznej. W takich przypadkach mówienie „po prostu zmień myślenie" jest etycznie problematyczne i klinicznie nieskuteczne. Goodman i wsp. (2004): ubóstwo generuje realne ograniczenia sprawczości — terapia musi je <em>uznawać</em>, nie minimalizować. Herman (1992, Trauma and Recovery): w przemocy domowej bezradność jest <em>adaptacyjna</em>, nie patologiczna. Martín-Baró (1994, liberation psychology): praca terapeutyczna w kontekście opresji wymaga jednoczesnej walidacji realnych barier <em>i</em> identyfikacji dostępnej sprawczości w ich ramach. Trzecia droga między „zmień myślenie" (obwinianie ofiary) a „nic nie możesz zrobić" (potwierdzanie bezradności) wymaga uczciwości wobec realiów i wyobraźni wobec szczelin.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary pracy z systemową bezradnością</div>
+      <div class="element-row">
+        <span class="element-icon">✋</span>
+        <span class="element-text"><strong>Walidacja realności</strong> — Twoja bezradność jest zrozumiałą reakcją na realne ograniczenia. To nie jest wina Twojego myślenia — to jest Twoja sytuacja. Walidacja jest <em>warunkiem</em> dalszej pracy, nie wstępem do niej.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🗺️</span>
+        <span class="element-text"><strong>Mapa barier i sprawczości</strong> — rozróżnienie tego, na co naprawdę nie masz wpływu (system, prawo, choroba), od tego, gdzie pole działania istnieje (relacje, decyzje, dostęp do informacji o prawach).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔍</span>
+        <span class="element-text"><strong>Szukanie szczeliny</strong> — nie „zmień system", lecz „znajdź szczelinę w systemie". Nie „wyjdź z ubóstwa", lecz „dowiedz się, do jakich świadczeń masz prawo". Działanie w ramach realnych ograniczeń.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📞</span>
+        <span class="element-text"><strong>Zewnętrzne zasoby</strong> — bezradność systemowa wymaga nie tylko terapii, ale <em>konkretnego wsparcia</em>: pomoc prawna, NGO, OPS, telefon zaufania, grupa wsparcia. Wiedza o lokalnych zasobach jest częścią interwencji.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Terapeuta, który mówi „zmień myślenie" osobie w realnym ucisku, współtworzy opresję. Terapeuta, który mówi „nic nie możesz zrobić" — współtworzy bezradność. Trzecia droga: widzę Twoje bariery <em>i</em> szukam z Tobą szczelin."
+      <span class="frame-quote-attr">— synteza Martín-Baró (1994), Goodman (2004), Herman (1992)</span>
+    </div>
+
+    <div class="warning-row">
+      <div class="warning-cell bad">
+        <span class="warning-tag">❌ Indywidualizacja systemu</span>
+        <strong>„Po prostu się postaraj."</strong> Sprowadza systemowy problem do braku motywacji jednostki. Pogłębia wstyd i bezradność.
+      </div>
+      <div class="warning-cell good">
+        <span class="warning-tag">✅ Walidacja + szczeliny</span>
+        <strong>„Twoje bariery są realne. Czy w tej konkretnej sytuacji jest <em>jakakolwiek</em> przestrzeń na działanie?"</strong>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: walidacja jest <em>pierwszym</em> krokiem, nie odwlekanym. Bez uznania realności barier żadna technika nie zadziała — bo będzie odbierana jako kolejne obwinianie ofiary. Walidacja nie zwalnia z dalszej pracy; <em>umożliwia</em> ją.</div>
+
+    <div class="src">Goodman i wsp. (2004, American Psychologist, ubóstwo i terapia) · Herman (1992, Trauma and Recovery) · Martín-Baró (1994, Writings for a Liberation Psychology) · Smail (2005, Power, Interest and Psychology) · Sue i wsp. (2019, Counseling the Culturally Diverse) · Heron i wsp. (2020, Journal of Family Violence)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja — fakty</div>
+    <h1 class="card-prompt">Opisz <em>realne</em> bariery — bez minimalizowania, bez wyolbrzymiania</h1>
+    <p class="card-detail">Pomyśl o swojej sytuacji i nazwij konkretne bariery. Cel: uczciwy obraz, nie pochlebny, nie katastrofalny. Bariery realne to te, których nie zmienisz samym myśleniem — wymagają interwencji zewnętrznej, czasu, wsparcia, działania innych ludzi lub systemów.</p>
+
+    <textarea class="thought-input" id="sysSytuacja" placeholder="Twoja sytuacja w skrócie. np. „Samotna mama, dwoje dzieci, niski etat, ojciec dzieci nie płaci alimentów, mieszkam w wynajmie, czynsz rośnie""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="sysBariery" placeholder="Realne bariery — fakty. np. „Pensja 3500 zł netto, czynsz 2200 zł, koszt życia rośnie. Sąd o alimenty trwa 8 mies., komornik nie ściąga. Brak rodziny, która mogłaby pomóc""  rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Realność barier — na ile sytuacja JEST trudna obiektywnie</div>
+      <div class="scale-bounds"><span>0 — łatwa</span><span>10 — bardzo trudna</span></div>
+      <input type="range" class="scale-input" id="barieraReal" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>Wartość</span><span id="barieraRealVal">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Dostępna sprawczość — ile pola działania ma w tej sytuacji</div>
+      <div class="scale-bounds"><span>0 — żadne</span><span>10 — duże</span></div>
+      <input type="range" class="scale-input" id="sprawczDost" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Wartość</span><span id="sprawczDostVal">3</span></div>
+    </div>
+
+    <div id="sysSum"></div>
+
+    <div class="term-note"><strong>📊 Reguła uczciwego pomiaru</strong>: bezradność wyolbrzymia bariery i pomniejsza sprawczość. Sprawczość fałszywa pomniejsza bariery i wyolbrzymia działanie. Cel: <em>uczciwy</em> obraz — który zwykle leży gdzieś pośrodku. Realne bariery 6—8/10 i jednocześnie sprawczość 3—5/10 to typowy układ w trudnych systemowych sytuacjach.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Mapa: bariery i sprawczość</div>
+    <h1 class="card-prompt">Rozdziel sprawy na <em>trzy kategorie</em></h1>
+    <p class="card-detail">Każdą sprawę z Twojej sytuacji przypisz do jednej z trzech kategorii. Pierwsza zwykle wyznacza realny ucisk i wymaga akceptacji. Druga jest polem bieżącego działania. Trzecia wymaga rozeznania — informacji, kontaktów, wiedzy o prawach. Większość energii zwykle wycieka do pierwszej kategorii — przesunięcie do drugiej i trzeciej zmienia obraz.</p>
+
+    <div class="map-grid">
+      <div class="map-card map-1">
+        <span class="map-icon">🚧</span>
+        <div class="map-h">Bariery systemowe — bez wpływu</div>
+        <div class="map-text"><strong>Czego naprawdę nie zmienię sam/a</strong> — opóźnienia w sądach, decyzje urzędników, koniunktura, choroba przewlekła, dyskryminacja. Tu energia wycieka. Akceptacja oszczędza siły.</div>
+      </div>
+      <div class="map-card map-2">
+        <span class="map-icon">⚙️</span>
+        <div class="map-h">Dostępna sprawczość — pole działania</div>
+        <div class="map-text"><strong>Co mogę robić w ramach barier</strong> — szukać wsparcia, kontaktować się z instytucjami, składać wnioski, negocjować, pisać pisma. Drobne, ale realne ruchy.</div>
+      </div>
+      <div class="map-card map-3">
+        <span class="map-icon">🔍</span>
+        <div class="map-h">Nieodkryte zasoby — wymaga rozeznania</div>
+        <div class="map-text"><strong>Czego jeszcze nie wiem</strong> — jakie świadczenia są dostępne, jakie organizacje pomagają, do jakich praw mam roszczenie. Rozeznanie to forma sprawczości.</div>
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="mapaBariery" placeholder="BARIERY systemowe — wymień 3—5 spraw, których naprawdę nie zmienisz sam/a. np. „Tempo sądu o alimenty" / „Decyzja komornika" / „Wzrost czynszu w mieście""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="mapaSprawcz" placeholder="DOSTĘPNA sprawczość — wymień 3—5 spraw, w których jest pole działania w ramach barier. np. „Mogę umówić wizytę w OPS" / „Mogę poprosić mecenasa o opinię" / „Mogę poszukać dodatkowego dochodu zdalnego""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="mapaZasoby" placeholder="NIEODKRYTE zasoby — czego jeszcze nie wiesz, a powinieneś/powinnaś sprawdzić? np. „Jakie świadczenia rodzinne mi przysługują" / „Czy są organizacje pomagające samotnym matkom" / „Czy mam prawo do alimentów z funduszu alimentacyjnego""  rows="4"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła nieodkrytych zasobów</strong>: wiele osób w trudnej sytuacji systemowej <em>nie wie</em> o przysługujących im prawach i dostępnych świadczeniach. Rozeznanie — pół godziny rozmowy z pracownikiem socjalnym, doradcą prawnym, infolinią — często odsłania zasoby, których brak był głównym składnikiem bezradności.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Plan szczeliny + zasoby</div>
+    <h1 class="card-prompt">Wybierz <em>jedną szczelinę</em> i jeden zasób</h1>
+    <p class="card-detail">Zamiast pracować na wszystkich frontach — wybierz jedną sprawę z drugiej kategorii (dostępna sprawczość) i jeden zasób z trzeciej (nieodkryte zasoby) na ten tydzień. Wąski front to nie kapitulacja — to strategia pracy w warunkach ograniczonych zasobów.</p>
+
+    <textarea class="thought-input" id="szczelinaSpr" placeholder="JEDNA szczelina sprawczości na ten tydzień — co konkretnie zrobisz? Kiedy? np. „W środę zadzwonię do OPS, pn 13:00 — umówię się na rozmowę z pracownikiem socjalnym""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="szczelinaZas" placeholder="JEDEN zasób do rozeznania w tym tygodniu. np. „W czwartek przed pracą sprawdzę, czy mam prawo do funduszu alimentacyjnego — informacja na stronie GOV""  rows="3"></textarea>
+
+    <div class="resource-grid">
+      <div class="resource-row">
+        <span class="resource-icon">🟦</span>
+        <span class="resource-text"><strong>Niebieska Linia</strong> — przemoc w rodzinie, 24h/7. <span class="resource-num">800 120 002</span> · niebieskalinia.pl</span>
+      </div>
+      <div class="resource-row">
+        <span class="resource-icon">🟣</span>
+        <span class="resource-text"><strong>Telefon Zaufania dla Dorosłych</strong> w kryzysie emocjonalnym. <span class="resource-num">116 123</span> (codziennie 14:00—22:00)</span>
+      </div>
+      <div class="resource-row">
+        <span class="resource-icon">🟢</span>
+        <span class="resource-text"><strong>OPS / MOPS</strong> — Ośrodek Pomocy Społecznej (dla mieszkańców gminy). Świadczenia rodzinne, zasiłki, praca socjalna. Adres na stronie urzędu gminy/miasta.</span>
+      </div>
+      <div class="resource-row">
+        <span class="resource-icon">🟡</span>
+        <span class="resource-text"><strong>Bezpłatna pomoc prawna</strong> — sieć punktów w każdym powiecie. Rejestracja przez darmowapomocprawna.ms.gov.pl lub telefonicznie w starostwie.</span>
+      </div>
+      <div class="resource-row">
+        <span class="resource-icon">🔴</span>
+        <span class="resource-text"><strong>112</strong> — telefon alarmowy w sytuacji bezpośredniego zagrożenia.</span>
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="kontaktyLokalne" placeholder="LOKALNE zasoby — wpisz, jeśli już znasz: konkretne osoby, numery, adresy. np. „OPS Wrocław, ul. Strzegomska 6, tel. 71 34 90 901" / „Mecenas X — pomógł sąsiadce w sprawie alimentów""  rows="3"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła „jednego frontu"</strong>: w sytuacji systemowej energia jest ograniczona. Próba pracy na pięciu frontach jednocześnie kończy się wycofaniem. Jeden konkret w tygodniu, dziesięć tygodni z rzędu — daje dziesięć ruchów, których inaczej by nie było. Strategia drobnych kroków w warunkach ucisku jest formą oporu.</div>
+
+    <div class="term-note"><strong>📌 Reguła wsparcia</strong>: w trudnej sytuacji systemowej samotna praca jest najmniej skuteczna. Każda rozmowa z osobą, która zna system (pracownik socjalny, doradca prawny, aktywist/ka NGO), zwiększa Twoją mapę zasobów wielokrotnie. Nie jesteś jedyna/jedyny w tej sytuacji — i nie musisz przechodzić przez to sam/a.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja realistycznej nadziei</div>
+    <h1 class="card-prompt">Sprawdź <em>realistyczną</em> nadzieję — w ramach barier</h1>
+    <p class="card-detail">Cel nie jest „jest świetnie, dam sobie radę" — to byłaby sprawczość fałszywa, ignorująca realne ograniczenia. Cel: <em>realistyczna</em> nadzieja — uznanie barier <em>i</em> rozpoznanie konkretnego pola działania w ich ramach. Snyder (1994, Hope Theory): nadzieja jest poznawcza, nie emocjonalna — opiera się na widzeniu dróg <em>i</em> swojego miejsca w nich.</p>
+
+    <div class="scale">
+      <div class="scale-title">Realistyczna nadzieja PO ćwiczeniu</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="nadzPo" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wartość</span><span id="nadzPoVal">5</span></div>
+    </div>
+
+    <textarea class="thought-input" id="planTydz" placeholder="PLAN NA TYDZIEŃ — kiedy konkretnie wykonasz szczelinę i rozeznanie z kroku 4? np. „Pn rano: lista pytań do OPS. Wt 13:00: telefon do OPS. Czw 9:00: sprawdzenie funduszu alimentacyjnego""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="cobedzieDalej" placeholder="CO BĘDZIE DALEJ — niezależnie od wyniku tego tygodnia, jaki jest Twój następny ruch? np. „Jeśli OPS przyzna pomoc — pójdę dalej do funduszu alimentacyjnego. Jeśli nie — szukam alternatywy: NGO Kobiety dla Kobiet""  rows="3"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: praca z systemową bezradnością wymaga akceptacji — niektóre rzeczy nie zmienią się szybko, niektóre w ogóle. Jednocześnie nie oznacza to bezruchu. Tygodniowy rytuał: jeden ruch w polu sprawczości + jedno rozeznanie zasobów. Po miesiącu zauważysz, że mapa zasobów rozszerzyła się znacznie ponad to, co widziałeś/aś początkowo. To nie zmienia bariery — zmienia Twoją pozycję wobec niej.
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: spadek bezradności w sytuacji systemowej jest powolny — bo bariery realne nie znikają. Ale wzrost <em>realistycznej nadziei</em> może być szybki — od momentu, w którym mapa zasobów się rozszerza. Z czterech zewnętrznych źródeł wsparcia po pierwszym tygodniu zwykle robi się siedem—dziesięć po miesiącu. To jest właściwy efekt do mierzenia.</div>
+
+    <div class="term-note"><strong>📊 Reguła „opór nie samobiczowanie"</strong>: praca z systemową bezradnością ma wymiar zarazem osobisty i polityczny. Twoje drobne ruchy — wniosek do OPS, telefon do prawnika, dołączenie do grupy wsparcia — są formą oporu wobec systemu. To nie tylko terapia; to <em>działanie</em>. Wstyd osoby uciskanej jest wytworem opresji, nie cechą charakteru.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Bariery <strong>bywają realne</strong> — i to też trzeba zobaczyć. Walidacja nie jest pobłażliwością; jest warunkiem dalszej pracy. <em>Trzecia droga</em>: widzę bariery i jednocześnie szukam szczelin. Mapa: bariery systemowe, dostępna sprawczość, nieodkryte zasoby. Plan: jedna szczelina + jeden zasób tygodniowo. Jeśli czujesz przemoc lub jesteś w kryzysie — Niebieska Linia 800 120 002 · 116 123.</div>
+    </div>
+
+    <div class="src">Goodman i wsp. (2004, American Psychologist) · Herman (1992, Trauma and Recovery) · Martín-Baró (1994, Writings for a Liberation Psychology) · Smail (2005, Power, Interest and Psychology) · Snyder (1994, The Psychology of Hope) · Heron i wsp. (2020, Journal of Family Violence)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateSysVals() {
+  ['barieraReal','sprawczDost','nadzPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderSysSum();
+}
+
+function renderSysSum() {
+  const r = document.getElementById('barieraReal');
+  const s = document.getElementById('sprawczDost');
+  const wrap = document.getElementById('sysSum');
+  if (!r || !s || !wrap) return;
+  const real = parseInt(r.value);
+  const spr = parseInt(s.value);
+  let txt = '';
+  if (real >= 7 && spr <= 3) {
+    txt = '<strong>Profil: realne bariery dominują</strong>. Sprawczość niska — to nie wina myślenia, to sytuacja. Pierwszą interwencją jest <em>zewnętrzne wsparcie</em> (zasoby z kroku 4): pomoc prawna, NGO, OPS, telefon zaufania. Praca z atrybucjami przyjdzie potem.';
+  } else if (real >= 5 && spr >= 4) {
+    txt = '<strong>Profil mieszany</strong>. Bariery realne i jednocześnie pole działania — typowa sytuacja. Krok 3 i 4 pokażą, gdzie znajduje się szczelina, w której można działać. Zewnętrzne zasoby + wewnętrzne kroki idą równolegle.';
+  } else if (real <= 4) {
+    txt = '<strong>Profil: bariery raczej percepcyjne</strong>. Sytuacja prawdopodobnie ma więcej pola działania, niż się wydaje. Praca z atrybucjami i mikrokrokami (inne SOS-y bezradności) może być punktem wejścia.';
+  } else {
+    txt = '<strong>Profil pośredni</strong>. Wróć do tej skali po wykonaniu kroku 3 — mapa barier zwykle precyzuje obraz.';
+  }
+  wrap.innerHTML = '<div class="term-note"><strong>📊 Twój profil</strong>: ' + txt + '</div>';
+}
+
+function onStepChange(step) {
+  if (step === 2 || step === 5) updateSysVals();
+}
+
+function onReset() {
+  const wrap = document.getElementById('sysSum');
+  if (wrap) wrap.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_bezr_systemowa — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_bezr_systemowa";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updateSysVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

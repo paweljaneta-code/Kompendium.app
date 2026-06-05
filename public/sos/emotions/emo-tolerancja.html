@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Tolerancja dystresu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.skill-card { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); border-radius: 8px; padding: 11px 14px; margin: 7px 0; cursor: pointer; transition: all 0.2s; font-size: 13px; line-height: 1.55; }
+.skill-card:hover, .skill-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.skill-card .sk-h { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); margin-bottom: 4px; font-size: 14px; }
+.skill-card:hover .sk-h, .skill-card.picked .sk-h { color: var(--bg); }
+.skill-card .sk-acro { display: inline-block; background: var(--sage-deep); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-right: 8px; font-family: 'Fraunces', serif; letter-spacing: 0.05em; }
+.skill-card.picked .sk-acro { background: var(--bg); color: var(--sage-deep); }
+.tool-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.tool-chip { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); color: var(--ink); padding: 5px 10px; border-radius: 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.tool-chip:hover, .tool-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.warn-card { background: rgba(220,180,100,0.10); border-left: 3px solid #b89050; padding: 10px 13px; border-radius: 0 4px 4px 0; margin: 8px 0; font-size: 12.5px; line-height: 1.5; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Tolerancja dystresu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Przetrwaj falę — <em>nie pogarszając sytuacji</em></h1>
+  <p class="card-detail">Tolerancja emocjonalnego dystresu (distress tolerance) — koncepcja Marshy Linehan (1993, 2014, DBT — Dialectical Behavior Therapy) — to zestaw umiejętności, które pomagają <em>przetrwać kryzys</em>, gdy emocja jest poza oknem tolerancji, bez sięgania po impulsywne, szkodliwe zachowania. Cel nie jest usunięcie emocji ani jej rozumienie. Cel: <em>przetrwać falę bez pogorszenia sytuacji</em>. Po fali można dopiero wracać do refleksji i rozwiązywania problemu.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery pakiety umiejętności DBT</div>
+    <div class="element-row">
+      <span class="element-icon">🧊</span>
+      <span class="element-text"><strong>TIPP</strong> — Temperature, Intense exercise, Paced breathing, Paired muscle relaxation. Najsilniejszy pakiet kryzysowy; działa fizjologicznie w 5—15 minut. Wskazany przy intensywności 8—10/10.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>ACCEPTS</strong> — przekierowanie uwagi i odwracanie. Activities, Contributing, Comparisons, opposite Emotions, Push away, Thoughts, Sensations. Wskazany dla intensywności 6—8/10.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌅</span>
+      <span class="element-text"><strong>IMPROVE</strong> — łagodzenie chwili przez wyobrażenie, znaczenie, modlitwę, relaksację, obecność, „mini wakacje", samodzielne pocieszenie. Wskazany dla intensywności 4—7/10, dłuższego kryzysu.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🤲</span>
+      <span class="element-text"><strong>Radical Acceptance</strong> (Linehan, Brach 2003) — radykalne uznanie sytuacji takiej, jaka jest, gdy nie da się jej zmienić. „Tu jest to, co jest." Cel: zaprzestanie cierpienia z walki z rzeczywistością.</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Tolerancja dystresu nie oznacza akceptacji bólu jako dobra. Oznacza zniesienie go bez dolewania oliwy do ognia."
+    <span class="frame-quote-attr">— Marsha Linehan (2014, DBT Skills Training Manual)</span>
+  </div>
+  
+  <div class="term-note"><strong>🔑 Klucz</strong>: distress tolerance jest narzędziem <em>tymczasowym</em>, nie strategią rozwojową. Używasz go, gdy stoisz przed pokusą impulsywnego działania (atak, wycofanie, autoagresja, alkohol, jedzenie, telefon w trakcie kryzysu w związku). Cel: <em>nic nie zrobić, co byś potem żałował/a</em>. Refleksja przyjdzie po opadzie fali.</div>
+  
+  <div class="term-note"><strong>📐 Sukces ≠ zniknięcie emocji</strong>: w distress tolerance miarą sukcesu jest <em>brak impulsywnego działania</em>, nie spadek intensywności. Możesz nadal czuć 9/10 — i to jest OK, jeśli nie wykonałeś/aś szkodliwego ruchu. Każda taka fala, którą przetrwałeś/aś bez pogorszenia, jest dowodem dla mózgu, że można. Mózg uczy się — następnym razem fala będzie krótsza.</div>
+  
+  <div class="src">Linehan (1993), <em>Cognitive-Behavioral Treatment of BPD</em> · Linehan (2014, 2015), <em>DBT Skills Training Manual</em>, wyd. 2 · Brach (2003), <em>Radical Acceptance</em> · Kabat-Zinn (1990, 2013), MBSR · Neacsiu, Bohus & Linehan (2014), DBT skills</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Identyfikacja kryzysu</div>
+  <h1 class="card-prompt">Co teraz <em>chce się rozegrać</em>?</h1>
+  <p class="card-detail">Dystres jest wysoki, gdy: jesteś poza oknem tolerancji, zwykłe strategie regulacji nie działają, pojawia się silny impuls do działania, którego potem byś żałował/a. Zauważ, co się dzieje.</p>
+  
+  <textarea class="thought-input" id="sytA" placeholder="Sytuacja w 1—2 zdaniach. np. „Partner napisał, że spóźni się 2 godziny. Ja siedzę w restauracji."" rows="3"></textarea>
+  
+  <textarea class="thought-input" id="emoA" placeholder="Co czujesz? np. „Złość 8/10, lęk 6/10, wstyd (że tak reaguję) 4/10."" rows="2"></textarea>
+  
+  <div class="scale">
+    <div class="scale-title">Intensywność dystresu (start)</div>
+    <div class="scale-bounds"><span>(0 — neutralnie)</span><span>(10 — kryzys)</span></div>
+    <input type="range" class="scale-input" id="intensA" min="0" max="10" step="1" value="8" data-default="8">
+    <div class="scale-readout"><span>Skala</span><span id="intensAval">8</span></div>
+  </div>
+  
+  <textarea class="thought-input" id="impulsA" placeholder="Jaki masz impuls? Co chciałbyś/abyś zrobić? np. „Napisać mu coś, co go zaboli. Wyjść i nie odebrać telefonu. Zamówić wódkę."" rows="3"></textarea>
+  
+  <div class="warn-card">
+    <strong>⚠️ Czerwone flagi — dystres bardzo wysoki</strong><br>
+    Myśli o samookaleczeniu lub samobójstwie. Plan zaszkodzenia komuś. Zamiar wykonania działania, które trwale wpłynie na życie (rezygnacja, zerwanie, zniszczenie). W tych przypadkach <em>zatrzymaj się natychmiast</em> — zadzwoń: 116 123 (Telefon Zaufania dla Dorosłych w Kryzysie Emocjonalnym), 112 (numer alarmowy), do bezpiecznej osoby.
+  </div>
+  
+  <div class="term-note"><strong>📌 Reguła stop-impulsu</strong>: ważnym pierwszym krokiem distress tolerance jest <em>oddzielenie siebie od narzędzia impulsu</em>. Jeśli impuls dotyczy telefonu — odłóż go w drugi pokój. Auto — kluczyki gdzieś indziej. Alkohol — wylej, oddaj. Nie polegaj na sile woli — polegaj na strukturze. To nie tchórzostwo, to mądrość.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór pakietu</div>
+  <h1 class="card-prompt">Który <em>pakiet umiejętności</em> tu pasuje?</h1>
+  <p class="card-detail">Wybierz pakiet w zależności od intensywności i kontekstu. W silnym kryzysie 8—10/10 — TIPP. Średni 6—8 — ACCEPTS. Dłuższy 4—7 — IMPROVE. Niezmienialna sytuacja — Radical Acceptance.</p>
+  
+  <div class="skill-card" id="sA" onclick="pickSkill('A')">
+    <div class="sk-h"><span class="sk-acro">TIPP</span>Szybka regulacja fizjologiczna</div>
+    <div>Temperature (zimno na twarz), Intense exercise (10 min ruchu), Paced breathing (wydech &gt; wdech), Paired muscle relaxation. Działa w 5—15 min. Najsilniejsze w kryzysie 8—10/10.</div>
+    <div style="margin-top: 6px; font-size: 12px; opacity: 0.8;">Już opisane w narzędziu „Dysregulacja emocji" — pełna procedura tam.</div>
+  </div>
+  
+  <div class="skill-card" id="sB" onclick="pickSkill('B')">
+    <div class="sk-h"><span class="sk-acro">ACCEPTS</span>Przekierowanie uwagi</div>
+    <div>7 dróg odwrócenia uwagi: <strong>A</strong>ctivities (zająć się czymś), <strong>C</strong>ontributing (pomóc komuś), <strong>C</strong>omparisons (porównanie z gorszym stanem), opposite <strong>E</strong>motions (wzbudzić odmienną), <strong>P</strong>ush away (mentalne odsunięcie), <strong>T</strong>houghts (zająć umysł), <strong>S</strong>ensations (intensywny bodziec).</div>
+  </div>
+  
+  <div class="skill-card" id="sC" onclick="pickSkill('C')">
+    <div class="sk-h"><span class="sk-acro">IMPROVE</span>Łagodzenie chwili</div>
+    <div>7 sposobów uczynienia chwili znośniejszą: <strong>I</strong>magery (wyobraźnia bezpiecznego miejsca), <strong>M</strong>eaning (znalezienie sensu), <strong>P</strong>rayer (modlitwa lub kontemplacja), <strong>R</strong>elaxation (ciało), <strong>O</strong>ne thing in the moment (uważność), brief <strong>V</strong>acation (mini-przerwa), self-<strong>E</strong>ncouragement (samopocieszenie).</div>
+  </div>
+  
+  <div class="skill-card" id="sD" onclick="pickSkill('D')">
+    <div class="sk-h"><span class="sk-acro">RA</span>Radical Acceptance</div>
+    <div>Radykalne uznanie sytuacji takiej, jaka jest. Stosowane gdy nie da się jej zmienić. „Tu jest to, co jest. Walka z faktem nie zmieni faktu — pogorszy moje cierpienie."</div>
+  </div>
+  
+  <textarea class="thought-input" id="wyborA" placeholder="Wybrany pakiet + dlaczego. np. „ACCEPTS — bo intensywność 7/10, mam czas (3 godziny w restauracji), chcę aktywnie odwrócić uwagę."" rows="2"></textarea>
+  
+  <div class="term-note"><strong>🔑 Reguła wyboru</strong>: w bardzo silnym kryzysie z impulsem natychmiastowego działania → TIPP (fizjologia, działa najszybciej). W kryzysie z dostępnym czasem → ACCEPTS lub IMPROVE (poznawcze i behawioralne). W sytuacji niezmienialnej → Radical Acceptance. Czasem łączysz: TIPP najpierw (obniża pobudzenie), potem RA (akceptacja faktu).</div>
+  
+  <div class="term-note"><strong>💡 Wskazówka</strong>: nie wybieraj „najlepszej" umiejętności — wybierz <em>najbardziej dostępną teraz</em>. W restauracji nie wykonasz intense exercise, ale możesz robić paced breathing pod stołem. W aucie możesz krzyczeć na cały regulator. Dostępność > teoretyczna skuteczność.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ ACCEPTS i IMPROVE — narzędzia</div>
+  <h1 class="card-prompt">Wybierz <em>konkretne narzędzia</em></h1>
+  <p class="card-detail">Jeśli wybrałeś/aś ACCEPTS lub IMPROVE — zaznacz konkretne techniki, które wykonasz w tym pakiecie. Można łączyć kilka.</p>
+  
+  <div class="skill-card" style="cursor: default;">
+    <div class="sk-h"><span class="sk-acro">ACCEPTS</span>7 dróg odwrócenia uwagi</div>
+  </div>
+  <div class="tool-row">
+    <button class="tool-chip" id="tA" onclick="pickTool('A')">🎯 Activities — zadanie</button>
+    <button class="tool-chip" id="tB" onclick="pickTool('B')">🤝 Contributing — pomoc</button>
+    <button class="tool-chip" id="tC" onclick="pickTool('C')">📊 Comparisons — perspektywa</button>
+    <button class="tool-chip" id="tD" onclick="pickTool('D')">😊 Opposite Emotion</button>
+    <button class="tool-chip" id="tE" onclick="pickTool('E')">📦 Push away — mentalne</button>
+    <button class="tool-chip" id="tF" onclick="pickTool('F')">🧠 Thoughts — liczyć</button>
+    <button class="tool-chip" id="tG" onclick="pickTool('G')">❄️ Sensations — bodziec</button>
+  </div>
+  
+  <div class="skill-card" style="cursor: default;">
+    <div class="sk-h"><span class="sk-acro">IMPROVE</span>7 dróg łagodzenia</div>
+  </div>
+  <div class="tool-row">
+    <button class="tool-chip" id="tH" onclick="pickTool('H')">🌅 Imagery — bezpieczne miejsce</button>
+    <button class="tool-chip" id="tI" onclick="pickTool('I')">💡 Meaning — sens</button>
+    <button class="tool-chip" id="tJ" onclick="pickTool('J')">🙏 Prayer — modlitwa</button>
+    <button class="tool-chip" id="tK" onclick="pickTool('K')">🧘 Relaxation — ciało</button>
+    <button class="tool-chip" id="tL" onclick="pickTool('L')">🎯 One thing in the moment</button>
+    <button class="tool-chip" id="tM" onclick="pickTool('M')">🏖️ Brief Vacation</button>
+    <button class="tool-chip" id="tN" onclick="pickTool('N')">💬 Self-encouragement</button>
+  </div>
+  
+  <textarea class="thought-input" id="praktA" placeholder="Co konkretnie zrobisz? np. „Zamówię herbatę i zacznę grać w prostą grę logiczną na telefonie (Activities + Thoughts). Mówię w głowie: »wytrzymam tę godzinę« (self-encouragement)."" rows="3"></textarea>
+  
+  <div class="warn-card">
+    <strong>⏱️ Reguła czasu kryzysu</strong>: distress tolerance jest narzędziem na <em>szczyt fali</em>, nie codzienną strategią. Cel: przetrwać 30—120 minut, dopóki intensywność nie spadnie do okna tolerancji. Po opadzie wracaj do normalnych strategii (refleksja, rozmowa, problem solving). Distress tolerance używane chronicznie staje się unikaniem.
+  </div>
+  
+  <div class="warn-card">
+    <strong>📌 Radical Acceptance — gdy sytuacja niezmienialna</strong><br>
+    Cztery zdania klasycznie używane (Linehan, Brach):
+    <em>„Tak jest", „To, co jest, jest", „Ta chwila jest taka, jaka jest", „Walka z faktem nie zmieni faktu, tylko pomnoży cierpienie".</em>
+    Radical Acceptance nie oznacza zgody ani aprobaty. Oznacza uznanie rzeczywistości — i przekierowanie energii z walki z faktami na działanie tam, gdzie jest jeszcze pole manewru.
+  </div>
+  
+  <textarea class="thought-input" id="raA" placeholder="Jeśli używasz Radical Acceptance — co konkretnie akceptujesz? Co przestajesz negocjować z rzeczywistością?" rows="3"></textarea>
+  
+  <div class="term-note"><strong>🔑 Reguła pełnego cyklu</strong>: użyj wybranych narzędzi przez <em>minimum 20—30 minut</em>. Krótsze próby (5—10 minut) zwykle nie pozwalają fali przejść. Pełny cykl ACCEPTS lub IMPROVE wymaga 30—60 minut. Daj sobie ten czas.</div>
+  
+  <div class="term-note"><strong>💡 Wskazówka</strong>: po fali zapisz, co zadziałało (co konkretnie + jak długo + jak silnie). Buduj swoją mapę kryzysową. Po 5—10 kryzysach masz konkretną listę „dla mnie działa: TIPP + zimna woda przez 2 minuty, potem 10 minut spaceru, potem rozmowa z X". To bezcenny materiał.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po fali — pomiar</div>
+  <h1 class="card-prompt">Co <em>przeżyłeś/aś</em>?</h1>
+  <p class="card-detail">Sprawdź dwa wymiary: spadek dystresu oraz subiektywne poczucie przetrwania bez pogorszenia. Drugi pomiar jest często ważniejszy — to fundament budowanego self-efficacy.</p>
+  
+  <div class="scale">
+    <div class="scale-title">Intensywność dystresu — teraz</div>
+    <div class="scale-bounds"><span>(0 — neutralnie)</span><span>(10 — kryzys)</span></div>
+    <input type="range" class="scale-input" id="intensP" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Skala</span><span id="intensPval">5</span></div>
+  </div>
+  
+  <div class="scale">
+    <div class="scale-title">Przetrwanie bez pogorszenia (brak impulsywnego działania)</div>
+    <div class="scale-bounds"><span>(0 — pogorszyłem/am)</span><span>(10 — przetrwałem/am bez pogorszenia)</span></div>
+    <input type="range" class="scale-input" id="przetrP" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Skala</span><span id="przetrPval">6</span></div>
+  </div>
+  
+  <div class="final-msg" id="finalMsg">
+    Ustaw suwaki, by zobaczyć analizę.
+  </div>
+  
+  <div class="term-note"><strong>📌 Reguła praktyki</strong>: distress tolerance jest <em>umiejętnością kryzysową</em>, którą najlepiej trenować w mniejszych kryzysach. W silnym kryzysie nie nauczysz się — możesz tylko korzystać z tego, co już umiesz. Trening: w intensywności 5—7/10 ćwicz pojedyncze umiejętności (1× tygodniowo). Po 6—8 tygodniach pełen zestaw narzędzi jest dostępny w ostrym kryzysie.</div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>Distress tolerance</strong> = przetrwać falę bez pogorszenia. <strong>Cztery pakiety</strong>: TIPP (fizjologia, kryzys 8—10) · ACCEPTS (przekierowanie uwagi, 6—8) · IMPROVE (łagodzenie, 4—7) · Radical Acceptance (sytuacje niezmienialne). Sukces = brak impulsywnego działania, nie spadek emocji. Najpierw fala, potem refleksja.</div>
+  </div>
+  
+  <div class="src">Linehan (1993, 2014, 2015), <em>DBT Skills Training Manual</em> · Brach (2003), <em>Radical Acceptance</em> · Kabat-Zinn (1990, 2013), MBSR · Neacsiu, Bohus & Linehan (2014), DBT skills · NICE (2009), CG78 BPD</div>
+</section>
+
+<script>
+['intensA','intensP','przetrP'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => {
+    const out = document.getElementById(id + 'val');
+    if (out) out.textContent = el.value;
+  });
+});
+</script>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickSkill(letter) {
+  document.querySelectorAll('.skill-card').forEach(el => el.classList.remove('picked'));
+  const el = document.getElementById('s' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function pickTool(letter) {
+  const el = document.getElementById('t' + letter);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_emo_tolerancja — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_emo_tolerancja";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+function onStepChange(step) {
+  if (step === 5) {
+    const before = parseInt(document.getElementById('intensA').value) || 8;
+    const after = parseInt(document.getElementById('intensP').value) || 5;
+    const przetrP = parseInt(document.getElementById('przetrP').value) || 5;
+    const delta = before - after;
+    const msg = document.getElementById('finalMsg');
+    if (msg) {
+      let pKom = '';
+      if (przetrP >= 7) pKom = 'Wysokie poczucie przetrwania bez pogorszenia (' + przetrP + '/10) — to centralny cel distress tolerance, nie usunięcie emocji.';
+      else if (przetrP >= 4) pKom = 'Średnie przetrwanie (' + przetrP + '/10) — uniknąłeś/aś pogorszenia, ale fala jeszcze nie przeszła. Kontynuuj wybrane narzędzia 10—15 minut dłużej.';
+      else pKom = 'Niskie przetrwanie (' + przetrP + '/10) — w bardzo silnym kryzysie samodzielne narzędzia mogą nie wystarczyć. Skontaktuj się z bezpieczną osobą lub dyżurem (116 123).';
+      let text;
+      if (delta >= 3) text = '<strong>Spadek dystresu o ' + delta + '.</strong> Wybrane narzędzia zadziałały — fala obniżyła się do akceptowalnego poziomu. ' + pKom;
+      else if (delta >= 1) text = '<strong>Spadek o ' + delta + '.</strong> Łagodny opad. ' + pKom;
+      else if (delta === 0) text = '<strong>Bez zmiany w intensywności.</strong> Distress tolerance to sztuka <em>przetrwania bez pogorszenia</em>, nie usunięcia. Sukcesem jest brak impulsywnego działania — nawet bez spadku dystresu. ' + pKom;
+      else text = '<strong>Wzrost o ' + Math.abs(delta) + '.</strong> Czasem pierwsze próby tolerowania ujawniają, jak silna jest emocja. To znak otwartości, nie regresji. ' + pKom;
+      msg.innerHTML = text;
+    }
+  }
+}
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="UTF-8"><title>Przepisywanie obrazów w AvPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400;9..144,1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === ZMIENNE — paleta lineart v2 dostosowana do modułu GAD === */
+:root{
+  --ink:#1c2620;          /* główny kolor tekstu */
+  --soft:#4a554d;          /* tekst pomocniczy */
+  --mute:#8a9089;          /* etykiety */
+  --line:#c9c2b0;          /* linie */
+  --line2:#e3ddc8;         /* linie pomocnicze */
+  --sage:#3d6b30;          /* akcent GAD — sage-zielony */
+  --sage-soft:#eaf0e0;     /* tło akcentu */
+  --warm:#b8693f;          /* akcent komplementarny */
+  --paper:#fdfbf3;         /* kremowy odcień (alternatywa) */
+}
+
+/* === RESET === */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#fff}
+body{
+  font-family:'DM Sans', system-ui, -apple-system, sans-serif;
+  color:var(--ink);
+  font-size:10pt;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* === STRONA A4 — 210x297mm === */
+.page{
+  width:210mm;
+  height:297mm;
+  margin:0 auto;
+  padding:14mm 13mm 13mm 13mm;
+  background:#fff;
+  position:relative;
+  page-break-after:always;
+  overflow:hidden;
+}
+.page:last-child{page-break-after:auto}
+
+/* === NAGŁÓWEK === */
+.eyebrow{
+  font-family:'DM Sans', sans-serif;
+  font-size:8pt;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:var(--sage);
+  font-weight:600;
+  margin-bottom:6px;
+}
+h1.hdr-title{
+  font-family:'Fraunces', serif;
+  font-size:24pt;
+  font-weight:500;
+  letter-spacing:-0.025em;
+  line-height:1.05;
+  color:var(--ink);
+  margin-bottom:4px;
+}
+h1.hdr-title em{font-style:italic;color:var(--sage);font-weight:500}
+.hdr-sub{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:10.5pt;
+  color:var(--soft);
+  margin-bottom:9px;
+  line-height:1.3;
+}
+.hdr-meta{
+  display:flex;
+  gap:13px;
+  flex-wrap:wrap;
+  font-size:8pt;
+  color:var(--mute);
+  letter-spacing:0.06em;
+  padding-top:7px;
+  padding-bottom:7px;
+  border-top:1.2px solid var(--ink);
+  border-bottom:0.5px solid var(--line);
+  margin-bottom:13px;
+}
+.hdr-meta strong{color:var(--ink);font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-right:3px}
+
+/* === SEKCJE === */
+.sec{margin-bottom:9px}
+.sec-h{
+  font-family:'Fraunces', serif;
+  font-size:12.5pt;
+  font-weight:600;
+  letter-spacing:-0.015em;
+  color:var(--ink);
+  margin-bottom:5px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.sec-h .num{
+  font-family:'DM Sans', sans-serif;
+  font-size:8.5pt;
+  font-weight:600;
+  color:var(--ink);
+  letter-spacing:0.06em;
+  border:1px solid var(--ink);
+  padding:1px 6px;
+  border-radius:2px;
+  min-width:22px;
+  text-align:center;
+}
+.sec-h .ico-svg{width:16px;height:16px;flex:0 0 16px}
+
+/* === IKONY SVG === */
+.ico-svg{display:inline-block;vertical-align:middle}
+.ico-sage{stroke:var(--sage);fill:none}
+.ico-warm{stroke:var(--warm);fill:none}
+.ico-ink{stroke:var(--ink);fill:none}
+
+/* === BLOKI TEKSTU === */
+.prose{font-size:10pt;color:var(--soft);line-height:1.5;margin-bottom:8px;text-align:justify;hyphens:auto;-webkit-hyphens:auto}
+.prose strong{color:var(--ink);font-weight:600}
+.prose em{color:var(--ink);font-style:italic}
+
+.callout{
+  background:#fff;
+  border:0.6px solid var(--line);
+  border-left:2.5px solid var(--sage);
+  padding:9px 12px;
+  margin:10px 0;
+  font-size:9.5pt;
+  color:var(--soft);
+  border-radius:0 3px 3px 0;
+  text-align:justify;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+.callout strong{color:var(--ink);font-weight:600}
+
+/* === INSTRUKCJA U GÓRY (krótka instrukcja + uzasadnienie po nagłówku) === */
+.intro-box-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 9px 0;
+}
+.intro-box{
+  border:0.8px solid var(--line);
+  padding:8px 12px;
+  font-size:9pt;
+  color:var(--soft);
+  line-height:1.45;
+  background:#fff;
+  text-align:justify;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+.intro-box .intro-lbl{
+  font-family:'DM Sans', sans-serif;
+  font-size:7pt;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  margin-bottom:3px;
+  display:block;
+}
+.intro-box p{margin:0}
+.intro-box strong{color:var(--ink);font-weight:600}
+.intro-box em{color:var(--ink);font-style:italic}
+
+/* === LINIE DO PISANIA === */
+.write-lines{margin:8px 0}
+.fill-field .write-lines{margin-top:auto}
+.nln{
+  height:9mm;
+  border-bottom:0.6px solid var(--line);
+  margin-bottom:0;
+}
+.write-label{
+  font-size:8.5pt;
+  color:var(--mute);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+  font-weight:600;
+}
+
+/* === POLA WYPEŁNIANE === */
+.fill-field{margin-bottom:10px;display:flex;flex-direction:column;height:100%}
+.fill-field .lbl{
+  font-family:'DM Sans', sans-serif;
+  font-size:8.5pt;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  margin-bottom:3px;
+}
+.fill-field .lbl-sub{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:9.5pt;
+  color:var(--mute);
+  letter-spacing:0;
+  text-transform:none;
+  font-weight:400;
+  display:block;
+  margin-top:1px;
+}
+
+/* === STOPKA === */
+.foot{
+  position:absolute;
+  bottom:8mm;
+  left:16mm;
+  right:16mm;
+  font-size:7.5pt;
+  color:var(--mute);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  border-top:0.5px solid var(--line);
+  padding-top:6px;
+}
+.foot strong{color:var(--soft);font-weight:600}
+.foot .pg-num{font-family:'Fraunces', serif;font-style:italic;text-transform:none;letter-spacing:0;color:var(--soft)}
+
+/* === SKALA MOOD === */
+.mood-scale{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:3px 0 8px 0;
+}
+.mood-scale .ms-lbl{
+  font-size:8.5pt;
+  color:var(--mute);
+  font-weight:600;
+  letter-spacing:0.04em;
+  flex:0 0 70px;
+}
+.mood-scale .ms-end{
+  font-size:8pt;
+  color:var(--mute);
+  font-style:italic;
+}
+.mood-scale .ms-row{
+  display:flex;
+  gap:4px;
+  flex:1;
+}
+.mood-scale .ms-num{
+  width:19px;height:19px;
+  border:1px solid var(--line);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8.5pt;
+  color:var(--soft);
+  font-weight:500;
+}
+
+/* === TABELE === */
+table.work-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:6px 0;
+  font-size:9pt;
+}
+table.work-table th{
+  font-family:'DM Sans', sans-serif;
+  font-size:8pt;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  text-align:left;
+  padding:7px 8px;
+  border-bottom:1.4px solid var(--ink);
+  background:#fff;
+}
+table.work-table td{
+  padding:0;
+  height:14mm;
+  border-bottom:0.6px solid var(--line);
+  vertical-align:top;
+}
+table.work-table td.col-divider{
+  border-left:0.4px solid var(--line2);
+}
+table.work-table .cell-hint{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:8.5pt;
+  color:var(--mute);
+  padding:5px 8px 0 8px;
+  line-height:1.2;
+}
+
+/* === BIBLIOTEKA IKON (SVG defs) — wspólna dla wszystkich handoutów === */
+
+/* === DRUK === */
+@media print{
+  body{background:#fff}
+  .page{margin:0;padding:18mm 16mm 18mm 16mm;box-shadow:none;break-after:page}
+  .page:last-child{break-after:auto}
+  .no-print{display:none}
+  @page{size:A4;margin:0}
+}
+
+/* === RESPONSYWNOŚĆ (podgląd na ekranie) === */
+@media screen{
+  body{padding:24px 16px;background:#e8e3d4}
+  .page{box-shadow:0 4px 24px rgba(0,0,0,0.08);margin-bottom:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- Biblioteka ikon SVG (line-art, stroke 1.8, viewBox 24x24) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <!-- target/cel -->
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke-width="1.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <!-- drzewo (dla worry tree) -->
+  <symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21V11M12 11l-4-4M12 11l4-4M8 7l-3-3M16 7l3-3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="4" r="1.6"/><circle cx="19" cy="4" r="1.6"/><circle cx="8" cy="7" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="7" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <!-- pytajnik -->
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M9 9c0-1.7 1.3-3 3-3s3 1.3 3 3c0 1.3-0.7 2-2 2.5-0.7 0.3-1 0.8-1 1.5" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none"/></symbol>
+  <!-- ptaszek -->
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- X -->
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke-width="2" stroke-linecap="round"/></symbol>
+  <!-- strzałka w prawo -->
+  <symbol id="i-arr" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- strzałka w dół -->
+  <symbol id="i-arr-d" viewBox="0 0 24 24"><path d="M12 5v14M7 14l5 5 5-5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- zegar -->
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M12 7v5l3 3" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- stoper -->
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" stroke-width="1.6"/><path d="M10 3h4M12 3v3M19 7l2-2M5 7L3 5" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M12 11v3l2 1.5" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- iskra / sparkle -->
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <!-- ołówek/pencil -->
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M16 4l4 4-11 11H5v-4L16 4z" stroke-width="1.6" stroke-linejoin="round" fill="none"/><path d="M14 6l4 4" stroke-width="1.6"/></symbol>
+  <!-- clipboard -->
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="1.5" stroke-width="1.6" fill="none"/><rect x="9" y="2.5" width="6" height="3" rx="0.6" stroke-width="1.6" fill="none"/><path d="M8 11h8M8 14h8M8 17h5" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <!-- żarówka / lightbulb -->
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 17h6M10 20h4M12 3a6 6 0 014 10.5c-0.7 0.7-1 1.5-1 2.5h-6c0-1-0.3-1.8-1-2.5A6 6 0 0112 3z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- ciało / body PMR -->
+  <symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2" stroke-width="1.6" fill="none"/><path d="M12 7.5v8M9 10l-3 3M15 10l3 3M9.5 15.5L7 22M14.5 15.5L17 22" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- liść (akceptacja, mindfulness) -->
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14zM5 19l7-7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- kalendarz -->
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5" stroke-width="1.6" fill="none"/><path d="M4 10h16M8 3v4M16 3v4" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <!-- mózg/myśl -->
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 4c-2 0-3.5 1.5-3.5 3.5 0 0.5 0.1 1 0.3 1.4C4.5 9.5 4 10.7 4 12c0 1.3 0.5 2.4 1.4 3.2-0.1 0.3-0.2 0.7-0.2 1 0 2 1.6 3.7 3.5 3.7M15 4c2 0 3.5 1.5 3.5 3.5 0 0.5-0.1 1-0.3 1.4 1.3 0.6 1.8 1.8 1.8 3.1 0 1.3-0.5 2.4-1.4 3.2 0.1 0.3 0.2 0.7 0.2 1 0 2-1.6 3.7-3.5 3.7M12 4v16" stroke-width="1.5" stroke-linecap="round" fill="none"/></symbol>
+  <!-- waga / wybór -->
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v17M5 21h14M6 11l3-7 3 7M12 11h3l3-7M3 11h6l-3 5-3-5zM15 11h6l-3 5-3-5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+</defs>
+</svg>
+
+<div class="page"><header>
+<div class="eyebrow">AVPD · Tożsamość · Schematy</div>
+<h1 class="hdr-title">Przepisywanie obrazów <em>(imagery rescripting)</em></h1>
+<div class="hdr-sub">Wizualizacja sceny upokorzenia z dzieciństwa, <strong>dorosły „ja" wchodzi i broni dziecka</strong>. Lee &amp; James 2012: d = 0,81 dla redukcji wstydu. Szczególnie skuteczne w AvPD — wstyd <em>zakodowany w obrazach</em>.</div>
+<div class="hdr-meta"><span><strong>Czas:</strong> 15 min</span><span>Wersja edukacyjna</span><span><strong>Źródło:</strong> Arntz &amp; Weertman (1999); Lee &amp; James (2012); Arntz, Sloots &amp; Hagenaars (2015)</span></div>
+</header>
+<div class="intro-box-row">
+<div class="intro-box">
+<span class="intro-lbl">Jak używać</span>
+<p><strong>1</strong> · Zrozumiesz, dlaczego sama <em>praca poznawcza</em> ze wstydem odbija się od ściany (sekcja 01). <strong>2</strong> · Poznasz mechanizm <strong>rekonsolidacji pamięci emocjonalnej</strong> (sekcja 02). <strong>3</strong> · Poznasz <em>pięcioetapową strukturę</em> sesji przepisywania obrazów (ang. <em>imagery rescripting</em>) (sekcja 03). <strong>4</strong> · Zobaczysz <strong>warunki bezpieczeństwa</strong> — kiedy NIE rozpoczynać (sekcja 04).</p>
+</div>
+<div class="intro-box">
+<span class="intro-lbl">Dlaczego to działa</span>
+<p>Przepisywanie obrazów (ang. <em>imagery rescripting</em>, Arntz &amp; Weertman 1999) — wizualizacja wczesnej sceny odrzucenia/upokorzenia, w której Dorosły „ja" wchodzi do sceny i broni Dziecka — jest jedną z <strong>najsilniejszych technik</strong> w AvPD, gdy schemat defektywności pochodzi z konkretnych pamiętnych wydarzeń. Lee &amp; James (2012, metaanaliza): redukcja wstydu i negatywnych emocji z <em>d = 0,81</em>. W AvPD <strong>szczególnie skuteczne</strong> — bo wstyd jest <em>zakodowany w obrazach</em>, nie w słowach (więc <em>obrazy</em> najlepiej go zmienią). Klasyczna praca poznawcza („to nie była twoja wina, miałeś 7 lat") generuje <em>intelektualną zgodę</em>, ale <strong>emocjonalny ładunek</strong> wspomnienia pozostaje. Pacjent „wie", że nie zawinił — i wciąż czuje wstyd, gdy o tym myśli. Bo schemat został zakodowany <em>emocjonalnie</em>, nie poznawczo. <em>Imagery rescripting</em> przemawia w języku <strong>pamięci emocjonalnej</strong>: terapeuta prowadzi Dorosłego „ja" do wejścia, ochrony Dziecka, powiedzenia oprawcy/krytykowi tego, czego Dziecko nie mogło powiedzieć. Mózg przetwarza to jako <em>doświadczenie</em>, nie abstrakcję. Po sesji: emocjonalny ładunek wspomnienia mierzalnie spada (SUDS).</p>
+</div>
+</div>
+<div class="sec">
+<h2 class="sec-h"><span class="num">01</span><svg class="ico-svg ico-sage"><use href="#i-board"/></svg> Dlaczego sama praca poznawcza nie wystarcza</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #b8693f;padding:8px 12px;border-radius:3px;font-size:8.5pt;line-height:1.6">
+<div style="font-family:'DM Sans';font-size:7.5pt;font-weight:700;color:#b8693f;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Klasyczna praca poznawcza</div>
+„To nie była twoja wina, miałeś 7 lat". Pacjent: „<em>wiem, ale i tak czuję wstyd</em>". Intelektualna zgoda. Emocjonalny ładunek <strong>nie spada</strong>.
+</div>
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:8px 12px;border-radius:3px;font-size:8.5pt;line-height:1.6">
+<div style="font-family:'DM Sans';font-size:7.5pt;font-weight:700;color:#3d6b30;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Przepisywanie obrazów</div>
+Pacjent <em>wraca</em> do sceny, terapeuta prowadzi Dorosłego do wejścia, ochrony Dziecka. Pamięć epizodyczna. <strong>Doświadczenie</strong>, nie abstrakcja. Ładunek mierzalnie spada.
+</div>
+</div>
+<p class="prose" style="margin-top:12px"><strong>Mechanizm różnicy:</strong> wspomnienia traumatyczne są przechowywane w <em>pamięci emocjonalnej</em> (amygdala, hipokamp), oddzielonej od pamięci semantycznej. Praca słowna pracuje na pamięci semantycznej („wiem, że…") — nie sięga emocjonalnej. <em>Imagery rescripting</em> <strong>aktywuje wspomnienie</strong> (rekonsolidacja) i modyfikuje je przed ponownym zakodowaniem.</p>
+</div>
+<div class="foot">
+<span><strong>Kompendium Narzędzi Terapeutycznych · Osobowość unikająca · lineart v2</strong></span>
+<span class="pg-num">str. 1 / 2</span>
+</div>
+</div><div class="page"><div class="sec" style="margin-top:0">
+<h2 class="sec-h"><span class="num">02</span><svg class="ico-svg ico-sage"><use href="#i-target"/></svg> Rekonsolidacja pamięci — mechanizm</h2>
+<svg viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin:8px auto;max-width:560px" font-family="'DM Sans', sans-serif">
+<style>
+.rk-warm{fill:#fff;stroke:#b8693f;stroke-width:1.3}
+.rk-sage{fill:#fff;stroke:#3d6b30;stroke-width:1.3}
+.rk-warm-lbl{font-size:8.5pt;fill:#b8693f;font-weight:700;letter-spacing:0.04em}
+.rk-sage-lbl{font-size:8.5pt;fill:#3d6b30;font-weight:700;letter-spacing:0.04em}
+.rk-sub{font-size:7.5pt;fill:#4a554d;font-style:italic;font-family:'Fraunces'}
+.rk-arr{stroke:#1c2620;stroke-width:1.1;fill:none}
+</style>
+<rect x="10" y="35" width="130" height="44" rx="3" class="rk-warm"/>
+<text x="75" y="51" text-anchor="middle" class="rk-warm-lbl">AKTYWACJA</text>
+<text x="75" y="63" text-anchor="middle" class="rk-sub" fill="#b8693f">wizualizacja sceny</text>
+<text x="75" y="73" text-anchor="middle" class="rk-sub" fill="#b8693f">w wyobraźni</text>
+<rect x="155" y="35" width="130" height="44" rx="3" class="rk-warm"/>
+<text x="220" y="51" text-anchor="middle" class="rk-warm-lbl">DESTABILIZACJA</text>
+<text x="220" y="63" text-anchor="middle" class="rk-sub" fill="#b8693f">ślad pamięci <em>plastyczny</em></text>
+<text x="220" y="73" text-anchor="middle" class="rk-sub" fill="#b8693f">przez ~6 godzin</text>
+<rect x="300" y="35" width="130" height="44" rx="3" class="rk-sage"/>
+<text x="365" y="51" text-anchor="middle" class="rk-sage-lbl">NOWE DOŚWIADCZENIE</text>
+<text x="365" y="63" text-anchor="middle" class="rk-sub" fill="#3d6b30">Dorosły broni Dziecka</text>
+<text x="365" y="73" text-anchor="middle" class="rk-sub" fill="#3d6b30">w obrazie</text>
+<rect x="445" y="35" width="145" height="44" rx="3" class="rk-sage"/>
+<text x="517" y="51" text-anchor="middle" class="rk-sage-lbl">REKONSOLIDACJA</text>
+<text x="517" y="63" text-anchor="middle" class="rk-sub" fill="#3d6b30">ślad modyfikowany,</text>
+<text x="517" y="73" text-anchor="middle" class="rk-sub" fill="#3d6b30">SUDS spada</text>
+<path d="M140 57 L 153 57" class="rk-arr"/><polygon points="153,57 147,54 147,60" fill="#1c2620"/>
+<path d="M285 57 L 298 57" class="rk-arr"/><polygon points="298,57 292,54 292,60" fill="#1c2620"/>
+<path d="M430 57 L 443 57" class="rk-arr"/><polygon points="443,57 437,54 437,60" fill="#3d6b30"/>
+</svg>
+<p class="prose" style="margin-top:6px"><strong>Mechanizm Nader 2000:</strong> wspomnienie <em>aktywowane</em> staje się <em>plastyczne</em> przez około 6 godzin. Nowe doświadczenie emocjonalne w tym oknie <strong>modyfikuje</strong> oryginalny ślad pamięciowy. Pacjent zapamiętuje scenę z nową emocją: ulgą, walidacją, bezpieczeństwem. Lane i wsp. (2015): to <em>nie</em> metafora — to udokumentowana neurobiologia. Efekt podobny do EMDR, choć inny mechanizm.</p>
+</div>
+<div class="sec" style="margin-top:10px">
+<h2 class="sec-h"><span class="num">03</span><svg class="ico-svg ico-sage"><use href="#i-pencil"/></svg> Pięć kroków sesji <em>imagery rescripting</em></h2>
+<div style="border:0.8px solid #c9c2b0;border-radius:3px;padding:8px 14px;margin-top:6px;font-size:8.5pt;line-height:1.7;color:#4a554d">
+<strong>1 · Wybór sceny</strong> — wczesne wspomnienie wstydu/upokorzenia. Ma być <em>żywe</em>, nie najgorsze — najgorsze wymaga większego aliansu.<br>
+<strong>2 · Wizualizacja jako dziecko</strong> — pacjent zamyka oczy, <em>wraca</em> do sceny w pierwszej osobie. Co widzi, słyszy, czuje w ciele? <em>Co czuje to dziecko?</em><br>
+<strong>3 · Wejście dorosłego/-ej</strong> — pacjent jako <em>dorosły</em> wchodzi do sceny. Mówi do dziecka: „<em>nie jesteś wadliwy. To, co się dzieje, jest niesprawiedliwe</em>". Mówi do oprawcy to, czego dziecko nie mogło.<br>
+<strong>4 · Dziecko słyszy</strong> — terapeuta pyta: „<em>co czuje dziecko, słysząc to?</em>". Płacz, ulga, niedowierzanie są normalne. <strong>To moment rekonsolidacji.</strong><br>
+<strong>5 · Integracja</strong> — wyjście ze sceny, oddech, refleksja. „Co się zmieniło?" „Co teraz wiesz, czego nie wiedziałeś/-aś wcześniej?". Notatka w dzienniku.
+</div>
+</div>
+<div class="sec" style="margin-top:10px">
+<h2 class="sec-h"><span class="num">04</span><svg class="ico-svg ico-sage"><use href="#i-bulb"/></svg> Warunki bezpieczeństwa — kiedy NIE rozpoczynać</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #b8693f;padding:8px 12px;border-radius:3px;font-size:8.5pt;line-height:1.6">
+<div style="font-family:'DM Sans';font-size:7.5pt;font-weight:700;color:#b8693f;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Kiedy <em>nie</em></div>
+Pierwsze sesje terapii. Aktywna depresja albo myśli samobójcze. Świeży kryzys. Pacjent dysocjuje. Brak ustabilizowanego aliansu. Niestabilna sytuacja życiowa.
+</div>
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:8px 12px;border-radius:3px;font-size:8.5pt;line-height:1.6">
+<div style="font-family:'DM Sans';font-size:7.5pt;font-weight:700;color:#3d6b30;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">Kiedy <em>tak</em></div>
+Po 6–12 miesiącach budowania aliansu. Pacjent <em>uznał</em> emocjonalny ból. Stabilna sytuacja życiowa. Doświadczony terapeuta schematów lub TFP. Wsparcie psychiatryczne w razie potrzeby.
+</div>
+</div>
+</div>
+<div class="callout" style="margin-top:10px">
+<strong>Klucz:</strong> <em>imagery rescripting</em> w AvPD to <strong>przełom</strong> — pacjent <em>czuje</em> korektę wstydu, nie tylko o niej myśli. Często płacze pierwszy raz w terapii. To <em>nie</em> dramatyzacja — to rekonsolidacja pamięci epizodycznej (Nader 2000; Lane 2015). Lee &amp; James 2012: d = 0,81 dla redukcji wstydu. Warunek wstępny: <strong>6–12 miesięcy budowania aliansu</strong>. Bez tego — dropout, dysocjacja albo blokowanie obrazu. <em>Imagery rescripting</em> <em>nie</em> jest pierwszą interwencją w AvPD — jest <strong>kluczową interwencją</strong> w fazie pracy z rdzeniem schematu (1–3 lata terapii).
+</div>
+<div class="foot">
+<span><strong>Kompendium Narzędzi Terapeutycznych · Osobowość unikająca · lineart v2</strong></span>
+<span class="pg-num">str. 2 / 2</span>
+</div>
+</div></body></html>

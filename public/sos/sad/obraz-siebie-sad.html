@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Obraz siebie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === EVIDENCE-LIST (krok 2) === */
+.evidence-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.evidence-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.evidence-item:hover, .evidence-item:active { background: rgba(122,146,112,0.06); }
+.evidence-item.checked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-left: 3px solid var(--sage-deep); }
+.evidence-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.evidence-item.checked .evidence-tick { background: var(--sage-deep); border-color: var(--sage-deep); }
+.evidence-item.checked .evidence-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.evidence-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.evidence-text strong { color: var(--ink); font-weight: 700; }
+.evidence-mech { display: block; font-size: 11px; color: var(--ink-mute); margin-top: 3px; font-style: italic; }
+
+/* === STRATEGY-CARDS (krok 3) === */
+.strategy-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.strategy-card { padding: 14px; background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.strategy-card:hover, .strategy-card:active { background: rgba(122,146,112,0.06); }
+.strategy-card.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.strategy-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.strategy-icon { font-size: 20px; flex-shrink: 0; }
+.strategy-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--ink); }
+.strategy-tick { font-size: 16px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.strategy-card.picked .strategy-tick { opacity: 1; }
+.strategy-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.strategy-desc strong { color: var(--ink); }
+
+/* === RESCRIPT-CARD (krok 4) === */
+.rescript-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.rescript-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.rescript-step { display: flex; gap: 12px; padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; align-items: flex-start; }
+.rescript-step:last-child { margin-bottom: 0; }
+.rescript-num { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--warm); flex-shrink: 0; line-height: 1.4; min-width: 22px; }
+.rescript-text { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.95); flex: 1; }
+.rescript-text strong { color: var(--bg); }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.diff-block { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 14px; background: rgba(122,146,112,0.06); border-radius: 12px; margin: 8px 0 10px; }
+.diff-side { text-align: center; flex: 1; }
+.diff-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.diff-num.before { color: var(--warm); }
+.diff-num.after { color: var(--sage-deep); }
+.diff-lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; font-weight: 600; }
+.diff-arrow { font-size: 22px; color: var(--ink-mute); }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Obraz siebie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Negatywny <em>obraz siebie</em></h1>
+    <p class="card-detail"><strong>Obraz siebie z perspektywy obserwatora</strong> (negative observer-perspective imagery, Hackmann, Clark, McManus 2000) — w sytuacji społecznej w SAD widzisz siebie <em>z perspektywy obserwatora</em>: jak zniekształcony obraz „od zewnątrz” — spocony, czerwony, drżący, niezgrabny. To <strong>nie</strong> jest realne — to wewnętrzny obraz utrwalony z dawnych traumatycznych sytuacji społecznych (najczęściej z dzieciństwa lub adolescencji). Każda nowa sytuacja <em>wzmacnia</em> ten obraz. <strong>Modyfikacja obrazów</strong> (imagery rescripting, Wild i Clark 2011) — leczenie polega na <em>przepisaniu</em> tego obrazu.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy mechanizmu</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">👁</span>
+          <span class="element-text"><strong>Perspektywa obserwatora</strong> = widzę siebie „z zewnątrz”, jak na nagraniu (mimo że rozmawiam)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📸</span>
+          <span class="element-text"><strong>Zdjęcie pamięci</strong> = obraz utrwalony z dawnej traumy społecznej, projekcja w teraźniejszość</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔁</span>
+          <span class="element-text"><strong>Cykl</strong> = każda nowa sytuacja społeczna <em>wzmacnia</em> stary obraz, zamiast go aktualizować</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔄</span>
+          <span class="element-text"><strong>Modyfikacja obrazów</strong> (imagery rescripting) = aktywne <em>przepisanie</em> obrazu z perspektywy współczującego dorosłego</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Pacjenci z fobią społeczną widzą siebie <em>oczami innych</em> — i obraz, który widzą, jest gorszy niż rzeczywistość.”
+        <span class="frame-quote-attr">— Hackmann, Clark i McManus (2000)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: ten obraz to <em>nie</em> jest „jak naprawdę wyglądasz”. To <strong>halucynacja oparta na pamięci</strong> z najgorszych chwil życia społecznego (najczęściej szkoła podstawowa/gimnazjum). Mózg <em>nakłada ją</em> na każdą obecną sytuację — nawet jeśli faktycznie wyglądasz spokojnie i pewnie.</div>
+    
+    <div class="src">Hackmann, Clark, McManus (2000) · Clark i Wells (1995) · Wild i Clark (2011, imagery rescripting) · Wells (1997)</div>
+  </section>
+  <!-- 2: AUDYT OBRAZU -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt obrazu</div>
+    <h1 class="card-prompt">Jak <em>wydaje ci się</em>, że wyglądasz?</h1>
+    <p class="card-detail">Wpisz <strong>konkretny opis</strong> obrazu siebie, który pojawia się w głowie <em>w trakcie</em> sytuacji społecznej. Im bardziej dosłowny opis, tym łatwiej go potem przepisać. Zaznacz też, jakie masz <em>obiektywne dane</em> potwierdzające ten obraz.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: jeśli zaznaczyłeś 3+ <em>NIE</em> — masz <strong>twardy dowód</strong>, że obraz to konstrukcja, nie rzeczywistość. To kluczowe odkrycie — odbiera obrazowi władzę. <em>„To jest wyobrażenie, nie fakt”</em>.</div>
+    
+    <div class="examples-h">Twój obraz siebie w sytuacji społecznej</div>
+    <textarea class="thought-input" id="imageInput" placeholder="np. „Widzę się jako spoconego, z czerwoną twarzą, drżącymi rękami, niezgrabnego — wszyscy patrzą na mnie z politowaniem”..." rows="3"></textarea>
+    
+    <div class="examples-h" style="margin-top:14px">Najczęstsze obrazy siebie w SAD — stuknij, jeśli pasuje</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useExampleImg(this)">Spocony, z mokrymi plamami pod pachami</div>
+      <div class="example-chip" onclick="useExampleImg(this)">Czerwony jak burak na twarzy</div>
+      <div class="example-chip" onclick="useExampleImg(this)">Drżący głos, jąkający się</div>
+      <div class="example-chip" onclick="useExampleImg(this)">Sztywny, niezgrabny w ruchach</div>
+      <div class="example-chip" onclick="useExampleImg(this)">Spięty, z napiętą twarzą</div>
+      <div class="example-chip" onclick="useExampleImg(this)">Mały, kulący się</div>
+      <div class="example-chip" onclick="useExampleImg(this)">Niewyraźnie patrzący w bok</div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Czy masz <em>obiektywne dane</em> potwierdzające ten obraz?</div>
+    <div class="evidence-list">
+      <div class="evidence-item" onclick="toggleEvidence(this)">
+        <div class="evidence-tick"></div>
+        <div class="evidence-text">
+          <strong>NIE — nigdy nie widziałem/am siebie z zewnątrz</strong> w takiej sytuacji
+          <span class="evidence-mech">To znaczy, że obraz pochodzi z wyobraźni, nie z obserwacji</span>
+        </div>
+      </div>
+      <div class="evidence-item" onclick="toggleEvidence(this)">
+        <div class="evidence-tick"></div>
+        <div class="evidence-text">
+          <strong>NIE — nikt mi nigdy nie powiedział</strong>, że tak wyglądałem/am
+          <span class="evidence-mech">Brak feedbacku zewnętrznego = brak danych potwierdzających</span>
+        </div>
+      </div>
+      <div class="evidence-item" onclick="toggleEvidence(this)">
+        <div class="evidence-tick"></div>
+        <div class="evidence-text">
+          <strong>NIE — żadne lustro/szyba/zdjęcie</strong> nie potwierdziły obrazu
+          <span class="evidence-mech">Lustra w toaletach, szyby, telefon — sprawdziłeś? Co widziałeś?</span>
+        </div>
+      </div>
+      <div class="evidence-item" onclick="toggleEvidence(this)">
+        <div class="evidence-tick"></div>
+        <div class="evidence-text">
+          <strong>NIE — żadne nagranie wideo</strong> mnie tak nie pokazało
+          <span class="evidence-mech">Jeśli kiedyś byłeś nagrany — porównaj. Najczęściej obraz „z głowy” jest 5-10× gorszy</span>
+        </div>
+      </div>
+      <div class="evidence-item" onclick="toggleEvidence(this)">
+        <div class="evidence-tick"></div>
+        <div class="evidence-text">
+          <strong>TAK — kiedyś ktoś mi powiedział</strong> coś takiego
+          <span class="evidence-mech">Kiedy? Jeden raz czy regularnie? Jak dawno temu?</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- 3: WYBIERZ STRATEGIĘ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybierz strategię</div>
+    <h1 class="card-prompt">Co teraz <em>zrobisz</em> z tym obrazem?</h1>
+    <p class="card-detail">Trzy empirycznie udokumentowane strategie pracy z obrazem siebie w SAD. Wybierz <strong>jedną</strong> i zastosuj w kroku 4. Nie próbuj wszystkich naraz — każda wymaga 5–10 minut skupienia.</p>
+    
+    <div class="term-note"><strong>Reguła wyboru</strong>: <em>informacja zwrotna z nagrania</em> = jeśli możesz się nagrać; <em>modyfikacja obrazów</em> = jeśli pamiętasz konkretną wczesną traumę; <em>uwaga skierowana na zewnątrz</em> = jeśli aktualne sytuacje są codzienne. <strong>Najsilniejszy efekt</strong> klinicznie ma informacja zwrotna z nagrania, ale wymaga jednorazowego dyskomfortu nagrania.</div>
+    
+    <div class="strategy-list">
+      <div class="strategy-card" onclick="pickStrategy(this)">
+        <div class="strategy-h">
+          <span class="strategy-icon">🎬</span>
+          <span class="strategy-name">Informacja zwrotna z nagrania (video feedback, Harvey i in. 2000)</span>
+          <span class="strategy-tick">✓</span>
+        </div>
+        <div class="strategy-desc">Nagraj się w sytuacji społecznej (rozmowa, prezentacja). Najpierw zapisz, jak <em>czułeś, że wyglądasz</em>. Potem obejrzyj — porównaj. <strong>Złoty standard</strong> — najsilniejszy empirycznie zabieg na obraz siebie w SAD.</div>
+      </div>
+      
+      <div class="strategy-card" onclick="pickStrategy(this)">
+        <div class="strategy-h">
+          <span class="strategy-icon">🔄</span>
+          <span class="strategy-name">Modyfikacja obrazów (imagery rescripting, Wild i Clark 2011)</span>
+          <span class="strategy-tick">✓</span>
+        </div>
+        <div class="strategy-desc">Wróć do <em>najwcześniejszej traumy społecznej</em> (np. zawstydzenie w klasie). Wyobraź sobie obecnego, dorosłego siebie wkraczającego do tej sceny i <strong>broniącego małego siebie</strong>. Aktywne przepisanie obrazu. Działa po 4–6 sesjach.</div>
+      </div>
+      
+      <div class="strategy-card" onclick="pickStrategy(this)">
+        <div class="strategy-h">
+          <span class="strategy-icon">🎯</span>
+          <span class="strategy-name">Uwaga skierowana na zewnątrz (Clark i Wells 1995)</span>
+          <span class="strategy-tick">✓</span>
+        </div>
+        <div class="strategy-desc">W trakcie sytuacji <strong>świadomie kieruj uwagę na zewnątrz</strong> — na rozmówcę, otoczenie, treść rozmowy. Uwaga skierowana na siebie <em>karmi</em> obraz; uwaga skierowana na zewnątrz <em>go wygładza</em>. Trening: 30 minut codziennie przez 2 tygodnie.</div>
+      </div>
+    </div>
+  </section>
+  <!-- 4: KONKRETNY PLAN -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Konkretny plan</div>
+    <h1 class="card-prompt">Tak to <em>wykonam</em></h1>
+    <p class="card-detail">Strategia zadziała, <strong>tylko jeśli ją wykonasz</strong>. Tu zapisujesz <em>4-krokową instrukcję</em> dla siebie. Konkret = wykonalność. Plan bez konkretu = zaplanowane unikanie.</p>
+    
+    <div class="term-note"><strong>Pułapka</strong>: planujesz, ale <em>nie wykonujesz</em>. To 80% przypadków w pracy z SAD. Strategia: <strong>w ciągu najbliższych 24 godzin</strong>. Jeśli odkładasz dalej — odkładasz na zawsze. Wykonana w 70% > nigdy w 100%.</div>
+    
+    <div class="rescript-card">
+      <div class="rescript-h">Sekwencja 4 kroków — uniwersalna dla każdej z 3 strategii</div>
+      <div class="rescript-step">
+        <span class="rescript-num">1.</span>
+        <span class="rescript-text"><strong>Zaplanowanie</strong>: konkretna data, godzina, miejsce. Bez „w tym tygodniu” — z <em>„czwartek 19:00, przy biurku”</em>.</span>
+      </div>
+      <div class="rescript-step">
+        <span class="rescript-num">2.</span>
+        <span class="rescript-text"><strong>Pomiar PRZED</strong>: zapisz <em>obecny obraz siebie</em> (z kroku 2). Skala intensywności 0–10, jak silny jest. To punkt referencyjny.</span>
+      </div>
+      <div class="rescript-step">
+        <span class="rescript-num">3.</span>
+        <span class="rescript-text"><strong>Wykonanie strategii</strong> przez 5–10 minut w skupieniu. Bez przerywania, bez sprawdzania telefonu. Pełne zaangażowanie.</span>
+      </div>
+      <div class="rescript-step">
+        <span class="rescript-num">4.</span>
+        <span class="rescript-text"><strong>Pomiar PO</strong>: ten sam obraz teraz — czy się zmienił? Skala 0–10. Spadek o 1–2 pkt = sukces. Spadek o 3+ = przełom.</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Mój plan — kiedy i gdzie</div>
+    <input type="text" class="thought-input" id="planWhen" placeholder="np. „Czwartek 19:00, salon, telefon w trybie samolotowym”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="examples-h" style="margin-top:10px">Co konkretnie zrobię (wybrana strategia)</div>
+    <textarea class="thought-input" id="planWhat" placeholder="np. „Włączę kamerę w telefonie, nagram 5 min rozmowy ze sobą o moim dniu. Najpierw zapiszę, jak myślę, że wyglądam (sztywno, czerwony). Potem obejrzę nagranie i porównam”..." rows="3"></textarea>
+  </section>
+  <!-- 5: POMIAR — PRZED I PO -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Pomiar — przed i po</div>
+    <h1 class="card-prompt">Czy <em>obraz</em> się zmienił?</h1>
+    <p class="card-detail">Po wykonaniu strategii — sprawdź. Większość osób przy <strong>informacji zwrotnej z nagrania</strong> doświadcza spadku o 3–5 punktów (Harvey i in. 2000). Przy <strong>modyfikacji obrazów</strong> — 2–3 punkty po pierwszej sesji, 4–5 po piątej (Wild i Clark 2011).</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: <em>jedno wideo</em> = szok, ale obraz wraca po kilku dniach. <em>Pięć wideo w 5 tygodni</em> = trwała zmiana. Mózg potrzebuje <strong>powtarzanych dowodów</strong> sprzecznych z obrazem, żeby go aktualizować. Nie ma drogi na skróty — jest droga konsekwencji.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Intensywność negatywnego obrazu PRZED</div>
+      <div class="scale-label"><span>0 — neutralny</span><span>10 — bardzo silny</span></div>
+      <input type="range" min="0" max="10" value="8" class="scale-input" id="imgBefore" oninput="updateImgBefore(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="imgBeforeVal">8</span><span> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Intensywność TERAZ — po wykonaniu strategii</div>
+      <div class="scale-label"><span>0 — neutralny</span><span>10 — bardzo silny</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="imgAfter" oninput="updateImgAfter(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="imgAfterVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="diff-block">
+      <div class="diff-side">
+        <div class="diff-num before" id="diffBefore">—</div>
+        <div class="diff-lbl">Przed</div>
+      </div>
+      <div class="diff-arrow">→</div>
+      <div class="diff-side">
+        <div class="diff-num after" id="diffAfter">—</div>
+        <div class="diff-lbl">Po</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Wnioski — co zauważyłeś/aś</div>
+    <textarea class="thought-input" id="lesson" placeholder="np. „Nagranie — wyglądałem normalnie, głos spokojny. To był dla mnie szok. Mój wewnętrzny obraz jest 4-krotnie gorszy niż realność” / „Modyfikacja obrazów — wprowadziłem dorosłego siebie do sceny z 8 klasy, broniącego małego mnie przed śmiechem klasy. Czuję ulgę”..." rows="4"></textarea>
+    
+    <div class="examples-h">Następna powtórka tego ćwiczenia</div>
+    <input type="text" class="thought-input" id="nextDate" placeholder="np. „Niedziela 20:00 — jeszcze raz informacja zwrotna z nagrania z innej rozmowy”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Twój obraz siebie to <strong>halucynacja oparta na pamięci</strong> — nie rzeczywistość. <em>Każde wykonanie strategii</em> z kroku 3 osłabia obraz średnio o 1–3 punkty. Po <strong>5 powtórkach</strong> — rekalibracja staje się trwała. To <em>złoty standard</em> leczenia obrazu siebie w SAD (Clark, Wells, Hackmann).</div>
+    </div>
+    
+    <div class="src">Hackmann, Clark, McManus (2000) · Clark i Wells (1995) · Wild i Clark (2011) · Harvey i in. (2000, informacja zwrotna z nagrania)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('imageInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('planWhen'); if (el) el.value = ''; }
+    { const el = document.getElementById('planWhat'); if (el) el.value = ''; }
+    { const el = document.getElementById('lesson'); if (el) el.value = ''; }
+    { const el = document.getElementById('nextDate'); if (el) el.value = ''; }
+    { const el = document.getElementById('imgBefore'); if (el) el.value = 8; }
+    { const el = document.getElementById('imgAfter'); if (el) el.value = 5; }
+    document.querySelectorAll('.evidence-item').forEach(b => b.classList.remove('checked'));
+    document.querySelectorAll('.strategy-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) {
+    document.getElementById('diffBefore').textContent = document.getElementById('imgBefore').value + '/10';
+    document.getElementById('diffAfter').textContent = document.getElementById('imgAfter').value + '/10';
+  }
+}
+
+function useExampleImg(el) {
+  const t = document.getElementById('imageInput');
+  if (t.value.trim()) t.value += ', ';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function toggleEvidence(el) { el.classList.toggle('checked'); }
+
+function pickStrategy(el) {
+  document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function updateImgBefore(v) {
+  document.getElementById('imgBeforeVal').textContent = v;
+  document.getElementById('diffBefore').textContent = v + '/10';
+}
+
+function updateImgAfter(v) {
+  document.getElementById('imgAfterVal').textContent = v;
+  document.getElementById('diffAfter').textContent = v + '/10';
+}
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.evidence-item';
+  var clickSel1 = '.strategy-card';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-obraz-siebie-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {}, c1: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.evidence-item, .strategy-card, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

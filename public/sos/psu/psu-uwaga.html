@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Odzyskiwanie uwagi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.range-card { background: rgba(184,197,168,0.12); border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+.range-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.range-emoji { font-size: 18px; }
+.range-title { font-family: 'Fraunces', serif; font-size: 15px; color: var(--sage-deep); font-weight: 700; }
+.range-desc { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 8px; line-height: 1.45; }
+
+.deep-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 10px 0; }
+.deep-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.deep-row { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.deep-row:first-of-type { border-top: none; }
+.deep-num { color: var(--warm); font-weight: 700; font-family: 'Fraunces', serif; font-size: 14px; flex-shrink: 0; line-height: 1.4; }
+.deep-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.deep-text strong { color: var(--bg); font-weight: 600; }
+
+.regen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.regen-cell { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 10px 12px; border-radius: 10px; }
+.regen-cell-h { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.regen-cell-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.regen-cell-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Odzyskiwanie uwagi</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Odzyskać <em>uwagę</em> — najcenniejszy zasób</h1>
+  <p class="card-detail">Uwaga to jedyna waluta, której nie odzyskasz. Mark i in. (2008, 2016): pracownik biurowy zmienia zadanie średnio co <strong>40 sekund</strong>; powrót do głębokiej koncentracji po przerwaniu trwa ~23 minuty. Newport (2016, <em>Deep Work</em>) opisuje to jako rozproszenie uwagi: zdolność do długiego, skupionego skupienia atrofuje, gdy nie jest ćwiczona, i odbudowuje się przy regularnej praktyce. Druga oś — Kaplan (1995, Attention Restoration Theory): uwaga się <strong>regeneruje</strong> w naturze, ciszy i nudzie. Nie odpoczywa, gdy scrollujesz „dla relaksu”.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Dwie funkcje uwagi (Newport 2016; Kaplan 1995; Berman 2008)</div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Praca głęboka</strong> (deep work) — długie bloki skupienia (60–90 min) na jednym zadaniu poznawczym. Tu powstaje wartość: programowanie, pisanie, analiza, nauka, twórczość.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌳</span>
+      <span class="element-text"><strong>Regeneracja uwagi</strong> (attention restoration) — natura, cisza, nuda, marzenie na jawie. Mózg przetwarza informacje, konsoliduje pamięć, pojawiają się wglądy. Berman i in. (2008): 20 min spaceru w parku odtwarza uwagę porównywalnie z medytacją.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⛔</span>
+      <span class="element-text"><strong>Co JE uwagę</strong> — multitasking, przerywanie, scrollowanie, powiadomienia. Każde przełączenie zadania kosztuje energię poznawczą (Cain &amp; Mitroff, 2011, Frontiers in Psychology).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📈</span>
+      <span class="element-text"><strong>Trening działa</strong> — Mrazek i in. (2013, Psychological Science): 2 tygodnie treningu uwagi (mindfulness 8 min/dzień) poprawia wyniki testu czytania ze zrozumieniem o ~16%. Uwaga to umiejętność, nie cecha wrodzona.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Uwaga jest <em>najcenniejszym zasobem</em>, jaki masz — i oddajesz go <strong>za darmo</strong> każdemu powiadomieniu, każdej notyfikacji, każdemu kolorowi w aplikacji. Odzyskanie uwagi to nie produktywność. To akt <em>samo-szacunku</em>.”
+    <span class="frame-quote-attr">— parafraza Newport (2016, Deep Work)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: uwagę odzyskujesz <strong>dwoma ruchami</strong>. Pracujesz głęboko — bloki 60–90 min bez przerwań. Regenerujesz aktywnie — natura, cisza, nuda. Brak jednego z dwóch nie wystarcza: praca głęboka bez regeneracji wypala, regeneracja bez ćwiczenia uwagi nie buduje siły skupienia.</div>
+
+  <div class="src">Mark, Gudith, Klocke (2008, CHI Conference); Mark i in. (2016, ACM CHI); Newport (2016, Deep Work — Grand Central); Kaplan (1995, Journal of Environmental Psychology — ART); Berman, Jonides, Kaplan (2008, Psychological Science); Mrazek i in. (2013, Psychological Science); Cain, Mitroff (2011, Frontiers in Psychology); Mann, Cadman (2014, Creativity Research Journal — nuda)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Diagnoza uwagi</div>
+  <h1 class="card-prompt">Jak <em>krótka</em> jest Twoja uwaga teraz?</h1>
+  <p class="card-detail">Cztery pomiary, które razem dają obraz aktualnej kondycji uwagi. Bądź szczera/y — to baseline, do którego wracasz za miesiąc.</p>
+
+  <div class="scale">
+    <div class="scale-title">Najdłuższy blok skupionej pracy w ostatnim tygodniu (min, bez sięgania po telefon)</div>
+    <div class="scale-bounds"><span>(&lt; 5 min)</span><span>(90+ min)</span></div>
+    <input type="range" class="scale-input" id="diaBlok" min="0" max="10" step="1" value="3" data-default="3" oninput="document.getElementById('diaBlokVal').textContent=this.value;">
+    <div class="scale-readout"><span>Wartość</span><span id="diaBlokVal">3</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Ile razy dziennie sprawdzasz telefon w trakcie pracy</div>
+    <div class="scale-bounds"><span>(rzadko)</span><span>(co 5 min)</span></div>
+    <input type="range" class="scale-input" id="diaSpra" min="0" max="10" step="1" value="6" data-default="6" oninput="document.getElementById('diaSpraVal').textContent=this.value;">
+    <div class="scale-readout"><span>Wartość</span><span id="diaSpraVal">6</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Tolerancja nudy — minuty w bezruchu bez sięgania po bodziec</div>
+    <div class="scale-bounds"><span>(&lt; 1 min)</span><span>(20+ min)</span></div>
+    <input type="range" class="scale-input" id="diaNuda" min="0" max="10" step="1" value="3" data-default="3" oninput="document.getElementById('diaNudaVal').textContent=this.value;">
+    <div class="scale-readout"><span>Wartość</span><span id="diaNudaVal">3</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Ile czytasz dłuższych tekstów (książki, artykuły 20+ min) w skali tygodnia</div>
+    <div class="scale-bounds"><span>(0)</span><span>(codziennie)</span></div>
+    <input type="range" class="scale-input" id="diaCzyt" min="0" max="10" step="1" value="3" data-default="3" oninput="document.getElementById('diaCzytVal').textContent=this.value;">
+    <div class="scale-readout"><span>Wartość</span><span id="diaCzytVal">3</span></div>
+  </div>
+
+  <p class="card-detail" style="font-size:13px;margin-top:10px;">Krótko: kiedy ostatnio czułaś/eś, że jesteś <em>w pełni</em> w jednym zadaniu — bez sięgania po telefon, bez myślenia o nim?</p>
+  <textarea class="thought-input" id="diaPrzy" placeholder="np. „Trzy tygodnie temu, w pociągu bez zasięgu — czytałem książkę 2 godziny, taka cisza w głowie. Od tamtej pory nie pamiętam.”" rows="3"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła pomiaru</strong>: większość ludzi z PSU ma blok skupionej pracy &lt; 15 min. To nie znaczy, że umysł jest „uszkodzony” — uwaga atrofuje od latach przerywania, ale ODBUDOWUJE się z praktyką. Mrazek i in. (2013): 2 tygodnie regularnego treningu daje mierzalną poprawę.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Bloki Deep Work</div>
+  <h1 class="card-prompt">Jaki <em>blok</em> umiesz dziś utrzymać?</h1>
+  <p class="card-detail">Zacznij od bloku, w którym <strong>masz 80% szans</strong> na sukces, nie od ambitnego. Co 1–2 tygodnie wydłużaj o 10–15 min. Newport (2016): trenując uwagę traktuj ją jak mięsień — od progresji, nie od heroicznego startu.</p>
+
+  <button class="rel-btn" id="blok25" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">⏱️ Pomodoro — 25 min</span>
+    <span class="rel-desc">Punkt startu. Telefon w innym pokoju, tryb samolotowy. 25 min pełnego skupienia → 5 min przerwy. Po 4 cyklach dłuższa przerwa (15–30 min). Ideal dla osoby z blokiem &lt; 15 min na starcie.</span>
+  </button>
+
+  <button class="rel-btn" id="blok50" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">📐 Półgodzinny blok — 50 min</span>
+    <span class="rel-desc">Następny stopień po 25 min. 50 min skupienia → 10 min przerwy. Dobre dla pracy poznawczej średniej trudności (e-maile pisane uważnie, raporty, zadania administracyjne wymagające koncentracji).</span>
+  </button>
+
+  <button class="rel-btn" id="blok90" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');save();">
+    <span class="rel-name">🧠 Pełny Deep Work — 90 min</span>
+    <span class="rel-desc">Cel docelowy. 90 min na jedno zadanie (programowanie, pisanie, analiza, twórczość) → 20–30 min regeneracji (spacer, kawa bez ekranu). To naturalny cykl ultradianowy mózgu (Kleitman, BRAC). 1–2 takie bloki dziennie wystarczają, by nadrobić wartość pełnego dnia rozproszonej pracy.</span>
+  </button>
+
+  <div class="deep-card">
+    <div class="deep-h">Trzy zasady działającego bloku Deep Work</div>
+    <div class="deep-row">
+      <span class="deep-num">1</span>
+      <span class="deep-text"><strong>Telefon w innym pokoju</strong> — nie „na biurku ekranem w dół”. Ward i in. (2017): sama obecność telefonu obniża wyniki testów uwagi nawet wtedy, gdy nie sięgasz.</span>
+    </div>
+    <div class="deep-row">
+      <span class="deep-num">2</span>
+      <span class="deep-text"><strong>Jedno zadanie</strong> — przed startem zapisz, NA CZYM dokładnie pracujesz. „Praca” = mglisty cel; „dokończyć rozdział 3” = jasny cel. Mglisty cel zawsze przegrywa z impulsem do scrollowania.</span>
+    </div>
+    <div class="deep-row">
+      <span class="deep-num">3</span>
+      <span class="deep-text"><strong>Bez wyjątków na powiadomienia</strong> — Slack, mail, Teams OFF na czas bloku. Po bloku możesz odpisać. „Tylko sprawdzę szybko” to wymówka cyklu, nie rozwiązanie.</span>
+    </div>
+  </div>
+
+  <p class="card-detail" style="font-size:13px;margin-top:12px;">Wybór bloku + konkretny start (kiedy, na czym, jak długo):</p>
+  <textarea class="thought-input" id="planBlok" placeholder="np. „25 min Pomodoro przez tydzień. Codziennie 9:00–9:25 — pisanie raportu kwartalnego. Telefon w szufladzie, słuchawki, wyłączony Slack. Po tygodniu wydłużam do 35 min.”" rows="4"></textarea>
+
+  <div class="term-note"><strong>💡 Klucz wyboru</strong>: jeśli próbujesz 90-minutowego bloku przy aktualnej uwadze 15 min, prawdopodobnie porzucisz po pierwszej próbie. Zacznij od 25 min, dotrzymaj słowa przez tydzień — to buduje <em>zaufanie do siebie</em>, na którym opiera się dalsza progresja. Mała wygrana &gt; duża próba.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Regeneracja uwagi</div>
+  <h1 class="card-prompt">Czym <em>karmisz</em> mięsień uwagi</h1>
+  <p class="card-detail">Sama praca głęboka bez regeneracji wypala. Regeneracja to NIE scrollowanie „dla relaksu” — to przeciwieństwo. Cztery typy aktywności, które według Kaplana (1995) i Bermana (2008) faktycznie odbudowują uwagę.</p>
+
+  <div class="regen-grid">
+    <div class="regen-cell">
+      <div class="regen-cell-h">🌳 Natura</div>
+      <div class="regen-cell-body">20 min spaceru w parku, lesie, nad wodą. <strong>Soft fascination</strong> (liście, fale, ptaki) regeneruje uwagę bez wysiłku. Działa nawet w mieście — ważna jest zieleń.</div>
+    </div>
+    <div class="regen-cell">
+      <div class="regen-cell-h">😶 Nuda</div>
+      <div class="regen-cell-body">Mann, Cadman (2014): nuda jest <strong>inkubatorem</strong> kreatywności. Pozwól sobie się nudzić — kolejka, winda, kawa bez ekranu. Tu pojawiają się wglądy.</div>
+    </div>
+    <div class="regen-cell">
+      <div class="regen-cell-h">🚶 Spacer bez słuchawek</div>
+      <div class="regen-cell-body">Bez podcastu, bez muzyki — <strong>cisza i obserwacja</strong>. Trudne, jeśli nie nawykłaś/eś — szybko mózg domaga się bodźca. To dokładnie znak, że potrzeba.</div>
+    </div>
+    <div class="regen-cell">
+      <div class="regen-cell-h">🧘 Single-task</div>
+      <div class="regen-cell-body">Rób JEDNĄ rzecz: jedz nie scrollując, gotuj bez podcastu. <strong>Mono-tasking</strong> sam w sobie regeneruje uwagę, bo trenuje ją w stanie spokojnego skupienia.</div>
+    </div>
+  </div>
+
+  <div class="range-card">
+    <div class="range-h">
+      <span class="range-emoji">⚠️</span>
+      <span class="range-title">Co NIE jest regeneracją uwagi</span>
+    </div>
+    <div class="range-desc">Częsta pułapka — myślimy „odpoczywam” w aktywnościach, które jeszcze bardziej obciążają uwagę. To nie regeneracja:</div>
+    <p style="font-size:13px;line-height:1.55;color:var(--ink-soft);margin:0;">
+      Scrollowanie social mediów (rozprasza), serial w tle podczas pracy (multitasking), Netflix po męczącym dniu (przekierowanie uwagi, nie odpoczynek), drzemki przy telefonie (przerywany sen). Te aktywności KONSUMUJĄ uwagę dalej, nawet gdy czujesz się „na tabletkach”.
+    </p>
+  </div>
+
+  <p class="card-detail" style="font-size:13px;margin-top:12px;">Twój plan regeneracji — co zaplanowałaś/eś na nadchodzący tydzień?</p>
+  <textarea class="thought-input" id="regenPlan" placeholder="np. „Codziennie 20-min spacer po lesie po pracy, BEZ słuchawek. Sobota rano: 1 godz. w parku z kawą, bez telefonu. Niedziela: dzień bez Netflixa.”" rows="4"></textarea>
+
+  <p class="card-detail" style="font-size:13px;">Konkretne aktywności, które chcesz dodać (kliknij swoje):</p>
+  <div class="example-chips">
+    <button class="example-chip" id="rgSpac" onclick="this.classList.toggle('picked');save();">Spacer 20 min/dzień bez słuchawek</button>
+    <button class="example-chip" id="rgNatu" onclick="this.classList.toggle('picked');save();">Park / las 1× w tygodniu</button>
+    <button class="example-chip" id="rgKawa" onclick="this.classList.toggle('picked');save();">Kawa rano BEZ telefonu (15 min)</button>
+    <button class="example-chip" id="rgPosi" onclick="this.classList.toggle('picked');save();">Posiłek BEZ ekranu</button>
+    <button class="example-chip" id="rgMedy" onclick="this.classList.toggle('picked');save();">Medytacja 8–10 min/dzień</button>
+    <button class="example-chip" id="rgKsia" onclick="this.classList.toggle('picked');save();">Czytanie papierowej książki 30 min/dzień</button>
+    <button class="example-chip" id="rgGodz" onclick="this.classList.toggle('picked');save();">1 godz./dzień BEZ ekranu (poza snem)</button>
+    <button class="example-chip" id="rgNied" onclick="this.classList.toggle('picked');save();">Niedziela bez ekranu (digital sabbath)</button>
+  </div>
+
+  <div class="term-note"><strong>🔧 Mechanizm regeneracji</strong>: Kaplan (1995, ART) — uwaga skierowana wymaga wysiłku, uwaga mimowolna (soft fascination natury, ruchu liści, fal) regeneruje. Mózg potrzebuje OBU rodzajów aktywności na zmianę. Codzienny rytm: bloki Deep Work (uwaga skierowana) + spacery / nuda / single-task (uwaga mimowolna). Brak jednego z dwóch po 2–3 tygodniach widać po koncentracji.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po 30 dniach</div>
+  <h1 class="card-prompt">Jak <em>wzmocniła się</em> uwaga?</h1>
+  <p class="card-detail">Po 30 dniach pracy z blokami Deep Work + regeneracją wróć tu i przesuń te same suwaki. Mrazek i in. (2013) pokazali, że nawet 2 tygodnie regularnego treningu daje mierzalną poprawę — 30 dni daje stabilny efekt.</p>
+
+  <div class="scale">
+    <div class="scale-title">Najdłuższy blok skupionej pracy w ostatnim tygodniu (min)</div>
+    <div class="scale-bounds"><span>(&lt; 5 min)</span><span>(90+ min)</span></div>
+    <input type="range" class="scale-input" id="postBlok" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('postBlokVal').textContent=this.value;updateUwagaDelta();">
+    <div class="scale-readout"><span>Wynik</span><span id="postBlokVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Tolerancja nudy — minuty bez sięgania po bodziec</div>
+    <div class="scale-bounds"><span>(&lt; 1 min)</span><span>(20+ min)</span></div>
+    <input type="range" class="scale-input" id="postNuda" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('postNudaVal').textContent=this.value;updateUwagaDelta();">
+    <div class="scale-readout"><span>Wynik</span><span id="postNudaVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Ilość przeczytanych dłuższych tekstów (książki, artykuły 20+ min) / tydz.</div>
+    <div class="scale-bounds"><span>(0)</span><span>(codziennie)</span></div>
+    <input type="range" class="scale-input" id="postCzyt" min="0" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('postCzytVal').textContent=this.value;updateUwagaDelta();">
+    <div class="scale-readout"><span>Wynik</span><span id="postCzytVal">5</span></div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+
+  <div class="final-msg" id="finalMsg">
+    Najmocniejszy sygnał wzmocnienia uwagi to <em>nie</em> długość bloku — to zdolność <strong>tolerowania nudy</strong>. Gdy umiesz siedzieć 5 min bez bodźca, blok 60 min staje się dostępny. Bez tej tolerancji każda dłuższa praca jest walką ze sobą.
+  </div>
+
+  <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: jeśli wzmocniłaś/eś uwagę (postBlok &gt; preBlok) — w kolejnym miesiącu wydłuż blok o kolejne 15 min. Jeśli stoi w miejscu — sprawdź, czy NAPRAWDĘ usunęłaś/usunąłeś telefon w czasie bloku, czy „odłożyłaś/eś na biurko ekranem w dół” (to nie wystarcza, Ward i in., 2017). Stabilna progresja: ~10–15 min/miesiąc.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Uwaga to <em>najcenniejszy zasób</em>, jaki masz, i <strong>jedyny</strong>, którego nie odzyskasz inaczej niż przez praktykę. Telefon nie jest wrogiem uwagi — telefon jest <em>narzędziem</em>; problem jest w cyklu kompulsywnego sprawdzania. Bloki Deep Work (uwaga skierowana) + regeneracja (uwaga mimowolna) działają razem; brak jednego z dwóch nie daje efektu.</div>
+  </div>
+
+  <div class="src">Mark, Gudith, Klocke (2008, CHI Conference); Mark i in. (2016, ACM CHI); Newport (2016, Deep Work — Grand Central); Kaplan (1995, Journal of Environmental Psychology — ART); Berman, Jonides, Kaplan (2008, Psychological Science); Mrazek, Franklin, Phillips, Baird, Schooler (2013, Psychological Science); Cain, Mitroff (2011, Frontiers in Psychology); Mann, Cadman (2014, Creativity Research Journal); Ward i in. (2017, Journal of the Association for Consumer Research)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateUwagaDelta() {
+  var preBlok = 3, preNuda = 3, preCzyt = 3;
+  var postBlok = parseInt(document.getElementById('postBlok').value) || 5;
+  var postNuda = parseInt(document.getElementById('postNuda').value) || 5;
+  var postCzyt = parseInt(document.getElementById('postCzyt').value) || 5;
+  var dB = postBlok - preBlok;
+  var dN = postNuda - preNuda;
+  var dC = postCzyt - preCzyt;
+  var html = '';
+  html += '<div class="diff-row"><strong>Najdłuższy blok skupienia</strong> <span class="diff-delta' + (dB >= 0 ? '' : ' neg') + '">' + (dB > 0 ? '↑ ' + dB : (dB < 0 ? '↓ ' + Math.abs(dB) : 'bez zmian')) + '</span></div>';
+  html += '<div class="diff-row"><strong>Tolerancja nudy</strong> <span class="diff-delta' + (dN >= 0 ? '' : ' neg') + '">' + (dN > 0 ? '↑ ' + dN : (dN < 0 ? '↓ ' + Math.abs(dN) : 'bez zmian')) + '</span></div>';
+  html += '<div class="diff-row"><strong>Czytanie dłuższych tekstów</strong> <span class="diff-delta' + (dC >= 0 ? '' : ' neg') + '">' + (dC > 0 ? '↑ ' + dC : (dC < 0 ? '↓ ' + Math.abs(dC) : 'bez zmian')) + '</span></div>';
+  document.getElementById('diffList').innerHTML = html;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_psu_uwaga — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_psu_uwaga";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+function onStepChange(s) { if (s === 5) updateUwagaDelta(); }
+function onReset() { updateUwagaDelta(); }
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

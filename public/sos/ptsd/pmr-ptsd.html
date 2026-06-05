@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · PMR adaptowany</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.mod-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.mod-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.mod-icon { font-size: 16px; }
+.mod-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.mod-body strong { color: var(--ink); }
+.group-card { background: rgba(214,196,168,0.18); border: 1px solid rgba(214,196,168,0.5); border-radius: 12px; padding: 10px 12px; margin: 6px 0; position: relative; }
+.group-num { position: absolute; top: -8px; left: 10px; background: var(--sage-deep); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 11px; }
+.group-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; padding-left: 26px; }
+.group-body { font-size: 12px; line-height: 1.45; color: var(--ink-soft); }
+.warn-card { background: rgba(214,140,140,0.15); border-left: 3px solid #a83a3a; padding: 12px 14px; margin: 8px 0; border-radius: 0 8px 8px 0; }
+.warn-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: #6a2a2a; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.warn-body { font-size: 13px; line-height: 1.5; color: #6a2a2a; }
+.proto-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.proto-rule { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>PMR adaptowany</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Klasyczny PMR <em>może wyzwalać</em> w PTSD</h1>
+  <p class="card-detail">Progressive Muscle Relaxation (PMR; Jacobson, 1938) jest klasyczną techniką relaksacji — napinanie i rozluźnianie grup mięśniowych. W PTSD wymaga jednak <strong>5 modyfikacji</strong>, bo w klasycznej formie często wyzwala flashbacki, dysocjację lub panikę. Paradoks: rozluźnienie wymaga POCZUCIA bezpieczeństwa — dla pacjenta z PTSD układ nerwowy interpretuje rozluźnienie jako „opuszczenie gardy". Foa i wsp. (2007) opracowali adaptowaną wersję jako składnik PE.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Pięć modyfikacji adaptowanego PMR</div>
+    <div class="element-row">
+      <span class="element-icon">👁️</span>
+      <span class="element-text"><strong>Oczy OTWARTE</strong> (lub na wpół przymknięte, skupione na punkcie) — zamknięte oczy w PTSD często wyzwalają flashbacki.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🪑</span>
+      <span class="element-text"><strong>Pozycja SIEDZĄCA</strong>, stopy na podłodze — pozycja leżąca może wyzwalać wspomnienia ataku/bezradności.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🚫</span>
+      <span class="element-text"><strong>BEZ napinania gardła/twarzy</strong> — przy traumie seksualnej / duszeniu te grupy są wyzwalające.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📍</span>
+      <span class="element-text"><strong>Stopniowo: peryferia → tułów</strong> — dłonie / stopy są bezpieczniejsze niż brzuch / klatka.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌱</span>
+      <span class="element-text"><strong>Grounding 2–3 min PRZED</strong> — układ nerwowy musi czuć grunt, zanim się rozluźni.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„PMR w PTSD nie jest <em>relaksem</em>. Jest <em>uświadamianiem</em> różnicy między napięciem a rozluźnieniem. Pacjent uczy się rozpoznawać własny stan, nie zostaje „uspokojony" cudzym głosem."
+    <span class="frame-quote-attr">— Edna Foa (PE manual, 2007)</span>
+  </div>
+
+  <div class="warn-card">
+    <div class="warn-h">⚠️ Kiedy NIE stosować</div>
+    <div class="warn-body">Aktywna dysocjacja, trwający flashback, świeża retraumatyzacja. W tych stanach lepsze: <em>grounding 5-4-3-2-1</em>, zimna woda, kontakt sensoryczny. PMR jest narzędziem stabilizacyjnym, nie kryzysowym.</div>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: PMR w PTSD to <em>uzupełnienie</em>, nie rdzeń terapii. Rdzeń = przetwarzanie traumy (PE/CPT/EMDR). PMR pomaga regulować codzienne napięcie i obniżać próg wpadania w hyperarousal — to pomaga w przetwarzaniu, nie zastępuje go.</div>
+
+  <div class="src">Jacobson, E. (1938). <em>Progressive Relaxation</em>. · Foa, E. i wsp. (2007). <em>Prolonged Exposure Therapy for PTSD: Therapist Guide</em>. · Öst, L.-G. (1987). Applied relaxation. · Bryant, R. i wsp. (2008). Treatment of acute stress disorder.</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Stan startowy</div>
+  <h1 class="card-prompt">Mapa <em>napięcia w ciele</em></h1>
+  <p class="card-detail">Skala 0–10. Sprawdź teraz, gdzie i ile masz napięcia. Punkt startowy pomaga zobaczyć efekt PMR po sesji.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — rozluźnienie</span><span>10 — sztywność</span></div>
+    <input type="range" id="preNap" class="scale-input" min="0" max="10" value="6" data-default="6" oninput="document.getElementById('preNapVal').textContent=this.value;">
+    <div class="scale-readout"><span>napięcie ogólne:</span><span id="preNapVal">6</span></div>
+  </div>
+
+  <p class="card-detail" style="margin-top:10px;">Gdzie czujesz napięcie najmocniej? Zaznacz wszystkie pasujące.</p>
+  <div class="example-chips">
+    <button id="n-rece" class="example-chip" onclick="pickSign(this);">🫳 dłonie / przedramiona</button>
+    <button id="n-ramiona" class="example-chip" onclick="pickSign(this);">💪 ramiona / barki</button>
+    <button id="n-kark" class="example-chip" onclick="pickSign(this);">🦴 kark / szczęka</button>
+    <button id="n-czolo" class="example-chip" onclick="pickSign(this);">🤔 czoło / oczy</button>
+    <button id="n-klatka" class="example-chip" onclick="pickSign(this);">🫁 klatka piersiowa</button>
+    <button id="n-brzuch" class="example-chip" onclick="pickSign(this);">🫃 brzuch</button>
+    <button id="n-plecy" class="example-chip" onclick="pickSign(this);">🪨 plecy (dolne)</button>
+    <button id="n-nogi" class="example-chip" onclick="pickSign(this);">🦵 uda / łydki</button>
+  </div>
+
+  <p class="card-detail" style="margin-top:10px;">Sprawdzenie warunków bezpieczeństwa — zaznacz tak, jeśli prawda:</p>
+  <div class="example-chips">
+    <button id="w-stab" class="example-chip" onclick="pickSign(this);">✅ jestem TERAZ stabilny/a (nie aktywny flashback)</button>
+    <button id="w-cisza" class="example-chip" onclick="pickSign(this);">✅ mam 15 min spokojnej przestrzeni</button>
+    <button id="w-grnd" class="example-chip" onclick="pickSign(this);">✅ wykonam grounding 2–3 min przed</button>
+  </div>
+
+  <div class="term-note"><strong>Wskazówka</strong>: PMR w PTSD wymaga <em>warunków</em>. Bez nich efekt może być przeciwny. Jeśli zaznaczyłeś/aś mniej niż 3 warunki — zostaw PMR na lepszy moment, użyj <em>grounding</em> teraz.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Pięć modyfikacji w praktyce</div>
+  <h1 class="card-prompt">Jak <em>wykonać</em> adaptowany PMR</h1>
+  <p class="card-detail">Każda modyfikacja ma cel: zapobiega konkretnemu wyzwoleniu. Czytaj wszystkie pięć przed sesją.</p>
+
+  <div class="mod-card">
+    <div class="mod-h"><span class="mod-icon">👁️</span> 1 · Oczy otwarte</div>
+    <div class="mod-body">Skupienie na neutralnym punkcie (sufit, ściana, dłonie). <strong>Cel</strong>: zachowanie kontaktu z aktualną rzeczywistością; zamknięte oczy w PTSD ułatwiają „odjazd" w pamięć traumatyczną.</div>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-h"><span class="mod-icon">🪑</span> 2 · Pozycja siedząca</div>
+    <div class="mod-body">Stopy płasko na podłodze, plecy oparte, ręce na udach lub poręczach. <strong>Cel</strong>: leżenie wyzwala wspomnienia ataku/bezradności u wielu pacjentów; siedzenie zachowuje poczucie sprawczości.</div>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-h"><span class="mod-icon">🚫</span> 3 · Pomijanie gardła i twarzy</div>
+    <div class="mod-body">Klasyczny PMR napina szczękę, czoło, gardło. W traumie seksualnej, duszeniu, podtopieniu — te obszary są wyzwalające. <strong>Cel</strong>: pominąć je całkowicie lub bardzo delikatnie. Dłonie, ramiona, brzuch, nogi wystarczą.</div>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-h"><span class="mod-icon">📍</span> 4 · Peryferia → tułów</div>
+    <div class="mod-body">Kolejność: dłonie → przedramiona → ramiona → brzuch → uda → łydki → stopy. <strong>Cel</strong>: peryferia są bezpieczniejsze; tułów (klatka, brzuch) zawiera najwięcej traumatycznych odczuć.</div>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-h"><span class="mod-icon">🌱</span> 5 · Grounding przed</div>
+    <div class="mod-body">2–3 minuty przed PMR: 5-4-3-2-1 (5 rzeczy, które widzisz; 4 — słyszysz; 3 — czujesz; 2 — wąchasz; 1 — smak). <strong>Cel</strong>: ukotwienie w teraźniejszości, zanim ciało zacznie się rozluźniać.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">1</span>
+    <div class="group-h">Dłonie i przedramiona</div>
+    <div class="group-body">Zaciśnij pięści i napnij przedramiona — 5 sekund. Rozluźnij — 15 sekund. <em>Zauważ różnicę</em>.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">2</span>
+    <div class="group-h">Ramiona</div>
+    <div class="group-body">Podnieś ramiona do uszu — 5 sekund. Opuść — 15 sekund. <em>Zauważ ciężar</em>, kiedy opadają.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">3</span>
+    <div class="group-h">Plecy (środkowe)</div>
+    <div class="group-body">Wepchnij łopatki ku sobie — 5 sekund. Rozluźnij — 15 sekund.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">4</span>
+    <div class="group-h">Brzuch (delikatnie)</div>
+    <div class="group-body">Napnij mięśnie brzucha — 5 sekund. Rozluźnij — 15 sekund. Jeśli brzuch jest wyzwalający — pomiń.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">5</span>
+    <div class="group-h">Uda</div>
+    <div class="group-body">Napnij mięśnie ud (przednie) — 5 sekund. Rozluźnij — 15 sekund.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">6</span>
+    <div class="group-h">Łydki</div>
+    <div class="group-body">Naciskaj palcami stóp w podłogę — 5 sekund. Rozluźnij — 15 sekund.</div>
+  </div>
+
+  <div class="group-card">
+    <span class="group-num">7</span>
+    <div class="group-h">Stopy</div>
+    <div class="group-body">Zaciśnij palce stóp — 5 sekund. Rozluźnij — 15 sekund. <em>Zauważ ciepło</em>, jeśli się pojawia.</div>
+  </div>
+
+  <div class="term-note"><strong>Reguła czasu</strong>: każda grupa: 5 s napięcie + 15 s rozluźnienie + zauważenie. Łącznie 7 grup × 25 s ≈ 3 min. Plus 2–3 min grounding przed = 5–6 min sesja minimalna. Pełna 15 min: 2 cykle + integracja.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — sesja teraz</div>
+  <h1 class="card-prompt">Wykonaj <em>krótką</em> sesję adaptowanego PMR</h1>
+  <p class="card-detail">Ustaw się w pozycji siedzącej, oczy otwarte. Wykonaj grounding 2 min, potem 7 grup mięśniowych. Po zakończeniu wróć tutaj.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">A · Grounding 5-4-3-2-1 (2 min)</div>
+    <p class="proto-rule">Powoli, na głos lub w myślach. <em>5 rzeczy, które widzę. 4, które słyszę. 3, które czuję dotykiem. 2 zapachy. 1 smak.</em> Zapisz, co zauważyłeś/aś.</p>
+  </div>
+  <textarea id="grnd" class="thought-input" placeholder="np. „Widzę: lampę, książkę, kota, zegar, kubek. Słyszę: zegar, dźwięk komputera, oddech, ulicę..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">B · 7 grup mięśniowych — wykonanie</div>
+    <p class="proto-rule">Każda: 5 s NAPNIJ → 15 s ROZLUŹNIJ → zauważ różnicę. Pomiń gardło i twarz. Zauważ, w której grupie rozluźnienie było wyraźniejsze.</p>
+  </div>
+  <textarea id="grupy" class="thought-input" style="min-height:90px;" placeholder="np. „Najmocniejsze rozluźnienie poczułam w ramionach — kiedy opadły, ciepło rozlało się po całym karku. W brzuchu nie udało się — był sztywny przez całe rozluźnienie"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">C · Sygnał wyzwalający — czy się pojawił</div>
+    <p class="proto-rule">Jeśli w trakcie pojawił się flashback, panika, dysocjacja — przerwij PMR, grounding 5-4-3-2-1, wróć do oddechu 4-8. Zanotuj, w której grupie to się działo.</p>
+  </div>
+  <textarea id="wyzw" class="thought-input" placeholder="np. „Przy brzuchu poczułam delikatny niepokój — nie panika, ale dyskomfort. Pominęłam tę grupę. Reszta przeszła łagodnie"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">D · Co warto zapamiętać</div>
+    <p class="proto-rule">Która grupa najmocniej rozluźniła? W której był wyzwalacz? Co zmodyfikujesz następnym razem?</p>
+  </div>
+  <textarea id="zapam" class="thought-input" placeholder="np. „Następnym razem: pominę brzuch, dodam dłuższe rozluźnienie ramion (30 s zamiast 15). Pora po pracy, kiedy jestem najbardziej napięta"..."></textarea>
+
+  <div class="term-note"><strong>Reguła powtarzania</strong>: codziennie 1× przez 2 tyg., żeby mózg nauczył się rozróżniać dwa stany (napięcie vs rozluźnienie). Po 2 tyg. wystarczy 3–4× tyg. Wieczorem przed snem ≠ poranek po wstaniu — różne efekty, oba wartościowe.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar końcowy</div>
+  <h1 class="card-prompt">Ile <em>napięcia</em> zostało po sesji?</h1>
+  <p class="card-detail">Ta sama skala 0–10. Cel po jednej sesji: spadek o 1–3 punkty. Pełne efekty (umiejętność świadomego rozluźniania w ciągu dnia) — po 2 tyg. regularności.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — rozluźnienie</span><span>10 — sztywność</span></div>
+    <input type="range" id="postNap" class="scale-input" min="0" max="10" value="4" data-default="4" oninput="document.getElementById('postNapVal').textContent=this.value;">
+    <div class="scale-readout"><span>napięcie po:</span><span id="postNapVal">4</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Ustaw skalę — pojawi się komentarz dopasowany do twojej zmiany.</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: PMR uczy <em>różnicy</em> między napięciem a rozluźnieniem. Po kilku tygodniach pacjent zauważa napięcie wcześniej w ciągu dnia (np. ramiona uniesione w pracy) i może je <em>świadomie rozluźnić</em> bez pełnej sesji. To jest cel długoterminowy — interocepcja na własne ciało.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>PMR adaptowany dla PTSD wymaga 5 modyfikacji.</strong> Oczy OTWARTE, pozycja SIEDZĄCA, BEZ gardła i twarzy, peryferia → tułów, grounding PRZED. 7 grup mięśniowych: 5 s napięcie → 15 s rozluźnienie. NIE przy aktywnej dysocjacji ani flashbacku. Codziennie 1× przez 2 tyg.</div>
+  </div>
+
+  <div class="src">Jacobson, E. (1938). <em>Progressive Relaxation</em>. · Foa, E. i wsp. (2007). <em>Prolonged Exposure Therapy for PTSD: Therapist Guide</em>. · Öst, L.-G. (1987). Applied relaxation. <em>Behaviour Research and Therapy</em>. · Bryant, R. i wsp. (2008). · NICE NG116 (2018).</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickSign(el) {
+  el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var pre = parseInt(document.getElementById('preNap').value, 10);
+    var post = parseInt(document.getElementById('postNap').value, 10);
+    var diff = pre - post;
+    var msg = document.getElementById('finalMsg');
+    if (msg) {
+      if (diff >= 3) msg.innerHTML = '<strong>Spadek napięcia o ' + diff + ' punktów.</strong> Adaptowany PMR zadziałał — różnica „napięcie ↔ rozluźnienie" jest świadoma. Powtarzaj 1× dziennie przez 2 tyg., żeby zinternalizować umiejętność.';
+      else if (diff >= 1) msg.innerHTML = '<strong>Spadek o ' + diff + '.</strong> Częściowa regulacja — typowa po pierwszym wykonaniu. PMR wymaga POWTÓRZEŃ, by mózg nauczył się rozróżniać dwa stany.';
+      else if (diff === 0) msg.innerHTML = '<strong>Bez zmiany.</strong> Sprawdź — czy NAPRAWDĘ rozluźniłeś/aś po napięciu (a nie tylko zwolniłeś/aś)? Czy oczy były OTWARTE, pozycja siedząca? Jeśli tak — może być za wczesny etap; wzmocnij stabilizację najpierw.';
+      else msg.innerHTML = '<strong>Wzrost napięcia.</strong> PMR uruchomił dysocjację lub flashback. Przerwij, grounding 5-4-3-2-1. Adaptowany PMR NIE jest dla aktywnej dysocjacji — wróć do <em>fazy stabilizacji</em>.';
+    }
+  }
+}
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(function(c){ c.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_pmr_ptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_pmr_ptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

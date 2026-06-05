@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Nadwartość wagi i kształtu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.cog-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin: 8px 0; }
+.cog-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; }
+.cog-d { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.cog-d strong { color: var(--ink); font-weight: 600; }
+.matter-q { margin: 10px 0; }
+.matter-q label { display: block; font-size: 13px; color: var(--ink); font-weight: 600; margin-bottom: 6px; }
+.dot-row { display: grid; grid-template-columns: 1fr 60px; gap: 8px 10px; padding: 8px 12px; border-bottom: 1px solid var(--sage-soft); align-items: center; font-size: 13px; }
+.dot-row:last-child { border-bottom: none; }
+.dot-row input { padding: 6px 10px; font-size: 13px; border: 1px solid var(--sage); border-radius: 6px; font-family: inherit; text-align: center; }
+.dot-label { color: var(--ink); }
+
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Nadwartość wagi i kształtu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Nadmierne <em>znaczenie</em> wagi i kształtu</h1>
+  <p class="card-detail">W modelu Fairburna (2008, transdiagnostyczny model zaburzeń odżywiania) <strong>rdzeniem poznawczym</strong> bulimii jest <em>nadmierne znaczenie wagi i kształtu w samoocenie</em> (po angielsku: overvaluation of shape and weight). To <strong>nie jest</strong> samo „bycie niezadowolonym z ciała" — większość osób w społeczeństwach zachodnich jest niezadowolonych z ciała. To jest coś innego: <em>twoja wartość jako człowieka zależy w znacznej części lub całkowicie od wagi i kształtu</em>. To, czy dzień jest dobry, zależy od liczby na wadze. Sukces w pracy „nie liczy się", jeśli kształt jest „zły". To rdzeń, z którego wyrasta cała reszta — restrykcja, napady, kompensacje.</p>
+  <div class="frame-card">
+    <div class="frame-h">Trzy poziomy nadwartości</div>
+    <div class="elements-list" style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+      <div class="element-row"><span class="element-icon">🪶</span><span class="element-text"><strong>Niezadowolenie z ciała</strong> (zwykłe) — chciałabyś coś zmienić, ale samoocena nie zależy od tego.</span></div>
+      <div class="element-row"><span class="element-icon">⚖️</span><span class="element-text"><strong>Wzmocnione znaczenie</strong> — waga/kształt to jeden z ważnych obszarów samooceny, ale nie jedyny.</span></div>
+      <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Nadwartość</strong> (klinicznie patologiczna) — waga/kształt to GŁÓWNA lub jedyna miara wartości. Reszta blednie. To rdzeń bulimii.</span></div>
+      <div class="element-row"><span class="element-icon">💚</span><span class="element-text"><strong>Cel terapii</strong> — przejście z nadwartości do wzmocnionego znaczenia. Ciało waży, ale nie jest jedyną miarą.</span></div>
+    </div>
+    <div class="frame-quote">„U każdej osoby z bulimią jest coś wspólnego na dnie — waga i kształt są zbyt ważne dla tego, jak ocenia siebie. Reszta wynika z rdzenia."<span class="frame-quote-attr">— Christopher Fairburn (2008)</span></div>
+  </div>
+  <div class="term-note">🔑 <strong>Reguła „rdzeń, nie objaw"</strong>: nawet jeśli zatrzymasz napady i wymioty, ale rdzeń (nadwartość) zostanie — nawrót jest kwestią czasu. Dlatego w drugiej fazie terapii poznawczo-behawioralnej rozszerzonej (CBT-E) praca z rdzeniem jest centralna.</div>
+  <div class="src">Fairburn (2008), Rozdział 8 — Body Image · Fairburn, Cooper i Shafran (2003), <em>Behaviour Research and Therapy</em> — model transdiagnostyczny · Cooper, Cooper i Fairburn (1989) — pierwsze opisy overvaluation</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja samoocena</div>
+  <h1 class="card-prompt">Co <em>składa</em> się na ciebie?</h1>
+  <p class="card-detail">Wyobraź sobie, że twoja samoocena to ciasto, które dzielisz na kawałki. Każdy kawałek to obszar życia, który wpływa na twoje poczucie wartości. Ile kawałków bierze waga i kształt? A ile inne obszary?</p>
+  <div class="term-note">📌 <strong>Wskazówka</strong>: nie ma „dobrych" i „złych" odpowiedzi. Ten obraz to <em>fotografia</em> twojej obecnej samooceny. Bez oceny — opis. W kolejnym kroku zobaczysz, jak ten obraz wygląda u osób bez zaburzenia.</div>
+  <p class="card-detail">Wpisz, ile procent twojej samooceny zależy od każdego obszaru. <strong>Suma musi być 100%</strong>.</p>
+  <div class="dot-row"><div class="dot-label">⚖️ <strong>Waga i kształt ciała</strong></div><input type="number" id="ovWaga" min="0" max="100" placeholder="np. 60"></div>
+  <div class="dot-row"><div class="dot-label">💼 <strong>Praca / nauka / rozwój zawodowy</strong></div><input type="number" id="ovPraca" min="0" max="100" placeholder="np. 15"></div>
+  <div class="dot-row"><div class="dot-label">👥 <strong>Relacje (partner, rodzina, przyjaciele)</strong></div><input type="number" id="ovRel" min="0" max="100" placeholder="np. 10"></div>
+  <div class="dot-row"><div class="dot-label">🎨 <strong>Hobby, pasje, zainteresowania</strong></div><input type="number" id="ovHob" min="0" max="100" placeholder="np. 5"></div>
+  <div class="dot-row"><div class="dot-label">💚 <strong>Wartości, etyka, sens życia</strong></div><input type="number" id="ovWart" min="0" max="100" placeholder="np. 5"></div>
+  <div class="dot-row"><div class="dot-label">🌱 <strong>Inne (zdrowie psychiczne, samoopieka, duchowość)</strong></div><input type="number" id="ovInne" min="0" max="100" placeholder="np. 5"></div>
+  <div class="matter-q"><label>Co cię uderzyło, gdy patrzyłaś na te liczby?</label>
+    <textarea class="thought-input" id="ovUd" placeholder="np. „Waga zajmuje 70%. Praca, na której spędzam większość dnia — 10%. Relacje, w które inwestuję dużo — 8%. Te liczby są nieproporcjonalne do tego, co rzeczywiście robię"..." rows="3"></textarea></div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Jak to wygląda u innych</div>
+  <h1 class="card-prompt">Twój <em>obraz</em> kontra obraz zdrowy</h1>
+  <p class="card-detail">U osoby bez zaburzenia odżywiania koło samooceny wygląda zupełnie inaczej — wagi i kształtu jest tam najczęściej 5–15%, reszta to relacje, praca, pasje, wartości. Nie chodzi o to, by ciało stało się <em>nieważne</em> — tylko by przestało być <em>miarą wszystkiego</em>.</p>
+  <div class="cog-card"><div class="cog-h">📊 Typowe rozłożenie samooceny</div><div class="cog-d"><strong>Osoba bez zaburzenia</strong>: relacje 30%, praca 25%, pasje 15%, wartości 10%, waga/kształt 10%, inne 10%. <strong>Osoba z bulimią (typowo)</strong>: waga/kształt 50–80%, reszta zsumowana 20–50%. <strong>Osoba w późnej fazie terapii (po 6 miesiącach CBT-E)</strong>: waga/kształt 20–25%, pozostałe obszary rosną proporcjonalnie. Cel terapii nie jest <em>0%</em> — jest <em>15–25%</em>.</div></div>
+  <div class="cog-card"><div class="cog-h">🎯 Trzy wnioski z porównania</div><div class="cog-d"><strong>1. Nieproporcjonalność</strong>: jeśli waga zajmuje 60%, a relacje (w które inwestujesz najwięcej energii) 10% — to nie jest opis tego, co robisz, tylko tego, co liczysz. <strong>2. Zubożenie</strong>: gdy 60% samooceny zależy od jednego obszaru, pozostałe obszary „głodują" — są niedoinwestowane. <strong>3. Kruchość</strong>: monokultura samooceny (jeden dominujący obszar) jest krucha — gdy ten obszar zawodzi, cała samoocena pada.</div></div>
+  <div class="term-note">🔑 <strong>Reguła „dywersyfikacja, nie inwersja"</strong>: celem nie jest „przestać dbać o ciało" — to nierealne. Celem jest <em>dywersyfikacja</em> — dodanie innych obszarów do koła samooceny. Nie odejmujesz wagi, dodajesz pasje, relacje, pracę.</div>
+  <div class="examples-h" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage-deep);font-weight:700;margin:12px 0 6px">Twoje wnioski — co zauważasz porównując swój obraz ze zdrowym?</div>
+  <textarea class="thought-input" id="ovWn" placeholder="np. „Mam monokulturę. Inwestuję ogromnie w pracę (40h tygodniowo) — a w samoocenie liczy się 10%. Relacje są zaniedbane jako obszar samooceny, nawet jeśli emocjonalnie ważne"..." rows="3"></textarea>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Pierwszy ruch</div>
+  <h1 class="card-prompt">Inwestycja w <em>jeden</em> obszar</h1>
+  <p class="card-detail">Praca z nadwartością jest <strong>długoterminowa</strong> — to nie kwestia tygodni, ale miesięcy. Ale każda zmiana zaczyna się od pierwszego ruchu. Wybierz <strong>jeden obszar</strong>, w który chcesz zainwestować w najbliższym miesiącu. Nie ten, który już jest mocny — ten, który jest niedoinwestowany.</p>
+  <div class="cog-card"><div class="cog-h">Cztery konkretne ruchy</div><div class="cog-d"><strong>1. Relacje</strong> — w tygodniu jedno spotkanie 1×1 (nie grupowe), 60+ minut, twarzą w twarz lub na video. Nie SMS-y, nie social media. <strong>2. Hobby</strong> — godzina tygodniowo na czynność, która <em>nie ma celu produktywnego</em> — śpiewanie, ogrodnictwo, modelarstwo, książka, gra. <strong>3. Wartości</strong> — godzina dla społeczności (wolontariat, grupa, kościół) lub dla własnego rozwoju (medytacja, czytanie, terapia indywidualna nie tylko o jedzeniu). <strong>4. Praca poza ciałem</strong> — projekt, na który możesz być dumna z efektu (kurs, prezentacja, wpis blogowy, ogród).</div></div>
+  <div class="matter-q"><label>Twój wybór — który obszar i konkretnie co?</label>
+    <textarea class="thought-input" id="ovRuch" placeholder="np. „Hobby — wracam do śpiewania w chórze (przerwałam 2 lata temu, gdy nasiliła się bulimia). Środy 19:00–21:00. Pierwsza próba 12 maja"..." rows="3"></textarea></div>
+  <div class="matter-q"><label>Jakie przewidujesz przeszkody?</label>
+    <textarea class="thought-input" id="ovPrz" placeholder="np. „Wstyd po przerwie. Strach, że ludzie zauważą, że schudłam/przybrałam. Lęk, że nie będę śpiewać tak dobrze jak kiedyś"..." rows="2"></textarea></div>
+  <div class="matter-q"><label>Pierwszy konkretny ruch — w ciągu 7 dni</label>
+    <input type="text" class="thought-input" id="ovKonk" placeholder="np. „Mejl do dyrygenta z pytaniem o wolne miejsca — do soboty"" style="font-style:normal;font-size:14px;min-height:auto"></div>
+  <div class="term-note">📌 <strong>Wskazówka — sceptycyzm jest częścią mechanizmu</strong>: pojawi się myśl: <em>„to za drobne, to nie pomoże"</em>. Bulimia broni nadwartości — bo nadwartość jest jej rusztowaniem. Drobny ruch nie naprawi rdzenia w tygodniu, ale zaczyna proces dywersyfikacji. To jest jak inwestycja długoterminowa: pierwszy miesiąc niewidocznie, szósty miesiąc widocznie.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po miesiącu inwestycji</div>
+  <h1 class="card-prompt">Co <em>nowy obszar</em> ci dał?</h1>
+  <p class="card-detail">Po 4 tygodniach inwestycji w wybrany obszar wracasz do koła samooceny. Dwa pomiary z odstępu miesięcznego pokazują pierwsze efekty. <strong>Najczęstsze odkrycia</strong>: nowy obszar nadal jest mały (2–8%), ale jego obecność <em>zmienia perspektywę</em> — masz dowód, że samoocena może mieć kilka filarów; w dni, gdy waga „nie pasuje", nowy obszar jest <em>refugium</em> — coś, co nadal działa.</p>
+  <div class="examples-h" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage-deep);font-weight:700;margin:12px 0 6px">Twój nowy obraz — wpisz % po miesiącu</div>
+  <textarea class="thought-input" id="ovNowe" placeholder="np. „Waga: 65% (było 75%). Praca: 12% (10%). Relacje: 10% (8%). Hobby: 8% (0%). Wartości: 3% (5%). Inne: 2% (2%). Najważniejsza zmiana: hobby z 0 do 8%"..." rows="3"></textarea>
+  <div class="examples-h" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage-deep);font-weight:700;margin:12px 0 6px">Co konkretnie zmieniło się w doświadczaniu siebie?</div>
+  <textarea class="thought-input" id="ovDosw" placeholder="np. „W dniu po wpadce z napadem byłam normalnie szczęśliwa na próbie chóru. Pierwsza taka sytuacja od 3 lat — coś poza wagą działało, mimo że waga 'nie pasowała' "..." rows="3"></textarea>
+  <div class="term-note">🔑 <strong>Reguła „6 miesięcy widocznie"</strong>: pełna zmiana rdzenia samooceny to 6–12 miesięcy regularnej pracy. Pierwszy miesiąc — pierwsze drobne sygnały. Trzeci — trwałe zmiany w jednym obszarze. Szósty — koło samooceny ma realnie 3–4 obszary o porównywalnej wadze. Po roku — waga jest <em>jednym z</em> wymiarów, nie <em>jedynym</em>.</div>
+  <div class="repeat-reminder"><div class="repeat-h">Zapamiętaj</div><div class="repeat-body">Nadmierne znaczenie wagi i kształtu (overvaluation) to <em>rdzeń poznawczy bulimii</em>. <strong>Cel terapii: 15–25%</strong>, nie 0%. Strategia: <em>dywersyfikacja, nie inwersja</em> — dodajesz obszary, nie odejmujesz wagi. Cztery obszary do inwestycji: <em>relacje, hobby, wartości, praca poza ciałem</em>. Pierwszy ruch jest mały, ale jego obecność zmienia perspektywę. Pełna zmiana to 6–12 miesięcy. Bez pracy z rdzeniem — ryzyko nawrotu duże.</div></div>
+  <div class="src">Fairburn (2008), Rozdział 8 · Fairburn, Cooper i Shafran (2003), <em>Behaviour Research and Therapy</em> — model transdiagnostyczny · Cooper, Cooper i Fairburn (1989) · Geller i in. (2002) — wpływ overvaluation na rokowania</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickOpt(btn) { btn.classList.toggle('picked'); }
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bn_overvalue — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bn_overvalue";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

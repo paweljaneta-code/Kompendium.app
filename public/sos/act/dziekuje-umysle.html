@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Dziękuję, umyśle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--sage-soft); border-color: var(--sage); color: var(--ink); }
+
+/* === FRAME (step 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative; }
+.frame-card::before { content: "✦ NADGORLIWY OCHRONIARZ"; position: absolute; top: 12px; left: 20px; background: var(--sage); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; }
+.frame-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.9); }
+.frame-body strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+
+/* === MIND TYPE PICKER (step 2) === */
+.type-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.type-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.type-block:hover { background: var(--sage-soft); }
+.type-block.active { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 11px; }
+.type-h { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.type-desc { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; }
+
+/* === RESPONSE PICKER (step 3) === */
+.response-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.response-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Fraunces', serif;
+}
+.response-block:hover { background: var(--sage-soft); }
+.response-block.active { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 11px; }
+.response-text { font-size: 14px; font-style: italic; line-height: 1.45; color: var(--ink); }
+.response-tone { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-top: 4px; font-family: 'DM Sans', sans-serif; font-style: normal; }
+
+.echo-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.echo-card .label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; font-style: normal; margin-bottom: 4px; font-family: 'DM Sans', sans-serif; }
+.echo-card strong { color: var(--ink); font-style: normal; font-weight: 700; }
+
+/* === COMPARISON (step 4) === */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+.compare-card {
+  border-radius: 12px;
+  padding: 14px;
+}
+.compare-card.fight { background: rgba(201,122,82,0.08); border: 1.5px solid var(--warm); }
+.compare-card.thanks { background: rgba(122,146,112,0.12); border: 1.5px solid var(--sage-deep); }
+.compare-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+.compare-card.fight .compare-h { color: var(--warm); }
+.compare-card.thanks .compare-h { color: var(--sage-deep); }
+
+.compare-slider-label { font-size: 10px; color: var(--ink-mute); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm)); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -9px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm)); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 18px; height: 18px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.compare-readout { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.compare-readout span.unit { color: var(--ink-mute); font-size: 11px; font-weight: 400; }
+
+.delta-summary {
+  background: var(--ink); color: var(--bg);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-top: 4px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.delta-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.delta-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === DAILY (step 5) === */
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Dziękuję, umyśle</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: WHY -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Twój umysł <em>próbuje pomagać</em></h1>
+    <p class="card-detail"><strong>„Thank your mind"</strong> (Harris 2009) — łagodna technika defuzji w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). Zamiast walczyć z trudną myślą, dziękujesz umysłowi za jej wygenerowanie. To zmienia <strong>relację</strong> z umysłem — z wroga na nadgorliwego pomocnika.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Umysł jako nadgorliwy ochroniarz</div>
+      <div class="frame-body">Umysł wyewoluował, by <strong>chronić</strong> — wynajdywać zagrożenia, przewidywać porażki, szukać błędów. To miało sens 50 000 lat temu na sawannie. Dziś ten sam mechanizm produkuje katastroficzne myśli o spotkaniu z szefem albo poście na Instagramie. <strong>Umysł nie jest twoim wrogiem</strong> — to nadgorliwy ochroniarz, który pracuje za dwóch. Walka go nie wyłączy. Ale uznanie jego funkcji <em>zmniejsza jego władzę</em>.</div>
+      <div class="frame-quote">„Dziękuję, umyśle. Próbujesz mnie chronić, ale teraz nie potrzebuję pomocy."</div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: „dziękuję" musi być <em>szczere</em>, nie sarkastyczne. Sarkazm to ukryta walka. Życzliwość pojawia się, gdy rzeczywiście dostrzegasz, że umysł próbował pomóc — choć dziś już nie potrzebujesz tej formy ochrony.</div>
+    
+    <div class="src">Harris (2009, ACT Made Simple) · Hayes (1999)</div>
+  </section>
+
+  <!-- 2: TYPE OF MIND THOUGHT -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Co umysł serwuje</div>
+    <h1 class="card-prompt">Wybierz <em>typ</em> myśli</h1>
+    <p class="card-detail">Umysł produkuje 4 główne kategorie myśli ochronnych. Wybierz tę, z którą najczęściej masz do czynienia — albo która jest aktywna teraz.</p>
+    
+    <div class="type-list">
+      <div class="type-block" onclick="selectType(this, 'catastrophe')">
+        <div class="type-h">🌩 Katastrofizacja</div>
+        <div class="type-desc">„Na pewno się zbłaźnisz", „Wszystko pójdzie źle", „Stracę pracę"</div>
+      </div>
+      <div class="type-block" onclick="selectType(this, 'criticism')">
+        <div class="type-h">🪞 Samokrytyka</div>
+        <div class="type-desc">„Jestem beznadziejny", „Nie zasługuję na to", „Powinienem być lepszy"</div>
+      </div>
+      <div class="type-block" onclick="selectType(this, 'rumination')">
+        <div class="type-h">🔄 Ruminacja</div>
+        <div class="type-desc">„Dlaczego on tak powiedział?", powracanie do tej samej myśli kilkadziesiąt razy</div>
+      </div>
+      <div class="type-block" onclick="selectType(this, 'avoidance')">
+        <div class="type-h">🚪 Doradzanie unikania</div>
+        <div class="type-desc">„Nie idź na to spotkanie", „Lepiej tego nie zaczynaj", „Może jutro"</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Konkretna myśl, której dotyczy ćwiczenie</div>
+    <textarea class="thought-input" id="myslInput" placeholder="np. „Na pewno się zbłaźnisz na prezentacji" / „Jestem nieudaczny" / „Lepiej nie dzwoń do niej"..." rows="2"></textarea>
+  </section>
+
+  <!-- 3: RESPONSE PICKER -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Twoja odpowiedź</div>
+    <h1 class="card-prompt"><em>Co</em> powiesz umysłowi?</h1>
+    <p class="card-detail">Wybierz wariant, który brzmi dla ciebie naturalnie. Każdy ma inną tonację. Można też stworzyć własny.</p>
+    
+    <div class="echo-card" id="thoughtEcho">
+      <div class="label">Myśl, którą będziesz adresować</div>
+      <span id="thoughtEchoText">—</span>
+    </div>
+    
+    <div class="response-list">
+      <div class="response-block" onclick="selectResponse(this, 0)">
+        <div class="response-text">„Dziękuję, umyśle, za tę informację."</div>
+        <div class="response-tone">Neutralny · biurokratyczny</div>
+      </div>
+      <div class="response-block" onclick="selectResponse(this, 1)">
+        <div class="response-text">„Ciekawe, umyśle. Zanotowałem/am."</div>
+        <div class="response-tone">Lekki · dystans badacza</div>
+      </div>
+      <div class="response-block" onclick="selectResponse(this, 2)">
+        <div class="response-text">„Dziękuję za troskę, ale poradzę sobie."</div>
+        <div class="response-tone">Ciepły · z poczuciem kompetencji</div>
+      </div>
+      <div class="response-block" onclick="selectResponse(this, 3)">
+        <div class="response-text">„O, znowu ta audycja? Dziękuję, umyśle."</div>
+        <div class="response-tone">Humorystyczny · „znamy się"</div>
+      </div>
+      <div class="response-block" onclick="selectResponse(this, 4)">
+        <div class="response-text">„Doceniam czujność, ale teraz nie potrzebuję pomocy."</div>
+        <div class="response-tone">Formalny · pełna wdzięczność</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Albo własna odpowiedź</div>
+    <textarea class="thought-input" id="customResponse" placeholder="np. „Dzięki za prognozę. I tak idę." / „Stary umyśle, znam ten numer..."..." rows="2"></textarea>
+    
+    <div class="term-note"><strong>Wybór tonu</strong>: humor pomaga, gdy fuzja nie jest bardzo silna. Przy intensywnych emocjach lub silnym samokrytycyzmie wybierz <em>ciepły</em> lub <em>formalny</em> wariant — sarkazm i ironia mogą się wtedy obrócić przeciwko tobie.</div>
+  </section>
+
+  <!-- 4: COMPARE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Test różnicy</div>
+    <h1 class="card-prompt">Walka <em>vs dziękuję</em></h1>
+    <p class="card-detail">Porównanie dwóch reakcji na tę samą myśl. Pierwszy slider: jak czujesz się <strong>po typowej walce</strong> z myślą (próba zaprzeczenia, tłumienia, racjonalizacji). Drugi: <strong>po podziękowaniu</strong> i odpuszczeniu.</p>
+    
+    <div class="compare-grid">
+      <div class="compare-card fight">
+        <div class="compare-h">⚔ Po walce z myślą</div>
+        <div class="compare-slider-label">Zmęczenie / spięcie</div>
+        <input type="range" min="0" max="10" value="7" class="scale-input" id="fightSlider" oninput="updateCompare()">
+        <div class="compare-readout"><span id="fightVal">7</span><span class="unit"> / 10</span></div>
+      </div>
+      <div class="compare-card thanks">
+        <div class="compare-h">🙏 Po „dziękuję"</div>
+        <div class="compare-slider-label">Zmęczenie / spięcie</div>
+        <input type="range" min="0" max="10" value="3" class="scale-input" id="thanksSlider" oninput="updateCompare()">
+        <div class="compare-readout"><span id="thanksVal">3</span><span class="unit"> / 10</span></div>
+      </div>
+    </div>
+    
+    <div class="delta-summary" id="deltaSummary">
+      Walka kosztuje <span class="num">4 punkty więcej</span> niż „dziękuję" — <strong>walka pochłania zasoby, „dziękuję" je oszczędza</strong>.
+    </div>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: walka z myślą wzmacnia ją (paradoks tłumienia, Wegner 1987 — „nie myśl o białym niedźwiedziu"). „Dziękuję" robi coś przeciwnego — uznaje obecność myśli, ale nie zatrzymuje na niej zasobów. Myśl <em>przechodzi</em>.</div>
+  </section>
+
+  <!-- 5: WEEKLY PRACTICE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan tygodnia</div>
+    <h1 class="card-prompt">Praktyka <em>codzienna</em></h1>
+    <p class="card-detail">Technika działa najlepiej, gdy stosujesz ją <strong>spontanicznie</strong>, w trakcie dnia. Każde użycie wzmacnia neuronalną ścieżkę „myśl → uznanie → odpuszczenie" zamiast „myśl → walka → wzmocnienie".</p>
+    
+    <div class="day-h">Sytuacje, w których planuję powiedzieć „dziękuję, umyśle"</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useTrigger(this)">Rano w łóżku, przed wstaniem</div>
+      <div class="example-chip" onclick="useTrigger(this)">Przed snem, gdy umysł serwuje analizy</div>
+      <div class="example-chip" onclick="useTrigger(this)">W drodze do pracy</div>
+      <div class="example-chip" onclick="useTrigger(this)">Po trudnej rozmowie</div>
+      <div class="example-chip" onclick="useTrigger(this)">Przy katastrofizacji</div>
+      <div class="example-chip" onclick="useTrigger(this)">Przy samokrytyce</div>
+    </div>
+    <textarea class="thought-input" id="triggerInput" placeholder="lub wpisz własne sytuacje..." rows="2"></textarea>
+    
+    <div class="day-h">Cel tygodnia (ile razy chcesz użyć?)</div>
+    <textarea class="thought-input" id="goalInput" placeholder="np. „minimum 1× dziennie", „przy każdej katastroficznej myśli", „3× w tygodniu zauważyć i powiedzieć"..." rows="2"></textarea>
+    
+    <div class="day-h">Kiedy „dziękuję, umyśle" jest najtrudniejsze</div>
+    <div class="term-note"><strong>Gdy myśl wydaje się prawdą</strong> (np. „ale to NAPRAWDĘ jest beznadziejne!"): „dziękuję" działa, ale wymaga zaufania. Pamiętaj, że nie kasujesz myśli — zmieniasz <em>relację</em> z nią.<br><strong>Gdy emocje są silne</strong>: technika łagodna, ale działa wolniej. Połącz z rozszerzaniem (acceptance).<br><strong>Gdy myśl wraca po raz 20.</strong>: powtarzaj „dziękuję" za każdym razem. Każde powtórzenie osłabia automatyczność walki.</div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła praktyki</div>
+      <div class="repeat-body"><strong>Małe i często</strong> &gt; <strong>duże i rzadko</strong>. 5× w tygodniu po jednej minucie znaczy więcej niż jedna 30-minutowa sesja medytacji raz w miesiącu. Powtórzenie buduje nawyk.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+let selectedType = null;
+let selectedResponse = null;
+
+const RESPONSES = [
+  '„Dziękuję, umyśle, za tę informację."',
+  '„Ciekawe, umyśle. Zanotowałem/am."',
+  '„Dziękuję za troskę, ale poradzę sobie."',
+  '„O, znowu ta audycja? Dziękuję, umyśle."',
+  '„Doceniam czujność, ale teraz nie potrzebuję pomocy."'
+];
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 3) renderThoughtEcho();
+  if (curStep === 4) updateCompare();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    selectedType = null; selectedResponse = null;
+    document.querySelectorAll('.type-block.active, .response-block.active').forEach(b => b.classList.remove('active'));
+    ['myslInput','customResponse','triggerInput','goalInput'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fightSlider').value = 7;
+    document.getElementById('thanksSlider').value = 3;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function selectType(el, type) {
+  document.querySelectorAll('.type-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedType = type;
+}
+
+function selectResponse(el, idx) {
+  document.querySelectorAll('.response-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedResponse = idx;
+}
+
+function renderThoughtEcho() {
+  const t = document.getElementById('myslInput').value.trim() || '— wpisz w kroku 2 —';
+  document.getElementById('thoughtEchoText').textContent = t;
+}
+
+function updateCompare() {
+  const fight = parseInt(document.getElementById('fightSlider').value);
+  const thanks = parseInt(document.getElementById('thanksSlider').value);
+  document.getElementById('fightVal').textContent = fight;
+  document.getElementById('thanksVal').textContent = thanks;
+  
+  const delta = fight - thanks;
+  const summary = document.getElementById('deltaSummary');
+  
+  if (delta >= 4) {
+    summary.innerHTML = `Walka kosztuje <span class="num">${delta} punktów więcej</span> niż „dziękuję" — <strong>walka pochłania zasoby, „dziękuję" je oszczędza</strong>. To wyraźne potwierdzenie mechanizmu.`;
+  } else if (delta >= 1) {
+    summary.innerHTML = `Walka kosztuje <span class="num">${delta} ${delta === 1 ? 'punkt' : 'punkty'} więcej</span> niż „dziękuję". Subtelna różnica, ale widoczna — przy kumulacji w ciągu dnia ma znaczenie.`;
+  } else if (delta === 0) {
+    summary.innerHTML = `Bez różnicy (<span class="num">${fight}</span> = <span class="num">${thanks}</span>). To może oznaczać, że jeszcze nie czujesz pełnego efektu „dziękuję" — z praktyką różnica zwykle się pogłębia.`;
+  } else {
+    summary.innerHTML = `Po „dziękuję" czujesz się gorzej (<span class="num">${thanks}</span> &gt; <span class="num">${fight}</span>) — nietypowe. Może „dziękuję" zabrzmiało dla ciebie sarkastycznie? Sarkazm = ukryta walka. Spróbuj cieplejszej tonacji.`;
+  }
+}
+
+function useTrigger(el) {
+  const t = document.getElementById('triggerInput');
+  if (t.value.trim()) t.value += ', ';
+  t.value += el.textContent;
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_dziekuje_umysle";
+  var clickSel0 = '.type-block, .response-block';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.type-block, .response-block')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

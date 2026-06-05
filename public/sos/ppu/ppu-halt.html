@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · HALT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === HALT-specific === */
+.halt-row {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
+}
+.halt-letter {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700;
+  color: var(--sage-deep); width: 26px; text-align: center; flex-shrink: 0;
+}
+.halt-name { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.halt-q { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+.halt-meta { flex: 1; }
+.halt-readout { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--sage-deep); width: 38px; text-align: right; flex-shrink: 0; }
+.halt-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; margin-top: 6px; }
+.halt-input::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; }
+.halt-input::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+
+.action-card {
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.action-card:hover, .action-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.action-card.picked .action-desc { color: rgba(244,241,234,0.85); }
+.action-name { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13.5px; }
+.action-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>HALT</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============ KROK 1 — Wprowadzenie ============ -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Sprawdź <em>cztery stany podatności</em></h1>
+    <p class="card-detail">HALT — akronim z tradycji Anonimowych Alkoholików (AA), który nazwał cztery stany fizjologiczno-emocjonalne, w których kontrola impulsów drastycznie spada: <strong>H — głodny/a, A — zły/a, L — samotny/a, T — zmęczony/a</strong>. Eksperymenty Baumeistera (Gailliot &amp; Baumeister, 2007) potwierdziły mechanizm: niski poziom glukozy i deficyt snu zmniejszają zasoby samoregulacji. Profilaktyka tych stanów chroni przed nawrotami w problematycznym używaniu pornografii (PPU) skuteczniej niż walka z impulsem już po jego wybuchu.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery stany HALT</div>
+      <div class="element-row">
+        <span class="element-icon">🍞</span>
+        <span class="element-text"><strong>H — Hungry (głodny/a)</strong> — niski poziom glukozy obniża zdolność hamowania impulsów; regularne posiłki to nie luksus, lecz tarcza.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔥</span>
+        <span class="element-text"><strong>A — Angry (zły/a)</strong> — gniew i frustracja podgrzewają układ pobudzenia; impuls jako szybka droga rozładowania napięcia.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🫥</span>
+        <span class="element-text"><strong>L — Lonely (samotny/a)</strong> — izolacja społeczna jest najmocniejszym predyktorem sięgania po pornografię regulacyjną; substytut bliskości.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌙</span>
+        <span class="element-text"><strong>T — Tired (zmęczony/a)</strong> — sen poniżej 6 godzin podnosi impulsywność i obniża wgląd; wieczorne urges są częściowo objawem deficytu.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Cztery zwykłe stany — głód, gniew, samotność, zmęczenie — odpowiadają za większość naszych nawrotów, zanim sięgniemy po jakikolwiek wyzwalacz zewnętrzny."
+      <span class="frame-quote-attr">— parafraza tradycji AA, lata 70.</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: HALT to <em>profilaktyka</em>, nie reakcja. Kiedy w głodzie, gniewie, samotności lub zmęczeniu pojawia się impuls — najpierw zajmij się stanem, dopiero potem oceń urge.</div>
+
+    <div class="src">Tradycja AA (lata 70.); Gailliot &amp; Baumeister (2007, ego depletion / glukoza i samokontrola); Marlatt &amp; Donovan (2005, profilaktyka nawrotów).</div>
+  </section>
+
+  <!-- ============ KROK 2 — Audyt teraz ============ -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — co czujesz w tej chwili</div>
+    <h1 class="card-prompt">Oceń <em>każdy z czterech stanów</em></h1>
+    <p class="card-detail">Skala 0—10. <strong>0</strong> = stan nieobecny, <strong>10</strong> = stan szczytowy. Bądź uczciwy/a — nawet ocena „4" jest ważna, bo to próg, w którym samokontrola zaczyna spadać.</p>
+
+    <div class="halt-row">
+      <div class="halt-letter">H</div>
+      <div class="halt-meta">
+        <div class="halt-name">🍞 Hungry — głód</div>
+        <div class="halt-q">Kiedy ostatnio zjadłeś/aś pełny posiłek? Czy odczuwasz pustkę, drżenie rąk, rozdrażnienie?</div>
+        <input type="range" class="halt-input" id="haltH" min="0" max="10" step="1" value="3" data-default="3">
+      </div>
+      <div class="halt-readout"><span id="haltHval">3</span>/10</div>
+    </div>
+
+    <div class="halt-row">
+      <div class="halt-letter">A</div>
+      <div class="halt-meta">
+        <div class="halt-name">🔥 Angry — złość, frustracja</div>
+        <div class="halt-q">Czy nosisz w sobie napięcie, niezałatwiony konflikt, niewypowiedziany sprzeciw?</div>
+        <input type="range" class="halt-input" id="haltA" min="0" max="10" step="1" value="3" data-default="3">
+      </div>
+      <div class="halt-readout"><span id="haltAval">3</span>/10</div>
+    </div>
+
+    <div class="halt-row">
+      <div class="halt-letter">L</div>
+      <div class="halt-meta">
+        <div class="halt-name">🫥 Lonely — samotność</div>
+        <div class="halt-q">Kiedy ostatnio rozmawiałeś/aś z kimś bliskim? Czy czujesz odłączenie?</div>
+        <input type="range" class="halt-input" id="haltL" min="0" max="10" step="1" value="3" data-default="3">
+      </div>
+      <div class="halt-readout"><span id="haltLval">3</span>/10</div>
+    </div>
+
+    <div class="halt-row">
+      <div class="halt-letter">T</div>
+      <div class="halt-meta">
+        <div class="halt-name">🌙 Tired — zmęczenie</div>
+        <div class="halt-q">Ile godzin spałeś/aś? Czy myśli są ciężkie, oczy się kleją, decyzje rozmazują?</div>
+        <input type="range" class="halt-input" id="haltT" min="0" max="10" step="1" value="3" data-default="3">
+      </div>
+      <div class="halt-readout"><span id="haltTval">3</span>/10</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła progu</strong>: jeśli któraś z ocen wynosi <em>≥6</em> lub przynajmniej dwie wynoszą <em>≥4</em> — masz wysokie ryzyko impulsu. Najpierw zajmij się stanem.</div>
+  </section>
+
+  <!-- ============ KROK 3 — Wybór stanu ============ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — który stan dominuje</div>
+    <h1 class="card-prompt">Co potrzebuje <em>uwagi najpilniej</em>?</h1>
+    <p class="card-detail">Nie próbuj naprawiać wszystkich czterech stanów naraz — taka próba zwykle kończy się porażką. Wskaż <strong>jeden</strong> stan, na którym skoncentrujesz się przez najbliższą godzinę.</p>
+
+    <div class="examples-h">Wybierz dominujący stan</div>
+    <button type="button" class="rel-btn" id="picH" onclick="pickHALT('H')">
+      <span class="rel-name">🍞 H — głód</span>
+      <span class="rel-desc">Pierwszą rzeczą jest jedzenie z białkiem — nie słodkie przekąski.</span>
+    </button>
+    <button type="button" class="rel-btn" id="picA" onclick="pickHALT('A')">
+      <span class="rel-name">🔥 A — złość</span>
+      <span class="rel-desc">Rozładowanie ciała (ruch, oddech) przed przemyśleniem sprawy.</span>
+    </button>
+    <button type="button" class="rel-btn" id="picL" onclick="pickHALT('L')">
+      <span class="rel-name">🫥 L — samotność</span>
+      <span class="rel-desc">Krótki realny kontakt — telefon, wiadomość głosowa, spotkanie.</span>
+    </button>
+    <button type="button" class="rel-btn" id="picT" onclick="pickHALT('T')">
+      <span class="rel-name">🌙 T — zmęczenie</span>
+      <span class="rel-desc">Drzemka 20 minut lub realny plan wcześniejszego snu.</span>
+    </button>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: bierz stan o najwyższej ocenie z kroku 2; przy remisie — zaczynaj od <em>H lub T</em>, bo bez glukozy i snu pozostałe interwencje rzadko działają.</div>
+  </section>
+
+  <!-- ============ KROK 4 — Akcja per stan ============ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — konkretna akcja na 30 minut</div>
+    <h1 class="card-prompt">Co <em>zrobisz teraz</em>?</h1>
+    <p class="card-detail">Wybierz jedno działanie z listy poniżej (dopasowane do dominującego stanu) <strong>lub</strong> wpisz własne. Liczy się konkret — czas, miejsce, kolejność.</p>
+
+    <div class="examples-h">Propozycje działania</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="actEat" onclick="this.classList.toggle('picked')">Pełny posiłek z białkiem (15 min)</button>
+      <button type="button" class="example-chip" id="actWalk" onclick="this.classList.toggle('picked')">Spacer 20 min na zewnątrz</button>
+      <button type="button" class="example-chip" id="actCall" onclick="this.classList.toggle('picked')">Telefon do bliskiej osoby</button>
+      <button type="button" class="example-chip" id="actNap" onclick="this.classList.toggle('picked')">Drzemka 20 min</button>
+      <button type="button" class="example-chip" id="actShower" onclick="this.classList.toggle('picked')">Zimny prysznic 2 min</button>
+      <button type="button" class="example-chip" id="actBreath" onclick="this.classList.toggle('picked')">Oddech 4-7-8 × 4 cykle</button>
+      <button type="button" class="example-chip" id="actMove" onclick="this.classList.toggle('picked')">20 pompek lub przysiadów</button>
+      <button type="button" class="example-chip" id="actVoice" onclick="this.classList.toggle('picked')">Wiadomość głosowa do kogoś</button>
+    </div>
+
+    <textarea class="thought-input" id="ownPlan" placeholder="np. „Robię kanapkę z jajkiem i serem, jem przy stole bez telefonu, potem wychodzę na 15 min spacer."" rows="3"></textarea>
+
+    <div class="term-note"><strong>Mechanizm</strong>: zajęcie się stanem HALT (zwłaszcza fizjologicznym — H, T) <em>obniża</em> intensywność impulsu zwykle w 20—40 minut, bez bezpośredniej walki z myślami o pornografii.</div>
+  </section>
+
+  <!-- ============ KROK 5 — Pomiar po ============ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Co się <em>zmieniło</em> po zajęciu się stanem?</h1>
+    <p class="card-detail">Wróć do kart po wykonaniu działania (idealnie po 30—60 minut). Oceń ponownie ten sam stan, który wybrałeś/aś w kroku 3, oraz siłę impulsu.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Stan dominujący — po (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="postState" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = brak</span><span id="postStateVal">3</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Siła impulsu PPU — po (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="postUrge" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = brak</span><span id="postUrgeVal">3</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja domyślna pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: <em>5—10 powtórzeń</em> protokołu HALT w ciągu dwóch tygodni buduje nawyk samosprawdzania; po tym czasie self-check 3× dziennie staje się automatyczny i zatrzymuje większość urges, zanim staną się świadome.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Impuls w stanie HALT to <em>sygnał</em>, nie wróg. <strong>Nakarm, ostudź, zadzwoń, połóż się</strong> — w tej kolejności. Pornografia w tych chwilach jest substytutem czegoś prostszego, czego potrzebujesz naprawdę.</div>
+    </div>
+
+    <div class="src">Tradycja AA (lata 70.); Gailliot &amp; Baumeister (2007, J. Pers. Soc. Psychol.); Marlatt &amp; Donovan (2005); Walker (2017, „Why We Sleep"); Hall (2013, CBT for hypersexual disorder).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Live readouty suwaków HALT i krok 5 */
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+bindRange('haltH','haltHval');
+bindRange('haltA','haltAval');
+bindRange('haltL','haltLval');
+bindRange('haltT','haltTval');
+bindRange('postState','postStateVal');
+bindRange('postUrge','postUrgeVal');
+
+/* Picker dominującego stanu */
+window.pickedHALT = null;
+function pickHALT(letter) {
+  window.pickedHALT = letter;
+  ['picH','picA','picL','picT'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('pic' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+/* Diff list i final message w kroku 5 */
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var picked = window.pickedHALT;
+  var letterMap = {H:'haltH',A:'haltA',L:'haltL',T:'haltT'};
+  var nameMap = {H:'🍞 Głód',A:'🔥 Złość',L:'🫥 Samotność',T:'🌙 Zmęczenie'};
+  var rows = [];
+  if (picked && letterMap[picked]) {
+    var pre = parseInt(document.getElementById(letterMap[picked]).value, 10);
+    var post = parseInt(document.getElementById('postState').value, 10);
+    var delta = post - pre;
+    var sign = delta > 0 ? '+' : '';
+    var cls = delta > 0 ? 'diff-delta neg' : 'diff-delta';
+    rows.push('<div class="diff-row"><strong>' + nameMap[picked] + '</strong><span class="' + cls + '">' + pre + ' → ' + post + ' (' + sign + delta + ')</span></div>');
+  }
+  /* Impuls — bez przed-pomiaru, tylko wartość po */
+  var urge = parseInt(document.getElementById('postUrge').value, 10);
+  var urgeWord = urge <= 2 ? 'niska' : (urge <= 5 ? 'umiarkowana' : 'wysoka');
+  rows.push('<div class="diff-row"><strong>Siła impulsu po</strong><span class="diff-delta">' + urge + '/10 — ' + urgeWord + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg = '';
+    if (picked) {
+      var pre = parseInt(document.getElementById(letterMap[picked]).value, 10);
+      var post = parseInt(document.getElementById('postState').value, 10);
+      if (post < pre - 1) {
+        msg = '<strong>Działa.</strong> Stan ' + nameMap[picked] + ' spadł — to dowód, że profilaktyka HALT trzyma. Powtarzaj 3× dziennie.';
+      } else if (post >= pre) {
+        msg = '<strong>Brak spadku</strong> w ' + nameMap[picked] + '. Sprawdź: czy działanie było <em>realne</em> (zjadłeś/aś, zadzwoniłeś/aś, wyspałeś/aś się), czy tylko zaplanowane? Jeśli realne — może dominował inny stan.';
+      } else {
+        msg = 'Drobny spadek. Daj sobie więcej czasu — niektóre stany (zwłaszcza T) potrzebują kilku godzin lub całej nocy.';
+      }
+    } else {
+      msg = '<strong>Brak wybranego stanu</strong> — wróć do kroku 3 i wskaż dominujący stan, by zobaczyć kalibrację.';
+    }
+    if (urge >= 6) {
+      msg += ' <em>Impuls nadal wysoki</em> — sięgnij po dodatkowe narzędzie (urge surfing, reguła 15 min).';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+/* Aktualizuj diff i final przy każdym wejściu w krok 5 */
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+/* Reset — wyczyść picker */
+function onReset() {
+  window.pickedHALT = null;
+  ['picH','picA','picL','picT'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+}
+
+/* Live update diff/final podczas zmian w kroku 5 */
+['postState','postUrge'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_halt — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_halt";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+/* Restore pickedHALT po reload na podstawie .picked w DOM */
+setTimeout(function(){
+  ['H','A','L','T'].forEach(function(letter){
+    var el = document.getElementById('pic' + letter);
+    if (el && el.classList.contains('picked')) {
+      window.pickedHALT = letter;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

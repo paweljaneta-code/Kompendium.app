@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Model Browna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.cluster-card { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.cluster-card:hover, .cluster-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.cluster-h { font-weight: 600; display: flex; gap: 8px; align-items: center; margin-bottom: 4px; font-size: 13px; }
+.cluster-num { font-family: 'Fraunces', serif; font-size: 16px; color: var(--warm); font-weight: 700; }
+.cluster-card.picked .cluster-num { color: var(--bg); }
+.cluster-d { font-size: 12px; line-height: 1.45; color: var(--ink-mute); }
+.cluster-card.picked .cluster-d { color: rgba(244,241,234,0.85); }
+
+.orchestra-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.orchestra-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.orchestra-text { font-size: 13px; line-height: 1.65; color: rgba(244,241,234,0.92); font-style: italic; font-family: 'Fraunces', serif; }
+.orchestra-text strong { color: var(--bg); font-style: normal; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Model Browna</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Mózg <em>bez dyrygenta</em></h1>
+    <p class="card-detail">Model Thomasa E. Browna (2005, 2013) to drugi najbardziej wpływowy model <strong>ADHD</strong> (zespół nadpobudliwości psychoruchowej z deficytem uwagi) po Barkleyu, uzupełniający go o perspektywę funkcji wykonawczych jako <em>systemu</em>, nie pojedynczego deficytu. Brown porównuje mózg ADHD do <em>orkiestry bez dyrygenta</em> — poszczególne instrumenty (umiejętności) są sprawne, ale nie ma kogoś, kto je koordynuje. Model wyodrębnia 6 klastrów funkcji wykonawczych: aktywacja, fokus, wysiłek, emocje, pamięć, działanie. Brown twierdzi, że ADHD to zaburzenie <em>koordynacji</em> tych klastrów, nie uwagi jako takiej. Model leży u podstaw Brown ADD Scales — narzędzia oceny tych funkcji u dorosłych. Szczególnie przydatny dla kobiet z ADHD nieuwagowym, gdzie dominują problemy z aktywacją, wysiłkiem i pamięcią, a nie hiperaktywność.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Sześć klastrów Browna (2005, 2013)</div>
+      <div class="element-row">
+        <span class="element-icon">🚀</span>
+        <span class="element-text"><strong>① Aktywacja</strong> — organizacja zadań, priorytetyzacja, rozpoczynanie. „Wiem, co zrobić, ale nie umiem zacząć".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>② Fokus</strong> — utrzymywanie uwagi, przełączanie. „Skupiam się i odpływam co 5 minut".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>③ Wysiłek</strong> — regulacja czujności, wytrwałość, tempo. „Energii starcza na 90 min, potem zapadam się".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌋</span>
+        <span class="element-text"><strong>④ Emocje</strong> — modulacja frustracji, regulacja afektu. „Każdy drobiazg wybucha jak fala".</span>
+      </div>
+    </div>
+
+    <div class="frame-card" style="margin-top:8px">
+      <div class="frame-h">Dwa pozostałe klastry</div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>⑤ Pamięć</strong> — pamięć robocza, dostęp do długoterminowej. „Wiem, że to wiem, ale teraz nie pamiętam".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">👁️</span>
+        <span class="element-text"><strong>⑥ Działanie</strong> — monitoring i samoregulacja zachowania. „Robię coś, ale nie zauważam, czy to dobrze".</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Mózg ADHD to <em>orkiestra bez dyrygenta</em>. Poszczególne instrumenty są sprawne — kreatywność, intelekt, intuicja. Ale brakuje kogoś, kto je koordynuje. To nie deficyt jednej zdolności — to deficyt <em>koordynacji</em>."
+      <span class="frame-quote-attr">— parafraza Browna (2013, „A New Understanding of ADHD")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: model Browna jest bardziej szczegółowy niż Barkleya. Pomaga w precyzyjnej identyfikacji <em>którego konkretnie</em> klastra Twój system ma najsłabszy. Strategia adresująca konkretny klaster działa lepiej niż „ogólne strategie ADHD".</div>
+
+    <div class="src">Brown (2005, „Attention Deficit Disorder") · Brown (2013, „A New Understanding of ADHD in Children and Adults") · Brown ADD Scales (narzędzie diagnostyczne) · Barkley (1997, model komplementarny)</div>
+  </section>
+
+  <!-- ============== KROK 2 — Audyt 6 klastrów ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt klastrów</div>
+    <h1 class="card-prompt">Który <em>instrument</em> orkiestry najsłabszy?</h1>
+    <p class="card-detail">Skala 0–10 dla każdego klastra. Cel: zauważyć Twój profil — który klaster zawodzi najbardziej. To dane, na podstawie których wybierzesz strategię w kolejnych krokach. Wartości są subiektywne; obiektywna ocena wymagałaby Brown ADD Scales u psychologa.</p>
+
+    <div class="scale">
+      <div class="scale-title">① Aktywacja — start, organizacja, priorytety (0 łatwo → 10 niemoc)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="c1" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Aktywacja:</span><span id="c1V">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">② Fokus — utrzymanie uwagi (0 stabilne → 10 ciągłe odpływanie)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="c2" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Fokus:</span><span id="c2V">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">③ Wysiłek — wytrwałość, czujność, tempo (0 stabilne → 10 zapadasz się)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="c3" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Wysiłek:</span><span id="c3V">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">④ Emocje — regulacja frustracji (0 spokój → 10 fale RSD)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="c4" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Emocje:</span><span id="c4V">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">⑤ Pamięć — robocza i dostęp (0 świetna → 10 chronicznie zawodząca)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="c5" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Pamięć:</span><span id="c5V">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">⑥ Działanie — monitoring zachowania (0 kontrola → 10 brak)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="c6" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Działanie:</span><span id="c6V">6</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Konkretne sytuacje</strong> — w której klaster najczęściej zawodzi w ostatnim tygodniu?</p>
+    <textarea class="thought-input" id="sytuacje" placeholder="np. „① Aktywacja — wstaję rano i 90 min «mgły» przed pierwszym zadaniem. ⑤ Pamięć — wczoraj otwarłem kalendarz 4 razy, bo zapomniałem o spotkaniu, mimo że było widoczne. ④ Emocje — wybuch wieczorem na drobiazg po wyczerpującym dniu."" rows="5"></textarea>
+
+    <div class="term-note"><strong>📌 Reguła diagnozy</strong>: w typowym profilu ADHD u dorosłych 4–5 klastrów ma wartość ≥ 6/10. Najmocniejsze (≥ 8/10) to <em>kotwice</em> — strategia tam działa najsilniej. Najsłabsze (≤ 4/10) to atuty — to obszary, w których Twój mózg działa lepiej, niż myślisz.</div>
+  </section>
+
+  <!-- ============== KROK 3 — Wybór dominującego klastra + strategia ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Strategia per klaster</div>
+    <h1 class="card-prompt">Strategia <em>dopasowana</em> do klastra</h1>
+    <p class="card-detail">Wybierz dominujący klaster (najwyższa wartość z kroku 2). Każdy klaster ma swoje typowe strategie. Cel: nie „ogólne ADHD-strategie", ale dokładnie te, które adresują Twój konkretny deficyt.</p>
+
+    <p class="examples-h">Twój dominujący klaster</p>
+    <div class="example-chips">
+      <button id="dA" class="example-chip" onclick="onlyOne('d', this)">① Aktywacja</button>
+      <button id="dB" class="example-chip" onclick="onlyOne('d', this)">② Fokus</button>
+      <button id="dC" class="example-chip" onclick="onlyOne('d', this)">③ Wysiłek</button>
+      <button id="dD" class="example-chip" onclick="onlyOne('d', this)">④ Emocje</button>
+      <button id="dE" class="example-chip" onclick="onlyOne('d', this)">⑤ Pamięć</button>
+      <button id="dF" class="example-chip" onclick="onlyOne('d', this)">⑥ Działanie</button>
+    </div>
+
+    <button id="kA" class="cluster-card" onclick="this.classList.toggle('picked')">
+      <span class="cluster-h"><span class="cluster-num">①</span>Strategie dla aktywacji</span>
+      <span class="cluster-d">Reguła „5 minut" (zacznij małe), externalizacja zadań na piśmie, body double na start, AI rozbija zadania na 25-min kroki, pierwszy ruch fizyczny rano (zimny prysznic, ruch).</span>
+    </button>
+
+    <button id="kB" class="cluster-card" onclick="this.classList.toggle('picked')">
+      <span class="cluster-h"><span class="cluster-num">②</span>Strategie dla fokusu</span>
+      <span class="cluster-d">Pomodoro 25/5 (mózg lepiej skupia się w blokach), bloker stron, telefon w innym pokoju, słuchawki noise-cancelling, jedno zadanie na ekranie naraz.</span>
+    </button>
+
+    <button id="kC" class="cluster-card" onclick="this.classList.toggle('picked')">
+      <span class="cluster-h"><span class="cluster-num">③</span>Strategie dla wysiłku</span>
+      <span class="cluster-d">Mapowanie szczytów energii (zwykle rano + 2 h po stymulancie), trudne zadania w tych blokach, regularne przerwy 5 min co 25 min, sen 7+ h, ruch 3× tydz.</span>
+    </button>
+
+    <button id="kD" class="cluster-card" onclick="this.classList.toggle('picked')">
+      <span class="cluster-h"><span class="cluster-num">④</span>Strategie dla emocji</span>
+      <span class="cluster-d">STOP + 60 sek przed reakcją, reguła 48 h dla impulsywnych decyzji, body scan, CFT (Compassion Focused Therapy), DBT-skills, stymulant pomaga regulacji.</span>
+    </button>
+
+    <button id="kE" class="cluster-card" onclick="this.classList.toggle('picked')">
+      <span class="cluster-h"><span class="cluster-num">⑤</span>Strategie dla pamięci</span>
+      <span class="cluster-d">Notatnik 24/7 (Apple Notes z dyktowaniem), kalendarz z alarmami, listy check-off, tablica wizualna, AI do podsumowywania spotkań.</span>
+    </button>
+
+    <button id="kF" class="cluster-card" onclick="this.classList.toggle('picked')">
+      <span class="cluster-h"><span class="cluster-num">⑥</span>Strategie dla działania</span>
+      <span class="cluster-d">Cotygodniowy 15-min przegląd, accountability partner, body double, monitor czasu na zadania (toggl), feedback zewnętrzny (mentor / coach).</span>
+    </button>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoje konkretne strategie</strong> dla dominującego klastra (1–2 sztuki):</p>
+    <textarea class="thought-input" id="strategie" placeholder="np. „Klaster ⑤ pamięć (8/10). Strategie: 1) Apple Notes z dyktowaniem 24/7 (wszystko zapisuję od razu), 2) kalendarz z alarmem 15 min wcześniej dla wszystkich spotkań. Po tygodniu kalibracja — czy działają, jakie luki."" rows="4"></textarea>
+
+    <div class="orchestra-card">
+      <div class="orchestra-h">Metafora orkiestry</div>
+      <div class="orchestra-text">
+        Twój mózg <strong>nie jest zepsuty</strong> — ma sprawne instrumenty (kreatywność, intuicja, intelekt). Brakuje <strong>dyrygenta</strong>. Strategia: zatrudnij <em>zewnętrznego dyrygenta</em> — kalendarz, body double, AI, coach. Każdy z nich pełni jedną funkcję wykonawczą za Ciebie. Nie naprawiasz orkiestry — dopasowujesz ją do tego, co działa.
+      </div>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: jedna strategia per klaster przez 2 tygodnie utrwala ją jako nawyk. Próba „naprawienia wszystkich 6 klastrów naraz" prowadzi zwykle do porzucenia wszystkich w 3 tygodnie. Pojedynczy zwycięzcy wybudowani po kolei = stabilny system po 3–6 miesiącach.</div>
+  </section>
+
+  <!-- ============== KROK 4 — Profil indywidualny + ADHD u kobiet ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Profil indywidualny</div>
+    <h1 class="card-prompt">Twój <em>unikalny</em> profil ADHD</h1>
+    <p class="card-detail">Model Browna pozwala uchwycić indywidualny profil — co odróżnia Cię od „typowego" ADHD. Szczególnie przydatne dla kobiet z ADHD nieuwagowym, gdzie hiperaktywność jest minimalna, ale klastry aktywacji, wysiłku, pamięci są silnie upośledzone.</p>
+
+    <p class="examples-h">Twój dominujący wzór</p>
+    <div class="example-chips">
+      <button id="w1" class="example-chip" onclick="onlyOne('w', this)">Klasyczny (wszystkie 6 klastrów ≥ 6)</button>
+      <button id="w2" class="example-chip" onclick="onlyOne('w', this)">Nieuwagowy (1, 2, 3, 5 wysokie; 4, 6 niższe)</button>
+      <button id="w3" class="example-chip" onclick="onlyOne('w', this)">Emocjonalno-impulsywny (4, 6 wysokie; 1, 2 niższe)</button>
+      <button id="w4" class="example-chip" onclick="onlyOne('w', this)">Aktywacja-wysiłek (1, 3 dominujące; reszta umiarkowana)</button>
+      <button id="w5" class="example-chip" onclick="onlyOne('w', this)">Mieszany / nietypowy</button>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja teza o własnym profilu</strong> — co odróżnia Cię od typowego ADHD?</p>
+    <textarea class="thought-input" id="teza" placeholder="np. „Mój profil: nieuwagowy — wartości 7, 8, 6, 4, 8, 5. Klastry 4 (emocje) i 6 (działanie) są niżej, bo lata maskowania nauczyły mnie tłumić impulsy społeczne. Ale klastry 1 (aktywacja), 2 (fokus) i 5 (pamięć) są chronicznie zawodne. To wyjaśnia, dlaczego nie jestem «klasycznym ADHD-chłopcem»."" rows="5"></textarea>
+
+    <p class="examples-h" style="margin-top:8px">Konsekwencje profilu dla Ciebie</p>
+    <div class="example-chips">
+      <button id="k1" class="example-chip" onclick="this.classList.toggle('picked')">Diagnoza zwykle później (typ nieuwagowy)</button>
+      <button id="k2" class="example-chip" onclick="this.classList.toggle('picked')">Klasyczne strategie ADHD nie zawsze pasują</button>
+      <button id="k3" class="example-chip" onclick="this.classList.toggle('picked')">Maskowanie wpływa na obraz</button>
+      <button id="k4" class="example-chip" onclick="this.classList.toggle('picked')">Brown ADD Scales precyzyjniejsze niż ASRS</button>
+      <button id="k5" class="example-chip" onclick="this.classList.toggle('picked')">Stymulant adresuje wszystkie 6 klastrów</button>
+      <button id="k6" class="example-chip" onclick="this.classList.toggle('picked')">CBT-ADHD trzeba personalizować</button>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Ocena</strong>: czy warto sprawdzić Brown ADD Scales u psychologa dla precyzyjniejszego profilu?</p>
+    <textarea class="thought-input" id="brown" placeholder="np. „Tak — chcę zrobić Brown ADD Scales (ok. 250 zł u psychologa) jako uzupełnienie diagnozy. Daje precyzyjny profil + plan terapeutyczny dopasowany do mojej konkretnej konstelacji deficytów. Zaplanowane na marzec, przed kolejną wizytą u psychiatry."" rows="3"></textarea>
+
+    <p class="examples-h" style="margin-top:8px">Konsultacja z bliskimi (edukacja modelem)</p>
+    <div class="example-chips">
+      <button id="b1" class="example-chip" onclick="this.classList.toggle('picked')">Pokazuję partnerowi/partnerce diagram 6 klastrów</button>
+      <button id="b2" class="example-chip" onclick="this.classList.toggle('picked')">Wyjaśniam terapeucie mój profil</button>
+      <button id="b3" class="example-chip" onclick="this.classList.toggle('picked')">Edukacja rodzica / rodzeństwa</button>
+      <button id="b4" class="example-chip" onclick="this.classList.toggle('picked')">Dziecku z ADHD (jeśli dotyczy)</button>
+      <button id="b5" class="example-chip" onclick="this.classList.toggle('picked')">Grupa wsparcia ADHD</button>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Reguła</strong>: Twój indywidualny profil 6 klastrów jest <em>mapą</em>, na której planujesz interwencje przez kolejne miesiące. Nie próbuj naprawiać wszystkiego — wybieraj 1 klaster do pracy w danym tygodniu, daj mu czas, dopiero potem dodawaj kolejny.</div>
+  </section>
+
+  <!-- ============== KROK 5 — Po tygodniu ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po tygodniu</div>
+    <h1 class="card-prompt">Czy strategia <em>per klaster</em> działa?</h1>
+    <p class="card-detail">Po pierwszym tygodniu strategii dopasowanych do dominującego klastra wracaj tu. Cel — zauważyć, czy adresowanie konkretnego klastra dało wyraźny efekt vs „ogólne strategie ADHD".</p>
+
+    <div class="scale">
+      <div class="scale-title">Skuteczność strategii per klaster (0 brak → 10 wyraźna)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="skut" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Skuteczność:</span><span id="skutV">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Wartość dominującego klastra teraz (vs Twoja wartość z kroku 2)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="klasterPo" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Klaster:</span><span id="klasterPoV">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Klarowność własnego profilu (0 zagubienie → 10 widzę mapę)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="klarn" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Klarowność:</span><span id="klarnV">7</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Co realnie zadziałało? Konkretna sytuacja, w której strategia per klaster pomogła?</p>
+    <textarea class="thought-input" id="dziala" placeholder="np. „Klaster ⑤ pamięć: Apple Notes z dyktowaniem działało 6 z 7 dni. Zapisałem 41 rzeczy w tygodniu. Brown ADD Scales — termin u psychologa 18-go marca. Zauważyłem, że klaster ① aktywacja jest w rzeczywistości 8/10, nie 7 — pierwsze 90 min rano to mgła, do której podejście wymaga osobnej strategii."" rows="5"></textarea>
+
+    <p class="card-detail" style="margin-top:8px">Co dodajesz / wzmacniasz w drugim tygodniu?</p>
+    <textarea class="thought-input" id="lekcja" placeholder="np. „Drugi tydzień: dodaję strategię dla klastra ① aktywacja — zimny prysznic + ruch + 1 mała czynność po przebudzeniu. Apple Notes utrwalam jako rytuał. Konsultacja terapeuty CBT-ADHD pod kątem mojego specyficznego profilu nieuwagowego."" rows="4"></textarea>
+
+    <div class="final-msg" id="finalMsg">Ustaw skale powyżej (skuteczność, klaster, klarowność) — tu pojawi się Twoja konkretna obserwacja efektu strategii per klaster.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: po 1 tygodniu klaster nie zmienia wartości znacząco (zwykle -1 do -2 na skali 10). Po 4 tygodniach: -2 do -4 (jeśli strategia pasuje). Po 3 miesiącach: nowy stabilny poziom, klaster znacznie poniżej wartości wyjściowej. Brown ADD Scales po 3 miesiącach pokazuje obiektywny ruch — to dowód, że strategia działa.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Model Browna = <strong>orkiestra bez dyrygenta</strong>. <em>Sześć klastrów: aktywacja, fokus, wysiłek, emocje, pamięć, działanie</em>. Strategia per klaster, nie „ogólne ADHD". Profil indywidualny — szczególnie ważny dla typu nieuwagowego (kobiety, dorośli z późną diagnozą). Brown ADD Scales daje precyzyjną mapę. Jedna strategia per klaster, 2 tygodnie utrwalenia, dopiero kolejna.</div>
+    </div>
+
+    <div class="src">Brown (2005, „Attention Deficit Disorder") · Brown (2013, „A New Understanding of ADHD") · Brown ADD Scales · Barkley (1997, model komplementarny) · Solanto i wsp. (2010, RCT MCT)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function onlyOne(prefix, btn) {
+  document.querySelectorAll('[id^="' + prefix + '"]').forEach(function(el){
+    if (el !== btn) el.classList.remove('picked');
+  });
+  btn.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function refreshScales() {
+  ['c1','c2','c3','c4','c5','c6','skut','klasterPo','klarn'].forEach(function(id){
+    var s = document.getElementById(id);
+    var v = document.getElementById(id+'V');
+    if (s && v) v.textContent = s.value;
+  });
+  buildFinalMsg();
+}
+
+function buildFinalMsg() {
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var s = document.getElementById('skut');
+  var k = document.getElementById('klasterPo');
+  var kl = document.getElementById('klarn');
+  if (!s || !k || !kl) return;
+  var sV = parseInt(s.value, 10);
+  var kV = parseInt(k.value, 10);
+  var klV = parseInt(kl.value, 10);
+
+  var msg = '<strong>Skuteczność:</strong> ' + sV + '/10. <strong>Klaster:</strong> ' + kV + '/10. <strong>Klarowność profilu:</strong> ' + klV + '/10. ';
+  if (sV >= 6 && klV >= 7) msg += '<em>Wyraźny ruch — strategia per klaster działa, profil jest jasny. Drugi tydzień: dodaj strategię dla drugiego klastra (drugiego najwyższego z kroku 2). Po 4 tygodniach 2–3 klastry obniżą się.</em>';
+  else if (sV >= 5) msg += '<em>Pierwsze ruchy. Sprawdź, w jakich konkretnych sytuacjach strategia działała, a w jakich odpadała. Wzmocnij wzór, w którym była skuteczna.</em>';
+  else if (klV >= 7) msg += '<em>Klarowność profilu rośnie — to fundament dalszej pracy. Daj 2–3 tygodnie na utrwalenie pojedynczej strategii per klaster. Brown ADD Scales daje obiektywny pomiar wartości.</em>';
+  else msg += '<em>Pierwsze tygodnie z modelem Browna bywają niepewne — model jest bardziej szczegółowy niż Barkley. Wracaj do kroku 2, sprawdź wartości, czy przypadkiem nie zaniżasz/zawyżasz subiektywnie.</em>';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) { if (step === 5 || step === 2) refreshScales(); }
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) refreshScales();
+});
+
+setTimeout(refreshScales, 60);
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_adhd_model_brown — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_adhd_model_brown";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · subtelne zachowania zabezpieczające</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.sb-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.sb-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.sb-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.sb-row.picked .sb-d { color: rgba(244,241,234,0.85) !important; }
+.sb-h { font-weight: 600; font-size: 13.5px; }
+.sb-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.cat-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.cat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.cat-row { padding: 9px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; align-items: flex-start; }
+.cat-row:first-of-type { border-top: none; }
+.cat-icon { font-size: 22px; flex-shrink: 0; line-height: 1; min-width: 28px; }
+.cat-body { flex: 1; }
+.cat-name { font-weight: 600; color: var(--bg); font-size: 13px; margin-bottom: 4px; }
+.cat-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.82); }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>subtelne zachowania zabezpieczające</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Zachowania zabezpieczające — gdy <em>ekspozycja</em> jest neutralizowana</h1>
+  <p class="card-detail">Zachowania zabezpieczające (safety behaviors) — zachowania, które pacjent wykonuje W TRAKCIE sytuacji społecznej, by „chronić się" przed katastrofą. Paul Salkovskis (1991, „The importance of behaviour in the maintenance of anxiety and panic", Behavioural Psychotherapy) wprowadził koncept dla zaburzeń lękowych. Adrian Wells (1995, „Worry and the incubation of intrusive images following stress", Behaviour Research and Therapy; oraz Wells 1997, „Cognitive Therapy of Anxiety Disorders") rozwinął go w modelu lęku społecznego. Mechanizm: zachowanie zabezpieczające ATRYBUUJE przetrwanie sytuacji do SIEBIE („udało się, bo robiłam X"), nie do bezpieczeństwa SYTUACJI. Mózg uczy się: „jestem bezpieczna TYLKO jeśli robię X" — co utrwala schemat zagrożenia. Bez zachowań zabezpieczających: „jestem bezpieczna w sytuacji X" — nowe, generalizowalne uczenie. To dlatego ekspozycja Z zachowaniami zabezpieczającymi NIE działa.</p>
+
+  <div class="cat-card">
+    <div class="cat-h">5 kategorii zachowań zabezpieczających w AvPD</div>
+    <div class="cat-row">
+      <span class="cat-icon">👁️</span>
+      <div class="cat-body">
+        <div class="cat-name">NIEWIDOCZNOŚĆ — siedzenie z boku, milczenie</div>
+        <div class="cat-cont">Wybieranie miejsca z dala od centrum (ostatnie krzesło, ostatni rząd). Schowanie się za stołem, kolumną. Milczenie w grupie. Cel: nie być zauważoną. Mózg: „bezpiecznie, bo niewidoczna" — nie „bezpiecznie w grupie".</div>
+      </div>
+    </div>
+    <div class="cat-row">
+      <span class="cat-icon">📜</span>
+      <div class="cat-body">
+        <div class="cat-name">PRZYGOTOWANE SKRYPTY — w głowie</div>
+        <div class="cat-cont">Wcześniej obmyślone wypowiedzi, wyuczone na pamięć odpowiedzi, mentalne próby przed sytuacją. Daje pozorne bezpieczeństwo, ale jeśli rozmowa odbiega od skryptu — paraliż. Mózg uczy się: „bezpiecznie tylko z planem".</div>
+      </div>
+    </div>
+    <div class="cat-row">
+      <span class="cat-icon">🍷</span>
+      <div class="cat-body">
+        <div class="cat-name">ALKOHOL / SUBSTANCJE — chemiczne odhamowanie</div>
+        <div class="cat-cont">Drink przed imprezą, „dla odwagi". Klasyczne dla AvPD/SAD. Krótkoterminowo działa. Długoterminowo: ryzyko uzależnienia + mózg uczy się „bezpiecznie tylko z alkoholem". Ekspozycja zaszumiona przez substancję.</div>
+      </div>
+    </div>
+    <div class="cat-row">
+      <span class="cat-icon">📱</span>
+      <div class="cat-body">
+        <div class="cat-name">TELEFON — ucieczka w ekran</div>
+        <div class="cat-cont">Sprawdzanie telefonu, gdy lęk rośnie. „Pretendowanie zajętości". Klasyczne na imprezach, w kolejkach, w autobusach. Mózg: „bezpiecznie, bo zajęta telefonem". Bez telefonu — pełne narażenie.</div>
+      </div>
+    </div>
+    <div class="cat-row">
+      <span class="cat-icon">⏰</span>
+      <div class="cat-body">
+        <div class="cat-name">SKRACANIE — wyjście wcześniej, krótkie zdania</div>
+        <div class="cat-cont">„Muszę już iść" po 30 minutach imprezy. Krótkie odpowiedzi: „tak", „nie wiem", „może". Skrócone wiadomości. Cel: minimalizacja czasu narażenia. Mózg: „bezpiecznie, bo krótko" — nie „bezpiecznie w długiej rozmowie".</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🧠</span><span class="element-text"><strong>Atrybucja przetrwania do SIEBIE, nie do sytuacji</strong> (Salkovskis 1991). Zachowanie zabezpieczające tworzy fałszywe wyjaśnienie: „przeżyłam, bo robiłam X". Sytuacja nigdy nie zostaje sprawdzona jako bezpieczna sama w sobie. Mózg pozostaje w trybie zagrożenia wobec niej. Stąd: 100 ekspozycji Z zachowaniem zabezpieczającym ≠ ani jedna „naga" ekspozycja.</span></div>
+    <div class="element-row"><span class="element-icon">🤖</span><span class="element-text"><strong>Automatyzacja — niewidoczne dla pacjenta</strong>. Po latach unikania zachowania zabezpieczające stają się ZAUTOMATYZOWANE — pacjent ich NIE zauważa „od środka". Wybór miejsca z boku, krótkie zdania, telefon w ręce — zachodzą BEZ refleksji. Stąd pierwszy krok pracy: ZAUWAŻANIE. Pomocne: nagranie audio, obserwacja przez bliską osobę.</span></div>
+    <div class="element-row"><span class="element-icon">🎭</span><span class="element-text"><strong>Subtelne formy — ledwo widoczne</strong>. Lista Wells (1995, 1997) zawiera 30+ zachowań — od oczywistych (skrypty, alkohol) do prawie niewidocznych (mówienie cicho, krótkie zdania, unikanie kontaktu wzrokowego, zaciskanie pięści w kieszeni, kontrolowanie oddechu). Każde z nich osłabia ekspozycję. Pacjent z AvPD często ma 5-10 jednocześnie.</span></div>
+    <div class="element-row"><span class="element-icon">🔓</span><span class="element-text"><strong>Strategia: stopniowe porzucanie, nie wszystkie naraz</strong>. Rzucenie wszystkich zachowań zabezpieczających w jednej ekspozycji = przeciążenie i porażka. Stopniowe: jedno zachowanie tygodniowo. Najpierw najbardziej oczywiste (alkohol), potem coraz subtelniejsze (mówienie cicho). Po 6-8 tygodniach: większość porzucona, ekspozycje stają się rzeczywiste.</span></div>
+  </div>
+
+  <div class="frame-quote">„Pacjent z AvPD często ma 5-10 zachowań zabezpieczających w jednej sytuacji społecznej, działających jednocześnie i niewidocznych dla niego. Rzucenie wszystkich naraz = przeciążenie. Praca: zauważanie najpierw (audio, obserwacja zewnętrzna), potem stopniowe porzucanie po jednym, przez 6-8 tygodni. Ekspozycje stają się rzeczywiste dopiero gdy zachowania zabezpieczające zostały porzucone."<span class="frame-quote-attr">— Adrian Wells (1997, Cognitive Therapy of Anxiety Disorders)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: pacjent musi NAJPIERW zauważyć swoje zachowania zabezpieczające — co bywa trudne, bo są zautomatyzowane. Pomocne narzędzia: (1) nagranie audio rozmowy społecznej, (2) obserwacja przez bliską osobę, (3) dziennik po sytuacji z konkretami („co robiłam, by się chronić"), (4) ekspozycja z partnerem-obserwatorem. Dopiero PO zauważeniu można zachowania zabezpieczające porzucać — krok po kroku, nie wszystkie naraz.</div>
+
+  <div class="src">Salkovskis (1991, The importance of behaviour in the maintenance of anxiety and panic, Behavioural Psychotherapy) · Wells (1995, Worry and the incubation of intrusive images following stress, Behaviour Research and Therapy) · Wells (1997, Cognitive Therapy of Anxiety Disorders) · Clark i Wells (1995, A cognitive model of social phobia, w: Heimberg, Liebowitz, Hope i Schneier — Social Phobia) · Hofmann (2007, Cognitive factors that maintain social anxiety disorder, Cognitive Behaviour Therapy) · McManus, Sacadura i Clark (2008, Why social anxiety persists: An experimental investigation of the role of safety behaviours as a maintaining factor, Journal of Behavior Therapy and Experimental Psychiatry)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Identyfikacja własnych zachowań zabezpieczających</div>
+  <h1 class="card-prompt">Które <em>zachowania zabezpieczające</em> rozpoznajesz u siebie?</h1>
+  <p class="card-detail">Lista 8 typowych zachowań zabezpieczających w AvPD (subset z 30+ wymienianych przez Wells 1997). Zaznacz te, które rozpoznajesz u siebie REGULARNIE — nie sytuacyjnie. Wiele z nich jest tak zautomatyzowanych, że łatwo je przeoczyć.</p>
+
+  <div class="sb-grid">
+    <div class="sb-row" id="s1" onclick="pickSb('s1')">
+      <div class="sb-h">📍 Wybieram zawsze miejsce z dala od centrum / na uboczu</div>
+      <div class="sb-d">Tylne krzesło na spotkaniu, kąt na imprezie, ostatni rząd na konferencji. Mózg: „bezpiecznie, bo niewidoczna". Klasyczna niewidoczność. Niezauważalne dla siebie po latach.</div>
+    </div>
+    <div class="sb-row" id="s2" onclick="pickSb('s2')">
+      <div class="sb-h">📜 W głowie wcześniej obmyślam co powiem</div>
+      <div class="sb-d">Mentalne próby przed rozmową, telefonem, e-mailem. Skrypty. Pozorne bezpieczeństwo, ale paraliż gdy rozmowa odbiega od planu. Mózg: „bezpiecznie z planem" — nie spontanicznie.</div>
+    </div>
+    <div class="sb-row" id="s3" onclick="pickSb('s3')">
+      <div class="sb-h">🍷 Drink lub kawa „dla odwagi" przed sytuacją</div>
+      <div class="sb-d">Alkohol, kofeina, czasem tabletki. Klasyczne dla imprez, prezentacji, randek. Krótkoterminowo działa. Długoterminowo: ryzyko nawyku + ekspozycja zaszumiona substancją.</div>
+    </div>
+    <div class="sb-row" id="s4" onclick="pickSb('s4')">
+      <div class="sb-h">📱 Sprawdzam telefon, gdy lęk rośnie</div>
+      <div class="sb-d">Pretendowanie zajętości. Imprezy, kolejki, autobusy, restauracje. Telefon jako tarcza między mną a światem. Zauważ: ile razy dziennie sięgasz po telefon w sytuacji społecznej.</div>
+    </div>
+    <div class="sb-row" id="s5" onclick="pickSb('s5')">
+      <div class="sb-h">⏰ Wychodzę wcześniej z imprez / spotkań</div>
+      <div class="sb-d">„Muszę już iść" po 30-60 minutach. Wymówki: praca, zmęczenie, kot. Cel: skrócenie czasu narażenia. Mózg uczy się: „bezpiecznie, bo krótko".</div>
+    </div>
+    <div class="sb-row" id="s6" onclick="pickSb('s6')">
+      <div class="sb-h">💬 Krótkie zdania / lakoniczne odpowiedzi</div>
+      <div class="sb-d">„Tak", „nie wiem", „może być". Maksymalna oszczędność słów. Pozorne bezpieczeństwo (mniej szans na pomyłkę). W rzeczywistości — utrudnia kontakt, brak osobistego.</div>
+    </div>
+    <div class="sb-row" id="s7" onclick="pickSb('s7')">
+      <div class="sb-h">👀 Unikam kontaktu wzrokowego — patrzę w ziemię, w bok</div>
+      <div class="sb-d">Subtelne, ale kluczowe. Spojrzenie z drugą osobą wymaga „bycia widzianą". Unikanie kontaktu wzrokowego = podstawowe wycofanie. Mózg: „bezpiecznie, bo nie widzą oczu".</div>
+    </div>
+    <div class="sb-row" id="s8" onclick="pickSb('s8')">
+      <div class="sb-h">🎤 Mówię cicho / niewyraźnie</div>
+      <div class="sb-d">Subtelne mikro-zachowania. Cichym głosem, mamrotaniem, niewyraźnie. Cel: jeśli powiem coś głupiego, nie usłyszą. Mózg: „bezpiecznie, bo niesłyszalna". Trudne do zauważenia bez nagrania.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myAware" placeholder="Konkretnie: ile zachowań zabezpieczających rozpoznajesz u siebie? Najczęściej używane? Czy widzisz, że niektóre są tak zautomatyzowane, że dotąd ich nie zauważałaś?" style="min-height: 100px;"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość własnych zachowań zabezpieczających — TERAZ</div>
+    <div class="scale-bounds"><span>0 — niska</span><span>10 — pełna mapa</span></div>
+    <input type="range" class="scale-input" id="bAware" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bAwarev">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: 4-8 zachowań zabezpieczających rozpoznawanych regularnie = klasyczny obraz AvPD. Pacjenci często NIE zauważają 1-2 najbardziej subtelnych (cichy głos, unikanie kontaktu wzrokowego). Pomocne: poprosić bliską osobę o obserwację „przez tydzień, co robię w sytuacjach społecznych". Często odkrycia są zaskakujące.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Konkretna sytuacja — twój zestaw zachowań</div>
+  <h1 class="card-prompt">Wpisz <em>jedną sytuację</em> i wszystkie zachowania zabezpieczające w niej</h1>
+  <p class="card-detail">Wybierz konkretną sytuację społeczną z ostatniego tygodnia (impreza, spotkanie, randka, prezentacja). Wypisz WSZYSTKIE zachowania zabezpieczające zastosowane w niej. Konkretnie — kiedy, jak. To audyt, nie krytyka.</p>
+
+  <textarea class="thought-input" id="situation" placeholder="① SYTUACJA — krótko, konkretnie. Co? Kiedy? Z kim? Gdzie? (np.: „w sobotę byłam na imprezie urodzinowej u Joanny, około 15 osób, byłam tam 90 minut")." style="min-height: 80px;"></textarea>
+
+  <textarea class="thought-input" id="behaviors" placeholder="② ZACHOWANIA ZABEZPIECZAJĄCE — wszystkie, które stosowałaś. Konkretnie. Bez krytyki — audyt. (np.: „1. Drink przed wyjściem z domu. 2. Mentalne próby tematów do rozmowy w taksówce. 3. Wybór miejsca przy oknie, z dala od głośnej grupy. 4. Telefon w ręce przez większość imprezy. 5. Krótkie odpowiedzi, gdy ktoś pytał. 6. Wyjście po 90 minutach z wymówką, że jutro mam wcześnie")." style="min-height: 130px;"></textarea>
+
+  <textarea class="thought-input" id="effect" placeholder="③ EFEKT — jak zachowania zabezpieczające wpłynęły na ekspozycję? Czy mózg dostał daną „bezpieczna sytuacja" czy „bezpiecznie tylko dlatego, że robiłam X"? (np.: „każde zachowanie zabezpieczające osłabiało ekspozycję. Drink — chemiczne odhamowanie. Telefon — brak prawdziwego kontaktu. Krótkie odpowiedzi — brak rozmowy. Praktycznie nie była to ekspozycja — była symulacja obecności na imprezie")." style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch — minimalizacja („no dobra, nie wszystko jak zachowanie zabezpieczające", „wszyscy patrzą w telefon"). To NIE jest osąd moralny — to mechaniczna obserwacja. Zachowania zabezpieczające są ADAPTACYJNE w ich genezie (chronią) — i jednocześnie blokują uczenie. Audyt bez wstydu.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — stopniowe porzucanie</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> wprowadzania pracy z zachowaniami zabezpieczającymi</h1>
+  <p class="card-detail">Praca z zachowaniami zabezpieczającymi to wieloetapowy proces. Te cztery kroki tworzą strukturę praktyczną na pierwsze 6-8 tygodni. Klucz: świadomość najpierw, porzucanie potem, jedno na raz.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — pierwsze 6-8 tygodni pracy</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>TYDZIEŃ 1-2: ZAUWAŻANIE — bez porzucania</strong>. Cel: tylko zauważać. Po każdej sytuacji społecznej zapisz wszystkie zachowania zabezpieczające. Bez ich zmieniania. Bez krytyki. Audyt. Po 2 tygodniach: pełna mapa własnych zachowań zabezpieczających. Pomocne: nagranie audio, obserwacja przez partnera.</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>TYDZIEŃ 3-4: WYBIERZ JEDNO NAJBARDZIEJ OCZYWISTE — porzuć</strong>. Najczęściej: alkohol „dla odwagi", telefon w ręce, mentalne skrypty. Wybierz JEDNO. Następnie ekspozycja BEZ tego konkretnie zachowania. Pozostałe pozostają — to OK. Cel: jeden eksperyment z „nagą" ekspozycją.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>TYDZIEŃ 5-6: DODAJ DRUGIE — porzuć dwa</strong>. Po 2-3 tygodniach ekspozycji bez pierwszego zachowania zabezpieczającego — dodaj drugie. Stopniowość chroni przed przeciążeniem. Każde porzucone zachowanie zabezpieczające daje konkretną informację: „sytuacja była bezpieczna NAWET BEZ tego zachowania zabezpieczającego". To wzmacnia inhibitory learning.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>TYDZIEŃ 7-8: SUBTELNE — kontakt wzrokowy, głos, długość zdań</strong>. Najtrudniejsze do porzucenia, bo niewidoczne. Praca: świadomie utrzymywać kontakt wzrokowy 2-3 sekundy dłużej. Mówić odrobinę głośniej. Dłuższe zdania, pełniejsze odpowiedzi. Mikro-zmiany kumulują się w fundamentalną zmianę obecności społecznej.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: które zachowanie zabezpieczające jest twoim „NAJOCZYWISTSZYM" do porzucenia w pierwszej kolejności? Jakie 3 sytuacje społeczne wykorzystasz w nadchodzących 2 tygodniach do ekspozycji bez tego konkretnie zachowania?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: po 6-8 tygodniach systematycznego porzucania zachowań zabezpieczających pacjent z AvPD raportuje: ekspozycje stają się rzeczywiście „nagie", lęk SUDS w typowych sytuacjach spada o 30-50% (vs spadek 10-20% przy ekspozycjach Z zachowaniami zabezpieczającymi), schemat zagrożenia osłabia się szybciej. To dramatyczna różnica empiryczna — ekspozycja Z zachowaniami zabezpieczającymi to NIE jest ekspozycja, to symulacja.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>świadomość</em> wzrosła?</h1>
+  <p class="card-detail">Wróć tu po refleksji nad mapą zachowań zabezpieczających i konkretną sytuacją z punktu 3. Mierzymy świadomość — czy widzisz teraz zachowania zabezpieczające, których wcześniej nie zauważałaś. Pierwsza refleksja zwykle daje wzrost o 1-2 punkty.</p>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość zachowań zabezpieczających — po refleksji</div>
+    <div class="scale-bounds"><span>0 — niska</span><span>10 — pełna mapa</span></div>
+    <input type="range" class="scale-input" id="aAware" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aAwarev">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz, że niektóre zachowania zabezpieczające były dotąd niewidoczne dla Ciebie? Które porzucisz pierwsze?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: praca z zachowaniami zabezpieczającymi jest fundamentalną częścią terapii AvPD. Bez niej ekspozycje są symulacjami. Z nią — stają się rzeczywiście korygujące. Stopniowe porzucanie po jednym, przez 6-8 tygodni. Świadomość najpierw, porzucanie potem. Pomocne: terapia ST/CBT (terapeuta zauważa zachowania zabezpieczające z zewnątrz), obserwacja przez bliską osobę, nagrania audio.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Zachowania zabezpieczające: <em>niewidoczność, skrypty, alkohol, telefon, krótkie zdania, kontakt wzrokowy</em>. Atrybuują przetrwanie do siebie, nie do bezpieczeństwa sytuacji. <strong>Ekspozycja Z zachowaniami zabezpieczającymi = symulacja, nie uczenie</strong>. Praca: zauważanie najpierw (2 tyg), porzucanie potem (po jednym, przez 6 tyg). Ekspozycje stają się rzeczywiste. Klasyczna technika CBT (Salkovskis 1991, Wells 1997).</div>
+  </div>
+
+  <div class="src">Salkovskis (1991, The importance of behaviour in the maintenance of anxiety and panic, Behavioural Psychotherapy) · Wells (1995, Worry and the incubation of intrusive images following stress, Behaviour Research and Therapy) · Wells (1997, Cognitive Therapy of Anxiety Disorders) · Clark i Wells (1995, A cognitive model of social phobia, w: Heimberg, Liebowitz, Hope i Schneier — Social Phobia) · Hofmann (2007, Cognitive factors that maintain social anxiety disorder, Cognitive Behaviour Therapy) · McManus, Sacadura i Clark (2008, Why social anxiety persists: An experimental investigation of the role of safety behaviours as a maintaining factor, Journal of Behavior Therapy and Experimental Psychiatry)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickSb(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bAware').value || 0, 10);
+    var aU = parseInt(document.getElementById('aAware').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Świadomość zachowań zabezpieczających wzrosła o ' + dU + ' — widzisz, czego dotąd nie widziałaś. To pierwszy fundamentalny krok. Bez świadomości nie da się porzucać.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszym kontakcie z koncepcją. Pełne zauważanie zachowań zabezpieczających wymaga 2-4 tygodni regularnego rejestrowania.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że zachowania zabezpieczające są tak zautomatyzowane, że ich nie zauważasz „od środka". Pomocne: nagranie audio rozmowy, obserwacja przez bliską osobę, dziennik z konkretami.';
+    else msg = 'Spadek — czasem zauważanie skali własnych zachowań zabezpieczających aktywuje wstyd („tyle robię, byle uniknąć"). To NIE jest porażka — to klasyczny etap. Współczucie wobec siebie + stopniowe porzucanie po jednym.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.sb-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_unikanie_subtelne — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_unikanie_subtelne";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bAware','aAware'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

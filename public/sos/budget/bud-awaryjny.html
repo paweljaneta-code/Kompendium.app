@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Fundusz awaryjny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.calc-box { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 10px 0 14px; }
+.calc-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.calc-label { flex: 1; font-size: 13px; color: var(--ink-soft); }
+.calc-input { flex: 0 0 110px; padding: 8px 10px; border: 1px solid var(--sage); border-radius: 8px; background: rgba(255,255,255,0.6); font-family: inherit; font-size: 13.5px; color: var(--ink); text-align: right; }
+.calc-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+.calc-result { background: var(--ink); color: var(--bg); border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-family: 'Fraunces', serif; font-size: 14.5px; line-height: 1.5; }
+.calc-result strong { color: var(--sage); font-weight: 600; }
+
+.goal-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.goal-card { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; position: relative; }
+.goal-card.active { background: rgba(184,197,168,0.4); border-color: var(--sage-deep); border-width: 2px; }
+.goal-h { font-family: 'Fraunces', serif; font-size: 14.5px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.goal-h .goal-tag { display: inline-block; background: var(--sage-deep); color: var(--bg); border-radius: 12px; padding: 2px 8px; font-family: 'Outfit', sans-serif; font-size: 10px; letter-spacing: 0.06em; margin-right: 6px; vertical-align: middle; }
+.goal-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.goal-body em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+.usage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 12px; }
+.usage-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 8px 10px; border-radius: 16px; font-size: 12.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: center; }
+.usage-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.usage-chip.bad { border-color: #c97070; color: #8a3a3a; }
+.usage-chip.bad.picked { background: #c97070; border-color: #8a3a3a; color: white; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Fundusz awaryjny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Bufor jako <em>lek na lęk</em></h1>
+  <p class="card-detail">Fundusz awaryjny to nie produkt finansowy — to mechanizm psychologiczny w fizycznej formie. Jego wartość mierzy się nie tym, ile zarabia (zwykle bardzo mało), ale tym, ile niepokoju zdejmuje z głowy. Prawkins i Park (2019) udokumentowali korelację bezpieczeństwa finansowego z dobrostanem psychicznym na poziomie r=0.35 — to silny związek w skali nauk społecznych. Brak buforu oznacza, że każda awaria, choroba czy utrata pracy automatycznie staje się długiem; obecność buforu zamienia te zdarzenia w niedogodność.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery filary bezpiecznika</div>
+    <div class="element-row"><div class="element-icon">🧬</div><div class="element-text"><strong>Korzenie</strong> — Bach (1999) i Ramsey (2003, „Total Money Makeover" baby steps) zoperacjonalizowali fundusz w czterech progach. Federalne komitety edukacji finansowej w USA i Wielkiej Brytanii uznają 3–6 miesięcy wydatków jako standard.</div></div>
+    <div class="element-row"><div class="element-icon">⚙️</div><div class="element-text"><strong>Mechanizm</strong> — bufor obniża pobudzenie sympatyczne, redukuje katastrofizację („a co jeśli awaria?") i przywraca poczucie agency. Lęk przed niepewnością zamienia się w plan na konkretne zdarzenie.</div></div>
+    <div class="element-row"><div class="element-icon">📊</div><div class="element-text"><strong>Cztery progi</strong> — starter (1000 zł), bezpiecznik (1 miesiąc wydatków), bufor średni (3 miesiące), bufor pełny (6 miesięcy). Każdy próg ma własne znaczenie i własną psychologiczną granicę.</div></div>
+    <div class="element-row"><div class="element-icon">🎯</div><div class="element-text"><strong>Cel</strong> — to ćwiczenie nie pomoże Ci zarobić więcej. Pomoże Ci zaplanować, ile potrzebujesz, w jakiej kolejności i jak długo zajmie dotarcie do każdego progu. Plan sam w sobie redukuje lęk.</div></div>
+  </div>
+
+  <div class="frame-quote">„Fundusz awaryjny nie jest pieniędzmi. Jest spokojem ducha w fizycznej formie. Pierwsze 1000 zł zmienia więcej niż kolejne 100 000."<span class="frame-quote-attr">— Dave Ramsey (2003, „The Total Money Makeover")</span></div>
+
+  <div class="term-note"><strong>Klucz</strong>: jeżeli teraz każda awaria spędza Ci sen z powiek, fundusz awaryjny rozwiąże ten problem szybciej niż jakikolwiek lek. Już 1000 zł na osobnym koncie zmienia odpowiedź na pytanie „a co jeśli zepsuje się lodówka?" z paniki w decyzję serwisową.</div>
+
+  <div class="src">Prawkins, Park (2019, J Family Econ Issues); Ramsey (2003, „The Total Money Makeover"); Bach (1999, „The Automatic Millionaire"); Lusardi, Mitchell (2014, J Econ Lit); FINRA Foundation (2018, „Financial Capability in the United States").</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja sytuacja wyjściowa</div>
+  <h1 class="card-prompt">Ile <em>realnie</em> kosztuje Twój miesiąc?</h1>
+  <p class="card-detail">Rozmiar buforu zależy od jednej liczby: miesięcznych wydatków stałych. To nie dochód, tylko koszt utrzymania życia, gdyby dochód nagle ustał — czynsz, jedzenie, rachunki, transport, podstawowe potrzeby. Druga liczba to kwota, którą realnie odłożysz w miesiącu na ten cel. Z tych dwóch wynika cały plan.</p>
+
+  <div class="calc-box">
+    <div class="calc-row">
+      <span class="calc-label">Miesięczne wydatki stałe (zł)</span>
+      <input type="number" id="wyd" class="calc-input" placeholder="0" oninput="recalcGoals()">
+    </div>
+    <div class="calc-row">
+      <span class="calc-label">Miesięczne tempo odkładania (zł)</span>
+      <input type="number" id="tem" class="calc-input" placeholder="0" oninput="recalcGoals()">
+    </div>
+    <div class="calc-result" id="calcOut">Wpisz miesięczne wydatki — zobaczysz cztery cele i czas potrzebny na każdy.</div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Lęk finansowy „a co jeśli awaria?" — TERAZ</div>
+    <div class="scale-bounds"><span>0 — spokój</span><span>10 — silny</span></div>
+    <input type="range" id="lek" class="scale-input" min="0" max="10" value="7" data-default="7">
+    <div class="scale-readout"><span></span><span id="lekRead">7</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła</strong>: jeżeli nie masz ścisłych danych, oszacuj wydatki górną granicą — lepiej zaplanować bufor większy niż mniejszy. Kwota odkładania może być dowolnie mała; nawet 50 zł/miesiąc to początek.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Cztery cele po kolei</div>
+  <h1 class="card-prompt">Plan w <em>czterech krokach</em></h1>
+  <p class="card-detail">Bufor buduje się etapami, nie naraz. Każdy próg ma własne psychologiczne znaczenie — i każdy daje wyraźnie inną jakość spokoju. Nie planuj od razu pełnego buforu; planuj w kolejności, którą podają Bach i Ramsey: starter → bezpiecznik → trzy miesiące → sześć miesięcy.</p>
+
+  <div class="goal-grid">
+    <div class="goal-card"><div class="goal-h"><span class="goal-tag">CEL 1</span>Starter — 1000 zł</div><div class="goal-body">Cel <em>najważniejszy</em>. Zmienia drobne awarie (zepsuta lodówka, wizyta u stomatologa, opłata urzędowa) z kryzysu w niedogodność. Realny do osiągnięcia w 2–4 miesiące przy 50 zł/tygodniowo. <em>Nie pomijaj go</em> — bez startera większe cele są iluzją.</div></div>
+    <div class="goal-card"><div class="goal-h"><span class="goal-tag">CEL 2</span>Bezpiecznik — 1 miesiąc wydatków</div><div class="goal-body">Pierwsza realna ochrona przed utratą dochodu. Daje miesiąc na znalezienie nowej pracy, przejście choroby, rozwiązanie kryzysu rodzinnego. Próg, na którym ustaje codzienny lęk o jutro.</div></div>
+    <div class="goal-card"><div class="goal-h"><span class="goal-tag">CEL 3</span>Bufor średni — 3 miesiące</div><div class="goal-body">Standard zalecany dla osób z stabilnym zatrudnieniem. Daje czas na spokojne poszukiwanie pracy zamiast brania pierwszej oferty. Dla wielu osób — moment, w którym lęk finansowy całkowicie ustępuje.</div></div>
+    <div class="goal-card"><div class="goal-h"><span class="goal-tag">CEL 4</span>Bufor pełny — 6 miesięcy</div><div class="goal-body">Standard dla osób samozatrudnionych, freelancerów, rodziców jedynie żywicieli rodziny. Pozwala znieść poważną chorobę, dłuższe poszukiwanie pracy, pojedynczy duży kryzys (rozwód, śmierć w rodzinie).</div></div>
+  </div>
+
+  <div class="examples-h">Wybierz swój pierwszy cel — ten, który osiągniesz w przeciągu roku</div>
+  <textarea id="planA" class="thought-input" placeholder="np. „Mój pierwszy cel — starter 1000 zł. Plan: 100 zł/tydzień przez 10 tygodni. Konto oszczędnościowe w mBanku, zlecenie stałe w piątek (dzień wypłaty). Po osiągnięciu — kontynuuję tym samym tempem do bezpiecznika."></textarea>
+
+  <div class="term-note"><strong>Reguła</strong>: nie próbuj jednocześnie spłacać długów konsumenckich (chwilówki, karty kredytowe powyżej 15% rocznie) i budować bufor 6-miesięczny. Najpierw starter (1000 zł), potem długi do zera, potem reszta buforu. Ta kolejność jest kontrintuicyjna, ale niezawodna.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Co jest „awarią"?</div>
+  <h1 class="card-prompt">Granice <em>użycia</em> funduszu</h1>
+  <p class="card-detail">Najczęstszy błąd po zbudowaniu buforu — używanie go jako „dostępnych pieniędzy" na okazje, prezenty, wakacje. To nie awaria. Dobrze ustawiona granica jest tym, co odróżnia fundusz awaryjny od konta oszczędnościowego ogólnego. Sprawdź, które z poniższych kwalifikują się jako awaria, a które nie.</p>
+
+  <div class="examples-h">Awaria — można sięgnąć</div>
+  <div class="usage-grid">
+    <button type="button" class="usage-chip" onclick="pickUse(this)">Utrata pracy</button>
+    <button type="button" class="usage-chip" onclick="pickUse(this)">Choroba blokująca dochód</button>
+    <button type="button" class="usage-chip" onclick="pickUse(this)">Awaria sprzętu pierwszej potrzeby</button>
+    <button type="button" class="usage-chip" onclick="pickUse(this)">Pilna interwencja medyczna</button>
+  </div>
+
+  <div class="examples-h">To nie awaria — nie sięgaj</div>
+  <div class="usage-grid">
+    <button type="button" class="usage-chip bad" onclick="pickUse(this)">Wakacje, urlop</button>
+    <button type="button" class="usage-chip bad" onclick="pickUse(this)">Prezenty świąteczne</button>
+    <button type="button" class="usage-chip bad" onclick="pickUse(this)">Promocja, okazja</button>
+    <button type="button" class="usage-chip bad" onclick="pickUse(this)">Drobne naprawy planowe</button>
+    <button type="button" class="usage-chip bad" onclick="pickUse(this)">Kosmetyki, ubrania</button>
+    <button type="button" class="usage-chip bad" onclick="pickUse(this)">Rozrywka, koncerty</button>
+  </div>
+
+  <div class="examples-h">Twoja własna definicja awarii</div>
+  <textarea id="defAw" class="thought-input" placeholder="np. „Awaria = zdarzenie, które (1) wymaga wydatku w ciągu 7 dni i (2) jego brak oznaczałby utratę dochodu, zdrowia lub bezpieczeństwa. Wakacje, prezenty, drobne wymiany sprzętu — kategoria oszczędności krótkoterminowych, nie funduszu awaryjnego."></textarea>
+
+  <div class="term-note"><strong>Reguła</strong>: jeżeli sięgasz do funduszu, zaplanuj jego odbudowę w pierwszym kroku po rozwiązaniu kryzysu. Bez tego kroku jednorazowe sięgnięcie zamienia się w stałe wykorzystanie i bufor stopniowo znika.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Lęk po planie</div>
+  <h1 class="card-prompt">Jak <em>zmienił</em> się Twój lęk?</h1>
+  <p class="card-detail">Sam plan, jeszcze bez pierwszej wpłaty, redukuje lęk u większości osób — niepewność zamienia się w sekwencję konkretnych kroków. Sprawdź, jak ta wartość zmieniła się od kroku drugiego.</p>
+
+  <div class="scale">
+    <div class="scale-title">Lęk finansowy „a co jeśli awaria?" — PO planie</div>
+    <div class="scale-bounds"><span>0 — spokój</span><span>10 — silny</span></div>
+    <input type="range" id="lek2" class="scale-input" min="0" max="10" value="4" data-default="4">
+    <div class="scale-readout"><span></span><span id="lek2Read">4</span></div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+  <div class="final-msg" id="finalMsg">Po przesunięciu suwaka pojawi się tu podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: jeśli plan jest jasny, ale lęk wciąż wysoki — to często sygnał, że problem nie leży w finansach, tylko w innym obszarze (zdrowie, relacje, praca). Wtedy fundusz awaryjny jest częścią rozwiązania, ale nie całością. Warto omówić ten wynik z terapeutą.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Cztery progi funduszu: <strong>starter 1000 zł → 1 miesiąc → 3 miesiące → 6 miesięcy wydatków</strong>. Osobne konto, lepiej w innym banku. Nie ruszać poza realną awarię. Bezpieczeństwo finansowe koreluje z dobrostanem psychicznym (Prawkins, Park 2019, r=0.35).</div>
+  </div>
+
+  <div class="src">Prawkins, Park (2019, J Family Econ Issues); Ramsey (2003, „The Total Money Makeover"); Bach (1999, „The Automatic Millionaire"); Lusardi, Mitchell (2014, J Econ Lit); FINRA Foundation (2018, „Financial Capability in the United States"); Thaler, Sunstein (2008, „Nudge").</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickUse(el) { el.classList.toggle('picked'); }
+
+function recalcGoals() {
+  var w = parseFloat((document.getElementById('wyd') || {}).value || 0);
+  var t = parseFloat((document.getElementById('tem') || {}).value || 0);
+  var el = document.getElementById('calcOut');
+  if (!el) return;
+  if (w > 0) {
+    var c1 = 1000;
+    var c2 = w;
+    var c3 = w * 3;
+    var c4 = w * 6;
+    var msg = 'Twoje cztery cele: <strong>' + c1 + ' zł</strong> (starter), <strong>' + c2.toFixed(0) + ' zł</strong> (1 mc), <strong>' + c3.toFixed(0) + ' zł</strong> (3 mc), <strong>' + c4.toFixed(0) + ' zł</strong> (6 mc).';
+    if (t > 0) {
+      var m1 = Math.ceil(c1 / t);
+      var m2 = Math.ceil(c2 / t);
+      var m4 = Math.ceil(c4 / t);
+      msg += ' Przy ' + t.toFixed(0) + ' zł/mc dotrzesz do startera w <strong>' + m1 + ' mc</strong>, do 1 miesiąca w <strong>' + m2 + ' mc</strong>, do pełnego buforu w <strong>' + m4 + ' mc</strong>.';
+    }
+    el.innerHTML = msg;
+  } else {
+    el.innerHTML = 'Wpisz miesięczne wydatki — zobaczysz cztery cele i czas potrzebny na każdy.';
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) {
+    var lek = parseInt((document.getElementById('lek') || {}).value || 7);
+    var lek2 = parseInt((document.getElementById('lek2') || {}).value || 4);
+    var diff = lek - lek2;
+    var msg = '';
+    if (diff >= 3) msg = '<strong>Spadek lęku o ' + diff + ' pkt.</strong> Klasyczna reakcja na konkretny plan — niepewność zamieniła się w sekwencję kroków. Prawkins i Park (2019) wykazali, że bezpieczeństwo finansowe koreluje z dobrostanem psychicznym z siłą r=0.35. Sam plan, jeszcze bez wpłat, redukuje katastrofizację.';
+    else if (diff >= 1) msg = '<strong>Niewielki spadek o ' + diff + ' pkt.</strong> Pełniejsza redukcja przyjdzie wraz z osiągnięciem pierwszego celu (1000 zł). Saldo namacalne na koncie działa silniej niż plan.';
+    else if (diff === 0) msg = '<strong>Bez zmiany.</strong> Możliwe, że plan czujesz jako odległy lub nierealny. Sprawdź jeszcze raz krok trzeci — jeżeli pierwszy cel (1000 zł) wydaje się zbyt daleki, zacznij od kwoty, którą realnie odłożysz w ciągu 4 tygodni, i nazwij ją „pre-starter".</div>';
+    else msg = '<strong>Wzrost lęku o ' + (-diff) + ' pkt.</strong> Czasem konkretne cyfry potęgują lęk, zanim go zredukują — szczególnie gdy luka między bieżącą oszczędnością a pełnym buforem wydaje się ogromna. Wróć do pierwszego celu (1000 zł) i traktuj go jako jedyny do osiągnięcia w pierwszym roku.';
+    var el = document.getElementById('finalMsg');
+    if (el) el.innerHTML = msg;
+    var dl = document.getElementById('diffList');
+    if (dl) dl.innerHTML = '<div class="diff-row"><strong>Lęk PRZED</strong><span class="diff-delta">' + lek + ' / 10</span></div>' + '<div class="diff-row"><strong>Lęk PO planie</strong><span class="diff-delta' + (lek2 <= lek ? '' : ' neg') + '">' + lek2 + ' / 10</span></div>';
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bud_awaryjny — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bud_awaryjny";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['lek','lek2'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var out = document.getElementById(id + 'Read');
+  if (inp && out) {
+    inp.addEventListener('input', function(){ out.textContent = inp.value; });
+    out.textContent = inp.value;
+  }
+});
+recalcGoals();
+function onReset() {
+  document.querySelectorAll('.usage-chip.picked').forEach(b => b.classList.remove('picked'));
+  var dl = document.getElementById('diffList'); if (dl) dl.innerHTML = '';
+  var fm = document.getElementById('finalMsg'); if (fm) fm.innerHTML = 'Po przesunięciu suwaka pojawi się tu podsumowanie.';
+  var co = document.getElementById('calcOut'); if (co) co.innerHTML = 'Wpisz miesięczne wydatki — zobaczysz cztery cele i czas potrzebny na każdy.';
+}
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Zapis myśli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --notebook: #4a5570; --notebook-deep: #2a3045;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(74,85,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--notebook); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--notebook); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--notebook); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--notebook); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--notebook); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(74,85,112,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--notebook); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--notebook); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — notebook ink === */
+.frame-card { 
+  background: linear-gradient(180deg, #3a4555 0%, #1a1f2a 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ DEFUZJA — PISANIE"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "📝"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.12; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.diff-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.diff-cell {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.diff-name { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--warm); }
+.diff-desc { font-size: 11.5px; color: rgba(244,241,234,0.85); line-height: 1.4; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--notebook); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+.step-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.step-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--notebook);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.step-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.step-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--notebook); line-height: 1; min-width: 24px; }
+.step-name { font-size: 13px; font-weight: 700; flex: 1; letter-spacing: 0.04em; }
+.step-time { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.step-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 4px; }
+.step-howto strong { color: var(--ink); font-weight: 700; }
+.step-example {
+  font-size: 11.5px; color: var(--ink-mute);
+  font-style: italic;
+  padding: 6px 10px;
+  background: rgba(74,85,112,0.06);
+  border-radius: 6px;
+}
+.step-example::before { content: "✎ "; color: var(--notebook); }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--notebook);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--notebook); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--notebook); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(74,85,112,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--notebook); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--notebook); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Zapis myśli</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Myśl <em>na papierze</em> ≠ myśl w głowie</h1>
+    <p class="card-detail">Fizyczna technika defuzji w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). Zasada: <em>myśl, którą widzisz na papierze</em>, ma inne psychologiczne właściwości niż myśl, w której tkwisz wewnętrznie. <strong>Eksternalizacja</strong> — wyciągasz myśl z głowy, zostaje czarny atrament na białej kartce. To, co było „prawdą", staje się <strong>kawałkiem tekstu</strong>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Myśl w głowie vs myśl na papierze</div>
+      
+      <div class="diff-grid">
+        <div class="diff-cell">
+          <span class="diff-name">W głowie</span>
+          <span class="diff-desc">obejmuje cię, ma głos, wraca cyklicznie, wydaje się prawdą</span>
+        </div>
+        <div class="diff-cell">
+          <span class="diff-name">Na papierze</span>
+          <span class="diff-desc">leży nieruchomo, masz nad nią kontrolę, jest skończona</span>
+        </div>
+        <div class="diff-cell">
+          <span class="diff-name">W głowie</span>
+          <span class="diff-desc">nieskończona — może się rozrastać</span>
+        </div>
+        <div class="diff-cell">
+          <span class="diff-name">Na papierze</span>
+          <span class="diff-desc">ograniczona do liczby słów, które zapisałeś/aś</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Pisanie myśli to <em>cofanie się o krok</em>. Patrzysz na nią z zewnątrz. Może być nadal nieprzyjemna — ale już <em>nie jest tobą</em>."
+      <span class="frame-quote-attr">— Hayes, Strosahl, Wilson (1999)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: defuzja działa najsilniej, gdy myśl staje się <em>obiektem</em>, który możesz dotknąć, zobaczyć, wymazać. Pisanie ręczne (nie ekranowe) wzmacnia efekt — angażuje motorykę, wprowadza fizyczność w abstrakcyjny proces. <strong>Im wolniej piszesz</strong>, tym silniejszy dystans powstaje.</div>
+    
+    <div class="src">Hayes i in. (1999, ACT — An Experiential Approach) · Harris (2009)</div>
+  </section>
+
+  <!-- 2: DIAGNOSIS -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Twoja myśl-cel</div>
+    <h1 class="card-prompt">Wybierz <em>jedną</em> myśl</h1>
+    <p class="card-detail">Wybierz <strong>jedną nawracającą trudną myśl</strong>, z którą będziesz pracować. Im konkretniejsza, tym łatwiej. „Jestem porażką" jest dobre. „Wszystko jest źle" — za szerokie.</p>
+    
+    <div class="examples-h">Moja myśl-cel (dosłownie, kilka słów)</div>
+    <textarea class="thought-input" id="targetThought" placeholder='np. „Nie dam rady z tym projektem" / „Jestem ciężarem dla bliskich" / „Wszyscy zauważą, że nie znam tematu"' rows="2"></textarea>
+    
+    <div class="examples-h">Kiedy ta myśl wraca? (typowe okoliczności)</div>
+    <textarea class="thought-input" id="triggers" placeholder='np. „Przy mailach z pracy. Po niedzielnym obiedzie z rodziną. W łazience rano przed lustrem."' rows="3"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak bardzo „jestem" tą myślą? (poziom fuzji)</div>
+      <div class="scale-label"><span>0 — fakt zewnętrzny</span><span>10 — pełna fuzja</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="fusion" oninput="updateFusion()">
+      <div class="scale-readout"><span id="fusionVal">7</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="fusionVerdict">
+      Fuzja <span class="num">7/10</span> — <strong>silna</strong>. Myśl wydaje się prawdą, definiuje. Pisanie pomoże stworzyć dystans między tobą a treścią.
+    </div>
+    
+    <div class="examples-h">Co ta myśl zabrała mi w ostatnim tygodniu?</div>
+    <textarea class="thought-input" id="cost" placeholder='np. „Godzinę dziennie ruminacji. Niezadzwonienie do mamy. Odłożenie wniosku. Bezsenność w środę."' rows="3"></textarea>
+  </section>
+
+  <!-- 3: PROTOCOL — WRITING METHOD -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Technika pisania</div>
+    <h1 class="card-prompt">5 kroków <em>z piórem</em></h1>
+    <p class="card-detail">Potrzebujesz <strong>kartki papieru i długopisu</strong>. Nie ekran — papier. Zarezerwuj 5 minut spokoju. Wykonuj kroki <em>w tej kolejności</em> — każdy buduje na poprzednim.</p>
+    
+    <div class="step-list">
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">1</span>
+          <span class="step-name">Zapisz myśl dosłownie</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Wypisz myśl tak, jak brzmi w głowie</strong> — słowo w słowo. Bez korekt, bez upiększeń. „Jestem porażką" = piszesz „Jestem porażką".</div>
+        <div class="step-example">"Jestem porażką w pracy"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">2</span>
+          <span class="step-name">Dopisz „Mam myśl, że…"</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Przepisz tę samą myśl, tym razem z prefiksem</strong>: „Mam myśl, że [oryginalna myśl]". Klasyczna technika defuzji — jedna z najsilniejszych w ACT.</div>
+        <div class="step-example">"Mam myśl, że jestem porażką w pracy"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">3</span>
+          <span class="step-name">Jeszcze raz: „Zauważam, że mam myśl, że…"</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Jeszcze jedna warstwa</strong>: „Zauważam, że mam myśl, że [oryginalna myśl]". To <em>3-piętrowa konstrukcja</em>: zauważający → mająca myśl → treść myśli. Buduje obserwatora.</div>
+        <div class="step-example">"Zauważam, że mam myśl, że jestem porażką w pracy"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">4</span>
+          <span class="step-name">Zapytaj kartkę: „Co teraz?"</span>
+          <span class="step-time">~ 60s</span>
+        </div>
+        <div class="step-howto"><strong>Kartka sama nic nie zrobi</strong>. Myśl leży na papierze. Co chcesz dalej zrobić? Zapisz konkretne działanie: zostawić kartkę, podrzeć, przyklipsować. Albo: <em>zacząć działać zgodnie z wartością</em> mimo myśli.</div>
+        <div class="step-example">"Wstaję od stołu. Idę otworzyć dokument projektu. Myśl zostaje na kartce"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">5</span>
+          <span class="step-name">Wykonaj symboliczny gest</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Dla domknięcia — zrób coś z kartką</strong>. Najczęściej: zostaw na biurku jako pamiątkę dystansu. Albo: złóż w kieszeń (myśl ze mną idzie, ale to mała rzecz). Albo: podrzyj. Wybór jest twój.</div>
+        <div class="step-example">"Składam kartkę na pół, kładę pod kubek. Idę pisać raport"</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Dla zaawansowanych</strong>: technika ma trzy warianty: (a) <em>powolne pisanie</em> — 30s na słowo, jak w kaligrafii, wzmacnia eksternalizację. (b) <em>bardzo dużymi literami</em> — daje fizyczne odczucie „obiektu". (c) <em>w obcym języku</em> jeśli umiesz — myśl traci emocjonalny ładunek znajomości. Eksperymentuj.</div>
+  </section>
+
+  <!-- 4: PRACTICE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Po praktyce</div>
+    <h1 class="card-prompt">Co <em>zauważyłem/am</em>?</h1>
+    <p class="card-detail">Wykonałeś/aś technikę? Zapisz obserwacje. Konkretnie. <strong>Pisanie o pisaniu</strong> jeszcze pogłębia dystans — patrzysz na proces, nie na treść myśli.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Notatki z 5-minutowej praktyki</div>
+      
+      <div class="commit-prompt-label">Jak myśl wyglądała na papierze? (wrażenie)</div>
+      <textarea class="thought-input" id="appearance" placeholder='np. „Krócej niż się spodziewałem/am — 5 słów. Wyglądała banalnie. Inna niż w głowie, gdzie wydawała się ciężka."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co zmieniła konstrukcja „Mam myśl, że…"?</div>
+      <textarea class="thought-input" id="effect2" placeholder='np. „Pierwsza myśl: wstyd. Druga (z prefiksem): łagodniej. Trzecia (»Zauważam…«): czuję dystans, jakbym czytał książkę."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Jak czuję się fizycznie po praktyce?</div>
+      <textarea class="thought-input" id="bodyAfter" placeholder='np. „Ramiona luźniejsze. Oddech głębszy. Mniej „natrętności" myśli — dalej tam jest, ale jakby cichsza."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co teraz robię? (konkretne działanie)</div>
+      <textarea class="thought-input" id="nextAction" placeholder='np. „Otwieram laptop, piszę pierwsze 2 zdania raportu. Myśl »jestem porażką« zostaje na kartce, ja działam mimo niej."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Pułapka „nadal czuję ciężar"</strong>: jeśli oczekujesz, że <em>pisanie usunie myśl</em> — będzie rozczarowanie. Celem nie jest usunięcie. Celem jest <strong>zmiana relacji</strong>. Myśl dalej tam jest, ale ty masz nad nią więcej miejsca. Jak waga: 10kg w plecaku jest ciężka, 10kg na półce — istnieje, ale nie obciąża.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Codzienna higiena</div>
+    <h1 class="card-prompt">Notes <em>w kieszeni</em></h1>
+    <p class="card-detail">Praktyka działa, gdy masz <em>narzędzie pod ręką</em>. <strong>Mały notes + długopis</strong> w kieszeni / na biurku / przy łóżku. Gdy myśl wraca — 5 minut, jeden dziennik. To rzadko zajmuje więcej.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój system pisania</div>
+      
+      <div class="commit-prompt-label">Gdzie trzymam notes (1 stałe miejsce)</div>
+      <textarea class="thought-input" id="location" placeholder='np. „Mały notes Moleskine na nocnej szafce, długopis obok. Drugi w kieszeni kurtki, która zwykle wisi przy drzwiach."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Sygnał — kiedy uruchamiam praktykę pisania</div>
+      <textarea class="thought-input" id="cue" placeholder='np. „Gdy złapię się na ruminacji ponad 5 min. Albo: gdy myśl powraca 3× w jeden poranek. Albo: gdy zaczynam scrollować z lęku."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Sposób przechowywania kartek z myślami</div>
+      <textarea class="thought-input" id="storage" placeholder='np. „Mam folder »Myśli z papieru«. Składam kartki, datuję. Co miesiąc przeglądam — widzę powtarzalność. Niektóre wyrzucam (przeszłe), niektóre zostają (aktywne)."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Reguła praktyki</div>
+    <div class="term-note">
+      <strong>Codziennie</strong> — gdy myśl wraca więcej niż 3× / godzinę, biorę papier<br>
+      <strong>Co tydzień</strong> — przegląd kartek z minionego tygodnia<br>
+      <strong>Co miesiąc</strong> — które myśli wracają, które zniknęły? Wzorzec?<br>
+      <strong>W kryzysie</strong> — pytanie: <em>czy ta myśl jest w głowie, czy mogę ją wyciągnąć?</em>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Hayesa</div>
+      <div class="repeat-body">Myśl <em>na papierze</em> jest <strong>krótsza, prostsza, mniej groźna</strong> niż ta sama myśl w głowie. Jeśli czujesz, że nie chcesz pisać — prawdopodobnie najwięcej zyskujesz z pisania właśnie wtedy. Myśl, która <em>nie znosi światła</em>, najsilniej cię definiuje, gdy zostaje w ciemności.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateFusion();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    ['targetThought','triggers','cost','appearance','effect2','bodyAfter','nextAction','location','cue','storage'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('fusion').value = 7;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function updateFusion() {
+  const v = parseInt(document.getElementById('fusion').value);
+  document.getElementById('fusionVal').textContent = v;
+  
+  const verdict = document.getElementById('fusionVerdict');
+  if (v >= 9) {
+    verdict.innerHTML = `Fuzja <span class="num">${v}/10</span> — <strong>maksymalna</strong>. Myśl jest tobą. Tu pisanie ma największy efekt — od „jestem porażką" do „mam myśl, że jestem porażką" to ogromny krok.`;
+  } else if (v >= 7) {
+    verdict.innerHTML = `Fuzja <span class="num">${v}/10</span> — <strong>silna</strong>. Myśl wydaje się prawdą, definiuje. Pisanie pomoże stworzyć dystans między tobą a treścią.`;
+  } else if (v >= 4) {
+    verdict.innerHTML = `Fuzja <span class="num">${v}/10</span> — <strong>średnia</strong>. Czasem przejmuje, czasem widzisz ją jako myśl. Pisanie ustabilizuje pozycję obserwatora przy najtrudniejszych chwilach.`;
+  } else if (v >= 2) {
+    verdict.innerHTML = `Fuzja <span class="num">${v}/10</span> — <strong>niska</strong>. Już potrafisz traktować ją jak myśl, nie prawdę. Pisanie pogłębi to przy szczególnie uporczywych powrotach.`;
+  } else {
+    verdict.innerHTML = `Fuzja <span class="num">${v}/10</span> — <strong>obojętność</strong>. Myśl nie ma nad tobą władzy. Sprawdź, czy nie jest to <em>unikanie</em> — czasem brak fuzji = niezauważanie. Spróbuj posiedzieć z nią przez 30s i zobacz, czy nadal jest 1/10.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_zapis_mysli";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

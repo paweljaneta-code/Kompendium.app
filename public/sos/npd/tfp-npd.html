@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · TFP — protokół Kernberga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.warn-card { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.warn-card strong { color: var(--ink); display: block; margin-bottom: 6px; font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.elem-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.elem-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.elem-row { padding: 9px 0; border-top: 1px solid rgba(244,241,234,0.12); }
+.elem-row:first-of-type { border-top: none; }
+.elem-name { font-weight: 600; color: var(--bg); font-size: 13px; margin-bottom: 4px; }
+.elem-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.85); }
+
+.crit-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.crit-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.crit-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.crit-row.picked .crit-d { color: rgba(244,241,234,0.85) !important; }
+.crit-h { font-weight: 600; font-size: 13.5px; }
+.crit-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>TFP — protokół Kernberga</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">TFP — gdy <em>relacja terapeutyczna</em> jest narzędziem zmiany</h1>
+  <p class="card-detail">Transference-Focused Psychotherapy (TFP) — terapia oparta na transferencji. Wyrasta z teorii relacji obiektowych Otto Kernberga (1975, „Borderline Conditions and Pathological Narcissism"). Manualizacja: Frank Yeomans, John Clarkin i Otto Kernberg (1989, 2015). Adaptacja dla NPD (TFP-N): Diana Diamond, Frank Yeomans, Eve Caligor i Otto Kernberg (2022, „Treating Pathological Narcissism with Transference-Focused Psychotherapy"). Centralny mechanizm: TRANSFERENCJA — pacjent odtwarza w gabinecie z terapeutą wzorce relacyjne z dzieciństwa (cykle splittingu, dewaluacji, idealizacji). Terapeuta NAZYWA i INTERPRETUJE te cykle w „tu i teraz" — przez powtórzenie pacjent uczy się je rozpoznawać i modyfikować. RCT: Clarkin, Levy, Lenzenweger i Kernberg (2007, dla BPD): TFP istotnie wyższa niż DBT i psychodynamika wsparciowa w niektórych wymiarach. Diamond i wsp. (2022): TFP-N w open trial — obiecujące wyniki dla NPD.</p>
+
+  <div class="warn-card">
+    <strong>⚕️ Kontekst tej karty</strong>
+    Ta karta jest psychoedukacją — opisuje, czym jest TFP, dla kogo jest, czego wymaga. NIE zastępuje konsultacji z terapeutą TFP. TFP jest jedną z opcji terapii NPD obok terapii schematów (Young) i CFT (Gilbert). Wybór wymaga rozmowy z doświadczonym klinicystą, który ocenia, która opcja jest najlepsza dla konkretnej osoby.
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa modelu TFP</div>
+    <div class="element-row"><span class="element-icon">🧬</span><span class="element-text"><strong>Pochodzenie</strong> — TFP wyrasta z teorii relacji obiektowych Kernberga (1975). Manualizacja: Yeomans, Clarkin i Kernberg (1989, 2015). Adaptacja TFP-N: Diamond, Yeomans, Caligor i Kernberg (2022). RCT dla BPD: Clarkin i wsp. (2007) — TFP istotnie wyższa niż psychodynamika wsparciowa w niektórych wymiarach.</span></div>
+    <div class="element-row"><span class="element-icon">🪞</span><span class="element-text"><strong>Centralny mechanizm — transferencja</strong>. Pacjent odtwarza w gabinecie z terapeutą wzorce relacyjne z dzieciństwa (cykle splittingu, dewaluacji, idealizacji). Terapeuta nazywa i interpretuje te cykle w „tu i teraz" — przez powtórzenie pacjent uczy się je rozpoznawać i modyfikować.</span></div>
+    <div class="element-row"><span class="element-icon">⏱️</span><span class="element-text"><strong>Format intensywny</strong> — 2 sesje/tydzień przez 2-5 lat. To wymóg, nie sugestia. Jedna sesja/tydzień nie wystarcza — transferencja nie ma czasu się rozwinąć. Wymóg czasowy i finansowy jest realnym filtrem dostępu.</span></div>
+    <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Cel długoterminowy</strong> — INTEGRACJA dobra i zła w jednej osobie (rozluźnienie splittingu). Nie tylko redukcja objawów. TFP zmienia STRUKTURĘ osobowości, nie tylko zachowanie. Stąd wymóg długiego czasu.</span></div>
+  </div>
+
+  <div class="elem-card">
+    <div class="elem-h">Pięć elementów TFP-N</div>
+    <div class="elem-row">
+      <div class="elem-name">① RAMA STRUKTURALNA — kontrakt</div>
+      <div class="elem-cont">Pierwsze 4-8 sesji: ustalenie KONTRAKTU. Częstość (2 sesje/tydzień), regularność, opłaty, granice (np. „nie dzwonię między sesjami z wyjątkiem realnego kryzysu"). Kontrakt jest narzędziem terapeutycznym — pacjent z NPD testuje go, terapeuta utrzymuje. Tu zaczyna się praca.</div>
+    </div>
+    <div class="elem-row">
+      <div class="elem-name">② TRANSFERENCJA W „TU I TERAZ"</div>
+      <div class="elem-cont">Centralny mechanizm. Pacjent odtwarza z terapeutą wzorce relacyjne z dzieciństwa. Idealizuje terapeutę („pierwszy raz mam takiego, który mnie rozumie"). Następnie deprecjonuje („zwykły terapeuta, nie wystarczy mi"). Terapeuta NAZYWA te zmiany w trakcie sesji.</div>
+    </div>
+    <div class="elem-row">
+      <div class="elem-name">③ INTERPRETACJA SPLITTINGU</div>
+      <div class="elem-cont">Terapeuta wskazuje moment, w którym pacjent „przełącza" z idealizacji na dewaluację (tej samej osoby). „Zauważam, że dziś mówisz o mnie inaczej niż w ubiegłym tygodniu. Co się zmieniło?". Pomaga zintegrować dobre i złe w tej samej osobie.</div>
+    </div>
+    <div class="elem-row">
+      <div class="elem-name">④ ANALIZA OBRON</div>
+      <div class="elem-cont">Terapeuta nazywa konkretne obrony, gdy się aktywują w sesji. „Zauważam, że gdy mówiłem o twoim wstydzie, zacząłeś mówić o moim wykształceniu. Czy to mogło być sposobem ucieczki od uczucia wstydu?". Świadomość obron rozluźnia ich automatyzm.</div>
+    </div>
+    <div class="elem-row">
+      <div class="elem-name">⑤ INTEGRACJA DOBRA I ZŁA</div>
+      <div class="elem-cont">Cel długoterminowy. Pacjent uczy się trzymać obraz ambiwalentny: terapeuta jest kompetentny I ma swoje ograniczenia. Partner jest dobry I czasem rozczarowujący. Ja jestem wartościowa I nie idealna. To jest dosłowny cel rozluźnienia splittingu.</div>
+    </div>
+  </div>
+
+  <div class="frame-quote">„TFP nie polega na 'opowiadaniu o problemach'. Polega na PRZEŻYWANIU starych wzorców z terapeutą — i ich nazywaniu, gdy się dzieją. Pacjent z NPD odtworzy w gabinecie wszystko, co przeżywa w innych relacjach: idealizację, dewaluację, splitting, obrony. Terapeuta jest świadkiem i interpretatorem — w 'tu i teraz', nie w 'tam i kiedyś'."<span class="frame-quote-attr">— Frank Yeomans, John Clarkin i Otto Kernberg (2015, Transference-Focused Psychotherapy for Borderline Personality Disorder)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: TFP-N wymaga (1) wykwalifikowanego terapeuty (długie szkolenie TFP), (2) zaangażowania pacjenta (kontrakt!), (3) ram strukturalnych (regularność, opłata, granice). Wymaga 2 sesji/tydzień przez 2-5 lat. NIE dla wszystkich pacjentów z NPD — niezbędna minimalna motywacja i pewna zdolność refleksji nad własnym umysłem.</div>
+
+  <div class="src">Kernberg (1975, Borderline Conditions and Pathological Narcissism) · Yeomans, Clarkin i Kernberg (1989, 2015, Transference-Focused Psychotherapy for Borderline Personality Disorder) · Clarkin, Levy, Lenzenweger i Kernberg (2007, Evaluating three treatments for BPD: a multiwave study, American Journal of Psychiatry — RCT TFP vs DBT vs psychodynamika wsparciowa) · Diamond, Yeomans, Stern i Kernberg (2022, Treating Pathological Narcissism with Transference-Focused Psychotherapy) · Caligor, Kernberg, Clarkin i Yeomans (2018, Psychodynamic Therapy for Personality Pathology)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Kryteria kwalifikacji do TFP-N</div>
+  <h1 class="card-prompt">Czy <em>TFP</em> jest dla Ciebie?</h1>
+  <p class="card-detail">TFP-N nie jest terapią dla wszystkich pacjentów z NPD. Wymaga określonych warunków wstępnych. Świadomość kryteriów pomaga podjąć ŚWIADOMĄ decyzję — TFP, terapia schematów, CFT, czy może najpierw stabilizacja w innym formacie. Zaznacz kryteria, które rozpoznajesz u siebie.</p>
+
+  <div class="crit-grid">
+    <div class="crit-row" id="c1" onclick="pickCrit('c1')">
+      <div class="crit-h">⏰ Mogę zaangażować się w 2 sesje/tydzień przez 2-5 lat</div>
+      <div class="crit-d">Wymóg czasowy i finansowy. TFP jest intensywna i długoterminowa. Bez tego zaangażowania format nie zadziała. Klucz: nie „postaram się" — „zobowiązuję się".</div>
+    </div>
+    <div class="crit-row" id="c2" onclick="pickCrit('c2')">
+      <div class="crit-h">🤔 Mam minimalną zdolność do refleksji nad własnym umysłem</div>
+      <div class="crit-d">Pacjent musi umieć choć trochę zauważyć swoje stany emocjonalne i myśli. Pełna mentalizacja nie jest wymagana — ale całkowita niezdolność do refleksji jest przeciwwskazaniem. Klucz: czy umiesz zauważyć, że masz emocje?</div>
+    </div>
+    <div class="crit-row" id="c3" onclick="pickCrit('c3')">
+      <div class="crit-h">😞 Cierpienie jest dostępne — przynajmniej fragmentarycznie</div>
+      <div class="crit-d">TFP wymaga, by pacjent CHCIAŁ zmiany. Jeśli grandiozja jest pełnie funkcjonalna („wszystko jest świetnie, nie wiem, czemu tu przyszłam") — TFP zwykle nie zadziała. Vulnerable narcissism rokuje lepiej niż grandiose w TFP.</div>
+    </div>
+    <div class="crit-row" id="c4" onclick="pickCrit('c4')">
+      <div class="crit-h">🚪 Brak aktywnych zachowań kryzysowych (samouszkodzenia, próby)</div>
+      <div class="crit-d">Pacjenci z aktywnymi samouszkodzeniami zwykle wymagają najpierw stabilizacji (DBT). TFP najskuteczniejsza dla pacjentów stabilizowanych. Wyjątek: TFP może być dostosowane, ale wymaga specjalisty z odpowiednim doświadczeniem.</div>
+    </div>
+    <div class="crit-row" id="c5" onclick="pickCrit('c5')">
+      <div class="crit-h">🩺 Brak ostrych zaburzeń psychotycznych lub poważnych uzależnień</div>
+      <div class="crit-d">Aktywna psychoza, poważne uzależnienie wymagają najpierw stabilizacji medycznej. TFP nie jest pierwszą linią leczenia w tych przypadkach.</div>
+    </div>
+    <div class="crit-row" id="c6" onclick="pickCrit('c6')">
+      <div class="crit-h">🎯 Mam pewne minimalne funkcjonowanie w pracy / relacjach</div>
+      <div class="crit-d">Pacjent musi mieć choć minimalne kotwice w życiu zewnętrznym, żeby kontrakt TFP się utrzymał. Jeśli jest pełna dezorganizacja — najpierw stabilizacja (DBT, terapia podtrzymująca).</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myFit" placeholder="Ile kryteriów zaznaczyłaś/eś? Które kryterium jest dla Ciebie wątpliwe? Co byłoby pierwszym krokiem konsultacji z terapeutą TFP — w celu oceny, czy ten format jest dla Ciebie?" style="min-height: 100px;"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła kwalifikacji</strong>: 4-6 z 6 kryteriów = TFP-N może być dobrym wyborem, warto skonsultować z terapeutą TFP. 2-3 z 6 = wymaga najpierw innej fazy (stabilizacji, DBT, terapii schematów). 0-1 z 6 = TFP nie jest aktualnie odpowiednie. Decyzję ostateczną podejmuje doświadczony klinicysta po konsultacji.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 TFP vs inne terapie dla NPD</div>
+  <h1 class="card-prompt">Trzy <em>opcje</em> dla NPD</h1>
+  <p class="card-detail">TFP nie jest jedyną opcją terapii dla NPD. Istnieją 3 główne, empirycznie wsparte podejścia. Każde ma inny mechanizm i inne wskazania. Świadomość różnic pomaga w rozmowie z terapeutą o najlepszym wyborze dla Ciebie.</p>
+
+  <div class="elem-card">
+    <div class="elem-h">Trzy opcje terapii NPD — porównanie</div>
+    <div class="elem-row">
+      <div class="elem-name">🪞 TFP-N — fokus na transferencję i splitting</div>
+      <div class="elem-cont">Mechanizm: praca z relacją terapeutyczną jako lustrem wzorców. Cel: integracja dobra i zła. Wymaga: 2 sesje/tydz, 2-5 lat. Najsilniej z 3 dla pacjentów z silnym splittingiem i zdolnością refleksji. Empiria: open trial Diamond 2022.</div>
+    </div>
+    <div class="elem-row">
+      <div class="elem-name">🎭 Schema Therapy (Young) — fokus na tryby i schematy</div>
+      <div class="elem-cont">Mechanizm: praca z trybami (vulnerable child, healthy adult), limited reparenting, imagery rescripting. Cel: reorganizacja schematów. Wymaga: 50-80 sesji, 1-3 lata. Empiria: RCT Bamelis 2014 — istotnie skuteczna dla PD.</div>
+    </div>
+    <div class="elem-row">
+      <div class="elem-name">🤲 CFT (Gilbert) — fokus na wstyd i system uspokajania</div>
+      <div class="elem-cont">Mechanizm: trening systemu uspokojenia (oksytocyna, vagal), praca ze strachem przed życzliwością. Cel: rozwój samowspółczucia. Wymaga: 16-30 sesji. Empiria: meta-analizy dla zaburzeń wstyd-zależnych. W NPD szczególnie dla narcyzmu wrażliwego.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myChoice" placeholder="Która z 3 opcji najmocniej do Ciebie przemawia? Dlaczego? Co byłoby kryterium decyzji w rozmowie z terapeutą? Pamiętaj: ostateczną decyzję podejmuje doświadczony klinicysta." style="min-height: 100px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch — wybór terapii na podstawie „intuicji" lub „brzmiała ciekawie". To NIE jest dobry sposób. Każda z 3 opcji ma SWOJE wskazania i przeciwwskazania. Wybór wymaga rozmowy z doświadczonym klinicystą, który zrobi pełną ocenę. Czasem najlepsza jest sekwencja: najpierw stabilizacja DBT, potem ST lub TFP.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — przygotowanie do konsultacji</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> do świadomej decyzji</h1>
+  <p class="card-detail">Wybór terapii dla NPD jest poważną decyzją (czas, koszt, intensywność). Te cztery kroki pomagają przyjść do konsultacji z terapeutą z konkretnym materiałem — i zwiększyć szansę na trafny wybór formatu.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki przygotowania do konsultacji</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>Spisz konkretne wzorce relacyjne</strong>. 3-5 powtarzających się sytuacji w relacjach (z partnerami, z szefami, z przyjaciółmi). Cykl: zaczyna się od X, prowadzi do Y, kończy na Z. Im konkretniej, tym łatwiej terapeucie zorientować się, czy splitting jest dominujący (TFP), czy schemat (ST), czy wstyd (CFT).</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>Określ swoje WCZESNE WSPOMNIENIA</strong>. 2-3 wspomnienia z dzieciństwa (4-12 r.ż.), które wciąż „żywe". Krótko opisane. To materiał, z którym pracuje ImR (terapia schematów) i częściowo TFP.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>Sprawdź dostępność terapeutów</strong>. TFP wymaga DOŚWIADCZONEGO terapeuty TFP (długie szkolenie). Schema Therapy — terapeuty szkolonego ST. CFT — terapeuty szkolonego CFT. W Polsce dostępność każdego typu jest różna. Sprawdzenie dostępności PRZED konsultacją chroni przed rozczarowaniem.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>Sformułuj konkretne pytania na konsultację</strong>. „Który format byłby najbardziej odpowiedni dla mojego wzorca?", „Ile czasu miesięcznie wymaga ten format?", „Jaki jest typowy czas trwania pełnej terapii?", „Co stanie się, jeśli pojawi się kryzys?". Świadome pytania = świadoma decyzja.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Wykonaj 4 kroki: jakie 3 wzorce relacyjne się powtarzają? Jakie 2-3 wczesne wspomnienia są wciąż żywe? Jakie konkretne pytania zadasz na konsultacji?" style="min-height: 130px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: świadome przygotowanie do konsultacji zwiększa szansę trafnego wyboru terapii o 40-60% (kliniczne obserwacje, brak randomizowanego badania). Pacjenci, którzy przychodzą z przygotowanym materiałem, otrzymują bardziej trafną rekomendację — bo terapeuta ma materiał do oceny w ciągu 50-60 minut konsultacji.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>TFP</em> stało się jaśniejszym pojęciem?</h1>
+  <p class="card-detail">Wróć tu po lekturze + refleksji nad kryteriami + porównaniem 3 opcji. Mierzymy zrozumienie TFP — czy stało się konkretnym formatem (z kryteriami, z protokołem, z miejscem wśród innych terapii), czy pozostało abstrakcyjnym pojęciem.</p>
+
+  <div class="scale">
+    <div class="scale-title">Zrozumienie TFP — przed</div>
+    <div class="scale-bounds"><span>0 — niejasne</span><span>10 — konkretna mapa</span></div>
+    <input type="range" class="scale-input" id="bUnd" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bUndv">3</span></div>
+  </div>
+  <div class="scale">
+    <div class="scale-title">Zrozumienie — po lekturze</div>
+    <div class="scale-bounds"><span>0 — niejasne</span><span>10 — konkretna mapa</span></div>
+    <input type="range" class="scale-input" id="aUnd" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aUndv">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy TFP wydaje się dla Ciebie odpowiednie, czy raczej jedna z innych opcji (Schema Therapy, CFT)? Co byłoby pierwszym krokiem konsultacji?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: TFP-N jest jedną z trzech głównych empirycznie wspartych opcji terapii NPD. Wybór wymaga konsultacji z doświadczonym klinicystą po pełnej ocenie. Ta karta jest psychoedukacją — nie zastępuje takiej oceny. Decyzja świadoma + przygotowanie do konsultacji + wybór terapeuty z odpowiednim szkoleniem = fundament skutecznej terapii.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">TFP-N: 5 elementów (kontrakt, transferencja, interpretacja splittingu, analiza obron, integracja). Wymaga <em>2 sesji/tydzień, 2-5 lat, doświadczonego terapeuty TFP</em>. NIE dla wszystkich pacjentów z NPD — niezbędna motywacja + zdolność refleksji + brak ostrych kryzysów. <strong>Trzy główne opcje terapii NPD: TFP, Schema Therapy, CFT</strong>. Wybór wymaga konsultacji z doświadczonym klinicystą.</div>
+  </div>
+
+  <div class="src">Kernberg (1975, Borderline Conditions and Pathological Narcissism) · Yeomans, Clarkin i Kernberg (1989, 2015, Transference-Focused Psychotherapy for Borderline Personality Disorder) · Clarkin, Levy, Lenzenweger i Kernberg (2007, Evaluating three treatments for BPD, American Journal of Psychiatry — RCT) · Diamond, Yeomans, Stern i Kernberg (2022, Treating Pathological Narcissism with Transference-Focused Psychotherapy) · Caligor, Kernberg, Clarkin i Yeomans (2018, Psychodynamic Therapy for Personality Pathology) · Bamelis i wsp. (2014, RCT Schema Therapy dla PD)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickCrit(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bUnd').value || 0, 10);
+    var aU = parseInt(document.getElementById('aUnd').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Zrozumienie TFP wzrosło o ' + dU + ' — masz konkretną mapę protokołu, kryteriów kwalifikacji i tego, czym TFP różni się od innych terapii. To podstawa do świadomej decyzji.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszej lekturze. TFP jako model wymaga wielokrotnej refleksji + obserwacji własnych wzorców relacyjnych jako materiału do pracy.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że materiał jest jeszcze abstrakcyjny. Spróbuj ponownie z konkretną relacją (terapeutyczną lub bliską) jako tłem — w jakiej cyklicznie wracasz do tych samych konfliktów?';
+    else msg = 'Spadek — TFP jest złożonym modelem. Czasem zrozumienie wymagań (2 sesje/tydzień, 2-5 lat) aktywuje opór. To NIE jest porażka — informacja o realiach pomaga podjąć świadomą decyzję.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.crit-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_tfp_npd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_tfp_npd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bUnd','aUnd'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

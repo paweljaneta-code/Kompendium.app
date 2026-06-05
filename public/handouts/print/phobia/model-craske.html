@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="UTF-8"><title>Model uczenia hamującego</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400;9..144,1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === ZMIENNE — paleta lineart v2 dostosowana do modułu GAD === */
+:root{
+  --ink:#1c2620;          /* główny kolor tekstu */
+  --soft:#4a554d;          /* tekst pomocniczy */
+  --mute:#8a9089;          /* etykiety */
+  --line:#c9c2b0;          /* linie */
+  --line2:#e3ddc8;         /* linie pomocnicze */
+  --sage:#3d6b30;          /* akcent GAD — sage-zielony */
+  --sage-soft:#eaf0e0;     /* tło akcentu */
+  --warm:#b8693f;          /* akcent komplementarny */
+  --paper:#fdfbf3;         /* kremowy odcień (alternatywa) */
+}
+
+/* === RESET === */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#fff}
+body{
+  font-family:'DM Sans', system-ui, -apple-system, sans-serif;
+  color:var(--ink);
+  font-size:10pt;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* === STRONA A4 — 210x297mm === */
+.page{
+  width:210mm;
+  height:297mm;
+  margin:0 auto;
+  padding:14mm 13mm 13mm 13mm;
+  background:#fff;
+  position:relative;
+  page-break-after:always;
+  overflow:hidden;
+}
+.page:last-child{page-break-after:auto}
+
+/* === NAGŁÓWEK === */
+.eyebrow{
+  font-family:'DM Sans', sans-serif;
+  font-size:8pt;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:var(--sage);
+  font-weight:600;
+  margin-bottom:6px;
+}
+h1.hdr-title{
+  font-family:'Fraunces', serif;
+  font-size:24pt;
+  font-weight:500;
+  letter-spacing:-0.025em;
+  line-height:1.05;
+  color:var(--ink);
+  margin-bottom:4px;
+}
+h1.hdr-title em{font-style:italic;color:var(--sage);font-weight:500}
+.hdr-sub{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:10.5pt;
+  color:var(--soft);
+  margin-bottom:9px;
+  line-height:1.3;
+}
+.hdr-meta{
+  display:flex;
+  gap:13px;
+  flex-wrap:wrap;
+  font-size:8pt;
+  color:var(--mute);
+  letter-spacing:0.06em;
+  padding-top:7px;
+  padding-bottom:7px;
+  border-top:1.2px solid var(--ink);
+  border-bottom:0.5px solid var(--line);
+  margin-bottom:13px;
+}
+.hdr-meta strong{color:var(--ink);font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-right:3px}
+
+/* === SEKCJE === */
+.sec{margin-bottom:9px}
+.sec-h{
+  font-family:'Fraunces', serif;
+  font-size:12.5pt;
+  font-weight:600;
+  letter-spacing:-0.015em;
+  color:var(--ink);
+  margin-bottom:5px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.sec-h .num{
+  font-family:'DM Sans', sans-serif;
+  font-size:8.5pt;
+  font-weight:600;
+  color:var(--ink);
+  letter-spacing:0.06em;
+  border:1px solid var(--ink);
+  padding:1px 6px;
+  border-radius:2px;
+  min-width:22px;
+  text-align:center;
+}
+.sec-h .ico-svg{width:16px;height:16px;flex:0 0 16px}
+
+/* === IKONY SVG === */
+.ico-svg{display:inline-block;vertical-align:middle}
+.ico-sage{stroke:var(--sage);fill:none}
+.ico-warm{stroke:var(--warm);fill:none}
+.ico-ink{stroke:var(--ink);fill:none}
+
+/* === BLOKI TEKSTU === */
+.prose{font-size:10pt;color:var(--soft);line-height:1.5;margin-bottom:8px;text-align:justify;hyphens:auto;-webkit-hyphens:auto}
+.prose strong{color:var(--ink);font-weight:600}
+.prose em{color:var(--ink);font-style:italic}
+
+.callout{
+  background:#fff;
+  border:0.6px solid var(--line);
+  border-left:2.5px solid var(--sage);
+  padding:9px 12px;
+  margin:10px 0;
+  font-size:9.5pt;
+  color:var(--soft);
+  border-radius:0 3px 3px 0;
+  text-align:justify;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+.callout strong{color:var(--ink);font-weight:600}
+
+/* === INSTRUKCJA U GÓRY (krótka instrukcja + uzasadnienie po nagłówku) === */
+.intro-box-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 9px 0;
+}
+.intro-box{
+  border:0.8px solid var(--line);
+  padding:8px 12px;
+  font-size:9pt;
+  color:var(--soft);
+  line-height:1.45;
+  background:#fff;
+  text-align:justify;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+.intro-box .intro-lbl{
+  font-family:'DM Sans', sans-serif;
+  font-size:7pt;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  margin-bottom:3px;
+  display:block;
+}
+.intro-box p{margin:0}
+.intro-box strong{color:var(--ink);font-weight:600}
+.intro-box em{color:var(--ink);font-style:italic}
+
+/* === LINIE DO PISANIA === */
+.write-lines{margin:8px 0}
+.fill-field .write-lines{margin-top:auto}
+.nln{
+  height:9mm;
+  border-bottom:0.6px solid var(--line);
+  margin-bottom:0;
+}
+.write-label{
+  font-size:8.5pt;
+  color:var(--mute);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+  font-weight:600;
+}
+
+/* === POLA WYPEŁNIANE === */
+.fill-field{margin-bottom:10px;display:flex;flex-direction:column;height:100%}
+.fill-field .lbl{
+  font-family:'DM Sans', sans-serif;
+  font-size:8.5pt;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  margin-bottom:3px;
+}
+.fill-field .lbl-sub{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:9.5pt;
+  color:var(--mute);
+  letter-spacing:0;
+  text-transform:none;
+  font-weight:400;
+  display:block;
+  margin-top:1px;
+}
+
+/* === STOPKA === */
+.foot{
+  position:absolute;
+  bottom:8mm;
+  left:16mm;
+  right:16mm;
+  font-size:7.5pt;
+  color:var(--mute);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  border-top:0.5px solid var(--line);
+  padding-top:6px;
+}
+.foot strong{color:var(--soft);font-weight:600}
+.foot .pg-num{font-family:'Fraunces', serif;font-style:italic;text-transform:none;letter-spacing:0;color:var(--soft)}
+
+/* === SKALA MOOD === */
+.mood-scale{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:3px 0 8px 0;
+}
+.mood-scale .ms-lbl{
+  font-size:8.5pt;
+  color:var(--mute);
+  font-weight:600;
+  letter-spacing:0.04em;
+  flex:0 0 70px;
+}
+.mood-scale .ms-end{
+  font-size:8pt;
+  color:var(--mute);
+  font-style:italic;
+}
+.mood-scale .ms-row{
+  display:flex;
+  gap:4px;
+  flex:1;
+}
+.mood-scale .ms-num{
+  width:19px;height:19px;
+  border:1px solid var(--line);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8.5pt;
+  color:var(--soft);
+  font-weight:500;
+}
+
+/* === TABELE === */
+table.work-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:6px 0;
+  font-size:9pt;
+}
+table.work-table th{
+  font-family:'DM Sans', sans-serif;
+  font-size:8pt;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  text-align:left;
+  padding:7px 8px;
+  border-bottom:1.4px solid var(--ink);
+  background:#fff;
+}
+table.work-table td{
+  padding:0;
+  height:14mm;
+  border-bottom:0.6px solid var(--line);
+  vertical-align:top;
+}
+table.work-table td.col-divider{
+  border-left:0.4px solid var(--line2);
+}
+table.work-table .cell-hint{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:8.5pt;
+  color:var(--mute);
+  padding:5px 8px 0 8px;
+  line-height:1.2;
+}
+
+/* === BIBLIOTEKA IKON (SVG defs) — wspólna dla wszystkich handoutów === */
+
+/* === DRUK === */
+@media print{
+  body{background:#fff}
+  .page{margin:0;padding:18mm 16mm 18mm 16mm;box-shadow:none;break-after:page}
+  .page:last-child{break-after:auto}
+  .no-print{display:none}
+  @page{size:A4;margin:0}
+}
+
+/* === RESPONSYWNOŚĆ (podgląd na ekranie) === */
+@media screen{
+  body{padding:24px 16px;background:#e8e3d4}
+  .page{box-shadow:0 4px 24px rgba(0,0,0,0.08);margin-bottom:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- Biblioteka ikon SVG (line-art, stroke 1.8, viewBox 24x24) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <!-- target/cel -->
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke-width="1.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <!-- drzewo (dla worry tree) -->
+  <symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21V11M12 11l-4-4M12 11l4-4M8 7l-3-3M16 7l3-3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="4" r="1.6"/><circle cx="19" cy="4" r="1.6"/><circle cx="8" cy="7" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="7" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <!-- pytajnik -->
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M9 9c0-1.7 1.3-3 3-3s3 1.3 3 3c0 1.3-0.7 2-2 2.5-0.7 0.3-1 0.8-1 1.5" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none"/></symbol>
+  <!-- ptaszek -->
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- X -->
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke-width="2" stroke-linecap="round"/></symbol>
+  <!-- strzałka w prawo -->
+  <symbol id="i-arr" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- strzałka w dół -->
+  <symbol id="i-arr-d" viewBox="0 0 24 24"><path d="M12 5v14M7 14l5 5 5-5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- zegar -->
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M12 7v5l3 3" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- stoper -->
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" stroke-width="1.6"/><path d="M10 3h4M12 3v3M19 7l2-2M5 7L3 5" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M12 11v3l2 1.5" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- iskra / sparkle -->
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <!-- ołówek/pencil -->
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M16 4l4 4-11 11H5v-4L16 4z" stroke-width="1.6" stroke-linejoin="round" fill="none"/><path d="M14 6l4 4" stroke-width="1.6"/></symbol>
+  <!-- clipboard -->
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="1.5" stroke-width="1.6" fill="none"/><rect x="9" y="2.5" width="6" height="3" rx="0.6" stroke-width="1.6" fill="none"/><path d="M8 11h8M8 14h8M8 17h5" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <!-- żarówka / lightbulb -->
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 17h6M10 20h4M12 3a6 6 0 014 10.5c-0.7 0.7-1 1.5-1 2.5h-6c0-1-0.3-1.8-1-2.5A6 6 0 0112 3z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- ciało / body PMR -->
+  <symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2" stroke-width="1.6" fill="none"/><path d="M12 7.5v8M9 10l-3 3M15 10l3 3M9.5 15.5L7 22M14.5 15.5L17 22" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- liść (akceptacja, mindfulness) -->
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14zM5 19l7-7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- kalendarz -->
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5" stroke-width="1.6" fill="none"/><path d="M4 10h16M8 3v4M16 3v4" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <!-- mózg/myśl -->
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 4c-2 0-3.5 1.5-3.5 3.5 0 0.5 0.1 1 0.3 1.4C4.5 9.5 4 10.7 4 12c0 1.3 0.5 2.4 1.4 3.2-0.1 0.3-0.2 0.7-0.2 1 0 2 1.6 3.7 3.5 3.7M15 4c2 0 3.5 1.5 3.5 3.5 0 0.5-0.1 1-0.3 1.4 1.3 0.6 1.8 1.8 1.8 3.1 0 1.3-0.5 2.4-1.4 3.2 0.1 0.3 0.2 0.7 0.2 1 0 2-1.6 3.7-3.5 3.7M12 4v16" stroke-width="1.5" stroke-linecap="round" fill="none"/></symbol>
+  <!-- waga / wybór -->
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v17M5 21h14M6 11l3-7 3 7M12 11h3l3-7M3 11h6l-3 5-3-5zM15 11h6l-3 5-3-5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+</defs>
+</svg>
+
+<div class="page"><header>
+<div class="eyebrow">Fobia specyficzna · Model</div>
+<h1 class="hdr-title">Model uczenia <em>hamującego (Craske 2014)</em></h1>
+<div class="hdr-sub">Stare skojarzenie „bodziec = zagrożenie" nie znika &mdash; obok niego powstaje nowe „bodziec = bezpieczny". Diagram do zrozumienia, dlaczego ekspozycja działa.</div>
+<div class="hdr-meta"><span><strong>Czas pracy:</strong> 10 min</span><span><strong>Charakter:</strong> psychoedukacja</span><span><strong>Źródło:</strong> Craske i wsp. (2014); Mystkowski i wsp. (2002)</span></div>
+</header>
+<div class="intro-box-row">
+<div class="intro-box">
+<span class="intro-lbl">Jak używać</span>
+<p><strong>Model uczenia hamującego</strong> (ang. <em>inhibitory learning model</em>) Craske i wsp. (2014) zmienił rozumienie ekspozycji w terapii fobii. Stary model habituacji mówił: „zostań z lękiem, aż minie &mdash; lęk się wygasi". Nowy model mówi: <em>spadek lęku w sesji nie jest celem</em> &mdash; celem jest <strong>naruszenie oczekiwania</strong> (ang. <em>expectancy violation</em>). Stare skojarzenie nie kasuje się; obok niego powstaje <em>nowe</em>, hamujące.</p>
+</div>
+<div class="intro-box">
+<span class="intro-lbl">Dlaczego to działa</span>
+<p>Mystkowski i wsp. (2002): to <strong>naruszenie oczekiwania</strong>, a nie spadek SUDS w sesji, jest najsilniejszym predyktorem trwałości efektu ekspozycji. Praktyczne konsekwencje są daleko idące. <strong>Po pierwsze:</strong> nie czekamy, aż lęk opadnie &mdash; kończymy ekspozycję, gdy oczekiwanie zostało wyraźnie obalone. <strong>Po drugie:</strong> nie powtarzamy identycznej ekspozycji 10 razy &mdash; zmieniamy konteksty, bo nowe skojarzenie jest kontekstowo zależne. <strong>Po trzecie:</strong> nawroty są <em>normalne</em>, bo stare skojarzenie nigdzie nie zniknęło &mdash; warto się ich spodziewać i wracać do okazjonalnej ekspozycji co kilka tygodni.</p>
+</div>
+</div>
+<div class="sec">
+<h2 class="sec-h"><span class="num">01</span><svg class="ico-svg ico-sage"><use href="#i-brain"/></svg> Stare i nowe skojarzenie &mdash; nie zastępują się, koegzystują</h2>
+
+<svg viewBox="0 0 600 250" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin:6px auto;max-width:560px" font-family="'DM Sans', sans-serif">
+<style>
+  .bx2{fill:#fff;stroke:#c9c2b0;stroke-width:0.8}
+  .bx-old{fill:#f5e8e0;stroke:#b8693f;stroke-width:1.2}
+  .bx-new{fill:#e0ede0;stroke:#3d6b30;stroke-width:1.2}
+  .lb{font-family:'Fraunces';font-style:italic;font-size:11px;font-weight:500}
+  .lbh{font-size:8px;font-weight:600;letter-spacing:0.06em}
+  .lbs{font-size:7.5px;fill:#4a554d}
+  .lbb{font-size:9px;font-weight:600;letter-spacing:0.04em;fill:#1c2620}
+</style>
+
+<!-- Bodziec node (środek) -->
+<circle cx="300" cy="125" r="34" fill="#fff" stroke="#1c2620" stroke-width="1.5"/>
+<text x="300" y="121" text-anchor="middle" class="lbb">BODZIEC</text>
+<text x="300" y="135" text-anchor="middle" class="lbs">pająk, lot,</text>
+<text x="300" y="145" text-anchor="middle" class="lbs">wysokość...</text>
+
+<!-- Stare skojarzenie (lewo) -->
+<rect x="20" y="20" width="180" height="80" rx="3" class="bx-old"/>
+<text x="110" y="35" text-anchor="middle" class="lbh" fill="#b8693f">STARE SKOJARZENIE</text>
+<text x="110" y="50" text-anchor="middle" class="lb" fill="#5a2a0a">„zagrożenie!"</text>
+<text x="110" y="68" text-anchor="middle" class="lbs">Powstałe z doświadczenia,</text>
+<text x="110" y="80" text-anchor="middle" class="lbs">obserwacji, informacji.</text>
+<text x="110" y="92" text-anchor="middle" class="lbs">Trwałe, silne, automatyczne.</text>
+<path d="M200 65 Q240 90 268 115" stroke="#b8693f" stroke-width="1.5" fill="none" marker-end="url(#ar2)"/>
+<text x="225" y="105" class="lbs" font-style="italic">silne</text>
+
+<!-- Nowe skojarzenie (prawo) -->
+<rect x="400" y="20" width="180" height="80" rx="3" class="bx-new"/>
+<text x="490" y="35" text-anchor="middle" class="lbh" fill="#3d6b30">NOWE SKOJARZENIE</text>
+<text x="490" y="50" text-anchor="middle" class="lb" fill="#1a4a1a">„bezpieczny"</text>
+<text x="490" y="68" text-anchor="middle" class="lbs">Powstałe z ekspozycji</text>
+<text x="490" y="80" text-anchor="middle" class="lbs">i naruszenia oczekiwania.</text>
+<text x="490" y="92" text-anchor="middle" class="lbs">Stopniowo coraz silniejsze.</text>
+<path d="M400 65 Q360 90 332 115" stroke="#3d6b30" stroke-width="1.5" fill="none" marker-end="url(#ar2)"/>
+<text x="370" y="105" class="lbs" font-style="italic">rośnie z czasem</text>
+
+<!-- Wzmacniacze (dół lewo) -->
+<rect x="20" y="180" width="180" height="55" rx="3" class="bx2"/>
+<rect x="20" y="180" width="180" height="14" rx="3" fill="#3d6b30"/>
+<text x="110" y="190" text-anchor="middle" class="lbh" fill="#fff">WZMACNIA NOWE</text>
+<text x="110" y="208" text-anchor="middle" class="lbs">• różne konteksty</text>
+<text x="110" y="220" text-anchor="middle" class="lbs">• naruszenie oczekiwania</text>
+<text x="110" y="232" text-anchor="middle" class="lbs">• okazjonalne powtórki</text>
+
+<!-- Zagrożenia (dół prawo) -->
+<rect x="400" y="180" width="180" height="55" rx="3" class="bx2"/>
+<rect x="400" y="180" width="180" height="14" rx="3" fill="#b8693f"/>
+<text x="490" y="190" text-anchor="middle" class="lbh" fill="#fff">OŻYWIA STARE</text>
+<text x="490" y="208" text-anchor="middle" class="lbs">• upływ czasu (spontaniczny powrót)</text>
+<text x="490" y="220" text-anchor="middle" class="lbs">• nowy kontekst (renewal)</text>
+<text x="490" y="232" text-anchor="middle" class="lbs">• stres (reinstatement)</text>
+
+<defs><marker id="ar2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0, 6 3, 0 6" fill="#1c2620"/></marker></defs>
+</svg>
+</div>
+<div class="foot">
+<span><strong>Kompendium Narzędzi Terapeutycznych · Fobia specyficzna · lineart v2</strong></span>
+<span class="pg-num">str. 1 / 2</span>
+</div>
+</div><div class="page"><div class="sec" style="margin-top:0">
+<h2 class="sec-h"><span class="num">02</span><svg class="ico-svg ico-sage"><use href="#i-scale"/></svg> Stary model vs nowy &mdash; jak to zmienia praktykę</h2>
+
+<table class="work-table" style="margin-top:4px;font-size:8.5pt">
+<thead>
+<tr>
+<th style="width:22%">Element</th>
+<th style="width:39%">Stary model (habituacja)</th>
+<th style="width:39%">Nowy model (uczenie hamujące)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="col-divider" style="font-family:'Fraunces';font-style:italic;color:#3d6b30;font-weight:500;height:11mm !important;padding-top:2mm">Cel ekspozycji</td>
+<td class="col-divider" style="height:11mm !important;padding-top:2mm">Spadek SUDS, „aż lęk minie".</td>
+<td class="col-divider" style="height:11mm !important;padding-top:2mm">Naruszenie oczekiwania &mdash; sprawdzenie, że katastrofa nie nadeszła.</td>
+</tr>
+<tr>
+<td style="font-family:'Fraunces';font-style:italic;color:#3d6b30;font-weight:500;height:11mm !important;padding-top:2mm">Kiedy kończyć sesję</td>
+<td style="height:11mm !important;padding-top:2mm">Gdy SUDS spadnie o 50%.</td>
+<td style="height:11mm !important;padding-top:2mm">Gdy oczekiwanie zostało wyraźnie obalone &mdash; nawet jeśli lęk pozostaje wysoki.</td>
+</tr>
+<tr>
+<td class="col-divider" style="font-family:'Fraunces';font-style:italic;color:#3d6b30;font-weight:500;height:11mm !important;padding-top:2mm">Powtarzalność</td>
+<td class="col-divider" style="height:11mm !important;padding-top:2mm">Identyczne powtórzenia, aż reakcja zniknie.</td>
+<td class="col-divider" style="height:11mm !important;padding-top:2mm">Zmienne konteksty (lokalizacja, pora, towarzystwo) &mdash; <em>generalizacja</em>.</td>
+</tr>
+<tr>
+<td style="font-family:'Fraunces';font-style:italic;color:#3d6b30;font-weight:500;height:11mm !important;padding-top:2mm">Czy stare wraca?</td>
+<td style="height:11mm !important;padding-top:2mm">Po wygaszeniu &mdash; nie powinno.</td>
+<td style="height:11mm !important;padding-top:2mm">Tak, w pewnych warunkach (czas, nowy kontekst, stres). Plan profilaktyki nawrotu jest standardem.</td>
+</tr>
+<tr>
+<td class="col-divider" style="font-family:'Fraunces';font-style:italic;color:#3d6b30;font-weight:500;height:11mm !important;padding-top:2mm">Sygnały bezpieczeństwa</td>
+<td class="col-divider" style="height:11mm !important;padding-top:2mm">Akceptowane, jeśli pomagają wytrzymać.</td>
+<td class="col-divider" style="height:11mm !important;padding-top:2mm">Stopniowo usuwane &mdash; inaczej nowe skojarzenie jest <em>warunkowe</em>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sec" style="margin-top:6px">
+<h2 class="sec-h"><span class="num">03</span><svg class="ico-svg ico-sage"><use href="#i-target"/></svg> Co z tego wynika dla mnie &mdash; cztery konsekwencje</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px;font-size:8.8pt;line-height:1.45">
+
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px">
+<div style="font-family:'DM Sans';font-size:7.5pt;letter-spacing:0.08em;color:#1c2620;font-weight:700;text-transform:uppercase;margin-bottom:2px">1 · Lęk nie musi zniknąć</div>
+Ekspozycja może być udana <em>nawet jeśli</em> lęk pozostaje wysoki przez całą sesję. Liczy się sprawdzenie, czy katastrofa się dzieje &mdash; nie czy poczułem/-am się lepiej.
+</div>
+
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px">
+<div style="font-family:'DM Sans';font-size:7.5pt;letter-spacing:0.08em;color:#1c2620;font-weight:700;text-transform:uppercase;margin-bottom:2px">2 · Konteksty się liczą</div>
+Sama ekspozycja w gabinecie nie wystarczy. Te same kroki w domu, na ulicy, przy różnych porach &mdash; budują trwałe nowe skojarzenie.
+</div>
+
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px">
+<div style="font-family:'DM Sans';font-size:7.5pt;letter-spacing:0.08em;color:#1c2620;font-weight:700;text-transform:uppercase;margin-bottom:2px">3 · Powrót lęku ≠ klęska</div>
+Stare skojarzenie żyje w pamięci. Okazjonalny powrót lęku po stresie, w nowym miejscu &mdash; <em>normalne</em>. To nie znaczy, że terapia nie zadziałała.
+</div>
+
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px">
+<div style="font-family:'DM Sans';font-size:7.5pt;letter-spacing:0.08em;color:#1c2620;font-weight:700;text-transform:uppercase;margin-bottom:2px">4 · Powtórki co kilka tygodni</div>
+Po zakończeniu terapii &mdash; <em>okazjonalna</em> ekspozycja co 2–4 tygodnie. 5–10 minut wystarczy, żeby utrzymać nowe skojarzenie w przewadze nad starym.
+</div>
+
+</div>
+</div>
+<div class="callout" style="margin-top:8px">
+<strong>Klucz:</strong> Nie trenujesz <em>zapomnienia</em> strachu &mdash; trenujesz <em>nową ścieżkę</em>, która z czasem staje się dominująca. Stare skojarzenie pozostaje cichą rezerwą, gotową się obudzić w sprzyjających warunkach (po długiej przerwie, w nowym kontekście, po stresie). Dlatego terapia fobii to nie pojedyncze wydarzenie, tylko proces budowania <em>i podtrzymywania</em> nowej sieci skojarzeń.
+</div>
+<div class="foot">
+<span><strong>Kompendium Narzędzi Terapeutycznych · Fobia specyficzna · lineart v2</strong></span>
+<span class="pg-num">str. 2 / 2</span>
+</div>
+</div></body></html>

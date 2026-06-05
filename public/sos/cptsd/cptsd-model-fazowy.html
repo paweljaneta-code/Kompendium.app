@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Trzy fazy leczenia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.faza-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.faza-card:hover, .faza-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.faza-card.picked .faza-h, .faza-card.picked .faza-desc, .faza-card.picked .faza-meta { color: var(--bg) !important; }
+.faza-card.picked .faza-meta { color: rgba(244,241,234,0.85) !important; }
+.faza-h { font-family: 'Fraunces', serif; font-size: 16px; color: var(--sage-deep); font-weight: 600; margin-bottom: 6px; }
+.faza-meta { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
+.faza-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+.faza-desc strong { color: var(--ink); font-weight: 600; }
+
+.crit-list { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+.crit-list h5 { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage-deep); margin-bottom: 6px; }
+.crit-list ul { list-style: none; padding-left: 0; margin: 0; }
+.crit-list li { font-size: 12.5px; color: var(--ink-soft); line-height: 1.55; padding: 3px 0 3px 18px; position: relative; }
+.crit-list li::before { content: '✓'; position: absolute; left: 0; color: var(--sage-deep); font-weight: 700; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Trzy fazy leczenia</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ====== KROK 1 — WPROWADZENIE ====== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Trzy fazy leczenia <em>złożonej traumy</em></h1>
+    <p class="card-detail">Trójfazowy model Judith Herman (1992) jest fundamentem nowoczesnej traumatologii — a wytyczne ISTSS (2019) potwierdzają go jako <strong>standard postępowania</strong> dla C-PTSD. W odróżnieniu od PTSD, gdzie można od razu przejść do ekspozycji na traumę, w C-PTSD najpierw potrzebna jest stabilizacja. Bez niej przetwarzanie traumy <em>destabilizuje</em>: pogłębia dysocjację, wybucha kryzys, terapia kończy się porzuceniem.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Trzy fazy modelu Herman (1992)</div>
+      <div class="element-row">
+        <span class="element-icon">🌱</span>
+        <span class="element-text"><strong>Faza 1 — bezpieczeństwo i stabilizacja</strong> — budowanie umiejętności regulacji, okna tolerancji, zasobów. Czas: 6 miesięcy do wielu lat. Bez presji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔁</span>
+        <span class="element-text"><strong>Faza 2 — przetwarzanie traumy</strong> — praca z pamięcią urazową (EMDR, IFS, STAIR, Schema). <em>Tylko</em> gdy Faza 1 jest stabilna. Wolniejsze tempo niż w PTSD.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🤝</span>
+        <span class="element-text"><strong>Faza 3 — integracja i powrót do życia</strong> — żałoba po utraconych latach, odbudowa tożsamości, relacji, sensu. Posttraumatic growth jako naturalny owoc.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔄</span>
+        <span class="element-text"><strong>Fazy nie są liniowe</strong> — pacjent może oscylować, wracać z 2 do 1 po destabilizacji. To normalne, nie regres.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Pierwszym zadaniem leczenia jest ustanowienie bezpieczeństwa. Bez tego — nic. Z nim — wszystko jest możliwe.”
+      <span class="frame-quote-attr">— Judith Herman (1992, Trauma and Recovery — parafraza)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: w fazie 1 nie chodzi o „przygotowanie do prawdziwej terapii” — Faza 1 <em>jest</em> prawdziwą terapią. Wielu klientów potrzebuje głównie Fazy 1 i to wystarcza dla znaczącej redukcji cierpienia. Stabilizacja jest celem terapeutycznym sama w sobie.</div>
+
+    <div class="src">Herman (1992, Trauma and Recovery); Cloitre i in. (2011, ekspertów panel); ISTSS (2019, Expert Consensus Guidelines); Briere, Scott (2015, Principles of Trauma Therapy); Cloitre, Petkova, Wang, Lassell (2010, RCT STAIR + PE)</div>
+  </section>
+
+  <!-- ====== KROK 2 — TWOJA POZYCJA ====== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja pozycja w modelu</div>
+    <h1 class="card-prompt">W której <em>fazie</em> jesteś?</h1>
+    <p class="card-detail">Każda faza ma swoje wskaźniki — zewnętrzne (zachowanie, codzienne życie) i wewnętrzne (relacja z emocjami, ciałem, pamięcią). Wybierz fazę, która <strong>najbliższa</strong> opisuje, gdzie teraz jesteś.</p>
+
+    <div class="faza-card" id="fazaA" onclick="this.classList.toggle('picked')">
+      <div class="faza-meta">Faza 1 · Stabilizacja</div>
+      <div class="faza-h">🌱 Buduję bezpieczeństwo</div>
+      <div class="faza-desc">Codzienne życie wciąż wymaga energii. Mogę być przytłoczony/a emocjami, dysocjuję pod stresem, wybucham lub odrętwieję. Pracuję nad podstawami: sen, jedzenie, ruch, regulacja oddechu, kotwiczenie sensoryczne. Rzadko wracam do wspomnień traumatycznych — bo wciąż <strong>nie wytrzymuję</strong> ich aktywacji.</div>
+    </div>
+
+    <div class="faza-card" id="fazaB" onclick="this.classList.toggle('picked')">
+      <div class="faza-meta">Faza 2 · Przetwarzanie</div>
+      <div class="faza-h">🔁 Pracuję z pamięcią</div>
+      <div class="faza-desc">Mam stabilną relację terapeutyczną i co najmniej 3–5 sprawdzonych technik regulacji. Codzienne życie jest funkcjonalne. Wchodzę w trudny materiał i wychodzę z niego w ciągu sesji, zachowując okno tolerancji. Z terapeutą pracujemy z konkretnymi wspomnieniami (EMDR, IFS, STAIR), wybranymi schematami, częściami siebie.</div>
+    </div>
+
+    <div class="faza-card" id="fazaC" onclick="this.classList.toggle('picked')">
+      <div class="faza-meta">Faza 3 · Integracja</div>
+      <div class="faza-h">🤝 Wracam do życia</div>
+      <div class="faza-desc">Dawne wspomnienia tracą ostrość. Nie definiują mnie już. Buduję nowe relacje, plany, wartości. Pracuję nad pytaniem „kim jestem <em>poza</em> traumą?”. Czasem żałoba — za stratą lat, dzieciństwa, szansy. Czasem wzrost — sens, wartości, dawanie z tego, co przeszłem/przeszłam. Terapia rzadziej, czasem grupowa.</div>
+    </div>
+
+    <div class="faza-card" id="fazaD" onclick="this.classList.toggle('picked')">
+      <div class="faza-meta">Między fazami · oscylacja</div>
+      <div class="faza-h">🔄 Czasem 1, czasem 2</div>
+      <div class="faza-desc">Zwykle radzę sobie, ale w trudniejszych okresach (kryzys, choroba, strata) wracam do destabilizacji. To nie regres — to normalne. Plan terapeutyczny przewiduje takie ruchy. W razie aktywacji — wracam do narzędzi z Fazy 1 (regulacja, kotwica, wsparcie).</div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła samooceny</strong>: jeśli wahasz się między dwiema fazami — wybierz <em>niższą</em>. Nadszacowanie własnej gotowości jest najczęstszym powodem, dla którego praca z traumą zawodzi. Spokojna Faza 1 to mocniejszy fundament niż przedwczesna Faza 2.</div>
+  </section>
+
+  <!-- ====== KROK 3 — KRYTERIA PRZEJŚCIA ====== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Kryteria przejścia 1 → 2</div>
+    <h1 class="card-prompt">Czy <em>gotowy/a</em> na fazę 2?</h1>
+    <p class="card-detail">Cloitre i wsp. (2011) na podstawie ekspertów panel definiują kryteria gotowości do przetwarzania traumy. Sprawdź każde — im więcej spełnionych, tym bezpieczniejsza praca z pamięcią urazową.</p>
+
+    <div class="crit-list">
+      <h5>Pięć kryteriów gotowości do Fazy 2</h5>
+      <ul>
+        <li>Stabilna relacja terapeutyczna (≥3 miesiące, alianse robocze)</li>
+        <li>Posiadasz 3–5 sprawdzonych technik regulacji emocji (oddech, kotwica, miejsce bezpieczne)</li>
+        <li>Brak aktywnych zachowań autodestrukcyjnych (samookaleczenia, próby, czynne uzależnienie)</li>
+        <li>Funkcjonujesz w codziennym życiu (sen, jedzenie, podstawowe role)</li>
+        <li>Możesz wejść w trudny materiał i z niego wyjść w ciągu sesji bez dekompensacji</li>
+      </ul>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;">Oceń własną gotowość na każdym z pięciu kryteriów. Skala 0 (zupełnie nie) — 10 (w pełni spełnione).</p>
+
+    <div class="scale">
+      <div class="scale-title">Stabilna relacja terapeutyczna</div>
+      <input type="range" class="scale-input" id="kr1" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="kr1Val">5</span></div>
+    </div>
+    <div class="scale">
+      <div class="scale-title">Sprawdzone techniki regulacji emocji</div>
+      <input type="range" class="scale-input" id="kr2" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="kr2Val">5</span></div>
+    </div>
+    <div class="scale">
+      <div class="scale-title">Brak aktywnych zachowań autodestrukcyjnych</div>
+      <input type="range" class="scale-input" id="kr3" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="kr3Val">5</span></div>
+    </div>
+    <div class="scale">
+      <div class="scale-title">Funkcjonowanie w codziennym życiu</div>
+      <input type="range" class="scale-input" id="kr4" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="kr4Val">5</span></div>
+    </div>
+    <div class="scale">
+      <div class="scale-title">Wchodzenie i wychodzenie z trudnego materiału w sesji</div>
+      <input type="range" class="scale-input" id="kr5" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="kr5Val">5</span></div>
+    </div>
+
+    <div class="term-note"><strong>💡 Reguła</strong>: jeśli średnia z pięciu kryteriów jest poniżej 6, prawdopodobnie potrzebujesz więcej Fazy 1 zanim zaczniesz pracę z konkretnymi wspomnieniami. To nie jest opóźnienie — to inwestycja w bezpieczeństwo.</div>
+  </section>
+
+  <!-- ====== KROK 4 — PLAN BIEŻĄCY ====== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Twój plan na ten miesiąc</div>
+    <h1 class="card-prompt">Co <em>robisz</em> najbliższe 4 tygodnie?</h1>
+    <p class="card-detail">Każda faza ma swoje cele i metody. Zaplanuj konkretnie, co będziesz pielęgnować w ciągu najbliższego miesiąca — z odniesieniem do swojej fazy z kroku 2.</p>
+
+    <p class="card-detail"><strong>Cel główny tego miesiąca</strong> (1 zdanie):</p>
+    <textarea class="thought-input" id="celMies" placeholder="np. Faza 1: „Codzienna praktyka oddechu 4-7-8 i regularny sen 7h.” / Faza 2: „Pracujemy z terapeutką nad jednym wybranym wspomnieniem przez EMDR.”" rows="3"></textarea>
+
+    <p class="card-detail"><strong>Metryki postępu</strong> (jak poznasz, że idzie?):</p>
+    <textarea class="thought-input" id="metryki" placeholder="np. „Dziennik snu pokaże 7+ h przez 5/7 nocy. Skala czujności (PCL-5) niższa o 5 pkt po 4 tygodniach.”" rows="3"></textarea>
+
+    <p class="card-detail"><strong>Co cię może zrzucić z toru?</strong> Pułapki, sytuacje wyzwalające, znane słabe punkty.</p>
+    <textarea class="thought-input" id="pulapki" placeholder="np. „Spotkania rodzinne w święta — przygotowuję plan ucieczki i wsparcie. Zmiany w pracy — pilnuję snu.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: plan na piśmie zwiększa szansę realizacji o ok. 40% (Gollwitzer 1999, badania nad implementation intentions). Cel ogólny <em>chcę być stabilniejszy/a</em> nie działa. Cel konkretny <em>codziennie 5 minut oddechu po przebudzeniu, 5 minut przed snem</em> — działa. Spisz, pokaż terapeucie, oceniajcie razem co miesiąc.</div>
+  </section>
+
+  <!-- ====== KROK 5 — PODSUMOWANIE ====== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Twoja mapa fazowa</div>
+    <h1 class="card-prompt">Co <em>wynosisz</em>?</h1>
+    <p class="card-detail">Podsumowanie diagnostyczne na podstawie Twoich odpowiedzi. To dokument do dzielenia się z terapeutą — wspólny plan.</p>
+
+    <div class="final-msg" id="finalMsg">
+      Wynik pojawi się tu po wypełnieniu kroków.
+    </div>
+
+    <div class="term-note"><strong>📐 Reguła kalibracji</strong>: powtarzaj tę ocenę co 3 miesiące z terapeutą. Postęp w C-PTSD jest <em>nielinearny</em>. Niektóre miesiące dają wielkie skoki, inne wyglądają jak stagnacja — a tak naprawdę utrwala się to, co już wypracowane. Cierpliwość wobec siebie nie jest opcją; jest narzędziem.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Trzy fazy nie są drabiną — są <strong>trzema rejestrami pracy</strong>, między którymi możesz się przemieszczać. Faza 1 nie jest „przygotowaniem” do prawdziwej terapii; <em>jest</em> prawdziwą terapią. Bez stabilizacji praca z traumą destabilizuje. <strong>Stabilność najpierw — zawsze.</strong></div>
+    </div>
+
+    <div class="src">Herman (1992, Trauma and Recovery); Cloitre i in. (2011, ekspertów panel); ISTSS (2019, Guidelines); Briere, Scott (2015); Cloitre i in. (2010, RCT STAIR); Gollwitzer (1999, implementation intentions); van der Kolk (2014)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateScaleVal(id) {
+  var el = document.getElementById(id);
+  var out = document.getElementById(id + 'Val');
+  if (el && out) out.textContent = el.value;
+}
+['kr1','kr2','kr3','kr4','kr5'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', function(){ updateScaleVal(id); });
+});
+
+function getFazaPicked() {
+  var faz = [
+    {id:'fazaA', name:'Faza 1 · Stabilizacja'},
+    {id:'fazaB', name:'Faza 2 · Przetwarzanie'},
+    {id:'fazaC', name:'Faza 3 · Integracja'},
+    {id:'fazaD', name:'Oscylacja między 1 a 2'}
+  ];
+  return faz.filter(function(f){
+    var el = document.getElementById(f.id);
+    return el && el.classList.contains('picked');
+  });
+}
+
+function renderFinal() {
+  var picked = getFazaPicked();
+  var srednia = ['kr1','kr2','kr3','kr4','kr5'].map(function(id){
+    var el = document.getElementById(id);
+    return el ? parseFloat(el.value) : 5;
+  }).reduce(function(a,b){return a+b;},0) / 5;
+
+  var msg = '';
+  if (picked.length === 0) {
+    msg = 'Nie wybrano fazy w kroku 2. Wróć i wybierz tę, która <em>najbliższa</em> opisuje Twoją obecną sytuację.';
+  } else {
+    var fazaName = picked.map(function(p){return p.name;}).join(' + ');
+    msg = '<strong>Twoja samoocena:</strong> ' + fazaName + '.<br>';
+    msg += '<strong>Średnia gotowości do Fazy 2:</strong> ' + srednia.toFixed(1) + ' / 10.<br><br>';
+    if (srednia < 6) {
+      msg += '<em>Wynik &lt; 6</em> — kontynuuj Fazę 1. Praca z konkretnym wspomnieniem traumy w tym momencie ryzykuje destabilizację. Skup się na regulacji, zasobach, relacji terapeutycznej.';
+    } else if (srednia < 8) {
+      msg += '<em>Wynik 6–8</em> — gotowość częściowa. Dobrze rozważyć z terapeutą, czy zacząć łagodne przetwarzanie (np. STAIR, IFS) zachowując odwrót do Fazy 1 w razie destabilizacji.';
+    } else {
+      msg += '<em>Wynik ≥ 8</em> — gotowość do Fazy 2. Wybór modalności (EMDR, IFS, Schema, CPT zaadaptowane) zależy od typu pamięci i preferencji. Tempo wciąż wolniejsze niż w PTSD prostym.';
+    }
+  }
+  var el = document.getElementById('finalMsg');
+  if (el) el.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) renderFinal();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_cptsd_model_fazowy — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_cptsd_model_fazowy";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['kr1','kr2','kr3','kr4','kr5'].forEach(function(id){ updateScaleVal(id); });
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

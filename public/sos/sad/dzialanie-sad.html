@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Działanie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === COMPASS-LIST === */
+.compass-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 14px; }
+.compass-card { background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s; text-align: left; font-family: inherit; }
+.compass-card:hover, .compass-card:active { background: rgba(122,146,112,0.06); border-color: var(--sage-deep); }
+.compass-card.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.compass-icon { font-size: 22px; margin-bottom: 4px; }
+.compass-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.compass-sub { font-size: 11px; color: var(--ink-mute); line-height: 1.3; }
+
+/* === STEP-LADDER (krok 3) === */
+.ladder-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.ladder-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.ladder-row { display: flex; gap: 12px; padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; margin-bottom: 8px; align-items: flex-start; }
+.ladder-row:last-child { margin-bottom: 0; }
+.ladder-num { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--warm); flex-shrink: 0; line-height: 1.2; min-width: 30px; }
+.ladder-text { font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); flex: 1; }
+.ladder-text strong { color: var(--bg); }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === COMMIT-CARD === */
+.commit-card { background: linear-gradient(135deg, rgba(201,122,82,0.08), rgba(240,214,196,0.4)); border: 1.5px solid var(--warm); border-radius: 14px; padding: 16px 18px; margin: 6px 0 14px; }
+.commit-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 10px; }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Działanie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Zaangażowane <em>działanie</em></h1>
+    <p class="card-detail"><strong>Zaangażowane działanie</strong> (Hayes, Strosahl, Wilson 1999) — szósty filar <strong>ACT</strong> (Acceptance and Commitment Therapy — terapia akceptacji i zaangażowania) i fundamentalny mechanizm zmiany w SAD. Po zidentyfikowaniu wartości (kompas) musi przyjść <em>ruch w ich stronę</em> — w obecności lęku, nie po jego ustąpieniu. <strong>Aktywizacja behawioralna</strong> (behavioral activation, BA, Martell i in. 2010) dodaje konkret: <em>najmniejszy obserwowalny krok</em>. W SAD każde uniknięcie wzmacnia lęk; każde podejście — z dobrze zaprojektowanym mikrokrokiem — <em>osłabia go o 5–10%</em> (Hofmann i Smits 2008, meta-analiza).</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy zaangażowane działanie</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Cel</strong> = <em>nie</em> „nie czuć lęku”. <em>Tak</em>: „zadzwonić do brata w ciągu 24h”</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📏</span>
+          <span class="element-text"><strong>Mikrokrok</strong> = najmniejszy ruch, którego <em>nie odłożysz</em> jutro</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📅</span>
+          <span class="element-text"><strong>Konkret</strong> = data, godzina, miejsce. „W tym tygodniu” = nigdy</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🤝</span>
+          <span class="element-text"><strong>Zobowiązanie</strong> = ktoś wie i sprawdza, czy zrobiłeś</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Wiesz, że wartości są twoje, kiedy <em>działasz</em> w ich stronę — z lękiem albo bez.”
+        <span class="frame-quote-attr">— Russ Harris (2009, ACT Made Simple)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w SAD pacjenci często „przygotowują się” do działania — czytają, planują, oglądają. To jest <em>unikanie z dobrym opakowaniem</em>. Zaangażowane działanie zaczyna się od <strong>realnej akcji</strong>, nie kolejnej fazy przygotowań. Mózg uczy się tylko z behawioralnego doświadczenia.</div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999) · Harris (2009) · Martell, Dimidjian, Herman-Dunn (2010, BA) · Hofmann i Smits (2008, meta-analiza CBT for SAD)</div>
+  </section>
+  <!-- 2: WYBIERZ OBSZAR -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Wybierz obszar</div>
+    <h1 class="card-prompt">Gdzie <em>najbardziej</em> potrzebujesz ruchu?</h1>
+    <p class="card-detail">Wybierz <strong>JEDEN</strong> obszar, w którym lęk społeczny najbardziej blokuje działanie. Skupienie = wykonalność. Próba pracy w 4 obszarach naraz = brak ruchu w żadnym.</p>
+    
+    <div class="term-note"><strong>Reguła konkretu</strong>: <em>nie</em> „chcę być bardziej towarzyski”. <em>Tak</em>: „chcę raz w tygodniu spotkać się z kimś z mojego kręgu”. Wartość konkretna jest <strong>weryfikowalna</strong>. Wartość ogólna pozostaje hasłem.</div>
+    
+    <div class="compass-list">
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">💞</div>
+        <div class="compass-name">Bliska osoba</div>
+        <div class="compass-sub">Partner/ka, rodzic, brat/siostra, przyjaciel</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">🤝</div>
+        <div class="compass-name">Krąg znajomych</div>
+        <div class="compass-sub">Stare znajomości, grupa, spotkania</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">🆕</div>
+        <div class="compass-name">Nowa znajomość</div>
+        <div class="compass-sub">Pierwsza rozmowa, networking, randka</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">💼</div>
+        <div class="compass-name">Praca — koledzy</div>
+        <div class="compass-sub">Zespół, lunch, pogawędka, projekt</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">🎤</div>
+        <div class="compass-name">Praca — głos</div>
+        <div class="compass-sub">Spotkania, prezentacje, propozycje</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">⬆️</div>
+        <div class="compass-name">Praca — szef</div>
+        <div class="compass-sub">Rozmowa, prośba, informacja zwrotna, awans</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">🎓</div>
+        <div class="compass-name">Edukacja, hobby</div>
+        <div class="compass-sub">Kurs, warsztat, klub, grupa zainteresowań</div>
+      </button>
+      <button class="compass-card" onclick="pickArea(this)">
+        <div class="compass-icon">🛒</div>
+        <div class="compass-name">Codzienne sytuacje</div>
+        <div class="compass-sub">Sklep, urząd, lekarz, restauracja</div>
+      </button>
+    </div>
+    
+    <div class="examples-h">Twoja konkretna wartość w wybranym obszarze</div>
+    <textarea class="thought-input" id="valueInput" placeholder="np. „Chcę być obecnym w życiu mojego brata, nie tylko na święta. Bliskość rodzeństwa jest dla mnie ważna” / „Chcę być widoczna jako kompetentna na spotkaniach zespołu”..." rows="3"></textarea>
+  </section>
+  <!-- 3: DRABINA MIKROKROKÓW -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Drabina mikrokroków</div>
+    <h1 class="card-prompt">Co jest <em>najmniejszym</em> krokiem?</h1>
+    <p class="card-detail">Reguła SMART + reguła Martella: krok musi być tak <strong>mały</strong>, że nawet w lęku 8/10 dasz radę. Lepiej krok wykonany = 1, niż krok ambitny = 0. Sukces buduje się <strong>na efekcie domina</strong>: każdy mały krok rozluźnia mózg, otwiera kolejny.</p>
+    
+    <div class="term-note"><strong>Test wykonalności</strong>: jeśli mikrokrok powoduje lęk powyżej <em>6/10</em>, to <strong>za dużo</strong>. Zejdź niżej. Jeśli powoduje poniżej <em>3/10</em> — za mało, nie zbuduje doświadczenia. Cel: lęk 4-6/10. To <em>strefa rozwoju</em> — wystarczy dyskomfortu, żeby mózg się uczył.</div>
+    
+    <div class="ladder-card">
+      <div class="ladder-h">Drabina od mikrokroku do pełnej wartości — przykład „bliskość z bratem”</div>
+      <div class="ladder-row">
+        <span class="ladder-num">1.</span>
+        <span class="ladder-text"><strong>Najmniejszy</strong>: wysłać mu jeden SMS dziś (np. „cześć, jak tam tydzień?”). Czas: 2 min. Lęk: 3/10.</span>
+      </div>
+      <div class="ladder-row">
+        <span class="ladder-num">2.</span>
+        <span class="ladder-text"><strong>Mały</strong>: zadzwonić w niedzielę na 15 min. Czas: 15 min. Lęk: 5/10.</span>
+      </div>
+      <div class="ladder-row">
+        <span class="ladder-num">3.</span>
+        <span class="ladder-text"><strong>Średni</strong>: zaproponować kawę za 2 tygodnie. Czas: 1 godz. Lęk: 6/10.</span>
+      </div>
+      <div class="ladder-row">
+        <span class="ladder-num">4.</span>
+        <span class="ladder-text"><strong>Duży</strong>: regularne spotkania raz w miesiącu. Czas: cykl. Lęk: 5/10 (spada z czasem).</span>
+      </div>
+      <div class="ladder-row">
+        <span class="ladder-num">5.</span>
+        <span class="ladder-text"><strong>Pełna wartość</strong>: bliska, spontaniczna relacja. Lęk: 2/10.</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twój najmniejszy krok — w wybranym obszarze (z kroku 2)</div>
+    <textarea class="thought-input" id="microStep" placeholder="np. „Jutro o 9:00 wyślę SMS do brata: ”Cześć, jak tam tydzień?„” / „Na poniedziałkowym spotkaniu zespołu zadam jedno pytanie do prezentującego”..." rows="3"></textarea>
+    
+    <div class="examples-h">Skala lęku przed tym mikrokrokiem</div>
+    <div class="scale-card" style="margin:6px 0 0">
+      <div class="scale-label"><span>Spokój</span><span>Maksimum</span></div>
+      <input type="range" min="0" max="10" value="4" class="scale-input" id="microAnx" oninput="updateMicro(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="microAnxVal">4</span><span> / 10</span></div>
+    </div>
+  </section>
+  <!-- 4: ZOBOWIĄZANIE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Zobowiązanie</div>
+    <h1 class="card-prompt">Komu <em>powiesz</em>?</h1>
+    <p class="card-detail"><strong>Publiczne zobowiązanie</strong> (public commitment, Cialdini, Influence) zwiększa wykonanie o <em>~40%</em>. Nie chodzi o „pochwalenie się” — chodzi o <strong>zewnętrzną kontrolę</strong>. Mózg w SAD jest mistrzem racjonalizowania unikania („dziś nie dam rady”). Trzeci ktoś, kto wie, blokuje tę racjonalizację.</p>
+    
+    <div class="term-note"><strong>Pułapka</strong>: zobowiązanie <em>tylko sobie</em> = w SAD zwykle nie wystarcza. Mózg ma zbyt sprawne mechanizmy odraczania. Jeśli „zaangażowane działanie” nie ma <strong>zewnętrznego świadka</strong>, jest abstrakcją. Tym świadkiem nie musi być terapeuta — może być partner, przyjaciel, kolega.</div>
+    
+    <div class="commit-card">
+      <div class="commit-h">Sekwencja konkretnego zobowiązania</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="padding:10px 12px;background:rgba(255,255,255,0.5);border-radius:6px;font-size:12.5px;line-height:1.5;color:var(--ink)"><strong>1. CO</strong> — twój mikrokrok z kroku 3 (konkret)</div>
+        <div style="padding:10px 12px;background:rgba(255,255,255,0.5);border-radius:6px;font-size:12.5px;line-height:1.5;color:var(--ink)"><strong>2. KIEDY</strong> — data + godzina (nie „w tym tygodniu”)</div>
+        <div style="padding:10px 12px;background:rgba(255,255,255,0.5);border-radius:6px;font-size:12.5px;line-height:1.5;color:var(--ink)"><strong>3. KOMU</strong> — wybierz osobę (terapeuta, partner/ka, przyjaciel, grupa wsparcia)</div>
+        <div style="padding:10px 12px;background:rgba(255,255,255,0.5);border-radius:6px;font-size:12.5px;line-height:1.5;color:var(--ink)"><strong>4. JAK SPRAWDZI</strong> — „spytasz mnie w sobotę wieczorem, czy zrobiłem”</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoje pełne zobowiązanie</div>
+    <textarea class="thought-input" id="commitInput" placeholder="np. „Wyślę SMS do brata jutro między 9:00 a 12:00. Powiem o tym Annie dziś wieczorem — spyta mnie w sobotę, czy zrobiłem”..." rows="4"></textarea>
+    
+    <div class="examples-h">Stuknij, by dopisać</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useCommit(this)">Powiem terapeucie na sesji</div>
+      <div class="example-chip" onclick="useCommit(this)">Wyślę SMS partnerowi/ce z planem</div>
+      <div class="example-chip" onclick="useCommit(this)">Zapiszę w kalendarzu z alarmem</div>
+      <div class="example-chip" onclick="useCommit(this)">Powiem zaufanemu przyjacielowi</div>
+      <div class="example-chip" onclick="useCommit(this)">Napiszę na grupowym czacie</div>
+    </div>
+  </section>
+  <!-- 5: PLAN B — GDY LĘK WZROŚNIE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Plan B — gdy lęk wzrośnie</div>
+    <h1 class="card-prompt">A co jeśli <em>lęk zaatakuje</em>?</h1>
+    <p class="card-detail">Lęk wzrośnie. To <em>pewne</em>. Pytanie: czy masz <strong>plan akceptacji</strong>, nie planu walki. <strong>Gotowość</strong> (willingness, Hayes) — gotowość niesienia lęku w plecaku, dalszej drogi. Akceptacja, nie tłumienie.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: zaangażowane działanie <em>nie</em> jest aktem heroicznym — jest <strong>codzienną praktyką</strong>. Jeden mikrokrok dziennie przez miesiąc = 30 dowodów dla mózgu. Po 90 dniach <em>tożsamość</em> się zmienia: z „osoba unikająca” na „osoba która działa, nawet w lęku”.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Twoja gotowość do <em>akceptacji</em> lęku w trakcie kroku</div>
+      <div class="scale-label"><span>Walka</span><span>Pełna akceptacja</span></div>
+      <input type="range" min="0" max="10" value="6" class="scale-input" id="acceptance" oninput="updateAcc(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="accVal">6</span><span> / 10</span></div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">3 zdania, które powtarzasz, gdy lęk wzrośnie</div>
+    <textarea class="thought-input" id="copingPhrases" placeholder="np. „To tylko lęk. Nie znaczy, że jest niebezpiecznie” / „Idę z lękiem, nie po jego ustąpieniu” / „Mój brat to ważne. Lęk minie. Bliskość zostaje”"  rows="4"></textarea>
+    
+    <div class="examples-h">Co konkretnie zrobisz fizycznie, gdy poczujesz lęk 7+/10?</div>
+    <textarea class="thought-input" id="physicalAction" placeholder="np. „4-7-8 oddech (1 cykl), kotwica stopami, kontynuuję rozmowę” / „Zauważam lęk, nazywam go ”tu jest lęk„, wracam do rozmówcy”..." rows="3"></textarea>
+    
+    <div class="examples-h">Po wykonaniu kroku — sprawdź, jak było</div>
+    <input type="text" class="thought-input" id="afterRecord" placeholder="np. „Wykonałem o 9:30. Lęk maksymalnie 5/10, minął po 10 min. Brat odpisał ciepło. Zysk: bliskość”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Zaangażowane działanie nie polega na <em>braku lęku</em>. Polega na <strong>ruchu z lękiem</strong> w stronę wartości. Każdy mikrokrok wykonany <em>buduje dowód</em>, że dasz radę. Po 10–15 takich krokach mózg zaczyna kalibrować się od nowa: <strong>„mogę. Z lękiem mogę”</strong>.</div>
+    </div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999) · Harris (2009) · Martell, Dimidjian, Herman-Dunn (2010) · Hofmann i Smits (2008, meta-analiza CBT for SAD)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('valueInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('microStep'); if (el) el.value = ''; }
+    { const el = document.getElementById('commitInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('copingPhrases'); if (el) el.value = ''; }
+    { const el = document.getElementById('physicalAction'); if (el) el.value = ''; }
+    { const el = document.getElementById('afterRecord'); if (el) el.value = ''; }
+    { const el = document.getElementById('microAnx'); if (el) el.value = 4; }
+    { const el = document.getElementById('acceptance'); if (el) el.value = 6; }
+    document.querySelectorAll('.compass-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {}
+
+function pickArea(el) {
+  document.querySelectorAll('.compass-card').forEach(b => b.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function useCommit(el) {
+  const t = document.getElementById('commitInput');
+  if (t.value.trim()) t.value += '\n';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function updateMicro(v) { document.getElementById('microAnxVal').textContent = v; }
+function updateAcc(v) { document.getElementById('accVal').textContent = v; }
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel1 = '.compass-card';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-dzialanie-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c1: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.compass-card, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

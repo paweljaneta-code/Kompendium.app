@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Szachownica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — chessboard tone === */
+.frame-card { 
+  background: linear-gradient(135deg, #2c2620 0%, #1a1612 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ JESTEŚ PLANSZĄ, NIE FIGURĄ"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "♛"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.07; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; position: relative; z-index: 1; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === CHESSBOARD VISUAL === */
+.board-vis {
+  width: 100%; max-width: 240px; aspect-ratio: 1;
+  margin: 14px auto 8px;
+  position: relative; z-index: 1;
+}
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%; height: 100%;
+  border: 2px solid rgba(244,241,234,0.4);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.board-cell { position: relative; }
+.board-cell.light { background: rgba(244,241,234,0.12); }
+.board-cell.dark { background: rgba(28,38,32,0.6); }
+.board-piece {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(11px, 3vw, 16px);
+  line-height: 1;
+}
+.board-piece.white { color: rgba(244,241,234,0.85); }
+.board-piece.dark-piece { color: rgba(201,122,82,0.85); }
+
+/* === PIECES INPUT === */
+.pieces-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin: 8px 0 12px;
+}
+.pieces-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.pieces-card.white { border-left: 4px solid var(--sage-deep); background: rgba(122,146,112,0.06); }
+.pieces-card.dark { border-left: 4px solid var(--warm); background: rgba(201,122,82,0.05); }
+.pieces-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.pieces-icon { font-size: 18px; }
+.pieces-card.white .pieces-icon { color: var(--sage-deep); }
+.pieces-card.dark .pieces-icon { color: var(--warm); }
+.pieces-name { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; }
+.pieces-card.white .pieces-name { color: var(--sage-deep); }
+.pieces-card.dark .pieces-name { color: var(--warm); }
+.pieces-q { font-size: 11px; color: var(--ink-soft); font-style: italic; line-height: 1.3; margin-bottom: 6px; }
+.pieces-input {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 12.5px; color: var(--ink);
+  resize: none; min-height: 60px;
+}
+.pieces-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === PRACTICE === */
+.practice-card {
+  background: linear-gradient(135deg, rgba(28,38,32,0.04), rgba(122,146,112,0.08));
+  border: 2px solid var(--sage-soft);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 8px 0 12px;
+}
+.practice-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.practice-step {
+  display: grid; grid-template-columns: 24px 1fr;
+  gap: 10px; align-items: start;
+  margin-bottom: 10px;
+}
+.practice-num {
+  font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700;
+  color: var(--sage-deep); text-align: center;
+}
+.practice-text { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.practice-text strong { color: var(--ink); font-weight: 700; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Szachownica</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: METAPHOR FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Metafora ja-kontekstualnego</div>
+    <h1 class="card-prompt">Plansza, <em>nie figura</em></h1>
+    <p class="card-detail"><strong>Chessboard Metaphor</strong> (Hayes, Strosahl, Wilson 1999) — najsilniejsza metafora <em>ja kontekstualnego</em> w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). <em>Wyobraź sobie szachownicę. Białe figury — radość, pewność, spokój. Czarne — lęk, wstyd, złość. Próbujesz, żeby białe wygrały. To niemożliwe. Bo nie jesteś figurami — jesteś planszą</em>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Figury walczą. Plansza — trwa.</div>
+      
+      <div class="board-vis">
+        <div class="board-grid" id="board"></div>
+      </div>
+      
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">Iluzja figur</div>
+          <div class="frame-text">„<strong>Jestem</strong> moim lękiem". Tożsamość zlewa się z czarną figurą. Walka, by wygrały białe.</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">Prawda planszy</div>
+          <div class="frame-text">„<strong>Mam</strong> lęk — jestem przestrzenią, w której on się pojawia". Plansza nie jest zagrożona przez ruch figur.</div>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Plansza nie musi wygrać. Nie musi wybierać. Plansza po prostu <em>jest</em> — i obserwuje grę."
+      <span class="frame-quote-attr">— Hayes, Strosahl, Wilson (1999)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: większość strategii pracy z emocjami zakłada, że <em>jesteś jedną z figur</em> (najczęściej tą walczącą). Stąd: „<em>muszę pokonać lęk</em>", „<em>nie chcę być smutny</em>". Szachownica oferuje radykalnie inną perspektywę: <strong>jesteś kontekstem, w którym wszystko się rozgrywa</strong>. Stabilny. Nieporuszony przez ruchy figur.</div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999, ACT) · Hayes (2001, RFT)</div>
+  </section>
+
+  <!-- 2: WHITE + BLACK PIECES -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Twoje figury</div>
+    <h1 class="card-prompt">Białe <em>i czarne</em></h1>
+    <p class="card-detail">Wypisz figury <strong>obu kolorów</strong>. Białe — to, co <em>chcesz</em> czuć (radość, pewność, spokój). Czarne — to, z czym <em>walczysz</em> (lęk, wstyd, złość, smutek). Im uczciwsza lista, tym więcej pracy z metaforą.</p>
+    
+    <div class="pieces-row">
+      <div class="pieces-card white">
+        <div class="pieces-h">
+          <span class="pieces-icon">♔</span>
+          <span class="pieces-name">Białe figury</span>
+        </div>
+        <div class="pieces-q">Co <em>chcę</em> czuć/myśleć — czego oczekuję od siebie</div>
+        <textarea class="pieces-input" id="white" placeholder="np. „pewność siebie, spokój, radość, motywacja, jasność umysłu, miłość do siebie, akceptacja"..."></textarea>
+      </div>
+      
+      <div class="pieces-card dark">
+        <div class="pieces-h">
+          <span class="pieces-icon">♛</span>
+          <span class="pieces-name">Czarne figury</span>
+        </div>
+        <div class="pieces-q">Z czym <em>walczę</em> — czego nie chcę czuć</div>
+        <textarea class="pieces-input" id="black" placeholder="np. „lęk przed odrzuceniem, wstyd, myśl »nie jestem dość dobry/a«, smutek po stracie, gniew, zazdrość, samotność"..."></textarea>
+      </div>
+    </div>
+    
+    <div class="examples-h">Jak wygląda moja walka figur na co dzień</div>
+    <textarea class="thought-input" id="warDescription" placeholder="np. „próbuję stłumić lęk pewnością siebie, ale lęk wraca silniejszy" / „wymuszam radość, gdy jest mi smutno — w efekcie jestem fałszywie wesoły i wycieńczony"..." rows="3"></textarea>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: zauważ, że to ty <em>wymyśliłeś podział</em> na „białe" i „czarne". Lęk nazwałeś czarnym. Pewność siebie — białą. <strong>Plansza nie ma takich wartościowań</strong> — wszystkie figury są dla niej równe. Ten podział wytwarza walkę.</div>
+  </section>
+
+  <!-- 3: SHIFT TO BOARD PERSPECTIVE -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Zmiana perspektywy</div>
+    <h1 class="card-prompt">Bycie <em>planszą</em></h1>
+    <p class="card-detail">Praktyka 4-stopniowa, która przenosi cię z perspektywy figury do perspektywy planszy. <strong>Klucz: nie próbuj przestać czuć</strong>. Próbujesz <em>zauważyć obserwatora</em>, który był tu cały czas.</p>
+    
+    <div class="practice-card">
+      <div class="practice-h">Praktyka przeniesienia perspektywy (4 kroki)</div>
+      
+      <div class="practice-step">
+        <span class="practice-num">1</span>
+        <div class="practice-text"><strong>Zauważ figurę.</strong> Wybierz konkretną czarną figurę z poprzedniego kroku — np. „lęk przed prezentacją". Zlokalizuj ją w ciele: gdzie czujesz? Co robi?</div>
+      </div>
+      
+      <div class="practice-step">
+        <span class="practice-num">2</span>
+        <div class="practice-text"><strong>Zauważ białą figurę naprzeciw.</strong> Co próbuje pokonać czarną? „Pewność siebie", „racjonalna analiza", „pozytywne myślenie". Zauważ <em>walkę</em>.</div>
+      </div>
+      
+      <div class="practice-step">
+        <span class="practice-num">3</span>
+        <div class="practice-text"><strong>Cofnij się — zobacz całą szachownicę.</strong> Wyobraź sobie, że unosisz się ponad planszą. Widzisz białe i czarne, walczące. <em>Ty jesteś tym, kto patrzy</em>.</div>
+      </div>
+      
+      <div class="practice-step">
+        <span class="practice-num">4</span>
+        <div class="practice-text"><strong>Stań się planszą.</strong> Powiedz: „Jestem planszą. Figury się ruszają. Ja trwam. Walka odbywa się <em>na mnie</em>, ale ja nie jestem walką".</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Co poczułem/am podczas praktyki</div>
+    <textarea class="thought-input" id="practiceFelt" placeholder="np. „ulga, ale tylko na moment — szybko wciągnąłem się z powrotem w figury" / „pierwszy raz zobaczyłem, że jest we mnie coś niezagrożonego" / „trudno utrzymać perspektywę dłużej niż 30 sekund"..." rows="3"></textarea>
+    
+    <div class="term-note"><strong>Realistyczne oczekiwanie</strong>: w pierwszym tygodniu utrzymanie perspektywy planszy jest <em>chwilowe</em> — kilka sekund, potem znowu wciągasz się w figury. <strong>To jest normalne</strong>. Cel — nie ciągła plansza-mode, tylko <em>zwiększenie częstotliwości</em>, z jaką pamiętasz: „<em>jestem planszą</em>".</div>
+  </section>
+
+  <!-- 4: APPLICATION + PHRASE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Zastosowanie</div>
+    <h1 class="card-prompt">Twoja <em>fraza-kotwica</em></h1>
+    <p class="card-detail">Wybierz <strong>jedną sytuację z najbliższego tygodnia</strong>, w której zwykle wciągasz się w walkę figur. Stwórz krótką frazę, która przypomni: <em>jestem planszą</em>. Powtarzaj w trudnym momencie.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój kontekst zastosowania</div>
+      
+      <div class="commit-prompt-label">Sytuacja w tym tygodniu, w której zwykle walczę z figurami</div>
+      <textarea class="thought-input" id="situation" placeholder="np. „prezentacja w środę — zwykle walczę z lękiem, próbuję wymusić pewność siebie" / „spotkanie z teściową — walczę z gniewem, wymuszam spokój"..." rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Moja fraza-kotwica (krótka, własna)</div>
+      <textarea class="thought-input" id="phrase" placeholder='np. „Jestem planszą — lęk to figura" / „Plansza trwa, figury się ruszają" / „Obserwuję walkę, nie jestem walką"..."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Konkretny moment, kiedy ją powiem (sygnał)</div>
+      <textarea class="thought-input" id="when" placeholder='np. „przed wejściem na salę: 3 oddechy + fraza" / „gdy poczuję ścisk w klatce — fraza" / „gdy złapię się na walce z lękiem"..."' rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Powtórzenia praktyki</div>
+    <div class="term-note">
+      <strong>Rano</strong> — 1 minuta praktyki przeniesienia perspektywy<br>
+      <strong>Przed trudnym momentem</strong> — fraza-kotwica + 3 oddechy<br>
+      <strong>W trudnym momencie</strong> — „<em>plansza, nie figura</em>" w myślach<br>
+      <strong>Wieczorem</strong> — bez krytyki: „ile razy dziś pamiętałem/am, że jestem planszą?"
+    </div>
+  </section>
+
+  <!-- 5: AFTER + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Po zastosowaniu</div>
+    <h1 class="card-prompt">Co się <em>zmieniło</em>?</h1>
+    <p class="card-detail">Po wykonaniu w realnej sytuacji wróć tu. Pytanie kluczowe: <strong>czy figury się zmieniły, czy zmieniła się twoja relacja z nimi?</strong> Klasyczny wzorzec: figury <em>nadal walczyły</em>, ale ty <em>byłeś/aś mniej wciągnięty/a</em>.</p>
+    
+    <div class="examples-h">Co poczułem/am, gdy przypomniałem/am sobie, że jestem planszą</div>
+    <textarea class="thought-input" id="afterFelt" placeholder="np. „lęk nadal był, ale przestał być MNĄ — był figurą na planszy" / „poczułem mniej presji, żeby »wygrać« — bo plansza nie wygrywa" / „odzyskałem oddech"..." rows="3"></textarea>
+    
+    <div class="examples-h">Co odkryłem/am o swojej tożsamości</div>
+    <textarea class="thought-input" id="discovered" placeholder="np. „nie jestem swoimi emocjami — jestem przestrzenią, w której się pojawiają" / „mogę być stabilny niezależnie od tego, co czuję" / „lęk nie zagraża temu, kim jestem — tylko temu, co próbuję udawać"..." rows="3"></textarea>
+    
+    <div class="examples-h">Trudność, którą napotkałem/am</div>
+    <textarea class="thought-input" id="difficulty" placeholder="np. „wracałem do figur co kilka sekund" / „w momencie silnego lęku — fraza nie działała, byłem już w figurze" / „trudno utrzymać perspektywę długo niż minutę"..." rows="2"></textarea>
+    
+    <div class="day-h">Subtelność praktyki</div>
+    <div class="term-note">
+      Plansza-mode nie jest <em>celem do osiągnięcia raz na zawsze</em>. Jest <strong>perspektywą, do której wracasz</strong>. Im częściej, tym łatwiej. W krytycznych momentach (panika, kryzys) — często niemożliwe. <em>I to jest OK</em>. Plansza wraca po. Cel — nie 24/7 plansza-mode, tylko <strong>świadomość, że plansza istnieje</strong>, gdy się jej szuka.
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Hayesa</div>
+      <div class="repeat-body">Figury <strong>nigdy nie znikają</strong>. Lęk, wstyd, złość — to elementy ludzkiego umysłu. Cel <em>nie polega na pokonaniu czarnych figur</em> — polega na <strong>odzyskaniu perspektywy planszy</strong>. Plansza nie wygrywa, nie przegrywa. Plansza <em>jest</em>. I ta „jest-ność" — pozostaje zawsze, niezależnie od tego, co dzieje się na powierzchni.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Build chessboard visual
+const boardEl = document.getElementById('board');
+const pieces = ['♚','♛','♜','♝','♞','♟'];
+const piecePositions = {
+  '0,0': '♜','0,1':'♞','0,2':'♝','0,3':'♛','0,4':'♚','0,5':'♝','0,6':'♞','0,7':'♜',
+  '1,0':'♟','1,1':'♟','1,2':'♟','1,3':'♟','1,4':'♟','1,5':'♟','1,6':'♟','1,7':'♟',
+  '6,0':'♙','6,1':'♙','6,2':'♙','6,3':'♙','6,4':'♙','6,5':'♙','6,6':'♙','6,7':'♙',
+  '7,0':'♖','7,1':'♘','7,2':'♗','7,3':'♕','7,4':'♔','7,5':'♗','7,6':'♘','7,7':'♖'
+};
+for (let r = 0; r < 8; r++) {
+  for (let c = 0; c < 8; c++) {
+    const cell = document.createElement('div');
+    cell.className = 'board-cell ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+    const k = r + ',' + c;
+    if (piecePositions[k]) {
+      const piece = document.createElement('span');
+      piece.className = 'board-piece ' + (r < 4 ? 'dark-piece' : 'white');
+      piece.textContent = piecePositions[k];
+      cell.appendChild(piece);
+    }
+    boardEl.appendChild(cell);
+  }
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    ['white','black','warDescription','practiceFelt','situation','phrase','when','afterFelt','discovered','difficulty'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_szachownica";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

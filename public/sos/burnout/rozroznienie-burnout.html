@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wypalenie vs depresja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.pic-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.pic-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.pic-card.picked .pic-d, .pic-card.picked .pic-mark { color: rgba(244,241,234,0.85); }
+.pic-h { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
+.pic-d { font-size: 12.5px; color: var(--ink-mute); line-height: 1.45; margin-bottom: 5px; }
+.pic-mark { font-size: 11.5px; color: var(--ink-mute); font-style: italic; }
+.test-row { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; background: rgba(244,241,234,0.5); border-radius: 8px; margin-bottom: 6px; }
+.test-row strong { color: var(--ink-deep); font-size: 12.5px; }
+.test-q { font-size: 12.5px; line-height: 1.4; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wypalenie vs depresja</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Wyczerpanie ma <em>różne źródła</em></h1>
+  <p class="card-detail">Wyczerpanie samo w sobie to nie diagnoza. Trzy obrazy kliniczne wyglądają na powierzchni podobnie — ale wymagają <strong>różnych interwencji</strong>. Pomylenie ich kosztuje miesiące źle dobranego leczenia. Wypalenie zawodowe, epizod depresyjny i zespół przewlekłego zmęczenia mają wspólny rdzeń (zmęczenie, anhedonia, spadek funkcjonowania) — ale różnią się <em>kontekstem</em>, <em>pervasywnością</em> i <em>regenerowalnością</em>.</p>
+  <p class="card-detail">Maslach i Leiter (2016, World Psychiatry) podkreślają: kluczem nie jest etykieta, ale identyfikacja <strong>źródła</strong>. Jeśli źródłem jest praca — działania na poziomie pracy. Jeśli źródłem jest globalna anhedonia — terapia depresji, czasem farmakoterapia. Jeśli źródłem jest fizyczna niedyspozycja po wysiłku — diagnostyka somatyczna. Bianchi, Schonfeld i Laurent (2015, Clinical Psychology Review) pokazali, że nakładanie się objawów wypalenia i depresji wynosi 50–90% — co czyni różnicowanie jeszcze ważniejszym.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Trzy klucze różnicujące</div>
+    <div class="element-row">
+      <span class="element-icon">📍</span>
+      <span class="element-text"><strong>Kontekst</strong> — czy objawy ograniczają się do pracy, czy obejmują całe życie? Wypalenie jest <em>lokalne</em> (praca), depresja jest <em>globalna</em> (każda sfera).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🏖️</span>
+      <span class="element-text"><strong>Regenerowalność</strong> — czy 2-tygodniowy urlop / weekend daje wyraźną ulgę? Wypalenie odpuszcza początkowo, depresja i zespół przewlekłego zmęczenia nie.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">💪</span>
+      <span class="element-text"><strong>Reakcja na wysiłek</strong> — czy po aktywności jest lepiej (psychika), czy gorzej (ciało)? PEM (post-exertional malaise) — pogorszenie po wysiłku — jest cechą charakterystyczną zespołu przewlekłego zmęczenia.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔄</span>
+      <span class="element-text"><strong>Współwystępowanie jest częste</strong> — Ahola i in. (2014, N=3 125, badanie podłużne): wypalenie <em>przewiduje</em> rozwój depresji, ale nie odwrotnie. Wypalenie nieleczone bywa „drzwiami" do epizodu depresyjnego.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Klinicznie istotne nie jest to, jak nazwiemy stan pacjenta, ale czy poprawnie zlokalizujemy <em>źródło</em> wyczerpania. Etykieta bez identyfikacji źródła prowadzi do leczenia symptomów, nie przyczyny."
+    <span class="frame-quote-attr">— Christina Maslach &amp; Michael Leiter (2016, World Psychiatry)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: to narzędzie nie zastępuje diagnozy klinicznej. Pomaga uporządkować obraz, zanim porozmawiasz z psychiatrą lub terapeutą. Jeśli wynik wskazuje na depresję lub zespół przewlekłego zmęczenia — następnym krokiem jest wizyta u specjalisty, nie samodzielne leczenie.</div>
+
+  <div class="src">Maslach &amp; Leiter (2016, World Psychiatry, „Understanding the burnout experience") · Bianchi, Schonfeld &amp; Laurent (2015, Clinical Psychology Review, nakładanie się 50–90%) · Ahola i in. (2014, badanie podłużne fińskie N=3 125, kierunek wypalenie → depresja)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Test kontekstu</div>
+  <h1 class="card-prompt">Gdzie <em>znikają</em> twoje objawy?</h1>
+  <p class="card-detail">Najprostszy test różnicujący — kontekstowy. Odpowiedz uczciwie na pytania poniżej. Wypalenie jest <strong>związane z pracą</strong>: na urlopie, w weekend (jeśli odłączysz powiadomienia), z dala od miejsca pracy odczuwasz wyraźną ulgę. Depresja <em>nie odpuszcza</em> — bo źródło nie jest w środowisku, ale w globalnym stanie psychiki. Zespół przewlekłego zmęczenia <em>nie odpuszcza</em>, a po wysiłku się pogarsza.</p>
+
+  <div class="test-row">
+    <strong>1.</strong>
+    <div class="test-q">Czy objawy (wyczerpanie, brak energii, irytacja) <strong>słabną wyraźnie</strong> w pierwsze 3–5 dni urlopu lub długiego weekendu?</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez różnicy</span><span>10 — wyraźna ulga</span></div>
+    <input type="range" class="scale-input" id="ctxUrlop" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Reakcja na urlop</span><span id="ctxUrlopVal">5</span></div>
+  </div>
+
+  <div class="test-row">
+    <strong>2.</strong>
+    <div class="test-q">Czy <strong>poza pracą</strong> (hobby, czas z bliskimi, weekend) odczuwasz przyjemność, ciekawość, śmiech?</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — wszędzie głucho</span><span>10 — poza pracą żyję</span></div>
+    <input type="range" class="scale-input" id="ctxPoza" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Życie poza pracą</span><span id="ctxPozaVal">5</span></div>
+  </div>
+
+  <div class="test-row">
+    <strong>3.</strong>
+    <div class="test-q">Po umiarkowanym wysiłku fizycznym (spacer, sprzątanie, wniesienie zakupów) czujesz się: lepiej (mniej napięcia) — czy gorzej (silne wyczerpanie utrzymujące się 24h+)?</div>
+  </div>
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — gorzej, długo</span><span>10 — lepiej, ulga</span></div>
+    <input type="range" class="scale-input" id="ctxRuch" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Reakcja na wysiłek</span><span id="ctxRuchVal">5</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła odczytu</strong>: pyt. 1 wysoko + pyt. 2 wysoko = profil <em>wypalenia</em>. Pyt. 1 nisko + pyt. 2 nisko = profil <em>depresji</em>. Pyt. 3 nisko (wysiłek pogarsza) = sygnał, by sprawdzić zespół przewlekłego zmęczenia / czynniki somatyczne (tarczyca, niedokrwistość, pocovid). Wzorce mogą się <em>łączyć</em> — to zdarza się często.</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Trzy obrazy kliniczne</div>
+  <h1 class="card-prompt">Który obraz najbardziej do <em>ciebie</em> pasuje?</h1>
+  <p class="card-detail">Przeczytaj trzy opisy. Wybierz ten, który <strong>najlepiej</strong> oddaje twoje doświadczenie ostatnich 2–4 tygodni. Możesz też wybrać „mieszany" — to częste i nie jest błędem. Cel: zobaczyć kierunek, nie postawić diagnozę.</p>
+
+  <div class="pic-card" id="picWypalenie" onclick="pickPic('Wypalenie')">
+    <div class="pic-h">🔥 Wypalenie zawodowe</div>
+    <div class="pic-d">Wyczerpanie pojawia się w pracy i wokół pracy. Cynizm wobec klientów / współpracowników / zadań. Spadek poczucia skuteczności w pracy. <strong>Poza pracą</strong> wciąż masz dostęp do energii i przyjemności — choć słabszy. Urlop daje wyraźną ulgę.</div>
+    <div class="pic-mark">Mechanizm: chroniczna nierównowaga wymagania / zasoby w pracy (Maslach &amp; Leiter, 2016).</div>
+  </div>
+
+  <div class="pic-card" id="picDepresja" onclick="pickPic('Depresja')">
+    <div class="pic-h">⛅ Epizod depresyjny</div>
+    <div class="pic-d">Wyczerpanie i pustka <strong>w każdej sferze</strong>: praca, dom, hobby, relacje. Anhedonia — nic nie sprawia przyjemności. Często samokrytyka, poczucie winy, beznadziejność. Objawy wegetatywne: zaburzenia snu, apetytu, libido. <strong>Urlop nie pomaga</strong>. Czasem myśli o tym, że nie chce się żyć.</div>
+    <div class="pic-mark">Mechanizm: globalna dysregulacja afektu, neurochemia, czynniki biologiczne i psychologiczne (kryteria ICD-11 6A70).</div>
+  </div>
+
+  <div class="pic-card" id="picCFS" onclick="pickPic('CFS')">
+    <div class="pic-h">🪫 Zespół przewlekłego zmęczenia / inne somatyczne</div>
+    <div class="pic-d"><strong>Fizyczne</strong> wyczerpanie dominuje nad psychicznym. Po wysiłku jest <em>gorzej</em> — i utrzymuje się 24–72 h (PEM). Sen nie regeneruje. Często bóle mięśni, „mgła" poznawcza, intolerancja ortostatyczna. Może wynikać z infekcji (np. po-COVID), niedoczynności tarczycy, niedokrwistości, niedoboru witaminy D / B12.</div>
+    <div class="pic-mark">Mechanizm: czynniki somatyczne; wymaga diagnostyki u lekarza pierwszego kontaktu (badania krwi, czasem dalsza diagnostyka).</div>
+  </div>
+
+  <div class="pic-card" id="picMieszany" onclick="pickPic('Mieszany')">
+    <div class="pic-h">🌫️ Mieszany / niejasny</div>
+    <div class="pic-d">Coś z każdego, ale żaden opis nie pasuje w pełni. To wynik <em>częsty</em> i nie jest błędem — Bianchi i in. (2015) pokazali, że wypalenie i depresja nakładają się na 50–90%. Ahola i in. (2014): nieleczone wypalenie często przechodzi w depresję. Mieszany obraz to sygnał, by porozmawiać ze specjalistą — nie diagnozować samodzielnie.</div>
+    <div class="pic-mark">Mechanizm: częste współwystępowanie; długotrwałe wypalenie zwiększa ryzyko epizodu depresyjnego.</div>
+  </div>
+
+  <textarea class="thought-input" id="picKomentarz" rows="3" placeholder="Co dokładnie do ciebie pasuje, a co nie? np. „Pasuje wyczerpanie i cynizm wobec pracy. Nie pasuje globalna anhedonia — w weekend z dziećmi mam energię. Ale ostatnio na urlopie nie odpuściło tak jak wcześniej — to mnie niepokoi.""></textarea>
+
+  <div class="term-note"><strong>Klucz</strong>: jeśli pojawiają się <em>myśli rezygnacyjne</em> (że lepiej by było nie żyć, że nikt by za tobą nie tęsknił, plany skrzywdzenia siebie) — to <strong>nie jest wypalenie</strong>, to sygnał alarmowy depresji. Następny krok: kontakt z psychiatrą w trybie pilnym lub Telefon Zaufania dla Dorosłych w Kryzysie 116 123 (24/7, bezpłatnie).</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Kierunek działania</div>
+  <h1 class="card-prompt">Co <em>konkretnie</em> zrobisz w tym tygodniu?</h1>
+  <p class="card-detail">Działanie zależy od kierunku z poprzedniego kroku. Każdy z trzech obrazów ma <strong>inny pierwszy krok</strong>. Wybierz jeden — i wykonaj w ciągu 7 dni. Nie próbuj naraz wszystkiego z trzech kierunków: to rozprasza i nic z tego nie wynika.</p>
+
+  <textarea class="thought-input" id="dirPlan" rows="5" placeholder="Konkretny plan na ten tydzień: np. „Wybór: wypalenie. Krok 1: wpisuję w kalendarz urlop 2-tygodniowy w lipcu (deadline na zatwierdzenie u przełożonej: piątek). Krok 2: dziś wieczorem wyłączam Slacka po 18:00 i tak przez 7 dni.""></textarea>
+
+  <div class="examples-h">Wybierz pierwszy krok zgodny z kierunkiem</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="dir1" onclick="pickDir('1')">🔥 Test urlopu (2 tyg.) + redukcja wymagań</button>
+    <button type="button" class="example-chip" id="dir2" onclick="pickDir('2')">⛅ Wizyta u psychiatry / lekarza rodzinnego</button>
+    <button type="button" class="example-chip" id="dir3" onclick="pickDir('3')">🪫 Badania (morfologia, TSH, B12, witamina D, ferrytyna)</button>
+    <button type="button" class="example-chip" id="dir4" onclick="pickDir('4')">🌫️ Konsultacja u terapeuty — uporządkować obraz</button>
+    <button type="button" class="example-chip" id="dir5" onclick="pickDir('5')">📓 Dziennik 14 dni (energia, nastrój, kontekst)</button>
+  </div>
+
+  <div class="term-note"><strong>Zasada minimum</strong>: jeśli wybór <em>wypalenie</em> — pierwszy krok to test urlopu 2-tygodniowego. To jest narzędzie diagnostyczne, nie wakacje. Jeśli po 2 tygodniach pełnego odłączenia objawy słabną — potwierdza wypalenie. Jeśli nie słabną — kierunek <em>depresja</em> staje się prawdopodobny i wymaga konsultacji.</div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „sam/a sobie zdiagnozuję"</strong>: nakładanie się objawów wypalenia, depresji i czynników somatycznych jest realne. Internetowe testy nie zastępują rozmowy z lekarzem — zwłaszcza gdy w grę wchodzi farmakoterapia. Twoja rola: zauważyć wzorzec i poszukać profesjonalnej rozmowy. Specjalisty rola: postawić rozpoznanie i zaproponować plan.</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po dwóch tygodniach</div>
+  <h1 class="card-prompt">Czy obraz <em>się wyklarował</em>?</h1>
+  <p class="card-detail">Po 14 dniach realizacji wybranego kierunku wróć tu i sprawdź wyniki. Cel nie jest „mieć etykietę", ale <strong>zobaczyć jasny kierunek</strong>: czy działanie potwierdziło hipotezę, czy obraz się zmienił, czy trzeba zmienić kierunek.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — obraz wciąż mglisty</span><span>10 — kierunek jasny</span></div>
+    <input type="range" class="scale-input" id="dirJasnosc" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Klarowność obrazu</span><span id="dirJasnoscVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — krok niewykonany</span><span>10 — pełna realizacja</span></div>
+    <input type="range" class="scale-input" id="dirExec" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Realizacja kroku</span><span id="dirExecVal">5</span></div>
+  </div>
+
+  <textarea class="thought-input" id="dirReflect" rows="3" placeholder="Co wynika z 14 dni? np. „Test urlopu: po 5 dniach poza pracą subiektywnie 60% lepiej, śpię, mam ochotę na rower. Wracając w głowie chwilowy lęk — ale to potwierdza wypalenie, nie depresję. Idę dalej kierunkiem zmniejszania wymagań.""></textarea>
+
+  <div class="final-msg" id="finalMsg">Wpisz oba pomiary, by zobaczyć podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła ponowienia</strong>: jeśli po 14 dniach obraz wciąż jest niejasny (klarowność &lt;5) — to <em>nie</em> jest porażka narzędzia. To sygnał, że obraz wymaga rozmowy z drugim człowiekiem (terapeuta, psychiatra). Sam w sobie wzorzec może być za skomplikowany, by ułożyć się intuicyjnie. Konsultacja często rozwiązuje to w 1–2 sesjach.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Wyczerpanie ma <strong>różne źródła</strong>. Wypalenie odpuszcza poza pracą — depresja nie. Zespół przewlekłego zmęczenia pogarsza po wysiłku. Trzy obrazy się <em>nakładają</em> w 50–90% przypadków — kierunek liczy się bardziej niż etykieta. Działaj zgodnie z kierunkiem, ale konsultuj specjalistę przy mieszanym obrazie lub myślach rezygnacyjnych.</div>
+  </div>
+
+  <div class="src">Maslach &amp; Leiter (2016, World Psychiatry) · Bianchi, Schonfeld &amp; Laurent (2015, Clin Psychol Rev, nakładanie 50–90%) · Ahola i in. (2014, podłużne fińskie N=3 125) · Schaufeli &amp; Enzmann (1998, „Burnout Companion to Study and Practice") · ICD-11 (kategorie 6A70 epizod depresyjny vs QD85 wypalenie zawodowe)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['ctxUrlop','ctxPoza','ctxRuch','dirJasnosc','dirExec'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; if (id === 'dirJasnosc' || id === 'dirExec') updateFinalMsg(); });
+    }
+  });
+}
+
+function pickPic(code) {
+  ['Wypalenie','Depresja','CFS','Mieszany'].forEach(function(c){
+    var el = document.getElementById('pic' + c);
+    if (el) el.classList.remove('picked');
+  });
+  var sel = document.getElementById('pic' + code);
+  if (sel) sel.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickDir(n) {
+  var el = document.getElementById('dir' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function updateFinalMsg() {
+  var jas = parseInt(document.getElementById('dirJasnosc').value, 10);
+  var exec = parseInt(document.getElementById('dirExec').value, 10);
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  if (jas === 5 && exec === 5) {
+    fm.innerHTML = 'Wpisz oba pomiary, by zobaczyć podsumowanie.';
+    return;
+  }
+  var msg = '';
+  if (exec >= 7 && jas >= 7) msg = '<strong>Krok wykonany, kierunek jasny</strong> — kontynuuj wybraną ścieżkę. Wracaj do tego narzędzia za 4 tygodnie, by sprawdzić, czy hipoteza nadal się trzyma.';
+  else if (exec >= 7 && jas < 5) msg = '<strong>Krok wykonany, ale obraz wciąż mglisty</strong> — dwa wytłumaczenia: obraz jest mieszany (częste) lub kierunek był nietrafiony. Kolejny krok: konsultacja u specjalisty z opisem 14 dni.';
+  else if (exec < 4) msg = '<strong>Krok w większości niewykonany</strong> — to jest informacja sama w sobie. Wyczerpanie obniża zdolność do działania. Zmniejsz krok o 50% (np. zamiast urlopu — jeden weekend bez maila) i spróbuj ponownie.';
+  else msg = 'Częściowy ruch — kontynuuj. Cel kolejnego tygodnia: realizacja ≥7/10 i ponowny pomiar klarowności.';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateFinalMsg();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_rozroznienie_burnout — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_rozroznienie_burnout";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

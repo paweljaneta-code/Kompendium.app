@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Dwa głosy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.dialog-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 8px 0; }
+.dialog-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--bg); margin-bottom: 10px; letter-spacing: 0.04em; }
+.dialog-line { display: grid; grid-template-columns: 60px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: flex-start; }
+.dialog-line:first-of-type { border-top: none; }
+.dialog-tag { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: center; flex-shrink: 0; }
+.dialog-tag.an { background: rgba(201,122,82,0.3); color: #ffc97a; }
+.dialog-tag.zdr { background: rgba(184,197,168,0.3); color: var(--sage); }
+.dialog-text { font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.92); font-style: italic; }
+.dialog-text strong { color: var(--bg); font-weight: 600; font-style: normal; }
+
+.col-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; }
+.col-cell { background: rgba(255,255,255,0.55); border: 1.5px solid var(--sage); border-radius: 12px; padding: 11px 13px; }
+.col-h { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; }
+.col-h.warm { color: #8a4a18; }
+.col-h.sage { color: var(--sage-deep); }
+.col-input { width: 100%; min-height: 100px; padding: 8px 10px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: inherit; font-size: 12.5px; line-height: 1.5; resize: vertical; }
+.col-input:focus { outline: 1px solid var(--sage-deep); background: white; }
+.col-prompt { font-size: 11px; color: var(--ink-mute); line-height: 1.4; margin-bottom: 6px; font-style: italic; }
+
+.compass-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.compass-card strong { color: var(--ink); font-weight: 700; }
+
+.friend-card { background: rgba(255,255,255,0.55); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin: 8px 0; }
+.friend-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; }
+.friend-q { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; font-style: italic; margin-bottom: 6px; }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Dwa głosy</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Dwa głosy — <em>jednoczesne</em> w jednej głowie</h1>
+  <p class="card-detail">Technika „dwóch głosów" (MANTRA, Schmidt &amp; Treasure 2013) bazuje na koncepcji <em>wewnętrznego konfliktu</em>. W Twojej głowie żyją równocześnie dwa głosy: <strong>AN-voice</strong> („jesz za dużo", „nie zasługujesz", „musisz kontrolować") i <strong>Zdrowy głos</strong> („mam prawo do jedzenia", „jestem warta więcej niż waga", „relacje są ważniejsze"). Zwykle AN jest <em>głośniejsza</em>, Zdrowy <em>cichszy</em>. Praca nie polega na „wyciszeniu AN" — polega na <strong>wzmacnianiu Zdrowego</strong>, aż dwa głosy dojdą do równowagi, a potem Zdrowy zacznie wygrywać.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery cele techniki</div>
+    <div class="element-row">
+      <span class="element-icon">🔍</span>
+      <span class="element-text"><strong>Świadomość konfliktu</strong> — nie jeden głos w głowie, lecz <em>dwa różne</em>; rozpoznanie ich jako odrębnych jest pierwszym krokiem</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔊</span>
+      <span class="element-text"><strong>Wzmocnienie Zdrowego</strong> — często cichego, zdominowanego; trening „dawania mu głosu" w sytuacjach codziennych</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">💬</span>
+      <span class="element-text"><strong>Trening odpowiedzi</strong> — gdy AN coś mówi, masz konkretną odpowiedź Zdrowego, nie tylko bezradność</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🧘</span>
+      <span class="element-text"><strong>Self-compassion</strong> — Zdrowy głos często okazuje się głosem, który mówi do Ciebie jak do <em>najlepszego przyjaciela</em>, którego się troszczy</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Dwa głosy w głowie nie są oznaką dezintegracji ani szaleństwa. Są strukturą wewnętrznego konfliktu — naturalnego dla każdej osoby, w szczególności widocznego u pacjenta z anoreksją. Praca polega na nadaniu obu głosom słów."
+    <span class="frame-quote-attr">— Schmidt &amp; Treasure (2013, <em>MANTRA Manual</em>)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — gdy zaczynasz słuchać uważnie, niemal zawsze odkrywasz, że Zdrowy głos jednak <em>jest</em>. Może mówić cicho. Może mówić rzadko. Ale istnieje. Rzadko zdarza się, żeby pacjent z anoreksją nie miał <em>żadnego</em> Zdrowego głosu — częściej ma głos cichy, którego nie słyszał, bo AN przekrzykuje. Ta technika daje narzędzie, żeby <em>zauważać</em> i <em>wzmacniać</em>.</div>
+  
+  <div class="term-note"><strong>Walidacja</strong> — niektórzy pacjenci na początku nie mogą znaleźć Zdrowego głosu. „Nie słyszę żadnego, tylko AN". To pułapka. Zwykle Zdrowy głos jest tam, ale brzmi „z innego rejestru" — bardziej cieplo, akceptująco, mniej wymagająco. Pomocne pytanie: <em>co bym powiedział/a najlepszej przyjaciółce w mojej sytuacji?</em> — to często odsłania głos, który jest łatwiejszy do <em>wytworzenia</em> niż do <em>słyszenia</em>.</div>
+  
+  <div class="src"><em>📚 Schmidt &amp; Treasure (2013, MANTRA Manual); Schwartz (1995, Internal Family Systems); Greenberg (2002, Gestalt two-chair); Neff (2003, Self-compassion); Gilbert (2010, Compassion-Focused Therapy).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Dwie kolumny</div>
+  <h1 class="card-prompt">Co mówi <em>każdy</em> głos</h1>
+  <p class="card-detail">Pierwsze konkretne ćwiczenie — <strong>dwie kolumny</strong>. Wybierz <em>jedną</em> sytuację z dzisiejszego dnia, w której pojawiły się myśli o jedzeniu albo ciele. Wypisz, <em>dosłownie</em>, co powiedział AN-voice. Potem — co powiedział (albo mógłby powiedzieć) Zdrowy głos. Zacznij od wybranej sytuacji.</p>
+  
+  <div class="examples-h">Sytuacja, którą wybierasz</div>
+  <textarea id="dg-syt" class="thought-input" rows="2" placeholder="np. „Przed śniadaniem dziś" / „Po obiedzie z mamą" / „Patrząc w lustro przed wyjściem""></textarea>
+  
+  <div class="col-row">
+    <div class="col-cell">
+      <div class="col-h warm">🔴 AN-voice</div>
+      <div class="col-prompt">Co AN szepnęła Ci? Wypisz dosłownie, w cudzysłowiu</div>
+      <textarea id="dg-an" class="col-input" placeholder="„Jesz za dużo". „Nie powinnaś tego jeść". „Wszyscy widzą, że…". „Po tym przytyjesz 2 kg". „Zostawia, jak ostatni głupiec"…"></textarea>
+    </div>
+    <div class="col-cell">
+      <div class="col-h sage">✅ Zdrowy głos</div>
+      <div class="col-prompt">Co powiedziałby (lub mógłby powiedzieć) Zdrowy głos?</div>
+      <textarea id="dg-zdr" class="col-input" placeholder="„Mam prawo do śniadania". „To normalne, że jem". „Zjedzenie 300 kcal mnie nie zniszczy". „Moja wartość nie zależy od liczby na wadze"…"></textarea>
+    </div>
+  </div>
+  
+  <div class="examples-h">Spróbuj — co byś powiedział/a najlepszej przyjaciółce w Twojej sytuacji?</div>
+  <textarea id="dg-przyj" class="thought-input" rows="3" placeholder="To pytanie odsłania Zdrowy głos szybciej niż jakiekolwiek inne. Pisz, jak byś mówił/a do niej…"></textarea>
+  
+  <div class="term-note"><strong>Wskazówka</strong> — pierwsze próby Zdrowego głosu często brzmią „sztywno" albo „afektowanie". To normalne. Z czasem wypracowujesz własny język, który brzmi <em>autentycznie</em>. Każdy ma <em>swój</em> Zdrowy głos — niektórzy bardziej racjonalny, inni bardziej cieplo opiekuńczy, jeszcze inni z lekkim humorem. Próbuj różnych rejestrów.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Dialog</div>
+  <h1 class="card-prompt">Niech głosy <em>rozmawiają</em></h1>
+  <p class="card-detail">Drugi etap — <strong>dialog</strong>. AN coś mówi. Zdrowy odpowiada. AN odpowiada na odpowiedź. Zdrowy odpowiada na to. Ważna zasada: dialog kończy się <em>na</em> odpowiedzi Zdrowego głosu — to jego głos ma ostatnie słowo. Ten ćwiczenie trenuje, że Zdrowy <em>może</em> wygrać starcie.</p>
+  
+  <div class="dialog-card">
+    <div class="dialog-h">Przykład dialogu — sytuacja: „przed śniadaniem"</div>
+    <div class="dialog-line">
+      <span class="dialog-tag an">AN</span>
+      <span class="dialog-text">„Nie powinnaś jeść — wczoraj zjadłaś za dużo".</span>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-tag zdr">Ja</span>
+      <span class="dialog-text">„Mam prawo do śniadania. To <strong>normalne jedzenie</strong>, nie nadwyżka".</span>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-tag an">AN</span>
+      <span class="dialog-text">„Ale za chwilę zobaczysz to na wadze".</span>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-tag zdr">Ja</span>
+      <span class="dialog-text">„Waga nie jest miarą tego, czy <strong>zasługuję na jedzenie</strong>. Każdy człowiek zasługuje na śniadanie".</span>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-tag an">AN</span>
+      <span class="dialog-text">„Dziś tym razem — może ja mam rację".</span>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-tag zdr">Ja</span>
+      <span class="dialog-text">„Nie. Słyszę Cię, ale dziś to <strong>ja</strong> decyduję. Jem śniadanie".</span>
+    </div>
+  </div>
+  
+  <div class="examples-h">Twój dialog — przepisz wymianę z Twojej sytuacji</div>
+  <textarea id="dg-dialog" class="thought-input" rows="8" placeholder="AN: „…".&#10;Ja: „…".&#10;AN: „…".&#10;Ja: „…".&#10;&#10;Pisz w naprzemiennych wierszach. Zdrowy głos zawsze ma ostatnie słowo…"></textarea>
+  
+  <div class="compass-card"><strong>Wskazówka — pusta krzesła (zaawansowane)</strong>: jeśli dialog na papierze daje za mało emocjonalnej intensywności, spróbuj <em>fizycznie</em>. Dwa krzesła obok siebie. Siedzisz na pierwszym, mówisz na głos jako AN. Przenosisz się na drugie, mówisz jako Zdrowy. Zmiana fizycznej pozycji intensyfikuje doświadczenie i pomaga rozróżnić głosy somatycznie. Pierwotna technika gestalt (Greenberg, 2002).</div>
+  
+  <div class="term-note"><strong>Klucz</strong> — Zdrowy głos <em>nie</em> musi „wygrać" przez argumenty silniejsze. Może wygrać przez <em>spokojną stanowczość</em>: „Słyszę Cię, ale dziś decyduję ja". To jest często skuteczniejsze niż dyskusja merytoryczna. AN potrafi nieskończenie podsuwać argumenty. Zdrowy głos zatrzymuje rozmowę, nie wygrywa jej.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Ton</div>
+  <h1 class="card-prompt">Jak <em>brzmi</em> Twój Zdrowy głos</h1>
+  <p class="card-detail">Trzeci etap — <strong>charakterystyka</strong> Zdrowego głosu. Jaki ma ton? Jak najlepszej przyjaciółki? Mądrej babci? Spokojnej terapeutki? Sam/a-przyszłej-z-przyszłości? Im wyraźniej go „słyszysz", tym łatwiej przywoływać go w trudnych momentach. Zdrowy głos <em>nie</em> jest „pozytywnym myśleniem" — jest głosem <em>troski</em> i <em>realizmu</em>.</p>
+  
+  <div class="friend-card">
+    <div class="friend-h">① Najlepsza przyjaciółka</div>
+    <div class="friend-q">„Wiesz co, daj sobie szansę zjeść. Wszystko będzie dobrze. Trzymam Cię". Ciepły, nieoceniający.</div>
+  </div>
+  
+  <div class="friend-card">
+    <div class="friend-h">② Mądra babcia</div>
+    <div class="friend-q">„Dziecko, twoje ciało potrzebuje jedzenia. Jak wszystkich nas. Nie martw się tak bardzo o liczby — życie jest nie o tym". Spokojna mądrość.</div>
+  </div>
+  
+  <div class="friend-card">
+    <div class="friend-h">③ Spokojna terapeutka</div>
+    <div class="friend-q">„Słyszę, że pojawia się trudna myśl. Możesz ją zauważyć i nie iść za nią. Twoja wartość nie zależy od dzisiejszego śniadania". Nieoceniająca obecność.</div>
+  </div>
+  
+  <div class="friend-card">
+    <div class="friend-h">④ Ty z przyszłości — za 10 lat</div>
+    <div class="friend-q">„Pamiętam ten okres. Wiesz, co Ci powiem teraz? Idź, żyj. Trzy posiłki dziennie nie są wrogiem. Życie zaczyna się, gdy przestajesz się ważyć". Perspektywa.</div>
+  </div>
+  
+  <div class="examples-h">Który ton Ci najbliższy? Który chcesz wybrać dla swojego Zdrowego głosu?</div>
+  <textarea id="dg-ton" class="thought-input" rows="3" placeholder="Może mieszanka? „Ciepło przyjaciółki + spokój terapeutki". Może coś jeszcze innego — własny ton, którego potrzebujesz dziś…"></textarea>
+  
+  <div class="examples-h">Pięć zdań, którymi Twój Zdrowy głos chce mówić do Ciebie codziennie</div>
+  <textarea id="dg-zdania" class="thought-input" rows="6" placeholder="„Mam prawo do jedzenia". „Moja wartość nie zależy od wagi". „Spotkania są ważniejsze niż liczby". „Jestem czymś więcej niż AN". „Dziś też zasługuję na ciepło". Twoje pięć…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — Zdrowy głos działa tym mocniej, im jest <em>autentyczny</em> dla Ciebie. „Pożyczone" zdania z poradników działają słabo. Zdania, które <em>sam/a</em> sformułujesz, używając swojego naturalnego języka, działają mocniej. Wracaj do swoich pięciu zdań — czytaj je rano, czytaj wieczorem. Powtarzanie wzmacnia neuralną ścieżkę.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Praktyka</div>
+  <h1 class="card-prompt">Codzienne <em>wzmacnianie</em> Zdrowego</h1>
+  <p class="card-detail">Zdrowy głos rośnie przez <em>codzienną praktykę</em>, nie przez sporadyczne ćwiczenia. Cztery konkretne sposoby, jak wprowadzić to w nadchodzące tygodnie.</p>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Codziennie wieczorem — 1 sytuacja, 2 głosy</strong>. 10 minut. „Co dziś AN powiedziała? Co powiedział (albo mógł powiedzieć) Zdrowy?". Buduje świadomość obecności obu głosów.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Powtarzaj swoje pięć zdań</strong> — z Kroku 4. Rano przy kawie, wieczorem przed snem. Mózg uczy się tego, co powtarzasz. Powtarzanie wzmacnia ścieżkę Zdrowego głosu.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>W trudnym momencie — pytanie</strong>: „<em>Co bym powiedział/a najlepszej przyjaciółce w tej sytuacji?</em>". Najszybsza droga do Zdrowego głosu, gdy AN krzyczy.</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Pracuj z terapeutą</strong> — szczególnie technika pustych krzeseł wymaga obecności drugiej osoby. Z czasem zauważysz: Zdrowy zaczyna być głośniejszy, AN cichsza. Czasem Zdrowy wygrywa starcie. To progres.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Dwa głosy żyją w jednej głowie — to <strong>norma</strong>, nie patologia. AN-voice i Zdrowy głos. Praca <em>nie</em> polega na „wyciszeniu AN" — polega na <em>wzmacnianiu Zdrowego</em>. Ćwiczenia: dwie kolumny, dialog, pytanie „co powiedziałbym/abym przyjaciółce". Zdrowy głos często jest cichy — ale prawie zawsze istnieje. Codzienne ćwiczenie wzmacnia neuralną ścieżkę.</div>
+  </div>
+  
+  <div class="final-msg"><strong>Self-compassion jako ścieżka do Zdrowego głosu</strong> — Neff (2003); Gilbert (2010, <em>Compassion-Focused Therapy</em>): pacjenci z anoreksją wykazują wyższą self-compassion <em>wobec innych</em> niż wobec siebie. Zdrowy głos zwykle „brzmi" jak głos, który łatwiej Ci kierować do <em>kogoś innego</em>. Pytanie „co powiedział/abym przyjaciółce?" jest najszybszą drogą do tego głosu — bo odsłania, że <em>masz</em> tę zdolność troski; po prostu trudniej Ci ją skierować na siebie.</div>
+  
+  <div class="src"><em>📚 Schmidt &amp; Treasure (2013, MANTRA Manual); Schwartz (1995, IFS); Greenberg (2002, Gestalt two-chair); Neff (2003, Self-compassion); Gilbert (2010, Compassion-Focused Therapy).</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Brak interaktywnego JS — textareas, persystencja zapisuje. */
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_dwa_glosy — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_dwa_glosy";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

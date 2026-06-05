@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mapa samokrytyki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.col-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 10px; }
+.col-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.func-pick { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.func-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 11px 13px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; line-height: 1.45; }
+.func-btn:hover, .func-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.func-btn .fn-name { font-weight: 600; display: block; margin-bottom: 2px; }
+.func-btn .fn-tip { font-size: 11.5px; color: var(--ink-mute); line-height: 1.4; display: block; }
+.func-btn.picked .fn-tip { color: rgba(244,241,234,0.85); }
+
+.body-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+.body-chip { padding: 9px 11px; border: 1px solid var(--sage); border-radius: 9px; background: rgba(184,197,168,0.15); color: var(--ink); cursor: pointer; font-size: 12.5px; transition: all 0.18s; text-align: center; font-family: inherit; }
+.body-chip:hover, .body-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.consq-pick { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.consq-chip { padding: 8px 12px; border: 1px solid var(--sage); border-radius: 999px; background: rgba(255,253,247,0.7); color: var(--ink); cursor: pointer; font-size: 12px; transition: all 0.18s; font-family: inherit; }
+.consq-chip:hover, .consq-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.formula-card { background: linear-gradient(135deg, rgba(184,197,168,0.20), rgba(204,153,127,0.14)); border: 1px solid var(--sage-deep); border-radius: 12px; padding: 14px 16px; margin: 14px 0; }
+.formula-card .fc-h { font-family: 'Fraunces', serif; font-style: italic; color: var(--sage-deep); font-size: 13.5px; margin-bottom: 10px; }
+.formula-card .fc-text { font-family: 'Fraunces', serif; font-size: 14.5px; line-height: 1.7; color: var(--ink); }
+.formula-card .fc-blank { color: rgba(160,100,70,1); font-weight: 600; padding: 0 2px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mapa samokrytyki</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Mapa, zanim <em>zaczniesz</em> coś zmieniać</h1>
+    <p class="card-detail">Większość osób myśli o swojej samokrytyce „losowo i wszechobecnie". W rzeczywistości samokrytyka prawie zawsze ma <em>wzorzec</em>: konkretne wyzwalacze, powtarzalną treść, ukrytą funkcję, historyczne źródło, somatyczny ślad i mierzalne konsekwencje. Ten arkusz to tygodniowy protokół obserwacyjny — bez prób zmiany, tylko mapowanie. Demistyfikacja jest warunkiem zmiany.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Skąd to się wzięło</div>
+      <div class="element-row">
+        <span class="element-icon">🧬</span>
+        <span class="element-text"><strong>Tradycja</strong> — formulacja przypadku w CBT (Persons, 2008): zanim zaczniesz interweniować, zrozum jak system działa. Gilbert (2014, „Forms and Functions of Self-Criticism") rozdzielił <em>treść</em> krytyki (co mówi) od jej <em>funkcji</em> (po co mówi). Schema Therapy (Young, 2003): mapa krytyka jako tryb trybu (Punitive Parent / Demanding Parent).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚙️</span>
+        <span class="element-text"><strong>Mechanizm</strong> — przez tydzień zapisuj 6 wymiarów każdej epizodu samokrytyki: <em>wyzwalacz, treść, funkcja, głos, ciało, konsekwencje</em>. Po 7 dniach dane wystarczą, by formułować hipotezy: kto mówi, po co mówi, w jakich sytuacjach, jak to wpływa na zachowanie. Z tej mapy wynikają konkretne interwencje.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Dane</strong> — Dugas i in. (2007): wprowadzenie strukturyzowanego dziennika myśli redukuje globalny dystres o 18% już w pierwszym tygodniu, niezależnie od dalszej terapii. Sama metabarwa (świadomość mechanizmu) zmienia relację z myślą.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✨</span>
+        <span class="element-text"><strong>Efekt</strong> — z „jestem toksyczny/a wobec siebie" → „mam systemowy mechanizm, który mogę nazwać i zrozumieć". Zmiana ramy: z tożsamości na proces.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Klienci często dziwią się, gdy kończą tydzień obserwacji: 'myślałam, że krytykuję się losowo — ale jest wzorzec. Prawie zawsze w tych samych sytuacjach, z tą samą treścią, czyimś głosem'. Demistyfikacja jest warunkiem zmiany."
+      <span class="frame-quote-attr">— parafraza Gilbert (2014, „Forms and Functions of Self-Criticism")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: ten arkusz to <span id="t-mapa-cel">narzędzie diagnostyczne, nie terapeutyczne</span>. Przez tydzień NIC NIE ZMIENIAJ. Tylko zauważaj i zapisuj. Cel: zobaczyć system, zanim się go ruszy.</div>
+
+    <div class="src">Gilbert (2014, „Forms and Functions of Self-Criticism", Self &amp; Identity); Persons (2008, „Cognitive Therapy in Practice"); Young, Klosko, Weishaar (2003, „Schema Therapy"); Dugas i in. (2007, J. Anxiety Disorders); Fennell (2016, „Overcoming Low Self-Esteem")</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Wymiar 1+2 — Wyzwalacz i Treść</div>
+    <h1 class="card-prompt">Co się <em>zdarzyło</em> i co krytyk powiedział?</h1>
+    <p class="card-detail">Wybierz JEDEN konkretny epizod samokrytyki z ostatnich 24 godzin. Zapisz dokładnie. Im konkretniej (godzina, miejsce, osoby, Twoje zmęczenie/głód), tym więcej zobaczysz po tygodniu obserwacji.</p>
+
+    <h3 style="font-size:13px;color:var(--sage-deep);font-weight:600;margin-bottom:6px;">Kolumna 1 — Wyzwalacz (kontekst)</h3>
+    <textarea class="col-input" id="trigger" placeholder="„np. 14:00, w pracy, szefowa zapytała o raport. Nie miałem go skończonego. Popełniłem drobny błąd w liczbach. Spałem 5h, jadłem ostatni posiłek 7h temu."" rows="3"></textarea>
+
+    <h3 style="font-size:13px;color:var(--sage-deep);font-weight:600;margin-bottom:6px;">Kolumna 2 — Treść (dosłownie)</h3>
+    <textarea class="col-input" id="content" placeholder="„np. Jesteś idiotą, znowu to zrobiłeś, wszyscy widzą że nie nadajesz się do tej pracy, zaraz Cię zwolnią." (Cytuj dokładne słowa krytyka, NIE parafrazuj.)" rows="3"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Intensywność krytyki w tym epizodzie</div>
+      <div class="scale-bounds"><span>(0 = ledwo)</span><span>(10 = miażdżąco)</span></div>
+      <input type="range" class="scale-input" id="intCrit" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wynik</span><span id="intCritval">6</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła dosłowności</strong>: jeśli wpisałaś/eś łagodniejszą wersję — wróć i dopisz dokładnie. Krytyk siedzi w słownictwie, w intonacji, w konkretnych zwrotach. Treść w stylu „byłem dla siebie surowy" jest bezużyteczna; treść „jesteś niezdolny" jest punktem wyjścia analizy.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wymiar 3+4 — Funkcja i Głos</div>
+    <h1 class="card-prompt">Po co krytyk to <em>mówi</em> — i kogo brzmi?</h1>
+    <p class="card-detail">Krytyk rzadko jest „losowo okrutny". Niemal zawsze pełni jakąś funkcję ochronną — często irracjonalną z perspektywy dorosłego, ale historycznie sensowną. I niemal zawsze brzmi czyimś głosem z przeszłości. Te dwa wymiary razem ujawniają historyczne korzenie samokrytyki.</p>
+
+    <h3 style="font-size:13px;color:var(--sage-deep);font-weight:600;margin-bottom:6px;">Kolumna 3 — Funkcja (przed czym chroni?)</h3>
+    <p style="font-size:12px;color:var(--ink-mute);margin-top:0;margin-bottom:10px;">Wybierz 1–2 najlepiej pasujące funkcje. Pytaj siebie: „co by się stało, gdybym nie krytykował/a siebie w tej sytuacji?"</p>
+
+    <div class="func-pick">
+      <button id="fMob" class="func-btn" onclick="this.classList.toggle('picked')">
+        <span class="fn-name">⚡ Mobilizacja</span>
+        <span class="fn-tip">„Zmuszam się do lepszej pracy. Bez krytyki nic bym nie zrobił/a."</span>
+      </button>
+      <button id="fAnt" class="func-btn" onclick="this.classList.toggle('picked')">
+        <span class="fn-name">🛡️ Antycypacja</span>
+        <span class="fn-tip">„Jeśli ja sam/a się skrytykuję pierwszy/a, cudza krytyka mniej zaboli."</span>
+      </button>
+      <button id="fCtr" class="func-btn" onclick="this.classList.toggle('picked')">
+        <span class="fn-name">🔍 Kontrola</span>
+        <span class="fn-tip">„Jeśli zauważę swoje wady, mogę je naprawić, zanim inni zobaczą."</span>
+      </button>
+      <button id="fLoy" class="func-btn" onclick="this.classList.toggle('picked')">
+        <span class="fn-name">🪢 Lojalność</span>
+        <span class="fn-tip">„Mama/tata to mówili — gdybym przestał/a, byłbym/abym wobec nich nielojalny/a."</span>
+      </button>
+      <button id="fPun" class="func-btn" onclick="this.classList.toggle('picked')">
+        <span class="fn-name">⚖️ Ukaranie</span>
+        <span class="fn-tip">„Nie zasługuję na łagodność po tym, co zrobiłem/am. Muszę to odpokutować."</span>
+      </button>
+    </div>
+
+    <h3 style="font-size:13px;color:var(--sage-deep);font-weight:600;margin-top:14px;margin-bottom:6px;">Kolumna 4 — Głos (czyj?)</h3>
+    <textarea class="col-input" id="voice" placeholder="„np. Głos mamy, kiedy sprzątałem pokój niedokładnie. Miałem 8 lat. Mówiła dokładnie te słowa: 'jesteś niezdolny'. Albo: to mój nauczyciel matematyki z liceum. Albo: to mój własny głos z wczesnych studiów."" rows="3"></textarea>
+
+    <div class="term-note"><strong>📜 Punkt zwrotny</strong>: identyfikacja głosu często jest momentem przełomu. Krytyk staje się <span id="t-glos-historyczny">historyczną osobą, nie Twoją tożsamością</span>. Z perspektywy dorosłego można powiedzieć: „to jest głos mojej matki z 1987 roku — nie moja prawda 2025".</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Wymiar 5+6 — Ciało i Konsekwencje</div>
+    <h1 class="card-prompt">Gdzie krytyk <em>żyje</em> w ciele i co po nim robisz?</h1>
+    <p class="card-detail">Krytyka NIGDY nie istnieje tylko w głowie. Zostawia ślad somatyczny — i pociąga za sobą zachowanie. Te dwa wymiary zamykają pętlę behawioralną: pokazują, dlaczego krytyka się utrzymuje (jakie ma konsekwencje), i wskazują punkt wejścia ciałem (często skuteczniejszy niż werbalna restrukturyzacja).</p>
+
+    <h3 style="font-size:13px;color:var(--sage-deep);font-weight:600;margin-bottom:6px;">Kolumna 5 — Ciało (gdzie czujesz aktywację?)</h3>
+    <p style="font-size:12px;color:var(--ink-mute);margin-top:0;margin-bottom:10px;">Wybierz 2–3 lokalizacje, w których czujesz krytykę najwyraźniej.</p>
+
+    <div class="body-grid">
+      <button class="body-chip" id="bThr" onclick="this.classList.toggle('picked')">😶 Ściśnięte gardło</button>
+      <button class="body-chip" id="bJaw" onclick="this.classList.toggle('picked')">🦷 Napięta szczęka</button>
+      <button class="body-chip" id="bSto" onclick="this.classList.toggle('picked')">🌀 Ściśnięty żołądek</button>
+      <button class="body-chip" id="bChe" onclick="this.classList.toggle('picked')">💢 Pusta klatka piersiowa</button>
+      <button class="body-chip" id="bBre" onclick="this.classList.toggle('picked')">💨 Płytki oddech</button>
+      <button class="body-chip" id="bFac" onclick="this.classList.toggle('picked')">🔥 Gorąco w twarzy</button>
+      <button class="body-chip" id="bSho" onclick="this.classList.toggle('picked')">⛰️ Wzniesione ramiona</button>
+      <button class="body-chip" id="bHea" onclick="this.classList.toggle('picked')">⚡ Ucisk w głowie</button>
+    </div>
+
+    <h3 style="font-size:13px;color:var(--sage-deep);font-weight:600;margin-top:14px;margin-bottom:6px;">Kolumna 6 — Konsekwencje (co robisz po aktywacji?)</h3>
+    <p style="font-size:12px;color:var(--ink-mute);margin-top:0;margin-bottom:10px;">Wybierz 2–4 najczęstsze reakcje behawioralne.</p>
+
+    <div class="consq-pick">
+      <button class="consq-chip" id="cWork" onclick="this.classList.toggle('picked')">💼 Nadmierna praca („naprawienie")</button>
+      <button class="consq-chip" id="cAvoid" onclick="this.classList.toggle('picked')">🚪 Unikanie / prokrastynacja</button>
+      <button class="consq-chip" id="cRum" onclick="this.classList.toggle('picked')">🔁 Ruminacja</button>
+      <button class="consq-chip" id="cSeek" onclick="this.classList.toggle('picked')">🤝 Szukanie zapewnień u innych</button>
+      <button class="consq-chip" id="cFood" onclick="this.classList.toggle('picked')">🍰 Jedzenie / alkohol</button>
+      <button class="consq-chip" id="cIso" onclick="this.classList.toggle('picked')">🏠 Izolacja</button>
+      <button class="consq-chip" id="cAggr" onclick="this.classList.toggle('picked')">⚡ Agresja w stronę innych</button>
+      <button class="consq-chip" id="cSelf" onclick="this.classList.toggle('picked')">💔 Samouszkodzenie / kara</button>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Pętla behawioralna</strong>: konsekwencje pokazują, dlaczego krytyk jest „nagradzany". Jeśli reagujesz nadmierną pracą — krytyk dostaje feedback „dobrze, że krytykuję, bo dzięki temu pracuje". Jeśli izolujesz się — krytyk wzmacnia się przez powtarzaną ruminację. Zmiana <em>konsekwencji</em> (eksperyment behawioralny: „nie krytykuję się — sprawdzam, czy nadal się starannie zachowuję") jest często skuteczniejsza niż zmiana treści.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Synteza — formuła jednozdaniowa</div>
+    <h1 class="card-prompt">Złożenie wszystkich <em>sześciu</em> wymiarów</h1>
+    <p class="card-detail">Po wypełnieniu sześciu wymiarów napisz jedno zdanie, które integruje wszystko. To formuła diagnostyczna — z niej wynikają interwencje terapeutyczne (CFT, two-chair, eksperymenty behawioralne, imagery rescripting, praca z głosem historycznym).</p>
+
+    <div class="formula-card">
+      <div class="fc-h">Formuła samokrytyki — szablon do uzupełnienia</div>
+      <div class="fc-text">Mój krytyk aktywuje się głównie przy <span class="fc-blank">[WYZWALACZ]</span>, mówiąc <span class="fc-blank">[TREŚĆ]</span> głosem <span class="fc-blank">[GŁOS]</span>, próbując mnie <span class="fc-blank">[FUNKCJA]</span>, co w ciele czuję jako <span class="fc-blank">[CIAŁO]</span>, i reaguję <span class="fc-blank">[KONSEKWENCJE]</span>.</div>
+    </div>
+
+    <textarea class="col-input" id="formula" placeholder="„Twoje pełne zdanie. Przykład: Mój krytyk aktywuje się głównie przy ocenie przez przełożonego, mówiąc „nie nadajesz się", głosem ojca z mojego dzieciństwa, próbując mnie zmobilizować i zabezpieczyć przed odrzuceniem, co w ciele czuję jako ucisk w klatce piersiowej i napiętą szczękę, i reaguję nadmierną pracą oraz szukaniem zapewnień."" rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Po napisaniu formuły — jak bardzo czujesz, że to <em>system</em>, nie tożsamość?</div>
+      <div class="scale-bounds"><span>(0 = to ja jestem krytyką)</span><span>(10 = to mechanizm, który widzę z boku)</span></div>
+      <input type="range" class="scale-input" id="dist" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wynik</span><span id="distval">6</span></div>
+    </div>
+
+    <div class="diff-list">
+      <div class="diff-row"><span><strong>Intensywność krytyki</strong></span><span class="diff-delta" id="dI">—</span></div>
+      <div class="diff-row"><span><strong>Dystans od krytyki</strong></span><span class="diff-delta" id="dD">—</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsgMap">Po jednym epizodzie i jednej formule mapa jest dopiero zaczerwieniona. Pełen efekt diagnostyczny przychodzi po 7-dniowej obserwacji (3+ wpisy dziennie). Wtedy widać <em>wzorzec</em>: powtarzające się wyzwalacze, dominującą funkcję, główny głos, charakterystyczne miejsce w ciele i najbardziej destrukcyjne konsekwencje.</div>
+
+    <div class="term-note"><strong>🔁 Po tygodniu — 5 pytań</strong>: (1) Jakie 3 najczęstsze wyzwalacze? (2) Treść podobna czy zróżnicowana? (3) Która funkcja dominuje? (4) Czyj głos pojawia się najczęściej? (5) Które konsekwencje są najbardziej destrukcyjne? Z odpowiedzi wynika konkretny wybór interwencji: dominująca mobilizacja → eksperymenty behawioralne; dominujący głos rodzica → imagery rescripting; dominująca funkcja antycypacji → praca z lękiem przed odrzuceniem.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Mapa to <em>narzędzie diagnostyczne</em>, nie terapeutyczne. Najpierw zobacz system — potem go ruszaj. Optymalna dawka: <strong>7 dni obserwacji × 3 epizody dziennie = 21 wpisów</strong> wystarczy do formuły. Bez tego kroku interwencje (CFT, two-chair, restrukturyzacja) działają na ślepo.</div>
+    </div>
+
+    <div class="src">Gilbert (2014, „Forms and Functions of Self-Criticism", Self &amp; Identity); Persons (2008, „Cognitive Therapy in Practice"); Young, Klosko, Weishaar (2003, „Schema Therapy"); Dugas i in. (2007, J. Anxiety Disorders); Fennell (2016, „Overcoming Low Self-Esteem"); Greenberg (2015, „Emotion-Focused Therapy")</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateDiff() {
+  var iC = parseInt(document.getElementById('intCrit').value);
+  var dV = parseInt(document.getElementById('dist').value);
+  function fmt(d) { if (d === 0) return '0'; return (d > 0 ? '+' : '') + d; }
+  var dIe = document.getElementById('dI');
+  var dDe = document.getElementById('dD');
+  dIe.textContent = iC; dIe.className = 'diff-delta';
+  dDe.textContent = dV; dDe.className = 'diff-delta';
+
+  var msg = document.getElementById('finalMsgMap');
+  if (dV >= 7 && iC >= 5) {
+    msg.innerHTML = 'Wysoka intensywność i jednocześnie wysoki dystans — to optymalny stan obserwatora: widzisz mechanizm wyraźnie i czujesz go silnie. Z tej pozycji formuła ma realną moc diagnostyczną. Powtórz dla 2–3 innych epizodów w nadchodzącym tygodniu.';
+  } else if (dV >= 6) {
+    msg.innerHTML = 'Dobry początek — udało się zobaczyć mechanizm z boku. Kontynuuj 7-dniową obserwację, by zobaczyć wzorzec. Jedna formuła to hipoteza; tygodniowa mapa to dane.';
+  } else if (dV <= 3) {
+    msg.innerHTML = 'Niski dystans oznacza, że nadal czujesz się złączony/a z krytyką („to jestem ja, nie mechanizm"). To częste przy chronicznej samokrytyce. Wzmocnienie dystansu wymaga PRAKTYKI — defuzji ACT, etykietowania głosu jako historycznego (Wymiar 4), pracy somatycznej (Wymiar 5).';
+  } else {
+    msg.innerHTML = 'Średni dystans — proces obserwacji zaczyna działać, ale jest jeszcze kruchy. Po 7 dniach (3 wpisy dziennie) dystans typowo rośnie o 2–3 punkty samym faktem regularnego mapowania.';
+  }
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    var id = e.target.id;
+    var out = document.getElementById(id + 'val');
+    if (out) out.textContent = e.target.value;
+    if (curStep === 5) updateDiff();
+  }
+});
+
+function onReset() {
+  ['intCrit','dist'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      var v = el.getAttribute('data-default') || '5';
+      el.value = v;
+      var out = document.getElementById(id + 'val');
+      if (out) out.textContent = v;
+    }
+  });
+  ['dI','dD'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = 'diff-delta'; }
+  });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_se_mapa_samokrytyki — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_se_mapa_samokrytyki";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

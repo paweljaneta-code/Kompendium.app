@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · imagery rescripting w OCPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.phase-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.phase-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.phase-row { padding: 10px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 12px; align-items: flex-start; }
+.phase-row:first-of-type { border-top: none; }
+.phase-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; font-size: 18px; flex-shrink: 0; min-width: 28px; }
+.phase-body { flex: 1; }
+.phase-name { font-weight: 600; color: var(--bg); font-size: 13px; margin-bottom: 4px; }
+.phase-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.85); }
+
+.warn-card { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.warn-card strong { color: var(--ink); display: block; margin-bottom: 6px; font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>imagery rescripting w OCPD</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Imagery rescripting — gdy <em>scena</em> z dzieciństwa zostaje przepisana</h1>
+  <p class="card-detail">Imagery rescripting (rekontekstualizacja sceny) — empirycznie najsilniejsze narzędzie pracy ze schematami w OCPD. Korzenie metody: Mervin Smucker i wsp. (1995, „Imagery rescripting: A new treatment for survivors of childhood sexual abuse suffering from posttraumatic stress disorder", Journal of Cognitive Psychotherapy) — pierwotnie dla PTSD. Arnoud Arntz i Anne Weertman (1999, „Treatment of childhood memories: Theory and practice", Behaviour Research and Therapy) zaadaptowali ją do Schema Therapy. Arnoud Arntz (2012, „Imagery Rescripting as a therapeutic technique: Review of clinical trials, basic studies, and research agenda", Journal of Experimental Psychopathology) — przegląd metody. RCT Bamelis, Evers, Spinhoven i Arntz (2014, American Journal of Psychiatry) — N=323, ST skuteczniejsza niż TAU dla zaburzeń osobowości, w tym OCPD. W OCPD imagery rescripting używa się przede wszystkim do pracy ze schematem WYGÓROWANYCH STANDARDÓW + KARZĄCEGO RODZICA. Cel: rekontekstualizacja sceny z dzieciństwa, w której pojawił się wymóg perfekcjonizmu lub kara za niedoskonałość. Doświadczalne UCHYLENIE warunku. To paradygmatyczna zmiana — od poznawczego rozumienia („standardy są przesadzone") do EMOCJONALNEGO przeżycia („nie musiałam być perfekcyjna, żeby być kochana").</p>
+
+  <div class="phase-card">
+    <div class="phase-h">3 fazy imagery rescripting (Arntz & Weertman 1999)</div>
+    <div class="phase-row">
+      <span class="phase-num">1.</span>
+      <div class="phase-body">
+        <div class="phase-name">FAZA 1 — odtworzenie sceny z DZIECIŃSTWA</div>
+        <div class="phase-cont">Pacjent z zamkniętymi oczami przywołuje konkretną scenę z dzieciństwa, w której schemat się ukształtował. Najczęściej: rodzic karzący za niedoskonałość, wycofujący miłość przy „porażce", krytykujący za normalną dziecięcą aktywność. Pacjent OPISUJE w czasie teraźniejszym: „mam 7 lat, jestem w kuchni, mama krzyczy...". Sieć emocjonalna sceny aktywuje się.</div>
+      </div>
+    </div>
+    <div class="phase-row">
+      <span class="phase-num">2.</span>
+      <div class="phase-body">
+        <div class="phase-name">FAZA 2 — wkroczenie DOROSŁEGO Ja</div>
+        <div class="phase-cont">Terapeuta prosi: „teraz wkracza dorosła Ty (40 lat). Co Ty, dorosły, chciałabyś powiedzieć małej sobie? Co chciałabyś powiedzieć rodzicowi?". Dorosła wersja pacjentki BRONI dziecka. Mówi: „Mała Marianno, jesteś perfekcyjna taka, jaka jesteś. To rodzic ma problem, NIE ty". Mówi do rodzica: „Przestań! Ona ma 7 lat, robi co może!".</div>
+      </div>
+    </div>
+    <div class="phase-row">
+      <span class="phase-num">3.</span>
+      <div class="phase-body">
+        <div class="phase-name">FAZA 3 — REKONTEKSTUALIZACJA — co RZECZYWIŚCIE potrzebowałaś?</div>
+        <div class="phase-cont">Terapeuta: „Co mała Ty potrzebuje teraz? Czego potrzebowała wtedy?". Dorosły dostarcza dziecku to, czego brakowało: bezwarunkową miłość, akceptację, ochronę, czas, zabawę. Mózg AKTUALIZUJE wspomnienie nową informacją: „byłam chroniona, byłam kochana taka, jaka byłam". Schemat dostaje korygujące doświadczenie EMOCJONALNE.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn-card">
+    <strong>⚕️ Technika wymaga TERAPEUTY</strong>
+    Imagery rescripting NIE jest techniką do samodzielnej pracy. Wymaga (a) bezpiecznej relacji terapeutycznej, (b) wcześniejszej psychoedukacji o schematach i trybach (zwykle 4-6 sesji wcześniej), (c) terapeuty wyszkolonego w Schema Therapy, (d) zwykle 30-45 minut sesji. Próba samodzielnego użycia często NIE DZIAŁA — pacjent „obserwuje" scenę zamiast w niej BYĆ. Ta karta wsparcia służy psychoedukacji + materiałowi do rozmowy z terapeutą.
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🧠</span><span class="element-text"><strong>Rekonsolidacja pamięci — neurobiologia metody</strong>. Kluczowe odkrycie neuronauki ostatnich 20 lat: pamięć NIE jest stała. Każde przywołanie wspomnienia + dodanie NOWEJ informacji = aktualizacja. Mózg „nadpisuje" stare wspomnienie nową wersją. Imagery rescripting wykorzystuje to: scena z dzieciństwa zostaje przywołana + wkracza ochrona dorosłego = mózg „zapisuje" nową wersję. Działa na podobnej zasadzie jak praca z PTSD.</span></div>
+    <div class="element-row"><span class="element-icon">🎬</span><span class="element-text"><strong>Sieć emocjonalna sceny aktywuje się</strong>. Klucz Arntza 2012: imagery aktywuje sieć emocjonalną sceny TAK, JAKBY MIAŁA MIEJSCE TERAZ — ale pacjent ma NOWĄ KOMPETENCJĘ dorosłego. To różni imagery od czystego wspomnienia (gdzie pacjent jest „obserwatorem"). W imagery: pacjent JEST w scenie + przeżywa emocje + dodaje nową kompetencję.</span></div>
+    <div class="element-row"><span class="element-icon">⚠️</span><span class="element-text"><strong>Kiedy NIE używać imagery rescripting</strong>. Arntz 2012, Bamelis 2014: technika wymaga (a) stabilnej relacji terapeutycznej, (b) podstawowej psychoedukacji o schematach, (c) zdolności pacjenta do kontaktu z emocjami (NIE w fazie aktywnej depresji ciężkiej, dysocjacji, czynnego nadużywania substancji). Przedwczesne imagery może AKTYWOWAĆ traumy bez możliwości regulacji. Szkoda większa niż pożytek.</span></div>
+    <div class="element-row"><span class="element-icon">📊</span><span class="element-text"><strong>Empiryczne wsparcie — najmocniejsze narzędzie</strong>. Bamelis 2014 (American Journal of Psychiatry, RCT N=323): ST z imagery rescripting istotnie skuteczniejsza niż TAU dla cluster C (w tym OCPD). Effect size duży. Trwałe efekty w 2-letnim follow-up. Arntz 2012 przegląd: imagery rescripting ma najsilniejszy effect size spośród wszystkich technik pracy ze schematami. Stąd: dla pacjenta z OCPD — narzędzie pierwszej linii w specjalistycznej terapii.</span></div>
+  </div>
+
+  <div class="frame-quote">„Technika wymaga CZASU (zwykle 30-45 minut), bezpiecznej relacji terapeutycznej i wcześniejszej psychoedukacji o schematach i trybach. Przedwczesne imagery (zanim pacjent rozumie konstrukt) zwykle NIE DZIAŁA — pacjent „obserwuje" scenę, zamiast w niej BYĆ. Pełna moc imagery rescripting pojawia się dopiero gdy pacjent rozumie schemat, zna swoje tryby i ma stabilną relację z terapeutą. Wtedy to często najsilniejsze narzędzie zmiany w terapii zaburzeń osobowości."<span class="frame-quote-attr">— Arnoud Arntz (2012, Imagery Rescripting as a therapeutic technique: Review of clinical trials, basic studies, and research agenda)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: imagery rescripting to TECHNIKA TERAPEUTYCZNA wymagająca pracy z terapeutą wyszkolonym w Schema Therapy. NIE jest narzędziem do samodzielnego użycia. Ta karta wsparcia służy psychoedukacji + materiałowi do rozmowy z terapeutą. Klasyczne zastosowania w OCPD: scena z dzieciństwa, w której schemat Wygórowanych Standardów się ukształtował (rodzic karzący za niedoskonałość, warunkowa miłość, krytyka za drobne błędy). Empirycznie wsparte: Bamelis 2014 RCT N=323, Arntz 2012 przegląd. Trwała zmiana 12-24 mies. terapii ST.</div>
+
+  <div class="src">Smucker, Dancu, Foa i Niederee (1995, Imagery rescripting: A new treatment for survivors of childhood sexual abuse suffering from posttraumatic stress disorder, Journal of Cognitive Psychotherapy) · Arntz i Weertman (1999, Treatment of childhood memories: Theory and practice, Behaviour Research and Therapy) · Arntz (2012, Imagery Rescripting as a therapeutic technique: Review of clinical trials, basic studies, and research agenda, Journal of Experimental Psychopathology) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry) · Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner''s Guide) · Arntz (2015, Imagery Rescripting for Personality Disorders: Healing Early Maladaptive Schemas)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Identyfikacja sceny — przygotowanie do pracy z terapeutą</div>
+  <h1 class="card-prompt">Wpisz <em>swoją scenę</em> — gdzie ukształtował się schemat?</h1>
+  <p class="card-detail">Pierwszy krok do pracy z imagery rescripting (z terapeutą). Zidentyfikuj konkretną scenę z dzieciństwa, w której uformował się schemat Wygórowanych Standardów / Karzącego Rodzica. Im więcej szczegółów, tym lepsza praca z terapeutą.</p>
+
+  <textarea class="thought-input" id="age" placeholder="① WIEK — ile masz w tej scenie? Najczęściej: 4-12 lat. (np.: „mam 7 lat — pamiętam mojego krótkiego pleciaka, blue płaszcz")." style="min-height: 70px;"></textarea>
+
+  <textarea class="thought-input" id="place" placeholder="② MIEJSCE — konkretnie gdzie? (np.: „kuchnia w mieszkaniu na ul. Sienkiewicza"; „biuro taty"; „klasa szkolna 2a"). Im konkretniej, tym lepsza aktywacja pamięci podczas imagery." style="min-height: 80px;"></textarea>
+
+  <textarea class="thought-input" id="who" placeholder="③ KTO TAM JEST — rodzic, opiekun, nauczyciel, rodzeństwo. Konkretne osoby. (np.: „mama, młodszy brat siedzi obok, ja stoję przy stole; tata w drugim pokoju, słychać go")." style="min-height: 90px;"></textarea>
+
+  <textarea class="thought-input" id="event" placeholder="④ CO SIĘ DZIEJE — opisz w czasie teraźniejszym. Konkretne wydarzenie, w którym schemat się ukształtował. (np.: „pokazuję mamie mój dyplom z konkursu — drugie miejsce. Mama spogląda i mówi 'a kto był pierwszy? Trzeba było bardziej się postarać'. Krótkie spojrzenie, potem wraca do gotowania. Stoję sama z dyplomem w ręku")." style="min-height: 130px;"></textarea>
+
+  <textarea class="thought-input" id="meaning" placeholder="⑤ CO TWOJE MAŁE JA POMYŚLAŁO — jaki wniosek wyciągnęło z tej sceny? To początek schematu. (np.: „że muszę być NAJLEPSZA, nie wystarczy 'dobrze'; że mama mnie kocha tylko gdy wygrywam; że drugie miejsce = porażka; że trzeba się BARDZIEJ starać")." style="min-height: 130px;"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: scena z imagery rescripting nie musi być DRAMATYCZNA. Najczęściej w OCPD: drobne, wielokrotnie powtarzające się sytuacje. Krótkie komentarze rodzica. Wycofanie zamiast czułości po porażce. Brak okazjonalnych pochwał za normalne osiągnięcia. Klasyczna scena: pacjent z OCPD potrzebuje 5-10 sesji psychoedukacji o schematach, ZANIM scena „wybiera się sama" do pracy. Z terapeutą.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Co dorosła Ty chciałabyś zrobić</div>
+  <h1 class="card-prompt">Wpisz, <em>co dorosła Ty</em> chciałabyś zrobić w tej scenie</h1>
+  <p class="card-detail">Drugi krok przygotowawczy. Wyobraź sobie, że dorosła Ty (40-50 lat) wkracza w tę scenę. Co chcesz powiedzieć/zrobić małej sobie? Co chcesz powiedzieć rodzicowi? Czego mała Ty potrzebowała wtedy? To jest praca przygotowawcza do imagery rescripting z terapeutą.</p>
+
+  <textarea class="thought-input" id="to_child" placeholder="① DO MAŁEJ SIEBIE — co chciałabyś jej powiedzieć / pokazać? (np.: „Mała Marianko, jesteś NIESAMOWITA. Drugie miejsce z 50 dzieci to ogromne osiągnięcie. Twój dyplom jest piękny. Ja Cię widzę. Ja Cię doceniam. Nie musisz być najlepsza, żeby być kochana. Jesteś wystarczająca taka, jaka jesteś")." style="min-height: 150px;"></textarea>
+
+  <textarea class="thought-input" id="to_parent" placeholder="② DO RODZICA / OPIEKUNA — co chciałabyś mu powiedzieć? Możesz być stanowcza — to scena, gdzie dorosła Ty CHRONI dziecko. (np.: „Mamo, ona ma 7 lat. Przyniosła Ci dyplom. Czeka na Twoją radość, na 'gratulacje, jestem z ciebie dumna'. Dlaczego nie potrafisz tego powiedzieć? Ona NIE musi być najlepsza. Ona ma być Twoją córką. Spojrzyj na nią. Powiedz jej coś dobrego")." style="min-height: 150px;"></textarea>
+
+  <textarea class="thought-input" id="needs" placeholder="③ CZEGO MAŁA TY POTRZEBOWAŁA — czego brakowało w tej scenie? (np.: „potrzebowała: bezwarunkowej dumy z mojego osiągnięcia; przytulenia; słów 'kocham cię, niezależnie od miejsca w konkursie'; nie potrzebowała porównania do 'pierwszego'; potrzebowała być centralnie ważna w ten moment")." style="min-height: 130px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch w OCPD przy tym ćwiczeniu — obrona rodzica („ale ona miała trudne życie, ona też była tak wychowana, ona robiła co mogła"). Empatia dla rodzica = możliwa W LATER FAZIE pracy. Ale w imagery rescripting dorosła Ty SPECYFICZNIE ma stanąć po stronie DZIECKA. Nie obu stron. To NIE jest moralna ocena rodzica — to TERAPEUTYCZNE doświadczenie ochrony dziecka, którego brakowało wtedy.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — sesja imagery rescripting z terapeutą</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> sesji z terapeutą Schema Therapy</h1>
+  <p class="card-detail">Imagery rescripting to FORMALNA SESJA z terapeutą wyszkolonym w Schema Therapy. 30-45 minut. Te cztery kroki tworzą strukturę typowej sesji. KLUCZ: terapeuta prowadzi proces. Pacjent jest „w scenie", terapeuta dostarcza struktury i bezpieczeństwa.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — typowa sesja imagery rescripting (30-45 min)</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>FAZA WPROWADZENIA — 5-10 min</strong>. Terapeuta + pacjent przygotowują się. Krótka relaksacja. Zamknięcie oczu. Pacjent wybiera scenę (lub terapeuta sugeruje na podstawie wcześniejszych sesji). Terapeuta: „Chcę, żebyś teraz przeniosła się do tamtej sceny. Powiedz mi, co widzisz w czasie teraźniejszym, jakbyś tam była TERAZ".</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>FAZA OPISU SCENY — 5-10 min</strong>. Pacjent w czasie teraźniejszym opisuje scenę. „Mam 7 lat. Stoję w kuchni. Mama gotuje. Pokazuję jej dyplom. Ona patrzy szybko, mówi 'a kto był pierwszy?', wraca do garnka". Terapeuta dopytuje: „co teraz czujesz w ciele? Co sobie myślisz?". Sieć emocjonalna sceny aktywuje się. Pacjent CZUJE jak dziecko.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>FAZA RESCRIPTING — 15-20 min — kluczowa</strong>. Terapeuta: „Teraz wkracza dorosła Ty. Wchodzi do tej kuchni. Ile ma lat? Co robi? Co mówi do tej małej Mariannki? Co mówi do mamy?". Pacjent W IMAGERY pozwala dorosłej wersji sobie zrobić to, czego potrzebowała wtedy. Powiedzenie matce. Przytulenie dziecka. Wyciągnięcie dziecka z tej kuchni. Zabranie do bezpiecznego miejsca. Mózg AKTUALIZUJE wspomnienie.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>FAZA INTEGRACJI — 5-10 min</strong>. Powolne otwarcie oczu. Terapeuta + pacjent rozmawiają o doświadczeniu. „Co się zmieniło? Jak to było mieć ochronę dorosłej siebie? Co teraz czujesz wobec małej Mariannki?". Klasyczne odkrycie: silne emocje (płacz, ulga, smutek), poczucie „odzyskania" dziecka w sobie, zauważalne zmniejszenie aktywacji schematu. Pomocne: napisanie listu do małej siebie po sesji.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: czy współpracujesz z terapeutą znającym Schema Therapy? Czy poznałaś już swoje schematy (zwykle wymaga 4-6 sesji wcześniej)? Czy ten materiał (sceny z punktów 2-3) chcesz przynieść na kolejną sesję terapeutyczną?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: pacjenci z OCPD po 6-10 sesjach imagery rescripting raportują (Bamelis 2014 RCT, Arntz 2012 przegląd): zauważalne zmniejszenie aktywacji schematu Wygórowanych Standardów (30-50%), pierwsze chwile autentycznego samowspółczucia, lepsza tolerancja własnych „niedoskonałości", redukcja Karzącego Rodzica, wzrost dostępu do trybu Spontanicznego Dziecka. Trwała zmiana 12-24 mies. ST. Klucz: regularność (1-2 imagery na miesiąc) + stabilna relacja terapeutyczna.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>imagery rescripting</em> staje się dostępna?</h1>
+  <p class="card-detail">Wróć tu po refleksji nad sceną (punkt 2) i przygotowaniu materiału do sesji (punkt 3). Mierzymy czytelność techniki. Pierwsza refleksja zwykle daje +1 do +2 punkty. Pełne korzystanie z metody wymaga terapeuty Schema Therapy + 4-6 sesji psychoedukacji wcześniej.</p>
+
+  <div class="scale">
+    <div class="scale-title">Czytelność imagery rescripting jako narzędzia — po refleksji</div>
+    <div class="scale-bounds"><span>0 — niejasne</span><span>10 — czytelne</span></div>
+    <input type="range" class="scale-input" id="aImg" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aImgv">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz, że imagery rescripting wymaga TERAPEUTY (NIE samodzielnej praktyki)? Co byłoby Twoim pierwszym konkretnym krokiem (rozmowa z terapeutą o ST? Jeśli już w terapii ST — przyniesienie tego materiału na kolejną sesję)?"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Wyjściowa skala — uzupełnij na początku</div>
+    <div class="scale-bounds"><span>0 — niejasne</span><span>10 — czytelne</span></div>
+    <input type="range" class="scale-input" id="bImg" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bImgv">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: imagery rescripting w OCPD to TECHNIKA TERAPEUTYCZNA, NIE samodzielna praktyka. Wymaga: terapeuty Schema Therapy + bezpiecznej relacji + psychoedukacji o schematach (4-6 sesji wcześniej) + zwykle 30-45 minut sesji. Klasyczne zastosowanie: praca ze schematem Wygórowanych Standardów / Karzącego Rodzica + scenami z dzieciństwa, w których schemat się ukształtował. Empirycznie wsparte: Bamelis 2014 RCT N=323 (American Journal of Psychiatry), Arntz 2012 przegląd. Najsilniejsze narzędzie pracy ze schematami w OCPD.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Imagery rescripting w OCPD: <em>3 fazy — odtworzenie sceny + wkroczenie dorosłego Ja + rekontekstualizacja</em>. Korzenie: Smucker 1995 PTSD, adaptacja do ST: Arntz & Weertman 1999. <strong>WYMAGA TERAPEUTY Schema Therapy — NIE samodzielnej praktyki</strong>. Mechanizm neurobiologiczny: rekonsolidacja pamięci. Empirycznie najsilniejsze narzędzie zmiany w ST (Bamelis 2014 RCT, Arntz 2012 przegląd). Klasyczne zastosowanie: scena dzieciństwa, gdzie schemat Wygórowanych Standardów / Karzącego Rodzica się ukształtował. 6-10 sesji = zauważalne zmniejszenie aktywacji schematu.</div>
+  </div>
+
+  <div class="src">Smucker, Dancu, Foa i Niederee (1995, Imagery rescripting: A new treatment for survivors of childhood sexual abuse suffering from posttraumatic stress disorder, Journal of Cognitive Psychotherapy) · Arntz i Weertman (1999, Treatment of childhood memories: Theory and practice, Behaviour Research and Therapy) · Arntz (2012, Imagery Rescripting as a therapeutic technique: Review of clinical trials, basic studies, and research agenda, Journal of Experimental Psychopathology) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry) · Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner''s Guide) · Arntz (2015, Imagery Rescripting for Personality Disorders: Healing Early Maladaptive Schemas)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bImg').value || 0, 10);
+    var aU = parseInt(document.getElementById('aImg').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Czytelność techniki wzrosła o ' + dU + ' — masz teraz mapę imagery rescripting. Klucz: TECHNIKA WYMAGA TERAPEUTY. Samodzielne próby zwykle nie działają. Materiał z tego narzędzia służy do rozmowy z terapeutą.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszym kontakcie. Imagery rescripting to technika doświadczalna z bezpiecznej relacji terapeutycznej. Empirycznie najsilniejsze narzędzie pracy ze schematami w OCPD (Bamelis 2014 RCT).';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że technika wydaje się zbyt abstrakcyjna lub niedostępna. Pierwszy krok: rozmowa z terapeutą znającym Schema Therapy o zastosowaniu imagery rescripting. Wymaga psychoedukacji o schematach najpierw.';
+    else msg = 'Spadek — czasem rozważanie scen z dzieciństwa aktywuje silne emocje i obronę („nie chcę grzebać w przeszłości"). To NORMALNE. Praca: tylko z terapeutą, nigdy samodzielnie. Bezpieczeństwo relacji jest fundamentem.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_imagery_ocpd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_imagery_ocpd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bImg','aImg'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

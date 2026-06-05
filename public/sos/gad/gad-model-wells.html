@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Model Wellsa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --bg-deep: #ebe6da;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --line: #c9c2b0;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+.element-text em { color: var(--sage); font-style: italic; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; display: block; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; z-index: 100; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+/* === GAD-specific shared classes === */
+.proto-card { background: rgba(184,197,168,0.14); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.proto-step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed rgba(122,146,112,0.3); }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 15px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.5; color: var(--ink-soft); flex: 1; }
+.proto-text strong { color: var(--ink); font-weight: 600; }
+.proto-text em { font-style: italic; color: var(--sage-deep); }
+
+.tldr-box { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; line-height: 1.55; color: var(--ink); margin: 0 0 14px; border-left: 3px solid var(--sage-deep); }
+.tldr-box strong { color: var(--sage-deep); font-weight: 700; }
+
+
+.layer-card { background: rgba(184,197,168,0.14); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 10px 0; cursor: pointer; transition: all 0.2s; }
+.layer-card:hover, .layer-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.layer-card.picked .layer-desc, .layer-card.picked .layer-ex { color: rgba(244,241,234,0.85); }
+.layer-h { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.layer-em { font-size: 18px; }
+.layer-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; }
+.layer-desc { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 4px; }
+.layer-ex { font-size: 12px; line-height: 1.45; color: var(--ink-mute); font-style: italic; }
+.diff-mini { display: flex; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.5); border: 1px dashed var(--sage); border-radius: 10px; margin: 10px 0; align-items: center; justify-content: space-around; }
+.diff-mini-side { text-align: center; }
+.diff-mini-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--sage-deep); }
+.diff-mini-lbl { font-size: 11px; color: var(--ink-mute); margin-top: 2px; }
+.diff-mini-arrow { color: var(--ink-mute); font-size: 16px; }
+
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Model Wellsa</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1: WPROWADZENIE -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Martwienie się <em>o martwienie</em></h1>
+  
+  <div class="tldr-box"><strong>⚡ W skrócie:</strong> Adrian Wells (1995, 2009) twierdzi, że nie <em>treść</em> obaw utrzymuje GAD, lecz <strong>przekonania o samym martwieniu</strong>. Myśl „zwariuję, bo nie umiem przestać" silniej napędza zaburzenie niż konkretna obawa. Dlatego praca z metaprzekonaniami — w terapii metapoznawczej (MCT) — daje d > 2,0 w randomizowanych badaniach kontrolowanych (Normann i wsp., 2014).</div>
+  
+  <p class="card-detail"><strong>Model metapoznawczy</strong> (MCT — metacognitive therapy, Wells 1995, 2009) wprowadza rozróżnienie, którego klasyczna terapia poznawczo-behawioralna (CBT) nie używała: <em>poziom 1</em> to martwienie o sytuację („a jeśli stracę pracę?"), <em>poziom 2</em> to martwienie o samo martwienie („nie potrafię tego zatrzymać, zwariuję"). To poziom 2 utrzymuje zaburzenie. Dwa typy metaprzekonań — <strong>pozytywne</strong> („martwienie mnie chroni") i <strong>negatywne</strong> („martwienie jest niebezpieczne") — tworzą paradoksalną pętlę: pozytywne <em>uruchamiają</em> martwienie, negatywne <em>przerażają</em> nim, gdy się pojawi.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery elementy modelu Wellsa</div>
+    <div class="element-row">
+      <span class="element-icon">1️⃣</span>
+      <span class="element-text"><strong>Typ 1 martwienia</strong> — zwykłe „a jeśli...?" o pracy, zdrowiu, relacjach. Pojawia się u wszystkich.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">2️⃣</span>
+      <span class="element-text"><strong>Typ 2 martwienia</strong> — <em>martwienie o martwienie</em>. „Znowu się martwię — to znaczy, że tracę kontrolę".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">➕</span>
+      <span class="element-text"><strong>Pozytywne metaprzekonania</strong> — „martwienie pomaga się przygotować", „to znak troski".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">➖</span>
+      <span class="element-text"><strong>Negatywne metaprzekonania</strong> — „nie kontroluję martwienia", „martwienie mnie zniszczy", „zwariuję".</span>
+    </div>
+    <div class="frame-quote">„W zaburzeniu lękowym uogólnionym kluczowe są nie obawy, lecz przekonania o samym procesie martwienia."<span class="frame-quote-attr">— Adrian Wells (2009, Metacognitive Therapy for Anxiety and Depression)</span></div>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong>: w klasycznej terapii poznawczo-behawioralnej kwestionujesz <em>treść</em> myśli („czy naprawdę stracisz pracę?"). W terapii metapoznawczej kwestionujesz <em>relację</em> z martwieniem („czy musisz w ogóle wchodzić w to martwienie? czy ono cię chroni?"). To zupełnie <strong>inny punkt dźwigni</strong>.</div>
+  
+  <div class="src">Wells (1995, model metapoznawczy GAD) · Wells (2009, podręcznik MCT) · Normann i wsp. (2014, metaanaliza N = 1 760, MCT vs. CBT) · Wells i King (2006, RCT)</div>
+</section>
+
+<!-- KROK 2: TWOJE METAPRZEKONANIA — POZYTYWNE -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje pozytywne</div>
+  <h1 class="card-prompt">Czemu <em>uruchamiasz</em> martwienie?</h1>
+  <p class="card-detail">Pozytywne metaprzekonania to powody, dla których umysł <strong>uważa martwienie za użyteczne</strong>. To one zaczynają cykl. Bez nich w ogóle nie weszłabyś/wszedłbyś w martwienie. Sprawdź, które brzmią znajomo. Borkovec i Roemer (1995): <em>67%</em> osób z GAD wierzy w „martwienie przygotowuje na najgorsze", <em>52%</em> w „martwienie pomaga rozwiązywać problemy".</p>
+  
+  <div class="term-note"><strong>Wskazówka</strong>: pozytywne metaprzekonania zwykle są <em>nieświadome</em>. Pacjenci dziwią się: <em>„nie sądziłem/sądziłam, że uważam martwienie za pomocne"</em>. Ale gdy pytasz „dlaczego nie przestajesz?", pojawiają się odpowiedzi typu „bo wtedy będę nieprzygotowany/a", „bo to znak, że mi zależy".</div>
+  
+  <div class="examples-h">Pięć najczęstszych pozytywnych metaprzekonań — stuknij swoje</div>
+  <div>
+    <div class="layer-card" id="pm1" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">🛡️</span><span class="layer-name">„Martwienie mnie chroni"</span></div>
+      <div class="layer-desc">Wierzę, że gdy się martwię, jestem przygotowany/a na najgorsze.</div>
+      <div class="layer-ex">np. „Jak się przestanę martwić, na pewno coś się wydarzy"</div>
+    </div>
+    <div class="layer-card" id="pm2" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">🧩</span><span class="layer-name">„Martwienie pomaga rozwiązywać problemy"</span></div>
+      <div class="layer-desc">Myślę, że obracanie problemu w głowie jest formą jego rozwiązywania.</div>
+      <div class="layer-ex">np. „Muszę to przemyśleć dokładnie, inaczej coś przeoczę"</div>
+    </div>
+    <div class="layer-card" id="pm3" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">💞</span><span class="layer-name">„Martwienie pokazuje, że mi zależy"</span></div>
+      <div class="layer-desc">Wierzę, że jeśli się nie martwię, znaczy to, że jestem obojętny/a.</div>
+      <div class="layer-ex">np. „Dobra matka martwi się o dzieci. Gdybym nie martwiła, byłabym egoistką"</div>
+    </div>
+    <div class="layer-card" id="pm4" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">⚡</span><span class="layer-name">„Martwienie mnie motywuje"</span></div>
+      <div class="layer-desc">Bez martwienia nic bym nie zrobił/a. Lęk pcha mnie do działania.</div>
+      <div class="layer-ex">np. „Jak się przestanę martwić o pracę, przestanę dobrze pracować"</div>
+    </div>
+    <div class="layer-card" id="pm5" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">⚠️</span><span class="layer-name">„Martwienie ostrzega o niebezpieczeństwie"</span></div>
+      <div class="layer-desc">Lęk to sygnał — gdyby zniknął, straciłbym/abym czujność.</div>
+      <div class="layer-ex">np. „Lepiej, żeby coś we mnie zawsze pilnowało"</div>
+    </div>
+  </div>
+</section>
+
+<!-- KROK 3: TWOJE METAPRZEKONANIA — NEGATYWNE -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Twoje negatywne</div>
+  <h1 class="card-prompt">Czemu martwienie <em>cię przeraża</em>?</h1>
+  <p class="card-detail">Negatywne metaprzekonania to powody, dla których martwienie <strong>jest przerażające</strong>, gdy już się pojawi. Tworzą drugą warstwę problemu — martwienie o martwienie. To one przekształcają zwykłe „a jeśli...?" w epizod GAD trwający godziny.</p>
+  
+  <div class="term-note"><strong>Reguła Wellsa</strong>: pozytywne metaprzekonania <em>uruchamiają</em> cykl, negatywne <strong>go utrzymują</strong>. Bez negatywnych martwienie kończyłoby się po kilku minutach. Z negatywnymi — staje się <em>katastrofą</em>: „nie kontroluję, więc zwariuję, więc muszę walczyć z myślami, więc nie kontroluję jeszcze bardziej...".</div>
+  
+  <div class="examples-h">Pięć najczęstszych negatywnych metaprzekonań — stuknij swoje</div>
+  <div>
+    <div class="layer-card" id="nm1" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">🔓</span><span class="layer-name">„Nie kontroluję martwienia"</span></div>
+      <div class="layer-desc">Wierzę, że nie potrafię go zatrzymać — a to oznacza, że zaraz mnie pochłonie.</div>
+      <div class="layer-ex">np. „Już się zaczęło, teraz nie ma jak wyjść"</div>
+    </div>
+    <div class="layer-card" id="nm2" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">🧠</span><span class="layer-name">„Martwienie jest niebezpieczne dla mózgu"</span></div>
+      <div class="layer-desc">Myślę, że długie martwienie zniszczy mi neurony, doprowadzi do choroby.</div>
+      <div class="layer-ex">np. „Jeszcze trochę i dostanę zawału / udaru"</div>
+    </div>
+    <div class="layer-card" id="nm3" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">😵</span><span class="layer-name">„Zwariuję od tego martwienia"</span></div>
+      <div class="layer-desc">Wierzę, że jeśli to nie ustanie, dostanę psychozy lub załamania nerwowego.</div>
+      <div class="layer-ex">np. „Mój umysł nie wytrzyma, pęknę"</div>
+    </div>
+    <div class="layer-card" id="nm4" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">⚖️</span><span class="layer-name">„Martwienie nie da się powstrzymać"</span></div>
+      <div class="layer-desc">Wierzę, że martwienie ma własną siłę — będzie tak długo, jak chce, niezależnie ode mnie.</div>
+      <div class="layer-ex">np. „Próbowałem/am, nie da się"</div>
+    </div>
+    <div class="layer-card" id="nm5" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">
+      <div class="layer-h"><span class="layer-em">💔</span><span class="layer-name">„Martwienie zniszczy mi życie"</span></div>
+      <div class="layer-desc">Wierzę, że to zaraz zniszczy moje relacje, pracę, zdrowie.</div>
+      <div class="layer-ex">np. „Dłużej tego nie wytrzymam, wszystko się rozpadnie"</div>
+    </div>
+  </div>
+</section>
+
+<!-- KROK 4: MAPA WŁASNEGO CYKLU -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Twój cykl</div>
+  <h1 class="card-prompt">Jak działa <em>u Ciebie</em>?</h1>
+  <p class="card-detail">Złóż mapę z elementów. <strong>Jeden konkretny epizod</strong> z ostatniego tygodnia: co go uruchomiło (typ 1), które pozytywne metaprzekonanie pchnęło Cię w martwienie, jak długo trwało, które negatywne metaprzekonanie pojawiło się w środku, czym się skończyło. Ten zapis jest <em>materiałem</em> do pracy z metaprzekonaniami.</p>
+  
+  <div class="term-note"><strong>Reguła</strong>: szukasz <em>jednego, świeżego, konkretnego</em> epizodu — nie ogólnego opisu. Im świeższy, tym więcej szczegółów pamiętasz; im konkretniejszy, tym łatwiej zauważyć metaprzekonania, które normalnie są niewidoczne.</div>
+  
+  <div class="proto-card">
+    <div class="proto-h">Pięć ogniw cyklu Wellsa</div>
+    <div class="proto-step">
+      <span class="proto-num">A</span>
+      <span class="proto-text"><strong>Wyzwalacz</strong>: zewnętrzne zdarzenie albo myśl, która zaczęła epizod.</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">B</span>
+      <span class="proto-text"><strong>Typ 1 martwienia</strong>: pierwsze „a jeśli...?".</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">C</span>
+      <span class="proto-text"><strong>Pozytywne metaprzekonanie</strong>: dlaczego weszłaś/wszedłeś w martwienie.</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">D</span>
+      <span class="proto-text"><strong>Typ 2 martwienia</strong>: martwienie o samo martwienie + negatywne metaprzekonanie.</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">E</span>
+      <span class="proto-text"><strong>Strategia</strong>: co zrobiłaś/zrobiłeś, żeby to zatrzymać (np. szukanie zapewnień, sprawdzanie, unikanie).</span>
+    </div>
+  </div>
+  
+  <div class="examples-h">A. Wyzwalacz — co zaczęło ten epizod?</div>
+  <textarea class="thought-input" id="trigA" rows="2" placeholder="np. „Wczoraj o 22:00 zobaczyłam wiadomość z banku o saldzie"></textarea>
+  
+  <div class="examples-h">B. Typ 1 — pierwsza myśl „a jeśli...?"</div>
+  <textarea class="thought-input" id="t1B" rows="2" placeholder="np. „A jeśli zabraknie mi na ratę kredytu w przyszłym miesiącu?"></textarea>
+  
+  <div class="examples-h">C. Pozytywne metaprzekonanie — dlaczego weszłaś/wszedłeś</div>
+  <textarea class="thought-input" id="pmC" rows="2" placeholder="np. „Muszę to przemyśleć, inaczej coś przeoczę i będzie katastrofa"></textarea>
+  
+  <div class="examples-h">D. Typ 2 — co pomyślałaś/pomyślałeś o samym martwieniu</div>
+  <textarea class="thought-input" id="t2D" rows="2" placeholder="np. „Znowu się tym kręcę godzinami, na pewno zaraz mi serce padnie"></textarea>
+  
+  <div class="examples-h">E. Strategia — co zrobiłaś/zrobiłeś</div>
+  <textarea class="thought-input" id="strE" rows="2" placeholder="np. „Sprawdziłam saldo 6 razy. Napisałam do partnera. Zrobiłam Excel z prognozą do końca roku. Spałam 4 godziny"></textarea>
+</section>
+
+<!-- KROK 5: KIERUNEK INTERWENCJI -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Konsolidacja</div>
+  <h1 class="card-prompt">Punkt <em>dźwigni</em></h1>
+  <p class="card-detail">Wells <strong>nie pracuje z treścią</strong> obaw (typ 1). Pracuje z metaprzekonaniami (poziom 2) i z relacją z myślą (oderwana uważność). Twój punkt dźwigni: które metaprzekonanie najsilniej trzyma cykl? To z nim warto zacząć kwestionować w eksperymentach behawioralnych. Normann i wsp. (2014, metaanaliza N = 1 760): MCT > klasyczne CBT w zaburzeniu lękowym uogólnionym; d > 2,0 — jeden z największych efektów w psychoterapii.</p>
+  
+  <div class="term-note"><strong>Reguła kalibracji</strong>: <em>jedno</em> metaprzekonanie pierwsze. Najsilniej trzymające cykl — zwykle to, do którego masz <em>najwięcej dowodów</em>. W ciągu 2–4 tygodni pracy z nim zauważysz osłabienie. Potem następne. To <em>iteracyjny</em> proces, nie pojedyncza decyzja.</div>
+  
+  <div class="scale">
+    <div class="scale-title">Po tym ćwiczeniu — jak silne jest u Ciebie martwienie o martwienie?</div>
+    <div class="scale-bounds"><span>0 — wcale</span><span>10 — bardzo silne</span></div>
+    <input type="range" min="0" max="10" value="5" class="scale-input" id="t2Po" data-default="5" oninput="document.getElementById('t2PoVal').textContent=this.value">
+    <div class="scale-readout"><span id="t2PoVal">5</span><span> / 10</span></div>
+  </div>
+  
+  <div class="examples-h">Najsilniejsze metaprzekonanie — z którym chcesz zacząć?</div>
+  <textarea class="thought-input" id="silneM" rows="2" placeholder="np. „Najsilniejsze: «martwienie chroni mnie». Z tym zaczynam — eksperyment odroczenia martwienia w narzędziu odroczenia"></textarea>
+  
+  <div class="examples-h">Konkretny krok w tym tygodniu</div>
+  <textarea class="thought-input" id="krokM" rows="2" placeholder="np. „Zrobię eksperyment odroczenia martwienia 3× w tym tygodniu: gdy wpadnie typ 1, zapiszę i odłożę do bloku 17:00–17:30"></textarea>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">W modelu Wellsa <em>treść obaw</em> jest <strong>mniej ważna</strong> niż przekonania o martwieniu. Punkt dźwigni: <em>nie pytaj „czy mam rację, że się boję?", pytaj „dlaczego w ogóle wszedłem/weszłam w to martwienie i co teraz o nim myślę?"</em>. Praca z jednym metaprzekonaniem na raz — przez eksperymenty behawioralne i oderwaną uważność. To <em>najwyżej skuteczna</em> ścieżka leczenia GAD znana w 2024 (Normann, 2014, d > 2,0).</div>
+  </div>
+  
+  <div class="src">Wells (1995, model GAD) · Wells (2009, MCT) · Wells i King (2006, RCT) · Normann i wsp. (2014, metaanaliza) · Borkovec i Roemer (1995, badania metaprzekonań) · Cartwright-Hatton i Wells (1997, MCQ-30)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór SAD v580 + uniwersalny picker v585) ===== */
+(function(){
+  var KEY = "sos_gad_model_wells";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+  window.save = save;
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+updateUI();
+</script>
+</body>
+</html>

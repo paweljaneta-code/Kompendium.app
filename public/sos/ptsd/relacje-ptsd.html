@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Odbudowa relacji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.pattern-card { background: rgba(214,196,168,0.18); border: 1px solid rgba(214,196,168,0.5); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.pattern-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.pattern-icon { font-size: 16px; }
+.pattern-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.pattern-body strong { color: var(--ink); }
+.step-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 10px 12px; margin: 6px 0; border-radius: 0 8px 8px 0; }
+.step-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.step-body { font-size: 12px; line-height: 1.45; color: var(--ink-soft); }
+.comm-card { background: rgba(168,184,210,0.18); border: 1px solid rgba(168,184,210,0.5); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.comm-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.comm-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.comm-body strong { color: var(--ink); }
+.proto-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.proto-rule { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Odbudowa relacji</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Trauma relacyjna leczy się <em>przez</em> relację</h1>
+  <p class="card-detail">Odbudowa relacji to <strong>faza 3 leczenia traumy</strong> wg Herman (1992) — po stabilizacji (faza 1) i przetwarzaniu (faza 2). PTSD i jakość relacji są wzajemnie uwarunkowane: leczenie PTSD wymaga bezpiecznej bazy, a relacja wymaga leczenia PTSD. CBCT (Cognitive-Behavioral Conjoint Therapy; Monson i Fredman, 2012) to pierwsza zwalidowana terapia par dla PTSD (15 sesji). EFT (terapia skoncentrowana na emocjach; Johnson, 2002) pracuje z więzią attachmentową jako podstawą stabilizacji emocjonalnej. Trauma relacyjna leczy się przez relację — ale powoli, ostrożnie, na własnych warunkach.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery typowe wzorce po traumie</div>
+    <div class="element-row">
+      <span class="element-icon">🚪</span>
+      <span class="element-text"><strong>Unikanie bliskości</strong> — wycofanie, dystans, „nie mogę nikogo dopuścić".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🪢</span>
+      <span class="element-text"><strong>Nadmierne przywiązanie</strong> — fuzja, lęk separacyjny, ciągła kontrola obecności partnera.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔒</span>
+      <span class="element-text"><strong>Trudność z zaufaniem</strong> — testy, sprawdzanie, „nikomu do końca nie ufam".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚡</span>
+      <span class="element-text"><strong>Drażliwość / agresja</strong> — wybuchy, ostre granice, atakowanie zanim atakują.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Trauma relacyjna nie leczy się sama. Leczy się przez <em>doświadczenie innej relacji</em> — bezpiecznej, stopniowej, uczciwej. Naszą pracą nie jest naprawić wszystkie relacje od razu. Naszą pracą jest zacząć od jednej, która jest dziś realna."
+    <span class="frame-quote-attr">— Judith Herman (Trauma and Recovery, 1992)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: nie musisz wyjaśniać traumy bliskim. Musisz wyrazić <em>potrzebę</em>. „Po traumie [X] jest dla mnie trudne; potrzebuję [Y]" — to wystarczy. Bliska osoba nie potrzebuje detali, by cię wesprzeć — potrzebuje wiedzieć, jak.</div>
+
+  <div class="src">Herman, J. (1992). <em>Trauma and Recovery</em>. · Johnson, S. (2002). <em>Terapia skoncentrowana na emocjach z osobami po traumie</em>. · Monson, C. &amp; Fredman, S. (2012). <em>Cognitive-Behavioral Conjoint Therapy for PTSD</em>. · Galovski, T. &amp; Lyons, J. (2004). Trauma in couples.</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Stan startowy</div>
+  <h1 class="card-prompt">Jak <em>dostępna</em> jest dla ciebie bliskość?</h1>
+  <p class="card-detail">Skala 0–10. „0" = całkowicie zamknięty/a, nie umiem nikogo dopuścić. „10" = mam głębokie, bezpieczne relacje i potrafię w nich być. Punkt startowy pomaga zobaczyć, czy refleksja i mały krok cokolwiek dały.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — niedostępna</span><span>10 — pełna</span></div>
+    <input type="range" id="preBliz" class="scale-input" min="0" max="10" value="4" data-default="4" oninput="document.getElementById('preBlizVal').textContent=this.value;">
+    <div class="scale-readout"><span>dostępność bliskości:</span><span id="preBlizVal">4</span></div>
+  </div>
+
+  <p class="card-detail" style="margin-top:10px;">Które wzorce po traumie rozpoznajesz u siebie? Zaznacz wszystkie pasujące.</p>
+  <div class="example-chips">
+    <button id="w-uniknie" class="example-chip" onclick="pickPat(this);">🚪 unikanie bliskości</button>
+    <button id="w-fuzja" class="example-chip" onclick="pickPat(this);">🪢 nadmierne przywiązanie / fuzja</button>
+    <button id="w-zauf" class="example-chip" onclick="pickPat(this);">🔒 trudność z zaufaniem</button>
+    <button id="w-drazl" class="example-chip" onclick="pickPat(this);">⚡ drażliwość / wybuchy</button>
+    <button id="w-test" class="example-chip" onclick="pickPat(this);">🧪 testowanie partnera</button>
+    <button id="w-wycof" class="example-chip" onclick="pickPat(this);">🌫️ emocjonalne wycofanie</button>
+    <button id="w-kontrl" class="example-chip" onclick="pickPat(this);">🎮 kontrolowanie partnera / dzieci</button>
+    <button id="w-intym" class="example-chip" onclick="pickPat(this);">🛏️ trudności z intymnością seksualną</button>
+    <button id="w-konf" class="example-chip" onclick="pickPat(this);">⚔️ unikanie konfliktów (cisza)</button>
+    <button id="w-eskal" class="example-chip" onclick="pickPat(this);">🌋 eskalacja drobnych konfliktów</button>
+  </div>
+
+  <div class="term-note"><strong>Wskazówka</strong>: zaznaczone wzorce to NIE „twoja wada" — to spójne reakcje układu nerwowego po traumie. Cel: zauważyć, nie obwiniać. Zauważanie jest pierwszym krokiem do wyboru innej reakcji.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Cztery wzorce — szczegółowo</div>
+  <h1 class="card-prompt">Co <em>napędza</em> każdy wzorzec</h1>
+  <p class="card-detail">Każdy wzorzec ma swój mechanizm, który wcześniej był strategią przetrwania. Dziś zwykle ogranicza zamiast chronić.</p>
+
+  <div class="pattern-card">
+    <div class="pattern-h"><span class="pattern-icon">🚪</span> Unikanie bliskości</div>
+    <div class="pattern-body"><strong>Mechanizm</strong>: bliskość = ryzyko zranienia (po traumie często prawdziwe). Lepiej nie dopuszczać, niż znów zostać zranionym/aną. <strong>Koszt dziś</strong>: samotność, izolacja, brak wsparcia. <strong>Krok wyjścia</strong>: stopniowe zaufanie do JEDNEJ bezpiecznej osoby. Małe testy zaufania, obserwacja reakcji.</div>
+  </div>
+
+  <div class="pattern-card">
+    <div class="pattern-h"><span class="pattern-icon">🪢</span> Nadmierne przywiązanie</div>
+    <div class="pattern-body"><strong>Mechanizm</strong>: lęk separacyjny — partner = bezpieczeństwo, jego nieobecność = panika. Często po traumie z bezbronności (porzucenie, nagła strata). <strong>Koszt dziś</strong>: partner czuje się przeciążony, fuzja blokuje rozwój. <strong>Krok wyjścia</strong>: praca z lękiem przed samotnością (terapia indywidualna), stopniowo wzmacnianie własnej regulacji.</div>
+  </div>
+
+  <div class="pattern-card">
+    <div class="pattern-h"><span class="pattern-icon">🔒</span> Trudność z zaufaniem</div>
+    <div class="pattern-body"><strong>Mechanizm</strong>: zaufanie zostało raz zdradzone (sprawca lub świadek braku ochrony). Ostrożność uogólnia się. <strong>Koszt dziś</strong>: testy, sprawdzanie, partner czuje się obwiniany za rzeczy, których nie zrobił. <strong>Krok wyjścia</strong>: zaufanie jest UMIEJĘTNOŚCIĄ, nie cechą świata. Buduje się STOPNIOWO przez drobne potwierdzenia.</div>
+  </div>
+
+  <div class="pattern-card">
+    <div class="pattern-h"><span class="pattern-icon">⚡</span> Drażliwość / agresja</div>
+    <div class="pattern-body"><strong>Mechanizm</strong>: hyperarousal w PTSD = niski próg na bodźce. Atak jest formą obrony („zanim mnie skrzywdzisz, ja krzywdzę"). Często NIE świadome. <strong>Koszt dziś</strong>: bliscy się oddalają, samotność, wstyd po wybuchach. <strong>Krok wyjścia</strong>: regulacja przed reakcją (oddech, time-out 20 min), naprawa po wybuchu (przeprosiny + co przeszło).</div>
+  </div>
+
+  <div class="comm-card">
+    <div class="comm-h">📢 Klucz komunikacji</div>
+    <div class="comm-body">Trzy zdania, które otwierają drzwi: <strong>(1) „Po traumie [X] jest dla mnie trudne".</strong> Nie tłumaczysz traumy, sygnalizujesz potrzebę. <strong>(2) „Potrzebuję [Y]".</strong> Konkret — co pomaga, co przeszkadza. <strong>(3) „To nie jest o tobie".</strong> Drażliwość, wycofanie, lęk — to objawy, nie atak na partnera. Każda z tych formuł osłabia personalizację objawów u bliskich.</div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-h">📋 Granice — twoje prawo</div>
+    <div class="step-body">Bliskość ≠ brak granic. Masz prawo do granic fizycznych (dotyk, intymność) i emocjonalnych (co dzielisz, kiedy, ile). Granica nie jest atakiem — jest ramą, która umożliwia bliskość.</div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-h">🩺 Kiedy CBCT lub EFT</div>
+    <div class="step-body">Jeśli trauma wpływa na partnera, jeśli wzorce relacyjne dominują, jeśli zwykła terapia par „się zacina" — szukaj terapeuty znającego CBCT lub EFT. Zwykła terapia par BEZ kontekstu traumy = ryzyko retraumatyzacji.</div>
+  </div>
+
+  <div class="term-note"><strong>Reguła stopniowości</strong>: odbudowa relacji to MIESIĄCE i lata, nie tygodnie. Mała poprawka w jednej relacji w miesiącu &gt; próba „naprawy wszystkiego" w tydzień. Cierpliwość plus konsekwencja.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — jeden krok</div>
+  <h1 class="card-prompt">Wybierz <em>jeden</em> mały krok</h1>
+  <p class="card-detail">Z zaznaczonych wzorców w kroku 2 — wybierz JEDEN, nad którym chcesz dziś popracować. Zaplanuj jeden konkretny mały krok w tym tygodniu.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">A · Wzorzec do pracy + bliska osoba</div>
+    <p class="proto-rule">Który wzorzec wybierasz? Z którą bezpieczną osobą chcesz przy niej pracować?</p>
+  </div>
+  <textarea id="wybor" class="thought-input" placeholder="np. „Wzorzec: emocjonalne wycofanie. Bliska osoba: [imię] (siostra/przyjaciółka/partner). Chcę spróbować podzielić się jedną rzeczą z dnia, której zwykle nie mówię"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">B · Komunikacja — sformułuj 3 zdania</div>
+    <p class="proto-rule">Klucz: NIE musisz wyjaśniać traumy. Sygnalizuj potrzebę. Sformułuj swoją wersję trzech zdań.</p>
+  </div>
+  <textarea id="komun" class="thought-input" placeholder="np. „Słuchaj, [imię], po tym, co przeszłam, dzielenie się tym, co czuję, jest dla mnie trudne. Potrzebuję, żebyś po prostu wysłuchała, bez radzenia. To nie jest o tobie — chcę być bardziej obecna"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">C · Konkretny mały krok w tym tygodniu</div>
+    <p class="proto-rule">Co dokładnie zrobisz? Kiedy? Jak długo? W jakim kontekście?</p>
+  </div>
+  <textarea id="krok" class="thought-input" placeholder="np. „W sobotę, przy niedzielnej kawie z [imię], 15 min, opowiem o tym, jak czuję się w pracy. Bez detali traumy, ale szczerze o emocjach z tygodnia"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">D · Granica, którą zachowujesz</div>
+    <p class="proto-rule">Co zostawiasz dla siebie? Co możesz powiedzieć „nie mogę o tym dziś"? Granica chroni proces.</p>
+  </div>
+  <textarea id="granica" class="thought-input" placeholder="np. „Granica: NIE odpowiadam na pytania o szczegóły traumy. Mogę powiedzieć »nie chcę o tym mówić, ale dziękuję za pytanie«. Bezpieczeństwo zostaje przy mnie"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">E · Co zrobisz, jeśli pojawi się stary wzorzec</div>
+    <p class="proto-rule">Wycofanie, eskalacja, panika — może wrócić. Plan B. Co wtedy?</p>
+  </div>
+  <textarea id="planB" class="thought-input" placeholder="np. „Jeśli zacznę się wycofywać — powiem »daj mi 20 minut, wrócę«. Wyjdę na 5-min spacer, grounding 5-4-3-2-1, wrócę. NIE uciekam, biorę przerwę"..."></textarea>
+
+  <div class="step-card">
+    <div class="step-h">🎯 Po wykonaniu kroku</div>
+    <div class="step-body">Zauważ, co rzeczywiście się stało. Co pomogło, co nie. Czy partner zareagował tak, jak się obawiałeś/aś? Nowe doświadczenie = nowe uczenie. Małe pozytywne doświadczenie = ważniejsze niż wiele teorii.</div>
+  </div>
+
+  <div class="term-note"><strong>Reguła małego kroku</strong>: wykonaj NAPRAWDĘ jeden mały krok w tym tygodniu. NIE planuj 5 — wykonaj 1. Mózg potrzebuje doświadczenia, że można inaczej. Jedno doświadczenie &gt; pięć dobrych intencji.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar końcowy</div>
+  <h1 class="card-prompt">Ile <em>dostępności</em> bliskości teraz?</h1>
+  <p class="card-detail">Ta sama skala 0–10. Cel po refleksji + planie kroku: wzrost o 1–3 punkty. Pełna odbudowa relacji to faza 3 leczenia traumy — miesiące pracy. Mały krok to dobry początek.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — niedostępna</span><span>10 — pełna</span></div>
+    <input type="range" id="postBliz" class="scale-input" min="0" max="10" value="6" data-default="6" oninput="document.getElementById('postBlizVal').textContent=this.value;">
+    <div class="scale-readout"><span>dostępność po:</span><span id="postBlizVal">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Ustaw skalę — pojawi się komentarz dopasowany do twojej zmiany.</div>
+
+  <div class="term-note"><strong>Reguła iteracji</strong>: jeden mały krok wykonany w tygodniu = sukces. Po wykonaniu — wracaj do tego narzędzia, planuj kolejny. Powtarzaj 6–8 razy w 2 mies. Po 2 mies. zauważalny postęp w relacjach. Cierpliwość; relacje to długi grunt.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>Trauma relacyjna leczy się przez relację.</strong> Cztery wzorce: unikanie / fuzja / brak zaufania / drażliwość. Każdy ma mechanizm i drogę wyjścia. Klucz komunikacji: 3 zdania (po traumie X jest trudne / potrzebuję Y / to nie o tobie). Granice są twoim prawem. CBCT, EFT — terapia par znająca traumę. Stopniowo, jeden krok.</div>
+  </div>
+
+  <div class="src">Herman, J. (1992). <em>Trauma and Recovery</em>. · Johnson, S. (2002). <em>Terapia skoncentrowana na emocjach z osobami po traumie</em>. · Monson, C., Fredman, S. &amp; Adair, K. (2008). <em>Cognitive-Behavioral Conjoint Therapy for PTSD</em>. · Galovski, T. &amp; Lyons, J. (2004). Trauma in couples. · Monson, C. i wsp. (2012). RCT CBCT.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickPat(el) {
+  el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var pre = parseInt(document.getElementById('preBliz').value, 10);
+    var post = parseInt(document.getElementById('postBliz').value, 10);
+    var diff = post - pre;
+    var msg = document.getElementById('finalMsg');
+    if (msg) {
+      if (diff >= 3) msg.innerHTML = '<strong>Wzrost dostępności bliskości o ' + diff + ' punktów.</strong> Zauważanie wzorców i zaplanowanie małego kroku już otwiera drogę. Najtrudniejsze: <em>wykonać</em> krok. Zrób go w ciągu 3 dni.';
+      else if (diff >= 1) msg.innerHTML = '<strong>Wzrost o ' + diff + '.</strong> Częściowa zmiana. Odbudowa relacji to faza 3 leczenia traumy — zwykle trwa miesiące. Mały krok w tygodniu &gt; brak kroku.';
+      else if (diff === 0) msg.innerHTML = '<strong>Bez zmiany.</strong> Może wzór przywiązania jest głęboki — to materiał na terapię par lub indywidualną z elementami EFT. Pokaż tę kartę terapeucie.';
+      else msg.innerHTML = '<strong>Spadek dostępności.</strong> Refleksja o relacjach po traumie często boli. Wróć do <em>bezpiecznego miejsca</em>. Trauma relacyjna leczy się przez relację — ale powoli, nie przez forsowanie.';
+    }
+  }
+}
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(function(c){ c.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_relacje_ptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_relacje_ptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

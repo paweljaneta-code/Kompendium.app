@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Neurobiologia depresji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#f4f1ea; --ink:#1c2620; --ink-soft:#3a4a40; --ink-mute:#7a8a82; --sage:#b8c5a8; --sage-soft:#dde3d2; --sage-deep:#4a6347; --warm:#c9a572; --shadow:rgba(28,38,32,0.08); }
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:var(--bg); color:var(--ink); font-family:'DM Sans',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+body { max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:100px; }
+
+.hdr { padding:18px 22px 8px; display:flex; justify-content:space-between; align-items:baseline; }
+.hdr-title { font-family:'Fraunces',serif; font-size:13px; font-weight:600; color:var(--sage-deep); letter-spacing:0.12em; text-transform:uppercase; }
+.hdr-title em { font-style:italic; color:var(--ink); font-weight:500; letter-spacing:0.04em; text-transform:none; }
+.hdr-step { font-size:12px; color:var(--ink-mute); letter-spacing:0.1em; text-transform:uppercase; font-weight:600; }
+
+.dots { display:flex; gap:6px; padding:8px 22px 0; }
+.dot { width:100%; height:3px; background:var(--sage-soft); border-radius:2px; transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background:var(--sage-deep); transform:scale(1.15); }
+
+.stage { padding:18px 22px; }
+
+.card { display:none; transition:opacity 0.25s ease, transform 0.25s ease; transform:translateY(8px); opacity:0; }
+.card.active { display:block; opacity:1; transform:translateY(0); }
+.card-eyebrow { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--sage-deep); font-weight:700; margin-bottom:12px; }
+.card-prompt { font-family:'Fraunces',serif; font-size:28px; font-weight:500; line-height:1.2; margin-bottom:14px; color:var(--ink); }
+.card-prompt em { font-style:italic; color:var(--sage-deep); }
+.card-detail { font-size:14px; line-height:1.6; color:var(--ink-soft); margin-bottom:14px; }
+.card-detail strong { color:var(--ink); font-weight:600; }
+.card-detail em { font-style:italic; color:var(--sage-deep); }
+
+.frame-card { background:var(--ink); color:var(--bg); padding:16px 18px; border-radius:12px; margin:12px 0; }
+.frame-h { font-family:'Fraunces',serif; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--sage); font-weight:700; margin-bottom:12px; }
+.element-row { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top:none; }
+.element-icon { font-size:16px; flex-shrink:0; line-height:1.4; }
+.element-text { font-size:13px; line-height:1.55; color:rgba(244,241,234,0.92); flex:1; }
+.element-text strong { color:var(--bg); font-weight:600; }
+
+.frame-quote { font-family:'Fraunces',serif; font-style:italic; font-size:15px; line-height:1.5; color:var(--ink-soft); padding:12px 14px; background:rgba(184,197,168,0.18); border-left:3px solid var(--sage-deep); border-radius:0 6px 6px 0; margin:12px 0; }
+.frame-quote-attr { display:block; font-size:11.5px; letter-spacing:0.05em; color:var(--ink-mute); margin-top:6px; font-style:normal; font-family:'DM Sans',sans-serif; }
+
+.term-note { background:rgba(184,197,168,0.18); border-left:3px solid var(--sage-deep); padding:11px 14px; border-radius:0 6px 6px 0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); margin:10px 0; }
+.term-note strong { color:var(--ink); font-weight:600; }
+.term-note em { font-style:italic; color:var(--sage-deep); }
+
+.repeat-reminder { background:var(--ink); color:var(--bg); padding:14px 16px; border-radius:12px; margin:12px 0; }
+.repeat-h { font-family:'Fraunces',serif; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--sage); font-weight:700; margin-bottom:8px; }
+.repeat-body { font-size:13.5px; line-height:1.55; color:rgba(244,241,234,0.92); }
+.repeat-body strong { color:var(--bg); font-weight:600; }
+.repeat-body em { color:var(--sage); font-style:italic; }
+
+.src { font-size:11.5px; color:var(--ink-mute); margin-top:14px; line-height:1.5; font-style:italic; }
+.src em { font-style:italic; color:var(--ink-soft); }
+
+.thought-input { width:100%; min-height:70px; padding:12px 14px; border:1px solid var(--sage); border-radius:10px; background:rgba(255,255,255,0.5); font-family:inherit; font-size:14px; line-height:1.5; color:var(--ink); resize:vertical; margin-bottom:12px; transition:border-color 0.2s; }
+.thought-input:focus { outline:none; border-color:var(--sage-deep); background:white; }
+
+.scale { margin:12px 0 14px; }
+.scale-title { font-size:13px; color:var(--ink-soft); margin-bottom:4px; font-weight:500; }
+.scale-bounds { display:flex; justify-content:space-between; font-size:11px; color:var(--ink-mute); margin-bottom:6px; }
+.scale-input { width:100%; -webkit-appearance:none; appearance:none; height:4px; background:var(--sage-soft); border-radius:2px; outline:none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--sage-deep); cursor:pointer; box-shadow:0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:var(--sage-deep); cursor:pointer; border:none; }
+.scale-readout { display:flex; justify-content:space-between; font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:var(--sage-deep); margin-top:6px; }
+
+.foot { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); width:calc(100% - 32px); max-width:448px; display:flex; gap:10px; }
+.foot-btn { flex:1; padding:14px 0; border-radius:24px; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:transform 0.12s ease, box-shadow 0.2s ease; letter-spacing:0.02em; }
+.foot-btn:active:not(:disabled) { transform:scale(0.96); }
+.foot-btn.back { background:rgba(184,197,168,0.4); color:var(--ink); }
+.foot-btn.back:disabled { opacity:0.4; cursor:default; }
+.foot-btn.next { background:var(--sage-deep); color:var(--bg); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse { 0%,100% { box-shadow:0 2px 8px rgba(0,0,0,0.08); } 50% { box-shadow:0 4px 18px rgba(122,146,112,0.45); } }
+#nextBtn[data-final="true"] { animation:v578pulse 1.6s ease-in-out infinite; }
+.v578-toast { position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); padding:10px 20px; border-radius:24px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; letter-spacing:0.02em; opacity:0; pointer-events:none; transition:opacity 0.35s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1); z-index:200; white-space:nowrap; box-shadow:0 6px 22px rgba(0,0,0,0.25); }
+.v578-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+.final-msg { background:linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding:14px 16px; border-radius:12px; font-size:14px; line-height:1.6; color:var(--ink); margin:12px 0; border:1px solid var(--sage); }
+.final-msg strong { color:var(--sage-deep); font-weight:700; }
+.final-msg em { font-style:italic; color:var(--sage-deep); }
+
+.example-chip { display:inline-block; padding:6px 11px; margin:3px 4px 3px 0; background:rgba(184,197,168,0.25); border:1px solid var(--sage); border-radius:14px; font-size:12px; color:var(--ink-soft); cursor:pointer; transition:all 0.2s; }
+.example-chip:hover { background:var(--sage-deep); color:var(--bg); border-color:var(--sage-deep); }
+.example-chip.picked { background:var(--sage-deep) !important; color:var(--bg) !important; border-color:var(--sage-deep) !important; }
+.examples-h { font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-mute); font-weight:600; margin:10px 0 8px; }
+
+/* === SPECYFICZNE: poziomy patofizjologii === */
+.level-row { display:flex; gap:10px; align-items:flex-start; padding:11px 13px; background:rgba(184,197,168,0.12); border:1px solid rgba(184,197,168,0.3); border-radius:8px; margin-bottom:7px; cursor:pointer; transition:all 0.2s; }
+.level-row:hover { background:rgba(184,197,168,0.22); }
+.level-row.picked { background:rgba(74,99,71,0.18); border-color:var(--sage-deep); }
+.level-mark { width:20px; height:20px; border:2px solid var(--sage); border-radius:5px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:transparent; transition:all 0.2s; }
+.level-row.picked .level-mark { background:var(--sage-deep); border-color:var(--sage-deep); color:var(--bg); }
+.level-body { flex:1; font-size:13px; line-height:1.5; color:var(--ink-soft); }
+.level-body strong { color:var(--ink); display:block; margin-bottom:2px; font-size:13.5px; font-weight:600; }
+
+.cycle-row { display:flex; gap:10px; align-items:flex-start; padding:9px 12px; background:rgba(201,165,114,0.12); border-left:3px solid var(--warm); border-radius:0 6px 6px 0; margin:6px 0; font-size:13px; line-height:1.5; color:var(--ink-soft); }
+.cycle-num { font-family:'Fraunces',serif; font-weight:700; color:var(--warm); font-size:14px; flex-shrink:0; min-width:18px; }
+.cycle-row strong { color:var(--ink); font-weight:600; }
+
+.intervention-card { background:rgba(74,99,71,0.1); border:1px solid var(--sage-deep); border-radius:10px; padding:12px 14px; margin:8px 0; }
+.intervention-h { font-family:'Fraunces',serif; font-size:12px; font-weight:700; color:var(--sage-deep); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+.intervention-body { font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
+.intervention-body strong { color:var(--ink); font-weight:600; }
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Pięć poziomów neurobiologii</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+  
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Mit i prawda</div>
+    <h1 class="card-prompt">Depresja to <em>nie</em> „chemiczna nierównowaga"</h1>
+    <p class="card-detail">Hasło o serotoninie jako jedynej przyczynie depresji to uproszczenie z lat 90., obalone w przeglądzie Moncrieff i in. (2022, <em>Molecular Psychiatry</em>). Aktualny model (Pariante, 2017; Duman i Aghajanian, 2012) opisuje depresję jako <strong>zaburzenie sieciowe mózgu z pięcioma powiązanymi poziomami patofizjologii</strong>. Żaden poziom nie jest sam w sobie „przyczyną" — działają razem.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Pięć poziomów (Pariante 2017; Duman 2012)</div>
+      <div class="element-row"><span class="element-icon">❶</span><span class="element-text"><strong>Oś HPA</strong> — nadreaktywna odpowiedź stresowa, wysoki kortyzol, słabe negatywne sprzężenie zwrotne, atrofia hipokampa.</span></div>
+      <div class="element-row"><span class="element-icon">❷</span><span class="element-text"><strong>Monoaminy</strong> — serotonina, noradrenalina, dopamina; nie prosty „niedobór", ale dysregulacja receptorów (5-HT1A, D2, α2).</span></div>
+      <div class="element-row"><span class="element-icon">❸</span><span class="element-text"><strong>Neuroplastyczność</strong> — spadek BDNF, atrofia dendrytów w kory przedczołowej, redukcja LTP w hipokampie.</span></div>
+      <div class="element-row"><span class="element-icon">❹</span><span class="element-text"><strong>Zapalenie</strong> — podwyższone cytokiny prozapalne (IL-6, TNF-α, CRP) u około 30% chorujących.</span></div>
+      <div class="element-row"><span class="element-icon">❺</span><span class="element-text"><strong>Sieci mózgowe</strong> — nadaktywność DMN (ruminacja), osłabiona CEN (kontrola poznawcza), dysfunkcja SN (przełączanie).</span></div>
+    </div>
+
+    <div class="term-note"><strong>BDNF</strong> (<em>brain-derived neurotrophic factor</em>) — białko wspierające wzrost i przeżycie neuronów, kluczowe dla uczenia się i pamięci. W depresji jego poziom spada; antydepresanty i ćwiczenia fizyczne go podnoszą (Duman, 2014).</div>
+
+    <div class="term-note"><strong>Oś HPA</strong> (<em>hypothalamic-pituitary-adrenal</em>) — szlak hormonalny stresu: podwzgórze → przysadka → kora nadnerczy → kortyzol. W depresji przewlekły stres zaburza wyłączanie tej osi.</div>
+
+    <div class="frame-quote">„Depresja nie jest brakiem szczęścia ani niedoborem serotoniny. To zaburzenie sieciowe, w którym stres, plastyczność i zapalenie wzajemnie się napędzają."<span class="frame-quote-attr">— Pariante, 2017 (parafraza)</span></div>
+
+    <div class="src">Źródła: <em>Moncrieff i in. (2022, „The serotonin theory of depression: a systematic umbrella review", Molecular Psychiatry); Pariante (2017, „Why are depressed patients inflamed?", European Neuropsychopharmacology); Duman &amp; Aghajanian (2012, „Synaptic dysfunction in depression", Science).</em></div>
+  </section>
+
+  
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twój profil</div>
+    <h1 class="card-prompt">Który poziom <em>najsilniej</em> odzwierciedla Twoje doświadczenie?</h1>
+    <p class="card-detail">Dla każdej osoby któryś poziom jest dominujący — to wpływa na to, które oddziaływania mogą zadziałać najlepiej. Zaznacz wszystkie, które rozpoznajesz u siebie. To <strong>orientacja, nie diagnoza</strong> — formalną ocenę robi lekarz lub klinicystka.</p>
+
+    <div class="examples-h">Pięć poziomów — które rozpoznajesz?</div>
+
+    <div class="level-row" id="lvHpa" onclick="toggleLevel(this)">
+      <div class="level-mark">✓</div>
+      <div class="level-body"><strong>❶ Oś stresu (HPA)</strong>Stale „włączony", trudność z odpoczynkiem, gorsza pamięć, pobudki o 4–5 rano, wysoki poziom napięcia w ciele.</div>
+    </div>
+
+    <div class="level-row" id="lvMono" onclick="toggleLevel(this)">
+      <div class="level-mark">✓</div>
+      <div class="level-body"><strong>❷ Monoaminy</strong>Brak motywacji, anhedonia (nic nie cieszy), spadek libido, spowolnienie ruchowe, „nic nie ma smaku".</div>
+    </div>
+
+    <div class="level-row" id="lvBdnf" onclick="toggleLevel(this)">
+      <div class="level-mark">✓</div>
+      <div class="level-body"><strong>❸ Neuroplastyczność</strong>Trudność w skupieniu, pogorszenie pamięci, „mgła poznawcza", wrażenie, że umysł działa wolniej.</div>
+    </div>
+
+    <div class="level-row" id="lvInflam" onclick="toggleLevel(this)">
+      <div class="level-mark">✓</div>
+      <div class="level-body"><strong>❹ Zapalenie</strong>Zmęczenie nieproporcjonalne do wysiłku, bóle stawów/mięśni, gorsza odporność, choroby autoimmunologiczne, otyłość brzuszna.</div>
+    </div>
+
+    <div class="level-row" id="lvDmn" onclick="toggleLevel(this)">
+      <div class="level-mark">✓</div>
+      <div class="level-body"><strong>❺ Sieci mózgowe (DMN)</strong>Ruminacja — myśli kręcą się w kółko, nie potrafisz ich zatrzymać, wracają te same scenariusze, „głowa pracuje sama".</div>
+    </div>
+
+    <div class="term-note"><strong>DMN</strong> (<em>Default Mode Network</em>) — sieć mózgu aktywna, gdy nic konkretnego nie robisz. W depresji jest nadaktywna i wytwarza ruminację. Uważność (mindfulness) trenuje jej hamowanie (Hamilton i in., 2015).</div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Co Cię najbardziej obciąża?</strong> Jeden, dwa zdania własnymi słowami:</p>
+    <textarea class="thought-input" id="dominantLevel" placeholder="np. Najmocniej rozpoznaję ruminację — myśli wracają godzinami, zwłaszcza wieczorem"></textarea>
+  </section>
+
+  
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Błędne koło</div>
+    <h1 class="card-prompt">Jak pięć poziomów <em>napędza się</em> wzajemnie</h1>
+    <p class="card-detail">Poziomy nie są niezależne. Stres przewlekły uruchamia kaskadę, w której każdy poziom pogarsza następny — i wraca do punktu wyjścia. Dlatego depresja „sama z siebie" rzadko mija i dlatego jednowymiarowe podejścia (np. tylko leki, tylko CBT) działają słabiej niż łączone.</p>
+
+    <div class="cycle-row"><span class="cycle-num">1.</span><span><strong>Stres przewlekły</strong> (geny + środowisko + trauma) aktywuje oś HPA → wzrost kortyzolu.</span></div>
+    <div class="cycle-row"><span class="cycle-num">2.</span><span><strong>Wysoki kortyzol</strong> obniża BDNF i osłabia neurogenezę → atrofia hipokampa.</span></div>
+    <div class="cycle-row"><span class="cycle-num">3.</span><span><strong>Atrofia hipokampa</strong> osłabia hamowanie zwrotne osi HPA → kortyzol jeszcze rośnie.</span></div>
+    <div class="cycle-row"><span class="cycle-num">4.</span><span><strong>Spadek plastyczności PFC</strong> → osłabiona kontrola poznawcza (CEN) i zwiększona aktywność DMN.</span></div>
+    <div class="cycle-row"><span class="cycle-num">5.</span><span><strong>Nadaktywna DMN</strong> generuje ruminację → ruminacja jest sama w sobie stresorem → punkt 1.</span></div>
+
+    <div class="term-note"><strong>Neurogeneza</strong> — powstawanie nowych neuronów, głównie w hipokampie. W zdrowym mózgu trwa całe życie; przewlekły stres ją hamuje, antydepresanty (zwłaszcza po 4–6 tygodniach) i wysiłek aerobowy ją odbudowują (Sahay i Hen, 2007).</div>
+
+    <div class="term-note"><strong>Ruminacja</strong> — powtarzające się, nieproduktywne myśli o problemach i przyczynach złego samopoczucia. Nolen-Hoeksema (2008) wykazała, że ruminacja jest jednym z najsilniejszych predyktorów zarówno powstania, jak i nawrotu depresji.</div>
+
+    <div class="frame-quote">„Najsilniejszy mediator między stresem a depresją to nie kortyzol sam w sobie — to spadek BDNF i utrata połączeń synaptycznych w sieci kontroli."<span class="frame-quote-attr">— Duman, 2014 (parafraza)</span></div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Gdzie u Ciebie błędne koło zaczyna się najczęściej?</strong></p>
+    <span class="example-chip" onclick="pickChip(this)">Przewlekły stres w pracy</span>
+    <span class="example-chip" onclick="pickChip(this)">Nieprzespane noce</span>
+    <span class="example-chip" onclick="pickChip(this)">Ruminacja wieczorem</span>
+    <span class="example-chip" onclick="pickChip(this)">Izolacja społeczna</span>
+    <span class="example-chip" onclick="pickChip(this)">Konflikt rodzinny</span>
+    <span class="example-chip" onclick="pickChip(this)">Brak aktywności fizycznej</span>
+    <textarea class="thought-input" id="cycleStart" placeholder="Wybierz powyżej lub wpisz po swojemu — co najczęściej uruchamia kaskadę u Ciebie?" style="margin-top:8px"></textarea>
+  </section>
+
+  
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Pięć dźwigni</div>
+    <h1 class="card-prompt">Każdy poziom ma <em>swoje</em> oddziaływanie</h1>
+    <p class="card-detail">Skoro depresja działa na pięciu poziomach, leczenie najlepsze efekty daje, gdy łączy kilka dźwigni. Cuijpers i in. (2014, metaanaliza 32 badań) pokazali, że <strong>łączenie psychoterapii z farmakoterapią</strong> daje wynik istotnie lepszy niż każda metoda osobno (NNT ≈ 4 dla średniociężkich epizodów).</p>
+
+    <div class="intervention-card">
+      <div class="intervention-h">❶ → Oś HPA</div>
+      <div class="intervention-body">Higiena snu, regularny rytm dobowy, oddechowe techniki regulacji (8/4 oddech, fizjologiczne westchnienie). <strong>Cel</strong>: obniżyć kortyzol bazowy i przywrócić cykl dobowy.</div>
+    </div>
+
+    <div class="intervention-card">
+      <div class="intervention-h">❷ → Monoaminy</div>
+      <div class="intervention-body">Farmakoterapia (SSRI/SNRI/TLPD/bupropion); efekt zwykle po 4–6 tygodniach — ten czas to nie „lek nie działa", to czas potrzebny na przebudowę receptorów i neuroplastyczność.</div>
+    </div>
+
+    <div class="intervention-card">
+      <div class="intervention-h">❸ → Neuroplastyczność (BDNF)</div>
+      <div class="intervention-body">Wysiłek aerobowy (3× tydz., 30–45 min, tętno 60–70% max) podnosi BDNF równie silnie jak SSRI w łagodnej–umiarkowanej depresji (Schuch i in., 2016, metaanaliza). CBT i psychoterapia także podnoszą BDNF.</div>
+    </div>
+
+    <div class="intervention-card">
+      <div class="intervention-h">❹ → Zapalenie</div>
+      <div class="intervention-body">Dieta śródziemnomorska, omega-3 (EPA &gt; 1g/d), ograniczenie cukru i alkoholu, leczenie chorób somatycznych. W depresji „zapalnej" lekarz może rozważyć dodanie kwasu acetylosalicylowego lub celekoksybu (Köhler-Forsberg, 2019).</div>
+    </div>
+
+    <div class="intervention-card">
+      <div class="intervention-h">❺ → Sieci mózgowe (DMN)</div>
+      <div class="intervention-body">Mindfulness/MBCT trenuje wyłączanie DMN; aktywizacja behawioralna i kontakt społeczny przesuwają aktywność do CEN; rTMS (przezczaszkowa stymulacja magnetyczna) bezpośrednio moduluje połączenia DMN-CEN w lekoopornych przypadkach.</div>
+    </div>
+
+    <div class="term-note"><strong>rTMS</strong> (<em>repetitive transcranial magnetic stimulation</em>) — nieinwazyjna stymulacja kory przedczołowej polem magnetycznym; refundowana w Polsce (NFZ, 2024) w depresji lekoopornej po nieskuteczności co najmniej dwóch leków.</div>
+  </section>
+
+  
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Implikacja praktyczna</div>
+    <h1 class="card-prompt">Co ta wiedza zmienia w <em>Twoim</em> planie?</h1>
+    <p class="card-detail">Najważniejszy wniosek: depresja nie jest oznaką słabości charakteru ani „chemiczną awarią" do naprawy jedną tabletką. Jest powiązanym układem pięciu poziomów — i każdy z tych poziomów odpowiada na konkretne działania. Twoja terapia, sen, ruch, dieta, kontakty — wszystko to wpływa na różne dźwignie tego samego układu.</p>
+
+    <div class="scale">
+      <div class="scale-title">Jak silnie utożsamiasz się ze stwierdzeniem: „Moja depresja to system, na który mogę wpływać z różnych stron"?</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — w pełni</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="ownership" data-default="5" oninput="document.getElementById('ownerVal').textContent=this.value">
+      <div class="scale-readout"><span>Identyfikacja</span><span><span id="ownerVal">5</span> / 10</span></div>
+    </div>
+
+    <p class="card-detail"><strong>Jedna konkretna dźwignia</strong>, którą chcesz zacząć stosować w tym tygodniu (z kroku 4):</p>
+    <span class="example-chip" onclick="pickChip(this)">Spacer 30 min × 3</span>
+    <span class="example-chip" onclick="pickChip(this)">Stały rytm snu</span>
+    <span class="example-chip" onclick="pickChip(this)">10 min mindfulness</span>
+    <span class="example-chip" onclick="pickChip(this)">Konsultacja u psychiatry</span>
+    <span class="example-chip" onclick="pickChip(this)">Kontakt z bliską osobą</span>
+    <span class="example-chip" onclick="pickChip(this)">Omega-3 / dieta</span>
+    <textarea class="thought-input" id="action" placeholder="np. Codzienny 30-minutowy spacer rano — to dźwignia ❸ i częściowo ❶ jednocześnie" style="margin-top:8px"></textarea>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Powracaj do tego materiału</div>
+      <div class="repeat-body">Pełna odpowiedź neurobiologiczna na działania (BDNF, plastyczność synaptyczna) wymaga <strong>4–8 tygodni regularności</strong>. Wracaj do tej karty co tydzień: zaznacz, które poziomy obecnie dominują, i sprawdź, czy wybrana dźwignia faktycznie była używana. Jeden konsekwentnie stosowany nawyk &gt; pięć podjętych i porzuconych <em>razem</em>.</div>
+    </div>
+
+    <div class="final-msg"><strong>Pamiętaj:</strong> ta karta to <em>mapa</em>, nie zastępstwo wizyty. Jeśli poziom cierpienia jest wysoki, jeśli pojawiają się myśli o śmierci lub depresja trwa &gt; 2 tygodnie — umów się do lekarza psychiatry albo zadzwoń na telefon zaufania (116 123, 24/7, bezpłatnie). Łączenie psychoterapii i leczenia farmakologicznego ma najsilniejsze wsparcie w badaniach.</div>
+
+    <div class="src">Źródła: <em>Cuijpers i in. (2014, „Adding psychotherapy to antidepressant medication", World Psychiatry); Schuch i in. (2016, „Exercise as a treatment for depression: A meta-analysis", Journal of Psychiatric Research); Hamilton i in. (2015, „Depressive rumination, the default-mode network", Biological Psychiatry); Köhler-Forsberg i in. (2019, „Efficacy of anti-inflammatory treatment", Acta Psychiatrica Scandinavica).</em></div>
+  </section>
+</main>
+
+<nav class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</nav>
+
+<script>
+var TOTAL_STEPS = 5;
+var curStep = 1;
+
+(function initDots() {
+  var dotsContainer = document.getElementById('dots');
+  for (var i = 0; i < TOTAL_STEPS; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    dotsContainer.appendChild(d);
+  }
+})();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+}
+
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  } else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.level-row.picked, .example-chip.picked').forEach(el => el.classList.remove('picked'));
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function toggleLevel(el) {
+  el.classList.toggle('picked');
+}
+
+function pickChip(el) {
+  el.classList.toggle('picked');
+}
+
+/* ===== AUTO-ZAPIS ===== */
+(function(){
+  var KEY = "sos_dep_neuro";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+  window.save = save;
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '\u2713 zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+updateUI();
+</script>
+</body>
+</html>

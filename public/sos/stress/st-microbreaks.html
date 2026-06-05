@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mikroprzerwy — regeneracja w ciągu dnia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.path-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.path-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.path-card.picked .path-desc { color: rgba(244,241,234,0.85); }
+.path-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.path-card.picked .path-h { color: var(--bg); }
+.path-desc { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; }
+.path-meta { font-size: 11px; color: var(--sage-deep); margin-top: 6px; font-weight: 600; letter-spacing: 0.06em; }
+.path-card.picked .path-meta { color: var(--sage); }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); }
+.proto-row:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); font-size: 16px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.proto-text strong { color: var(--bg); font-weight: 600; }
+.proto-text em { color: var(--sage); font-style: italic; }
+
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.compare-cell { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(184,197,168,0.3); }
+.compare-cell.good { background: rgba(184,197,168,0.18); }
+.compare-cell.bad { background: rgba(217,167,87,0.15); border-color: rgba(217,167,87,0.4); }
+.compare-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.compare-cell.good .compare-h { color: var(--sage-deep); }
+.compare-cell.bad .compare-h { color: #8a5d1d; }
+.compare-body { font-size: 12px; line-height: 1.5; color: var(--ink-mute); }
+
+.elem-card { background: rgba(184,197,168,0.10); padding: 10px 14px; border-radius: 10px; border-left: 3px solid var(--sage-deep); margin-bottom: 8px; }
+.elem-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.elem-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-mute); }
+
+@media (max-width: 480px) { .compare-grid { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mikroprzerwy — regeneracja w ciągu dnia</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- KROK 1 -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Mikroprzerwy — <em>aktywna</em> regeneracja</h1>
+    <p class="card-detail">Mikroprzerwy to krótkie (30 sek. – 5 min), celowe przerwy w ciągu dnia pracy, które przeciwdziałają kumulacji stresu i wypaleniu. Albulescu i in. (2022, meta-analiza 22 badań): regularne mikroprzerwy redukują zmęczenie i zwiększają energię. Klucz, który łatwo przeoczyć: <strong>mikroprzerwy działają tylko wtedy, gdy są aktywne</strong>. Scrollowanie social mediów na fotelu nie redukuje obciążenia — często je nawet zwiększa.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy skutecznej mikroprzerwy (Kim, Park, Niu 2017)</div>
+      <div class="element-row">
+        <span class="element-icon">🚪</span>
+        <span class="element-text"><strong>Odłączenie psychologiczne</strong> (psychological detachment) — całkowicie oderwij uwagę od pracy. Nie myśl o zadaniach, deadline'ach, mailach.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌬️</span>
+        <span class="element-text"><strong>Relaksacja</strong> — oddech, rozciąganie, cisza. Aktywacja przywspółczulnego, obniżenie kortyzolu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Mistrzostwo</strong> (mastery) — krótka aktywność, która daje poczucie skuteczności. Łamigłówka, rysunek, krótki tekst, drobny ruch.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎛️</span>
+        <span class="element-text"><strong>Kontrola</strong> — sam/a wybierasz, kiedy i jak. To nie nakaz, to twoja decyzja. Element samodzielności wzmacnia efekt regeneracyjny.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Pracownik bierze przerwę, ale na social media — cognitive load nie maleje. Po 4–6 godzinach: zmęczenie poznawcze, błędy. Najlepsze mikroprzerwy to te, które <em>angażują ruch</em> — wstanie, rozciąganie, spacer. Siedzące przerwy nie redukują zmęczenia.”
+      <span class="frame-quote-attr">— Fritz, Lam i Spreitzer (2013)</span>
+    </div>
+
+    <div class="term-note"><strong>Reguła 52/17</strong> (DeskTime 2014, analiza 5,5 mln dni pracy): najbardziej produktywni pracownicy pracują w cyklach 52 min skupienia + 17 min przerwy. To nie jest sztywna norma — to obserwacja statystyczna. Wariant Pomodoro (25/5) jest bardziej intensywny, lepszy do zadań wymagających koncentracji w pełnym świetle. Reguła 52/17 lepiej pasuje do pracy znaniowej z dłuższym kontekstem.</div>
+
+    <div class="term-note"><strong>Mechanizm neurobiologiczny</strong>: zmiana kontekstu resetuje sieć uwagi (Boksem i Tops, 2008). Oddech spowalnia pobudzenie HPA. Ruch spala kortyzol. Spojrzenie na zieleń (jeśli dostępna) angażuje uwagę mimowolną i regeneruje uwagę dowolną wyczerpaną pracą (ART — Kaplan, 1995). Każdy z tych mechanizmów jest aktywowany przez inny rodzaj mikroprzerwy.</div>
+
+    <div class="src">Albulescu i in. (2022, meta-analiza 22 badań) · Kim, Park i Niu (2017, 4 elementy) · Trotter i in. (2020, systematic review 19 badań) · Bosch, Sonnentag i Pinck (2018, RCT 52/17) · Fritz, Lam i Spreitzer (2013, ruch w przerwach) · DeskTime (2014, analiza 5,5 mln dni) · Boksem i Tops (2008, mechanizm neurobiologiczny)</div>
+  </section>
+
+  <!-- KROK 2 — Diagnoza obecnego rytmu -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twój obecny rytm pracy</div>
+    <h1 class="card-prompt">Jak <em>teraz</em> przerywasz pracę?</h1>
+    <p class="card-detail">Większość ludzi nie planuje przerw, a jeśli je bierze — to spontanicznie i często w sposób, który nie redukuje zmęczenia. Diagnoza obecnego wzorca pomaga zauważyć, gdzie konkretnie tracisz energię.</p>
+
+    <p class="card-detail" style="margin-top:14px">Zaznacz, co opisuje twój typowy dzień pracy:</p>
+    <div class="example-chips">
+      <div class="example-chip" id="c1" onclick="this.classList.toggle('picked')">⏰ Pracuję 4+ godziny bez przerwy</div>
+      <div class="example-chip" id="c2" onclick="this.classList.toggle('picked')">📱 Przerwy = scrollowanie telefonu</div>
+      <div class="example-chip" id="c3" onclick="this.classList.toggle('picked')">🪑 Większość dnia siedzę</div>
+      <div class="example-chip" id="c4" onclick="this.classList.toggle('picked')">😵 Po południu mam zauważalny spadek energii</div>
+      <div class="example-chip" id="c5" onclick="this.classList.toggle('picked')">💧 Często zapominam o piciu wody</div>
+      <div class="example-chip" id="c6" onclick="this.classList.toggle('picked')">👀 Bóle oczu / głowy do końca dnia</div>
+      <div class="example-chip" id="c7" onclick="this.classList.toggle('picked')">📞 Spotkania jedno za drugim, bez przerw</div>
+      <div class="example-chip" id="c8" onclick="this.classList.toggle('picked')">🍽️ Jem przy biurku / przy kompie</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Twój poziom zmęczenia po południu (typowo o godzinie 15:00–16:00):</p>
+    <div class="scale">
+      <div class="scale-title">Zmęczenie po południu</div>
+      <div class="scale-bounds"><span>0 — świeżość</span><span>10 — wyczerpanie</span></div>
+      <input type="range" class="scale-input" id="afternoon" min="0" max="10" step="1" value="6" data-default="6" oninput="document.getElementById('afternoonVal').textContent=this.value;if(typeof save==='function')save();">
+      <div class="scale-readout"><span>Twój wynik</span><span id="afternoonVal">6</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Twój główny stresor związany z brakiem przerw (jedno zdanie):</p>
+    <textarea class="thought-input" id="mainStressor" placeholder="np. „Spotkania w ciągłej sekwencji od 9:00 do 14:00, bez 5 minut na oddech między nimi. Po południu mam pulsujący ból w skroni i już niewiele rozumiem z tego, co czytam.”" rows="3"></textarea>
+
+    <div class="compare-grid">
+      <div class="compare-cell good">
+        <div class="compare-h">✅ Aktywne mikroprzerwy</div>
+        <div class="compare-body">Wstanie, rozciąganie, spacer 2–3 min, oddech, woda, spojrzenie w okno. Redukują zmęczenie d = 0,42 (Bosch 2018).</div>
+      </div>
+      <div class="compare-cell bad">
+        <div class="compare-h">⚠️ Pasywne pauzy</div>
+        <div class="compare-body">Scrollowanie telefonu, social media, kolejny mail, „szybki news”. Cognitive load nie maleje — często rośnie.</div>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>Reguła samoobserwacji</strong>: jeżeli zaznaczyłeś/aś ≥4 chipy lub zmęczenie po południu ≥7 — bez systemu przerw nie poprawisz tego. Ten dzień jest typowy, nie wyjątek. Mikroprzerwy są strukturalną interwencją, nie luksusem.</div>
+  </section>
+
+  <!-- KROK 3 — Wybór systemu -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Cztery systemy mikroprzerw</div>
+    <h1 class="card-prompt">Który <em>rytm</em> ci pasuje?</h1>
+    <p class="card-detail">Nie ma jednego optymalnego systemu — zależy od typu pracy, charakteru zadań, twojej fizjologii. Wybierz jeden na test (1–2 tyg.), potem ewentualnie zmień. Próba „kombinacji wszystkich” zwykle prowadzi do żadnego.</p>
+
+    <div class="path-card" id="s1" onclick="pickSystem(this,'1')">
+      <div class="path-h">⏱️ System 52/17 (DeskTime 2014, Bosch 2018)</div>
+      <div class="path-desc">52 min skupionej pracy + 17 min przerwy. 4–5 cykli dziennie + lunch. Najlepiej zewaluowany w pracy znaniowej. RCT: redukcja wyczerpania d = 0,42 po 3 tyg. Pasuje do zadań wymagających dłuższego kontekstu (analiza, pisanie, projektowanie).</div>
+      <div class="path-meta">Cykl: 52/17 · 4–5 cykli/dzień · Praca znaniowa</div>
+    </div>
+    <div class="path-card" id="s2" onclick="pickSystem(this,'2')">
+      <div class="path-h">🍅 Pomodoro (Cirillo 1980)</div>
+      <div class="path-desc">25 min skupienia + 5 min przerwy. Po 4 cyklach — dłuższa przerwa 15–30 min. Pasuje do zadań krótkich, wymagających intensywnej koncentracji (programowanie, drobne maile, naukę). Wadą: częste przerywanie kontekstu.</div>
+      <div class="path-meta">Cykl: 25/5 · 8–12 cykli/dzień · Krótkie zadania</div>
+    </div>
+    <div class="path-card" id="s3" onclick="pickSystem(this,'3')">
+      <div class="path-h">⏰ Co 90 min (cykle ultradobowe — Kleitman 1957)</div>
+      <div class="path-desc">75–90 min pracy + 5–10 min przerwy. Pasuje do biorytmu (BRAC — basic rest-activity cycle). Mniej zegarowy, bardziej naturalny. Pasuje, jeśli wpadasz w flow i 25–52 min wybija cię z rytmu.</div>
+      <div class="path-meta">Cykl: 90/10 · 4 cykle/dzień · Flow-friendly</div>
+    </div>
+    <div class="path-card" id="s4" onclick="pickSystem(this,'4')">
+      <div class="path-h">🎯 Mikropauzy 30 sek (Henning 1997)</div>
+      <div class="path-desc">Bardzo krótkie przerwy (30–60 sek.) co 10 min — wzrok od ekranu, oddech, rozluźnienie ramion. Plus jedna 5-minutowa co 60 min. Pasuje do pracy z dużą ilością przerywań (call center, customer support, modlenie / programowanie wielowątkowe).</div>
+      <div class="path-meta">Mikropauzy: 30 sek/10 min · Wysoka frekwencja</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: praca głęboka, dłuższe konteksty (analiza, pisanie) → 52/17 lub 90/10. Praca rozproszona, krótkie zadania → Pomodoro. Praca z ciągłymi przerywaniami → mikropauzy 30 sek. Po 1–2 tygodniach testu — ewaluacja: czy zmęczenie po południu spadło o ≥1 punkt? Jeśli nie — zmień system.</div>
+  </section>
+
+  <!-- KROK 4 — Co robić w przerwie -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Treść mikroprzerwy — protokoły</div>
+    <h1 class="card-prompt">Co <em>konkretnie</em> robić w przerwie?</h1>
+    <p class="card-detail">System (52/17 itp.) to dopiero połowa skuteczności. Druga połowa to <strong>treść</strong> przerwy. Każda mikroprzerwa powinna zawierać element ruchu + element odłączenia od ekranu. Bez tego efekt regeneracyjny jest minimalny.</p>
+
+    <div class="proto-card">
+      <div class="proto-h">17-minutowa przerwa (system 52/17)</div>
+      <div class="proto-row">
+        <span class="proto-num">1</span>
+        <span class="proto-text"><strong>0–2 min — wstanie i rozciąganie</strong>. Karku, ramion, pleców. Krążenia tułowiem. Blok długiego siedzenia obciąża dolne plecy najbardziej.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">2</span>
+        <span class="proto-text"><strong>2–3 min — oddech</strong>. 4 cykle 4-7-8 lub 5-5 (oddech rezonansowy). Przy pełnym wydechu spada pobudzenie sympatyczne.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">3</span>
+        <span class="proto-text"><strong>3–10 min — spacer</strong>. Wokół biura, na zewnątrz, do okna. Spacer = ruch + zmiana środowiska + spojrzenie w dal (oczy odpoczywają od ekranu).</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">4</span>
+        <span class="proto-text"><strong>10–15 min — woda + lekka aktywność umysłowa</strong>. Łamigłówka, rysunek, krótki tekst do czytania (nie służbowy), rozmowa z kolegą.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">5</span>
+        <span class="proto-text"><strong>15–17 min — przygotowanie powrotu</strong>. Wracasz do biurka, szybkie określenie celu na kolejne 52 min, rozpoczęcie.</span>
+      </div>
+    </div>
+
+    <div class="proto-card">
+      <div class="proto-h">5-minutowa przerwa (system Pomodoro)</div>
+      <div class="proto-row">
+        <span class="proto-num">1</span>
+        <span class="proto-text"><strong>0–1 min — wstanie</strong>. Krzesło, podejście do okna, woda.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">2</span>
+        <span class="proto-text"><strong>1–3 min — rozciąganie + oddech</strong>. Ramiona, kark, 5 świadomych oddechów wydłużonych.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">3</span>
+        <span class="proto-text"><strong>3–4 min — spojrzenie w dal</strong>. Reguła 20-20-20: co 20 min patrz przez 20 sek. na coś w odległości 20 stóp (~6 m). Tu wydłużone do 1 min.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">4</span>
+        <span class="proto-text"><strong>4–5 min — krótka czynność konkretna</strong>. Naczynia, mały porządek, herbata, krótka wymiana z kolegą. Coś, co daje poczucie skuteczności.</span>
+      </div>
+    </div>
+
+    <div class="elem-card">
+      <div class="elem-h">🎯 Reguła 20-20-20 (American Optometric Association)</div>
+      <div class="elem-body">Co 20 min spójrz przez 20 sek. na coś w odległości około 6 m. Redukuje zmęczenie oczu (digital eye strain) o ~30%. Sheppard i Wolffsohn (2018, BMJ Open Ophthalmology) — działa, jeśli stosowane regularnie. Nawet bez pełnej mikroprzerwy — sama ta reguła zmienia jakość pracy z ekranem.</div>
+    </div>
+
+    <div class="elem-card">
+      <div class="elem-h">🚫 Co NIE jest dobrą mikroprzerwą</div>
+      <div class="elem-body">Scrollowanie social mediów (Twardochleb i in. 2022 — zwiększa cognitive load). Sprawdzanie maili służbowych (przedłuża pracę). „Szybkie news” (uruchamia stresogenne treści). Pasywne siedzenie z telefonem w ręce. Każda z tych aktywności <em>imituje</em> przerwę bez efektu regeneracyjnego.</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Twój plan typowej przerwy w wybranym systemie (z poprzedniego kroku) — co konkretnie robisz w pierwszych 2 minutach?</p>
+    <textarea class="thought-input" id="breakPlan" placeholder="np. „System 52/17: pierwsze 2 minuty wstaję, idę do okna i robię 10 powolnych krążeń ramion. Następne 3 minuty — spacer wokół piętra (~200 m). Potem 5 min — robię herbatę, wracam, wypijam ją patrząc przez okno. Ostatnie 5 minut — krótkie ćwiczenie z aplikacji Duolingo (10 słówek hiszpańskich).”" rows="4"></textarea>
+
+    <div class="term-note"><strong>Reguła sukcesu mikroprzerwy</strong>: po przerwie powinieneś/powinnaś czuć się odrobinę bardziej rześko niż przed nią. Jeśli czujesz się tak samo lub gorzej — albo treść jest błędna (zbyt dużo ekranu / siedzenia), albo przerwa była zbyt krótka. Bosch i in. (2018) — minimum 3 minuty rzeczywistego ruchu jest progiem skutecznej regeneracji.</div>
+  </section>
+
+  <!-- KROK 5 — Plan i pomiar -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Wdrożenie + pomiar</div>
+    <h1 class="card-prompt">Jak <em>wbudować</em> w typowy dzień?</h1>
+    <p class="card-detail">Najczęstszy błąd: postanowienie „od jutra mikroprzerwy” bez konkretnego mechanizmu wymuszającego. Bez zegara / aplikacji / kotwicy w kalendarzu — w 2–3 dni zniknie. Drugi błąd: próba „nadrobienia” zaległych przerw zbyt długą — to nie działa, każda przerwa ma własną funkcję.</p>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Mechanizm wymuszający</strong> — wybierz przynajmniej jeden:</p>
+    <div class="example-chips">
+      <div class="example-chip" id="m1" onclick="this.classList.toggle('picked')">⏲️ Pomidor / TimeRabbit / aplikacja z timerem</div>
+      <div class="example-chip" id="m2" onclick="this.classList.toggle('picked')">📅 Bloki w kalendarzu (52/17 jako stałe wpisy)</div>
+      <div class="example-chip" id="m3" onclick="this.classList.toggle('picked')">⌚ Powiadomienia z zegarka co 60 min</div>
+      <div class="example-chip" id="m4" onclick="this.classList.toggle('picked')">🤝 Partner odpowiedzialności w zespole</div>
+      <div class="example-chip" id="m5" onclick="this.classList.toggle('picked')">💧 Mała szklanka wody (kończy się = przerwa)</div>
+      <div class="example-chip" id="m6" onclick="this.classList.toggle('picked')">📞 Reguła „po każdym spotkaniu 5 min przerwy”</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Specjalne sytuacje</strong> — jak postępować przy spotkaniach, deadline'ach, nieprzewidywalności:</p>
+    <div class="example-chips">
+      <div class="example-chip" id="sp1" onclick="this.classList.toggle('picked')">📞 Maks 50 min spotkania zamiast 60 (10 min na pauza)</div>
+      <div class="example-chip" id="sp2" onclick="this.classList.toggle('picked')">🎯 Po 3 spotkaniach z rzędu — obowiązkowo 15 min</div>
+      <div class="example-chip" id="sp3" onclick="this.classList.toggle('picked')">⚡ W deadline'ie — minimum mikropauzy 30 sek/10 min</div>
+      <div class="example-chip" id="sp4" onclick="this.classList.toggle('picked')">🍽️ Lunch poza biurkiem (minimum 20 min)</div>
+      <div class="example-chip" id="sp5" onclick="this.classList.toggle('picked')">🚶 Spacer-spotkanie zamiast siedzącego (1:1)</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Twój konkretny plan na najbliższy tydzień — system + mechanizm + treść:</p>
+    <textarea class="thought-input" id="weekPlan" placeholder="np. „System: 52/17. Mechanizm: Pomidor w aplikacji Forest, dźwiękowe powiadomienie. Treść 17-min: 2 min rozciąganie, 5 min spacer wokół piętra, 5 min herbata przy oknie, 5 min Duolingo. Wyjątki: jeśli spotkanie — kończę o 50 min lub robię 5 min przerwy między. Lunch 12:30 obowiązkowo poza biurkiem. Sprawdzam codziennie wieczorem: ile cykli udało się?”" rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Cel: zmęczenie po południu po 2 tyg. praktyki</div>
+      <div class="scale-bounds"><span>0 — świeżość</span><span>10 — wyczerpanie</span></div>
+      <input type="range" class="scale-input" id="goalAfter" min="0" max="10" step="1" value="4" data-default="4" oninput="document.getElementById('goalAfterVal').textContent=this.value;if(typeof save==='function')save();">
+      <div class="scale-readout"><span>Twój cel</span><span id="goalAfterVal">4</span></div>
+    </div>
+
+    <div class="final-msg">
+      Mikroprzerwy nie są luksusem ani „lenistwem”. Są <em>strukturalną interwencją</em>, która zwiększa efektywność i redukuje wypalenie. Trotter i in. (2020) — często wzrasta produktywność, nie spada. Twoja decyzja o regularnych mikroprzerwach jest decyzją o jakości pracy, nie o jej ilości.
+    </div>
+
+    <div class="term-note"><strong>Pomiar długoterminowy</strong>: Bosch i in. (2018) — po 3 tyg. systemu 52/17: zmęczenie −d=0,42, energia +d=0,38, satysfakcja z pracy +d=0,29. Albulescu i in. (2022, meta-analiza): efekty utrzymują się tak długo, jak praktyka jest kontynuowana — porzucenie po pierwszym intensywnym tygodniu prowadzi do powrotu do baseline w ciągu 2 tyg. Klucz: regularność > intensywność jednego dnia.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Cztery elementy skutecznej mikroprzerwy: <strong>odłączenie · relaksacja · mistrzostwo · kontrola</strong>. Cztery systemy: 52/17, Pomodoro 25/5, cykle 90/10, mikropauzy 30 sek/10 min. Treść: ruch + odłączenie od ekranu + woda + spojrzenie w dal. NIE: scrollowanie, maile, „szybki news”. Mechanizm wymuszający (timer, kalendarz) jest niezbędny — bez niego znika w 2–3 dni.</div>
+    </div>
+
+    <div class="src">Albulescu i in. (2022, meta-analiza 22 badań) · Kim, Park i Niu (2017) · Trotter i in. (2020, systematic review) · Bosch i in. (2018, RCT 52/17) · Fritz i in. (2013) · DeskTime (2014) · Henning i in. (1997, mikropauzy) · Sheppard i Wolffsohn (2018, 20-20-20) · Boksem i Tops (2008)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickSystem(el, val) {
+  document.querySelectorAll('.path-card').forEach(function(e){ e.classList.remove('picked'); });
+  el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_st_microbreaks — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_st_microbreaks";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

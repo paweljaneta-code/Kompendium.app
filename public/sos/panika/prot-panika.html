@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Protokół PCT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.session-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 14px; padding: 14px 12px; background: rgba(184,197,168,0.18); border-radius: 12px; border: 1px solid var(--sage); }
+.session-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: rgba(255,255,255,0.5); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.session-row:hover, .session-row.picked { background: var(--sage-deep); }
+.session-row .sr-num { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--warm); flex-shrink: 0; min-width: 50px; }
+.session-row .sr-content { flex: 1; }
+.session-row .sr-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.session-row .sr-task { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+.session-row.picked .sr-name, .session-row.picked .sr-task, .session-row.picked .sr-num { color: var(--bg) !important; }
+.session-row.picked .sr-task { color: rgba(244,241,234,0.85) !important; }
+
+.phase-card { padding: 14px 16px; background: rgba(122,146,112,0.12); border-left: 3px solid var(--warm); border-radius: 0 10px 10px 0; margin: 8px 0; }
+.phase-card .pc-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.phase-card .pc-h em { color: var(--warm); font-style: italic; font-weight: 700; }
+.phase-card .pc-body { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.phase-card .pc-body strong { color: var(--ink); font-weight: 600; }
+
+.now-row { padding: 12px 14px; background: rgba(255,255,255,0.45); border: 1px solid var(--sage); border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+.now-row:hover, .now-row.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.now-row .nr-h { font-weight: 700; font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+.now-row .nr-body { font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+.now-row.picked .nr-h, .now-row.picked .nr-body { color: var(--bg) !important; }
+
+.warning-card { background: rgba(201,165,114,0.18); border-left: 3px solid var(--warm); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.warning-card strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Protokół PCT</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">PCT — <em>najlepiej zbadany</em> protokół CBT paniki</h1>
+  <p class="card-detail">Panic Control Treatment (PCT) opracowali David H. Barlow (Boston University) i Michelle G. Craske (UCLA) w latach 80. jako manualizowaną operacjonalizację modelu Clarka (1986). Aktualna wersja MAP-4 (Mastery of Your Anxiety and Panic, 4. wyd., 2007) to 12 sesji tygodniowych po 50–60 minut. Brak polskiego wydania manualu — polscy terapeuci pracują na wersji angielskiej.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery filary PCT (Barlow i Craske 2007)</div>
+    <div class="element-row">
+      <span class="element-icon">📚</span>
+      <span class="element-text"><strong>Psychoedukacja</strong> — model walcz/uciekaj, fizjologia adrenaliny, model Clarka.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🧠</span>
+      <span class="element-text"><strong>Restrukturyzacja poznawcza</strong> — dziennik 5-kolumnowy, zmiana katastroficznej interpretacji.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚡</span>
+      <span class="element-text"><strong>Ekspozycja interoceptywna</strong> — celowe wywoływanie odczuć (rdzeń protokołu).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🚶</span>
+      <span class="element-text"><strong>Ekspozycja in vivo</strong> — stopniowe wracanie do unikanych sytuacji.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Skuteczność PCT po 9 miesiącach przewyższa imipraminę: lek po odstawieniu daje wzrost nawrotów, terapia poznawczo-behawioralna utrzymuje efekt".
+    <span class="frame-quote-attr">— Barlow i in. (2000, JAMA, randomizowane badanie kliniczne, N = 312)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: PCT <em>nie jest</em> zestawem technik do wybierania. Jest protokołem <em>sekwencyjnym</em> — każda faza dostarcza klocek wykorzystywany w następnej. Craske i in. (2008): usunięcie ekspozycji interoceptywnej obniża efekt o 30–40%.</div>
+
+  <div class="src">Craske i Barlow (2007, „Mastery of Your Anxiety and Panic", 4. wyd., Oxford University Press); Barlow i in. (2000, JAMA, RCT — randomizowane badanie kontrolowane); Craske i in. (2008, 2014); NICE (2011) CG113; Pompoli i in. (2018, meta-analiza Cochrane).</div>
+</section>
+
+<!-- ============== KROK 2 — Pełna mapa 12 sesji ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Mapa 12 sesji</div>
+  <h1 class="card-prompt">Cały protokół na <em>jednym ekranie</em></h1>
+  <p class="card-detail">Tygodniowy rytm, 12 sesji + 1–2 sesje przypominające. Kliknij sesję, którą chcesz przejrzeć szczegółowo.</p>
+
+  <div class="session-list">
+    <div class="session-row" id="ss1" onclick="pickSess('ss1')">
+      <span class="sr-num">1–2</span>
+      <div class="sr-content">
+        <div class="sr-name">📚 Psychoedukacja</div>
+        <div class="sr-task">Model walcz/uciekaj, fizjologia adrenaliny, model Clarka. „Atak nieprzyjemny, ale bezpieczny".</div>
+      </div>
+    </div>
+    <div class="session-row" id="ss34" onclick="pickSess('ss34')">
+      <span class="sr-num">3–4</span>
+      <div class="sr-content">
+        <div class="sr-name">📝 Monitoring + restrukturyzacja</div>
+        <div class="sr-task">Wprowadzenie dziennika 5-kolumnowego. Analiza katastroficznych interpretacji. Min. 5 zapisów na sesję 4.</div>
+      </div>
+    </div>
+    <div class="session-row" id="ss4" onclick="pickSess('ss4')">
+      <span class="sr-num">4</span>
+      <div class="sr-content">
+        <div class="sr-name">🌬️ Trening oddechowy</div>
+        <div class="sr-task">Oddychanie przeponowe — z jasnym zastrzeżeniem „<em>nie</em> jako zachowanie zabezpieczające".</div>
+      </div>
+    </div>
+    <div class="session-row" id="ss58" onclick="pickSess('ss58')">
+      <span class="sr-num">5–8</span>
+      <div class="sr-content">
+        <div class="sr-name">⚡ Ekspozycja interoceptywna (rdzeń)</div>
+        <div class="sr-task">Hiperwentylacja, obrót na krześle, słomka, bieg w miejscu. Każde: prognoza → wykonanie → wynik.</div>
+      </div>
+    </div>
+    <div class="session-row" id="ss911" onclick="pickSess('ss911')">
+      <span class="sr-num">9–11</span>
+      <div class="sr-content">
+        <div class="sr-name">🚶 Ekspozycja in vivo</div>
+        <div class="sr-task">Hierarchia unikanych sytuacji (agorafobia). Stopniowa ekspozycja z eliminacją zachowań zabezpieczających.</div>
+      </div>
+    </div>
+    <div class="session-row" id="ss12" onclick="pickSess('ss12')">
+      <span class="sr-num">12</span>
+      <div class="sr-content">
+        <div class="sr-name">🛡️ Profilaktyka nawrotów</div>
+        <div class="sr-task">Plan „jeśli–to", harmonogram sesji przypominających, kryterium powrotu.</div>
+      </div>
+    </div>
+    <div class="session-row" id="ssFu" onclick="pickSess('ssFu')">
+      <span class="sr-num">+3, +6 mies.</span>
+      <div class="sr-content">
+        <div class="sr-name">🔄 Sesje przypominające</div>
+        <div class="sr-task">Wczesna detekcja pełzającego unikania. Wzmocnienie utrwalonych zmian.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="term-note"><strong>📌 Wskazówka</strong>: NICE CG113 rekomenduje 7–14 sesji terapii poznawczo-behawioralnej dla zaburzenia panicznego. PCT z 12 sesjami mieści się w tym oknie. Krótszy wariant CT-PD Clarka (5–7 sesji) jest opcją przy łagodniejszej prezentacji bez agorafobii.</div>
+</section>
+
+<!-- ============== KROK 3 — Faza, w której jesteś ============== -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Twoja faza</div>
+  <h1 class="card-prompt">Gdzie <em>jesteś</em> w protokole?</h1>
+  <p class="card-detail">Zaznacz fazę, na której obecnie pracujesz (jako pacjent lub terapeuta). Każda faza ma swój kluczowy zadanie i typowy opór.</p>
+
+  <div class="now-row" id="ph1" onclick="pickPhase('ph1')">
+    <div class="nr-h">📚 Faza 1 — psychoedukacja (sesje 1–2)</div>
+    <div class="nr-body"><strong>Zadanie:</strong> mózg ma zrozumieć, że odczucia są bezpieczne. <strong>Typowy opór:</strong> „rozumiem teorią, ale w panice to nie pomaga". <strong>Odpowiedź:</strong> to się zmienia w fazie 5+ (ekspozycja).</div>
+  </div>
+  <div class="now-row" id="ph2" onclick="pickPhase('ph2')">
+    <div class="nr-h">📝 Faza 2 — monitoring + restrukturyzacja (3–4)</div>
+    <div class="nr-body"><strong>Zadanie:</strong> wypełnić dziennik 5–10 razy między sesjami. <strong>Typowy opór:</strong> „zapomniałem" / „brak czasu" — często unikanie zapisu pisany. <strong>Odpowiedź:</strong> potraktować jako sygnał kliniczny, nie pominąć.</div>
+  </div>
+  <div class="now-row" id="ph3" onclick="pickPhase('ph3')">
+    <div class="nr-h">🌬️ Faza 3 — trening oddechowy (4)</div>
+    <div class="nr-body"><strong>Zadanie:</strong> nauczyć oddychania przeponowego jako narzędzia regulacji (nie jako zabezpieczenia). <strong>Typowy opór:</strong> używanie oddechu jako „pomocy w razie czego". <strong>Odpowiedź:</strong> oddech ćwiczony codziennie, nie tylko w panice.</div>
+  </div>
+  <div class="now-row" id="ph4" onclick="pickPhase('ph4')">
+    <div class="nr-h">⚡ Faza 4 — ekspozycja interoceptywna (5–8) — rdzeń</div>
+    <div class="nr-body"><strong>Zadanie:</strong> celowo wywoływać odczucia. 5–10 powtórzeń każdego ćwiczenia. <strong>Typowy opór:</strong> „nie będę specjalnie wywoływał tego, czego się boję". <strong>Odpowiedź:</strong> ramka <em>„szczepionka na panikę"</em> — mały kontrolowany kontakt.</div>
+  </div>
+  <div class="now-row" id="ph5" onclick="pickPhase('ph5')">
+    <div class="nr-h">🚶 Faza 5 — ekspozycja in vivo (9–11)</div>
+    <div class="nr-body"><strong>Zadanie:</strong> hierarchia unikanych sytuacji + stopniowe wchodzenie w nie. Bez zachowań zabezpieczających. <strong>Typowy opór:</strong> „wezmę telefon na wszelki wypadek". <strong>Odpowiedź:</strong> identyfikacja każdej kotwicy zabezpieczającej.</div>
+  </div>
+  <div class="now-row" id="ph6" onclick="pickPhase('ph6')">
+    <div class="nr-h">🛡️ Faza 6 — profilaktyka (12 + follow-up)</div>
+    <div class="nr-body"><strong>Zadanie:</strong> plan „jeśli–to" na sytuacje wczesnego ostrzegania. Sesje +3, +6 mies. <strong>Typowy opór:</strong> „już mi dobrze, nie potrzebuję planu". <strong>Odpowiedź:</strong> nawroty są <em>częste</em> bez planu — ten dokument to kotwica.</div>
+  </div>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: PCT jest <em>kumulatywne</em> — efekt nie pojawia się w fazie 1 i nie kończy w fazie 6. Każda faza dostarcza klocka, który następna wykorzystuje. Pominięcie fazy = osłabienie wszystkich kolejnych.</div>
+</section>
+
+<!-- ============== KROK 4 — Najczęstsze błędy ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Pułapki</div>
+  <h1 class="card-prompt">Pięć <em>najczęstszych</em> błędów w PCT</h1>
+  <p class="card-detail">Craske (2014): wierność protokołowi przewiduje wynik silniej niż doświadczenie terapeuty. Pięć błędów obniżających skuteczność — zaznacz, które rozpoznajesz w swojej praktyce lub procesie.</p>
+
+  <div class="phase-card">
+    <div class="pc-h">1. Pominięcie <em>ekspozycji interoceptywnej</em></div>
+    <div class="pc-body">„Pacjent się nie zgadza", „to za trudne". Craske (2008): pominięcie tego komponentu obniża efekt o <strong>30–40%</strong>. PCT bez ekspozycji interoceptywnej staje się „terapią rozmowy o panice".</div>
+  </div>
+  <div class="phase-card">
+    <div class="pc-h">2. Oddychanie przeponowe jako <em>zachowanie zabezpieczające</em></div>
+    <div class="pc-body">Pacjent używa oddechu „w razie czego" — za każdym razem, gdy poczuje pierwsze kołatanie. Wyjście: oddech ćwiczony <strong>codziennie</strong> jako trening, <strong>nie</strong> jako narzędzie ratunkowe w panice.</div>
+  </div>
+  <div class="phase-card">
+    <div class="pc-h">3. Ekspozycja z <em>dystrakcją</em></div>
+    <div class="pc-body">Pacjent w trakcie hiperwentylacji rozmawia, słucha muzyki, „odlatuje". Mózg nie uczy się, że odczucie jest bezpieczne — bo go w pełni nie doświadczył. Reguła: pełne, świadome doświadczenie odczucia.</div>
+  </div>
+  <div class="phase-card">
+    <div class="pc-h">4. Hierarchia in vivo <em>zbyt łatwa</em> lub <em>zbyt trudna</em></div>
+    <div class="pc-body">Zbyt łatwa = brak uczenia (lęk się nie aktywuje). Zbyt trudna = pacjent ucieka i utrwala unikanie. Reguła: ekspozycja na poziomie <strong>SUDS 50–70</strong> (subiektywna skala dystresu) — wystarczająco trudna, by uczyć, wystarczająco znośna, by zostać.</div>
+  </div>
+  <div class="phase-card">
+    <div class="pc-h">5. Pominięcie <em>profilaktyki nawrotów</em></div>
+    <div class="pc-body">Po fazie 11 pacjent czuje się dobrze i nie chce sesji 12. Bez planu „jeśli–to" pierwsza fala stresu w przyszłości łatwo restartuje cykl. Reguła: <strong>plan = obowiązkowy</strong>, nawet jeśli pacjent czuje się świetnie.</div>
+  </div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Twoja największa pułapka</strong> w pracy z paniką (jako pacjent lub terapeuta):</p>
+  <textarea class="thought-input" id="myTrap" placeholder="np. „W mojej terapii pominęliśmy ekspozycję interoceptywną — terapeuta uznał, że nie jestem gotów""></textarea>
+
+  <div class="warning-card"><strong>⚠️ Ostrzeżenie:</strong> NICE (2011) i Craske (2014) rekomendują, by w razie braku doświadczenia w PCT zlecić terapię specjalistycznemu ośrodkowi, nie improwizować elementami. Generic CBT bez panic-specific komponentów ma wyraźnie niższą skuteczność niż pełen PCT.</div>
+
+  <div class="term-note"><strong>🧠 Zasada wierności</strong>: Craske (2014) — wierność manualowi przewiduje wynik silniej niż doświadczenie terapeuty. „Kreatywne adaptacje" PCT zwykle <em>obniżają</em>, nie podnoszą skuteczności. Najtrudniejsza dyscyplina dla doświadczonego klinicysty: trzymać się sekwencji.</div>
+</section>
+
+<!-- ============== KROK 5 — Plan na ten tydzień ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Plan na ten tydzień</div>
+  <h1 class="card-prompt">Konkretny <em>krok</em> do końca tygodnia</h1>
+  <p class="card-detail">Niezależnie od tego, czy jesteś pacjentem czy terapeutą prowadzącym PCT — wybierz jedno konkretne zadanie do końca tygodnia. Małe, mierzalne, z deadline'em.</p>
+
+  <div class="examples-h">Wybierz zadanie</div>
+  <div class="example-chips">
+    <button class="example-chip" id="t1" onclick="pickTask('t1')">Zacząć / kontynuować dziennik 5-kolumnowy</button>
+    <button class="example-chip" id="t2" onclick="pickTask('t2')">Wykonać 1 ćwiczenie ekspozycji interoceptywnej</button>
+    <button class="example-chip" id="t3" onclick="pickTask('t3')">Zrobić listę unikanych sytuacji (hierarchia)</button>
+    <button class="example-chip" id="t4" onclick="pickTask('t4')">Wybrać 3 zachowania zabezpieczające do redukcji</button>
+    <button class="example-chip" id="t5" onclick="pickTask('t5')">Przeczytać manuał MAP-4 (rozdział z fazy)</button>
+    <button class="example-chip" id="t6" onclick="pickTask('t6')">Opracować plan „jeśli–to" na nawrót</button>
+  </div>
+
+  <textarea class="thought-input" id="myTask" placeholder="Konkretnie: kiedy, gdzie, jak długo, ile razy?" style="margin-top:8px"></textarea>
+
+  <div class="scale">
+    <div class="scale-label"><span>Pewność, że wykonasz to zadanie</span></div>
+    <input type="range" min="0" max="100" value="65" class="scale-input" id="convT" data-default="65" oninput="document.getElementById('convTR').textContent=this.value+'%'">
+    <div class="scale-readout"><span>0%</span><span id="convTR">65%</span><span>100%</span></div>
+  </div>
+
+  <div class="final-msg">Pełen PCT to 12 tygodni — ale każdy z tych tygodni rozkłada się na konkretne, małe kroki. Trwała zmiana zachodzi nie w sesji, tylko między sesjami. Jeden krok w tym tygodniu znaczy więcej niż perfekcyjny plan na całość.</div>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: Barlow i in. (2000) wykazali, że trwałość efektu PCT po 9 miesiącach <em>przewyższa</em> efekt imipraminy. Powód: pacjent zdobył umiejętności, nie tylko czasową ulgę. Te umiejętności wymagają <em>powtarzania</em> — nie tylko w czasie terapii, ale i po niej.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">PCT to <strong>protokół sekwencyjny</strong>, nie zestaw technik. Każda faza dostarcza klocka, który następna wykorzystuje. Pominięcie fazy osłabia wszystkie kolejne. <em>Wierność protokołowi</em> > <em>kreatywność terapeuty</em> — wierność daje 70–90% remisji, kreatywność niczego nie poprawia.</div>
+  </div>
+
+  <div class="src">Craske i Barlow (2007, „Mastery of Your Anxiety and Panic", 4. wyd., Oxford University Press); Barlow i in. (2000, JAMA, RCT, N = 312); Craske i in. (2008, 2014); Clark (1986); NICE (2011) CG113; Pompoli i in. (2018, meta-analiza Cochrane); APA Division 12 — empirically supported treatments.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickSess(id) {
+  document.querySelectorAll('.session-row').forEach(b => b.classList.remove('picked'));
+  var el = document.getElementById(id);
+  if (el) el.classList.add('picked');
+}
+
+function pickPhase(id) {
+  document.querySelectorAll('.now-row').forEach(b => b.classList.remove('picked'));
+  var el = document.getElementById(id);
+  if (el) el.classList.add('picked');
+}
+
+function pickTask(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+function onReset() {
+  document.querySelectorAll('.session-row, .now-row, .example-chip').forEach(el => el.classList.remove('picked'));
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_prot_panika — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_prot_panika";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Imagery rescripting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.fact-row { background: rgba(201,165,114,0.12); border-left: 3px solid var(--warm); padding: 10px 12px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.fact-row strong { color: var(--ink); }
+.warn-box { background: rgba(201,100,80,0.10); border-left: 3px solid #c46450; padding: 10px 12px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-box strong { color: #8a4030; }
+.step-row { display: grid; grid-template-columns: 36px 1fr; gap: 10px; padding: 8px 10px; background: rgba(184,197,168,0.10); border-radius: 8px; margin-bottom: 4px; align-items: center; }
+.step-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--sage-deep); text-align: center; }
+.step-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; }
+.step-text strong { color: var(--ink); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Imagery rescripting</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Imagery <em>rescripting</em>: praca z korzeniem</h1>
+    <p class="card-detail">Imagery rescripting (IR — Arntz i Weertman, 1999; Hackmann i in., 2011, <em>Oxford Guide to Imagery in CBT</em>): technika pracy z wyobrażeniowymi wspomnieniami, która rekonstruuje pierwotną scenę, by zaspokoić niezaspokojone potrzeby. W lęku zdrowotnym: 40–60% pacjentów ma w anamnezie konkretne wczesne doświadczenie (Wheatley i in., 2007) — chorobę bliskiego, własną hospitalizację, traumę medyczną.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady imagery rescripting</div>
+      <div class="element-row">
+        <span class="element-icon">🌱</span>
+        <span class="element-text"><strong>Korzeń lęku, nie tylko objaw</strong> — IR adresuje pamięć epizodyczną, która utrwaliła katastroficzne przekonania o ciele/zdrowiu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔄</span>
+        <span class="element-text"><strong>Rekonsolidacja, nie wymazanie</strong> — pamięć nie znika; zmienia się jej znaczenie. Faktem pozostaje, że babcia umarła; zmienia się to, jak ta scena działa teraz w Tobie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">👤</span>
+        <span class="element-text"><strong>Healthy Adult wchodzi do sceny</strong> — dorosły Ty wchodzi w pamięć dziecka i zaspokaja niezaspokojoną potrzebę (ochronę, wyjaśnienie, pocieszenie).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚠️</span>
+        <span class="element-text"><strong>Wymaga sojuszu terapeutycznego</strong> — pełny IR z aktywacją emocjonalną nie jest narzędziem samopomocy. Wymaga przygotowania i towarzyszenia profesjonalisty.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Imagery rescripting nie jest przepisywaniem historii — jest zmianą znaczenia, które utrwaliło katastroficzne przekonania o ciele i zdrowiu."
+      <span class="frame-quote-attr">— Hackmann, Bennett-Levy i Holmes (2011)</span>
+    </div>
+
+    <div class="warn-box">
+      ⚠️ <strong>Ważne ostrzeżenie</strong>: ta karta jest <em>orientacyjna</em>. Pełne imagery rescripting z aktywacją emocjonalną wymaga 60–90-minutowych sesji z terapeutą i sojuszu terapeutycznego. Nie wykonuj samodzielnie. Tutaj możesz zidentyfikować materiał i przygotować go do sesji.
+    </div>
+
+    <div class="fact-row">📊 <strong>Veale i in. (2016, pilot study, N=20)</strong>: imagery rescripting + standardowe CBT dla lęku zdrowotnego — efekt d = 1,35 (vs 0,84 dla samego CBT). Najsilniejszy efekt u pacjentów z wyraźną traumą medyczną w anamnezie.</div>
+
+    <div class="term-note"><strong>Klucz</strong>: nie każdy pacjent z lękiem zdrowotnym potrzebuje IR. Wskazania: (a) wyraźna trauma medyczna w wywiadzie; (b) intrusywne wyobrażenia (chorób, śmierci); (c) klasyczne CBT „utknęło" na poziomie emocjonalnym; (d) pacjent z wyraźnym schematem podatności (Young).</div>
+
+    <div class="src">Arntz i Weertman (1999, imagery rescripting); Hackmann, Bennett-Levy i Holmes (2011, <em>Oxford Guide to Imagery in CBT</em>); Smucker i in. (1995); Wheatley i in. (2007, CBT for HA); Veale i in. (2016, pilot); Watkins (1971, affect bridge).</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Identyfikacja</div>
+    <h1 class="card-prompt">Twoje <em>powracające</em> wyobrażenie</h1>
+    <p class="card-detail">Pierwszy krok IR. Wybierz <em>jedno</em> intrusywne wyobrażenie związane z chorobą lub śmiercią, które najczęściej wraca. Konkretnie. Im wyraźniej je opiszesz, tym łatwiejsza będzie późniejsza praca z terapeutą.</p>
+
+    <textarea class="thought-input" id="img1" placeholder="POWRACAJĄCE WYOBRAŻENIE (1–3 zdania, sensorycznie):&#10;np. „Widzę siebie w szpitalnym łóżku, lekarz wchodzi z teczką, mówi «przykro mi». Twarz mojej matki łamie się w bezgłośnym płaczu. Czuję chłód białej pościeli."" rows="4"></textarea>
+
+    <textarea class="thought-input" id="img2" placeholder="Jak często wraca? Kiedy najczęściej?&#10;np. „Kilka razy w tygodniu, najsilniej wieczorem przed snem. Po jakimkolwiek odczuciu w klatce piersiowej."" rows="3"></textarea>
+
+    <textarea class="thought-input" id="img3" placeholder="Jakie emocje wywołuje (siła 0–10)?&#10;np. „Lęk: 8. Smutek: 7. Bezsilność: 9. Tęsknota za matką: 6."" rows="3"></textarea>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: wybierz wyobrażenie, które wraca często i wywołuje silne emocje. Słabe, sporadyczne wyobrażenia nie są dobrym celem IR — bo są mniej zakorzenione w pamięci epizodycznej.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Bridge back</div>
+    <h1 class="card-prompt">Pierwsza <em>pamięć</em> z tym uczuciem</h1>
+    <p class="card-detail">Technika affect bridge (Watkins, 1971). Skup się na uczuciu z aktualnego wyobrażenia. Pozwól, by pojawiła się <em>najwcześniejsza</em> pamięć z tym samym uczuciem — nawet jeśli wydaje się niezwiązana z chorobą.</p>
+
+    <textarea class="thought-input" id="br1" placeholder="Skup się na głównym uczuciu z wyobrażenia. Jakie pamięci się pojawiają?&#10;np. „Pierwsza, która przyszła: moje 7 lat, stoję w szpitalnym korytarzu, mama trzyma mnie za rękę, dziadek leży w łóżku za szybą, nie pozwalają mi wejść."" rows="5"></textarea>
+
+    <textarea class="thought-input" id="br2" placeholder="Opisz tę scenę sensorycznie: co widzisz, słyszysz, czujesz?&#10;np. „Widzę: zielony korytarz, jaskrawe lampy, biały fartuch pielęgniarki. Słyszę: szept matki, dudnienie wózka. Czuję: ciepłą rękę matki, zimną ścianę pod plecami, zapach środków odkażających."" rows="5"></textarea>
+
+    <textarea class="thought-input" id="br3" placeholder="Co czuło 7-letnie dziecko, czego nie mogło nazwać?&#10;np. „Strach. Samotność. Poczucie, że dziadek umiera za szybą i mnie nie wpuszczono. Złość, że dorośli decydują o wszystkim. Bezsilność."" rows="4"></textarea>
+
+    <div class="fact-row">📚 <strong>Watkins (1971), affect bridge</strong>: technika łączenia obecnego uczucia z najwcześniejszą pamięcią o tym samym uczuciu. U 70% pacjentów wyłania się pamięć z dzieciństwa lub młodości — często związana z chorobą bliskiego.</div>
+
+    <div class="term-note"><strong>Reguła „brigde back"</strong>: nie szukaj „logicznie powiązanej" pamięci. Pozwól pamięci samodzielnie się wyłonić, kierując się <em>uczuciem</em>, nie tematem. Skojarzenia działają emocjonalnie, nie tematycznie.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Co potrzebowało dziecko</div>
+    <h1 class="card-prompt">Niezaspokojona <em>potrzeba</em></h1>
+    <p class="card-detail">Kluczowy krok IR. W pamięci z dzieciństwa była konkretna niezaspokojona potrzeba — rzeczy, której potrzebowało dziecko, ale nie dostało. Identyfikacja tej potrzeby jest fundamentem rescriptingu.</p>
+
+    <div class="step-row">
+      <div class="step-num">①</div>
+      <div class="step-text"><strong>Potrzeba wyjaśnienia</strong> — dziecko nie rozumiało: „dlaczego dziadek nie wstaje?", „co to znaczy, że umiera?".</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">②</div>
+      <div class="step-text"><strong>Potrzeba ochrony</strong> — „tu nie miejsce dla dziecka", „nie pozwoliłabym/em ci tego widzieć", „jesteś bezpieczny/a".</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">③</div>
+      <div class="step-text"><strong>Potrzeba pocieszenia</strong> — „możesz się bać i smucić", „jesteś dzielny/a", „masz prawo do tych uczuć".</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">④</div>
+      <div class="step-text"><strong>Potrzeba zapewnienia o świecie</strong> — „nie wszyscy umierają", „twoi rodzice są zdrowi", „świat jest też bezpiecznym miejscem".</div>
+    </div>
+
+    <textarea class="thought-input" id="po1" placeholder="Co realnie POTRZEBOWAŁO 7-letnie dziecko w tej scenie?&#10;np. „Wyjaśnienia, że dziadek umiera, ale to nie znaczy, że wszyscy zaraz umrą. Pozwolenia, by się bać i płakać. Zapewnienia, że mama nie zniknie."" rows="4"></textarea>
+
+    <textarea class="thought-input" id="po2" placeholder="Co dziecko REALNIE dostało?&#10;np. „Dorosłych szepczących nad jego głową. Decyzji «nie wpuszczamy go» bez wyjaśnienia. Rozkazu «nie płacz, nie denerwuj babci»."" rows="3"></textarea>
+
+    <textarea class="thought-input" id="po3" placeholder="Co dorosły Ty (TERAZ) powiedziałby/aby temu dziecku?&#10;np. „Nie jesteś sam/a. Możesz się bać. Dziadek umiera, ale nie wszyscy umrą. Mama tu jest. Mogę cię trzymać za rękę. Nie musisz być strażnikiem niczego."" rows="5"></textarea>
+
+    <div class="fact-row">📊 <strong>Arntz i Weertman (1999, RCT)</strong>: rescripting z identyfikacją niezaspokojonej potrzeby + interwencją Healthy Adult — spadek siły emocjonalnej traumatycznego wspomnienia o 50% w 3–6 sesjach z terapeutą.</div>
+
+    <div class="term-note"><strong>Reguła Healthy Adult</strong>: dorosły Ty nie zmienia <em>faktów</em> sceny (dziadek nadal umiera). Zmienia <em>doświadczenie</em> dziecka w niej (dziecko nie jest już samotne, niewytłumaczone, niepocieszone). To jest mechanizm rescriptingu.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja</div>
+    <h1 class="card-prompt">Lęk po <em>zobaczeniu</em> korzenia</h1>
+    <p class="card-detail">Sama identyfikacja korzenia obniża lęk u części pacjentów (jest sens), u części krótkotrwale podnosi (dotyk traumy). Pełny rescripting wymaga sesji z terapeutą — 6–10 sesji daje d = 1,35 (Veale i in., 2016).</p>
+
+    <div class="scale">
+      <div class="scale-title">Lęk PRZED otwarciem ćwiczenia</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="preLek" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Poziom</span><span id="preLekDis">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Lęk PO przejściu wszystkich kroków</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="postLek" min="0" max="10" step="1" value="5" data-default="5" oninput="updateFinal()">
+      <div class="scale-readout"><span>Poziom</span><span id="postLekVal">5</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsg">Przesuń suwak „PO", żeby zobaczyć efekt.</div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: ta karta przygotowuje materiał, nie wykonuje rescriptingu. Następny krok: zabranie tych zapisków do sesji z terapeutą prowadzącym CBT-IR lub terapię schematów. 6–10 sesji daje pełną integrację.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Twój lęk zdrowotny <strong>ma korzeń</strong>. Konkretną historię, konkretną pamięć, konkretną niezaspokojoną potrzebę. To nie znaczy, że jesteś popsuty/a — znaczy, że Twój lęk jest <em>sensowny</em>: kiedyś chronił dziecko, którym byłeś/aś. Imagery rescripting wymaga obecności terapeuty, ale identyfikacja korzenia jest pierwszym krokiem, który możesz zrobić sam/a. <em>Zobaczenie historii zmienia jej działanie.</em></div>
+    </div>
+
+    <div class="src">Arntz i Weertman (1999); Hackmann, Bennett-Levy i Holmes (2011); Smucker i in. (1995); Wheatley i in. (2007); Veale i in. (2016, pilot); Watkins (1971, affect bridge); Young i in. (2003, Schema Therapy).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateFinal() {
+  var pre = parseInt(document.getElementById('preLek').value, 10);
+  var post = parseInt(document.getElementById('postLek').value, 10);
+  document.getElementById('postLekVal').textContent = post;
+  var diff = pre - post;
+  var msg = '';
+  if (diff > 0) msg = 'Spadek o <strong>' + diff + '</strong> punkt(y) — uznanie, że Twój lęk ma korzeń (konkretną pamięć), zmienia perspektywę: lęk nie jest „tajemniczy", ma historię. To otwiera samokompasję — fundament zmiany.';
+  else if (diff === 0) msg = 'Bez zmiany — imagery rescripting jest narzędziem terapeutycznym, nie samodzielnym ćwiczeniem. Pełny rescripting wymaga sesji z terapeutą.';
+  else msg = 'Wzrost o <strong>' + (-diff) + '</strong> — czasem dotknięcie traumatycznego wspomnienia uruchamia silne emocje. To zwykle sygnał ważnego materiału do pracy z terapeutą — nie porażka.';
+  document.getElementById('finalMsg').innerHTML = msg;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_imagery_ha — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_imagery_ha";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

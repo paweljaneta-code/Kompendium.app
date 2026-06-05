@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Porównywanie społeczne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.po-input { width: 100%; min-height: 60px; padding: 11px 13px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 10px; }
+.po-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.cmp-cell { padding: 11px 13px; border-radius: 10px; }
+.cmp-cell.up { background: rgba(204,153,127,0.13); border: 1px solid rgba(160,100,70,0.6); }
+.cmp-cell.down { background: rgba(184,197,168,0.18); border: 1px solid var(--sage-deep); }
+.cmp-cell .cm-h { font-weight: 600; font-size: 12.5px; margin-bottom: 6px; }
+.cmp-cell.up .cm-h { color: rgba(160,100,70,1); }
+.cmp-cell.down .cm-h { color: var(--sage-deep); }
+.cmp-cell .cm-body { font-size: 12px; color: var(--ink); line-height: 1.55; }
+.cmp-cell .cm-body em { font-style: italic; }
+
+.reel-frame { background: rgba(255,253,247,0.85); border: 1px solid var(--sage-deep); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.reel-h { font-family: 'Fraunces', serif; font-style: italic; color: var(--sage-deep); font-size: 14px; margin-bottom: 12px; text-align: center; }
+.reel-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+.reel-side { padding: 11px 13px; border-radius: 10px; }
+.reel-side.theirs { background: rgba(184,197,168,0.18); border: 1px solid var(--sage-deep); }
+.reel-side.yours { background: rgba(204,153,127,0.13); border: 1px solid rgba(160,100,70,0.6); }
+.reel-side .rs-label { font-weight: 600; font-size: 12px; margin-bottom: 5px; }
+.reel-side.theirs .rs-label { color: var(--sage-deep); }
+.reel-side.yours .rs-label { color: rgba(160,100,70,1); }
+.reel-side .rs-body { font-size: 11.5px; color: var(--ink); line-height: 1.5; }
+.reel-vs { font-size: 18px; color: var(--sage-deep); font-weight: 600; align-self: center; text-align: center; }
+
+.action-grid { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.action-row { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 10px 12px; background: rgba(184,197,168,0.13); border-radius: 9px; border-left: 3px solid var(--sage-deep); }
+.action-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--sage-deep); width: 28px; text-align: center; line-height: 1.2; font-style: italic; }
+.action-name { font-weight: 600; font-size: 12.5px; color: var(--ink); margin-bottom: 3px; }
+.action-tip { font-size: 11.5px; color: var(--ink-mute); line-height: 1.5; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Porównywanie społeczne</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Porównywanie to <em>naturalne</em>, ale zatruwane SoMe</h1>
+    <p class="card-detail">Teoria porównywania społecznego (Festinger, 1954) — ludzie naturalnie porównują się z innymi, by ocenić własne umiejętności, wartości, opinie. Porównywanie w górę (z lepszymi) obniża samoocenę. Porównywanie w dół (z gorszymi) podnosi chwilowo, ale nie buduje trwałej wartości. Social media nasilają porównywanie do patologicznego poziomu — chroniczne upward comparison z <em>highlight reels</em> innych.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Skąd to się wzięło</div>
+      <div class="element-row">
+        <span class="element-icon">🧬</span>
+        <span class="element-text"><strong>Tradycja</strong> — Festinger (1954, „A Theory of Social Comparison Processes"): pierwsza naukowa teoria. Wills (1981): porównywanie w dół jako mechanizm regulacji nastroju. Vogel i in. (2014, Psychology of Popular Media): pierwsza praca pokazująca, że Facebook ekspozycja obniża samoocenę przez upward comparison. Hunt i in. (2018, J. Social and Clinical Psychology): RCT 30-minutowego limitu SoMe — istotny spadek depresji i samotności.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚙️</span>
+        <span class="element-text"><strong>Mechanizm</strong> — algorytmy SoMe optymalizują pod <em>czas spędzany</em>, a najsilniej angażujące są treści wywołujące porównywanie (luksus, sukces, atrakcyjność). Vogel i in. (2014): pasywne scrollowanie aktywuje upward comparison, obniża nastrój o 0.4 SD w ciągu 30 minut. Verduyn i in. (2015): efekt jest specyficzny dla pasywnego oglądania, nie aktywnej interakcji (komentowanie, rozmowa).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Dane</strong> — Hunt i in. (2018, RCT): 3-tygodniowy limit SoMe do 30 min/dzień obniża depresję (d=0.40) i samotność (d=0.32) — silniej niż grupa kontrolna bez limitu. Allcott i in. (2020, RCT N=2000): 4-tygodniowa deaktywacja Facebooka istotnie poprawia dobrostan subiektywny. Twenge i in. (2018): nastolatki spędzające &gt;5h/dzień w SoMe mają o 50% wyższe wskaźniki depresji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✨</span>
+        <span class="element-text"><strong>Efekt</strong> — limit SoMe + temporal comparison (porównywanie z sobą-wczoraj zamiast z innymi) typowo daje 30–50% spadek nasilenia porównywania w 4–6 tygodni. Klienci raportują: „przestałem czuć się gorszy". Ważne: nie polega na całkowitym pozbyciu się porównań (niemożliwe), ale na <em>zmianie ich struktury</em>.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Social media to highlight reel cudzego życia porównywany z Twoim behind the scenes. To porównanie jest z góry nieuczciwe — porównujesz cudze najlepsze 1% z własnym całością. Klucz: świadomość asymetrii informacji."
+      <span class="frame-quote-attr">— parafraza Vogel i in. (2014, Psychology of Popular Media)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: pięć interwencji — <span id="t-po-protokol">uważność porównań, asymetria informacji, limit SoMe, porównanie temporalne, wartości jako kompas</span>. Razem typowo dają 30–50% spadek w 4–6 tygodni. Najsilniejsza pojedyncza interwencja: <em>limit czasu w SoMe do 30 min/dzień</em>.</div>
+
+    <div class="src">Festinger (1954); Vogel i in. (2014, Psychology of Popular Media); Verduyn i in. (2015, JEP: General); Hunt i in. (2018, RCT); Allcott i in. (2020, RCT); Twenge i in. (2018); Wills (1981); Suls i in. (2002)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Krok 1 — diagnostyka porównywania</div>
+    <h1 class="card-prompt">Policz <em>swoje</em> porównania przez 1 dzień</h1>
+    <p class="card-detail">Pierwsza interwencja: świadomość. Klienci typowo nie zdają sobie sprawy, jak <em>często</em> porównują się — bo proces jest automatyczny. Przez 1 dzień licz każde porównanie („ona jest ładniejsza", „on zarabia więcej", „ich życie jest lepsze"). Ile? Z kim? Kiedy?</p>
+
+    <div class="cmp-grid">
+      <div class="cmp-cell up">
+        <div class="cm-h">⬆️ UPWARD — porównywanie w górę</div>
+        <div class="cm-body">Z osobami <em>lepszymi</em> w danej domenie. <em>Efekt</em>: chwilowy spadek samooceny. Czasem motywujące — ale w SoMe częściej demotywujące, bo różnica wydaje się niemożliwa do nadrobienia.</div>
+      </div>
+      <div class="cmp-cell down">
+        <div class="cm-h">⬇️ DOWNWARD — porównywanie w dół</div>
+        <div class="cm-body">Z osobami <em>gorszymi</em> w danej domenie. <em>Efekt</em>: chwilowa ulga („mogłoby być gorzej"). Wills (1981): mechanizm regulacji nastroju, ale nie buduje trwałej wartości.</div>
+      </div>
+    </div>
+
+    <textarea class="po-input" id="dailyCount" placeholder="„Ile razy dziennie się porównujesz? Z kim głównie? W jakich sytuacjach (SoMe, w pracy, w sklepie, w mediach)? Konkretnie."" rows="4"></textarea>
+
+    <textarea class="po-input" id="trigger" placeholder="„Najczęstszy trigger porównywania — co go uruchamia? Np. 'Otwarcie Instagrama rano, gdy jeszcze leżę w łóżku' / 'Spotkanie ze znajomymi z liceum' / 'Czytanie LinkedIn po godzinach'."" rows="3"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Jak silnie porównywanie wpływa na Twoją samoocenę?</div>
+      <div class="scale-bounds"><span>(0 = wcale)</span><span>(10 = bardzo silnie)</span></div>
+      <input type="range" class="scale-input" id="impact" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>Wynik</span><span id="impactval">7</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła licznika</strong>: pierwszy dzień świadomego liczenia często szokuje („30 razy?!"). To jest <em>celem</em> — uświadomienie skali. Sama świadomość typowo daje 10–20% spadek częstotliwości w pierwszym tygodniu — bo zaczynasz zauważać, kiedy to robisz.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Krok 2 — asymetria informacji</div>
+    <h1 class="card-prompt">Highlight reel <em>vs</em> behind the scenes</h1>
+    <p class="card-detail">Druga interwencja: świadomość asymetrii. W social media widzisz najlepsze 1% cudzego życia porównane z Twoim 100%. Cudza Instagrama posty są starannie wyselekcjonowane, oświetlone, wyfiltrowane. Twoje doświadczenie jest pełne — z chorobami, kłótniami, wątpliwościami, szarymi dniami. To <em>strukturalnie nieuczciwe porównanie</em>.</p>
+
+    <div class="reel-frame">
+      <div class="reel-h">Co realnie porównujesz?</div>
+      <div class="reel-grid">
+        <div class="reel-side theirs">
+          <div class="rs-label">😀 ICH highlight reel</div>
+          <div class="rs-body">Najlepsze 1% — wesele, wakacje, awans, świetne zdjęcie po godzinie selekcji, wyjazd luksusowy, dziecko śpiące idealnie.</div>
+        </div>
+        <div class="reel-vs">vs</div>
+        <div class="reel-side yours">
+          <div class="rs-label">😐 TWOJE behind the scenes</div>
+          <div class="rs-body">Pełne 100% — kłótnia z partnerem rano, brak motywacji, choroba, przeciętne dni, wątpliwości w pracy, zmęczenie.</div>
+        </div>
+      </div>
+    </div>
+
+    <textarea class="po-input" id="trueLife" placeholder="„Pomyśl o osobie, z którą najczęściej się porównujesz. Co WIESZ z jej życia, czego nie widzisz w SoMe? (Choroby, rozwody, depresja, niepewność zawodowa, problemy finansowe, długi). Często odpowiedź: bardzo dużo."" rows="4"></textarea>
+
+    <textarea class="po-input" id="myReel" placeholder="„A jakie są TWOJE highlight reels — wybrane chwile z Twojego życia, które byłbyś dumny opublikować? Wypisz 5. To są fragmenty, które ktoś inny by widział i Ci zazdrościł."" rows="4"></textarea>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: po wypełnieniu klient typowo widzi, że <em>jego życie też ma highlight reel</em> — który dla zewnętrznego obserwatora wygląda imponująco. Asymetria informacji działa w obie strony. „Jeśli ja wybieram do publikacji najlepsze 1%, czemu inni tego nie robią?".</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Krok 3 — limit SoMe + porównanie temporalne</div>
+    <h1 class="card-prompt">Dwie najsilniejsze <em>interwencje behawioralne</em></h1>
+    <p class="card-detail">Trzecia interwencja: limit SoMe (Hunt i in. 2018: 30 min/dzień przez 3 tygodnie istotnie poprawia samopoczucie). Czwarta: temporalne porównywanie — z sobą-wczoraj zamiast z innymi-dzisiaj. To przekierowuje naturalną tendencję do porównań w pożyteczny kierunek.</p>
+
+    <div class="action-grid">
+      <div class="action-row">
+        <span class="action-num">1</span>
+        <div>
+          <div class="action-name">LIMIT CZASU SoMe — 30 min/dzień</div>
+          <div class="action-tip">Hunt i in. (2018, RCT): 3 tygodnie → spadek depresji i samotności. Tools: timer w aplikacji (Screen Time iOS / Digital Wellbeing Android), automatyczny lockout po 30 min.</div>
+        </div>
+      </div>
+      <div class="action-row">
+        <span class="action-num">2</span>
+        <div>
+          <div class="action-name">USUŃ KONTA TRIGGEROWE</div>
+          <div class="action-tip">Wycisz / odsubskrybuj 5 najczęściej wywołujących porównanie kont. Followuj zamiast: edukatorów, ludzi pokazujących behind the scenes, autentyczne rozmowy.</div>
+        </div>
+      </div>
+      <div class="action-row">
+        <span class="action-num">3</span>
+        <div>
+          <div class="action-name">AKTYWNA interakcja zamiast PASYWNEJ</div>
+          <div class="action-tip">Verduyn i in. (2015): pasywne scrollowanie szkodzi, aktywna rozmowa nie. Komentuj, pisz wiadomości — zamiast tylko oglądać.</div>
+        </div>
+      </div>
+      <div class="action-row">
+        <span class="action-num">4</span>
+        <div>
+          <div class="action-name">PORÓWNANIE TEMPORALNE — z sobą-wczoraj</div>
+          <div class="action-tip">Codziennie wieczorem: „Gdzie byłam/em rok temu? Co się zmieniło? Co zyskałam/em?". Wzmacnia poczucie progresu i stabilną tożsamość.</div>
+        </div>
+      </div>
+    </div>
+
+    <textarea class="po-input" id="commit" placeholder="„Twój konkretny commitment na nadchodzące 4 tygodnie: (1) limit SoMe — ile minut? Jak wymusisz? (2) konkretne 5 kont do wyciszenia. (3) jaką aktywną interakcję wprowadzasz zamiast scrollowania? (4) kiedy zrobisz porównanie temporalne (z sobą-rok-temu)?"" rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Gotowość do 4-tygodniowego limitu SoMe</div>
+      <div class="scale-bounds"><span>(0 = nie zacznę)</span><span>(10 = zaczynam jutro)</span></div>
+      <input type="range" class="scale-input" id="readinessSoMe" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wynik</span><span id="readinessSoMeval">6</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła wymuszenia</strong>: sam limit nie działa bez <em>technicznego wymuszenia</em>. Klienci, którzy zostawiają sobie „silną wolę", typowo nie utrzymują limitu. Skuteczne: aplikacja blokująca po 30 minutach (np. ScreenZen, Opal), telefon w innym pokoju wieczorem, usunięcie aplikacji z telefonu (zostaje tylko web).</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Krok 4 — wartości jako kompas</div>
+    <h1 class="card-prompt">Twoje życie <em>nie potrzebuje</em> porównania</h1>
+    <p class="card-detail">Piąta i najgłębsza interwencja: zastąpienie porównań <em>wartościami</em>. Porównywanie odpowiada na pytanie „czy jestem lepszy/gorszy od X?". Wartości odpowiadają na pytanie „czy żyję zgodnie z tym, co dla mnie ważne?". Pierwsze pytanie nigdy nie da trwałej satysfakcji (zawsze ktoś jest „lepszy"). Drugie — daje kierunek niezależny od innych.</p>
+
+    <textarea class="po-input" id="myValues" placeholder="„Twoje 3–5 najważniejszych wartości życiowych. Nie to, czego chcesz osiągnąć (cele), ale jak chcesz żyć (wartości). Np.: 'twórczość, autentyczność w relacjach, troska o zdrowie, uczciwość zawodowa, wzrost intelektualny'."" rows="3"></textarea>
+
+    <textarea class="po-input" id="valuesAlive" placeholder="„Konkretne, codzienne działania zgodne z tymi wartościami — co robisz, co je realizuje? Np.: 'twórczość — 30 min pisania dziennie. Relacje — kolacja z partnerką bez telefonów. Zdrowie — trening 3× w tygodniu.'"" rows="4"></textarea>
+
+    <textarea class="po-input" id="vsCmp" placeholder="„Gdy zauważysz porównanie, zadaj sobie pytanie: 'Czy ta osoba ma to, co ja CENIĘ? Czy ona żyje wartościami, które są MOJE?' Często odpowiedź: nie. Ich życie jest skuteczne dla NICH, nie dla Ciebie."" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Po pełnym ćwiczeniu — siła porównywania w samoocenie</div>
+      <div class="scale-bounds"><span>(0 = wcale)</span><span>(10 = bardzo silna)</span></div>
+      <input type="range" class="scale-input" id="postImpact" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="postImpactval">5</span></div>
+    </div>
+
+    <div class="diff-list">
+      <div class="diff-row"><span><strong>Wpływ porównań przed</strong></span><span class="diff-delta" id="dB">—</span></div>
+      <div class="diff-row"><span><strong>Wpływ po ćwiczeniu</strong></span><span class="diff-delta" id="dA">—</span></div>
+      <div class="diff-row"><span><strong>Spadek</strong></span><span class="diff-delta" id="dD">—</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsgPO">Pierwsze pełne ćwiczenie typowo daje 1–2 punkty spadku. Pełen efekt (limit SoMe + porównanie temporalne + wartości jako kompas) rozwija się w 4–6 tygodni — typowo 30–50% spadek nasilenia porównywania (Hunt i in. 2018). Klienci raportują: „przestałem czuć, że muszę kogoś dogonić — wiem, dokąd idę".</div>
+
+    <div class="term-note"><strong>🔁 Codzienny rytuał</strong>: rano <em>przeczytaj wartości</em> (1 min). Wieczorem <em>porównanie temporalne</em> — co się dziś zrobiło zgodnie z wartościami? (3 min). Raz w tygodniu — <em>przegląd SoMe</em>: czyje konta wciąż wywołują porównanie? Wycisz. Po 4 tygodniach typowo widać przesunięcie: porównania się pojawiają, ale przestają boleć — bo wiesz, że żyjesz <em>swoim kierunkiem</em>.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Porównywanie społeczne jest <em>naturalne</em>, ale SoMe je zatruwa do patologii. Pięć interwencji: <strong>uważność porównań → asymetria informacji (highlight reel ≠ rzeczywistość) → limit SoMe (30 min/dzień) → porównanie temporalne (z sobą-wczoraj) → wartości jako kompas</strong>. Reguła: nie polegaj na silnej woli — używaj technicznych wymuszeń.</div>
+    </div>
+
+    <div class="src">Festinger (1954); Vogel i in. (2014); Verduyn i in. (2015); Hunt i in. (2018, RCT); Allcott i in. (2020, RCT); Twenge i in. (2018); Wills (1981); Hayes (ACT — wartości); Suls i in. (2002)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateDiff() {
+  var b = parseInt(document.getElementById('impact').value);
+  var a = parseInt(document.getElementById('postImpact').value);
+  function fmt(d) { if (d === 0) return '0'; return (d > 0 ? '+' : '') + d; }
+  var d = a - b;
+  var dBe = document.getElementById('dB');
+  var dAe = document.getElementById('dA');
+  var dDe = document.getElementById('dD');
+  dBe.textContent = b + '/10'; dBe.className = 'diff-delta' + (b >= 7 ? ' neg' : '');
+  dAe.textContent = a + '/10'; dAe.className = 'diff-delta';
+  dDe.textContent = fmt(d); dDe.className = 'diff-delta' + (d >= 0 ? ' neg' : '');
+
+  var msg = document.getElementById('finalMsgPO');
+  if (d <= -3) {
+    msg.innerHTML = 'Wyraźny spadek po jednorazowym ćwiczeniu — to oznacza, że problem nie jest tak głęboko zakorzeniony, jak się wydawało. Często sama świadomość asymetrii (highlight reel) i przypomnienie wartości wystarcza. Wprowadź limit SoMe — by efekt się utrzymał.';
+  } else if (d === 0) {
+    msg.innerHTML = 'Brak zmiany po ćwiczeniu — typowe gdy główny mechanizm to <em>chroniczne pasywne scrollowanie</em>. Sama wiedza nie wystarczy — potrzebne <em>techniczne wymuszenie</em>: aplikacja blokująca SoMe (ScreenZen, Opal), usunięcie aplikacji z telefonu, telefon w innym pokoju wieczorem.';
+  } else if (d > 0) {
+    msg.innerHTML = 'Wzrost wpływu porównań po ćwiczeniu — paradoksalnie częsta reakcja, gdy świadome przywołanie tematu aktywuje uśpione porównania. To NIE jest porażka — to znak, że temat jest aktualny. Wprowadź limit SoMe i wróć do ćwiczenia za tydzień.';
+  } else if (b >= 8 && a >= 6) {
+    msg.innerHTML = 'Bardzo silny wpływ porównań — typowy u osób spędzających &gt;3h dziennie w SoMe. Sama praca poznawcza nie wystarczy — potrzebny <em>radykalny limit</em>. Allcott i in. (2020): 4-tygodniowa deaktywacja Facebooka istotnie poprawia dobrostan. Spróbuj 1 tydzień bez Instagrama / TikToka.';
+  } else {
+    msg.innerHTML = 'Mały spadek (1–2 punkty) — kierunek dobry, dawka mała. 4-tygodniowy program (limit + temporal comparison + wartości) typowo daje 30–50% spadek (Hunt i in. 2018). Najważniejsze: <em>nie polegaj na silnej woli, używaj technicznych wymuszeń</em>.';
+  }
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    var id = e.target.id;
+    var out = document.getElementById(id + 'val');
+    if (out) out.textContent = e.target.value;
+    if (curStep === 5) updateDiff();
+  }
+});
+
+function onReset() {
+  ['impact','readinessSoMe','postImpact'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      var v = el.getAttribute('data-default') || '5';
+      el.value = v;
+      var out = document.getElementById(id + 'val');
+      if (out) out.textContent = v;
+    }
+  });
+  ['dB','dA','dD'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = 'diff-delta'; }
+  });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_se_porownywanie — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_se_porownywanie";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

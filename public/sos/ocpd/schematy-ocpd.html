@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · schematy w OCPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.sch-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.sch-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.sch-row { padding: 10px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 12px; align-items: flex-start; }
+.sch-row:first-of-type { border-top: none; }
+.sch-icon { font-size: 22px; flex-shrink: 0; line-height: 1; min-width: 28px; }
+.sch-body { flex: 1; }
+.sch-name { font-weight: 600; color: var(--bg); font-size: 13px; margin-bottom: 4px; }
+.sch-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.85); }
+
+.voi-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.voi-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.voi-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.voi-row.picked .voi-d { color: rgba(244,241,234,0.85) !important; }
+.voi-h { font-weight: 600; font-size: 13.5px; }
+.voi-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>schematy w OCPD</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Schematy — gdy <em>nigdy nie jest dość dobrze</em></h1>
+  <p class="card-detail">Schematy w OCPD — Jeffrey Young, Janet Klosko i Marjorie Weishaar (2003, „Schema Therapy: A Practitioner''s Guide") opisali schematy jako TRWAŁE WZORCE z dzieciństwa, działające w dorosłym życiu jako filtr percepcji i reakcji. Lotte Bamelis i wsp. (2014, „Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders", American Journal of Psychiatry) — pierwsze pełne RCT ST dla cluster C (w tym OCPD), N=323, pokazujące skuteczność znacząco wyższą niż TAU (treatment as usual). Centralne schematy OCPD: WYGÓROWANE STANDARDY (Unrelenting Standards) + KARZĄCY RODZIC (Punitive Parent — tryb, nie schemat sensu stricto). Klasyczna formuła: „nigdy nie jest dość dobrze, a błąd zasługuje na karę". Schemat Wygórowanych Standardów rozwija się tam, gdzie miłość była warunkowa (zależna od osiągnięć). Karzący Rodzic — gdzie błędy spotykały się z surową krytyką, wstydem lub odrzuceniem. Schemat samoreplikuje się: pacjent NIEŚWIADOMIE wybiera środowiska wzmacniające standardy. Karzący Rodzic aktywuje się automatycznie przy najmniejszym potknięciu. Pacjent słyszy wewnętrzny głos JAKO SWÓJ, nie jako tryb.</p>
+
+  <div class="sch-card">
+    <div class="sch-h">Centralne schematy OCPD (Young 2003)</div>
+    <div class="sch-row">
+      <span class="sch-icon">📐</span>
+      <div class="sch-body">
+        <div class="sch-name">SCHEMAT 1: WYGÓROWANE STANDARDY (Unrelenting Standards)</div>
+        <div class="sch-cont">„Muszę być najlepsza we wszystkim, co robię". „5+ jest TYLKO podstawą". „Brak osiągnięcia = porażka". Pacjent NIE JEST szczęśliwy z osiągnięć — bo zawsze jest następna góra. Klasyczny dla OCPD i NPD. Domena „Other-Directedness" lub „Over-Vigilance".</div>
+      </div>
+    </div>
+    <div class="sch-row">
+      <span class="sch-icon">🚫</span>
+      <div class="sch-body">
+        <div class="sch-name">SCHEMAT 2: NEGATYWNOŚĆ / PESYMIZM (Negativity / Pessimism)</div>
+        <div class="sch-cont">„Jeśli coś może pójść źle, pójdzie". Chroniczne skanowanie zagrożeń. Trudność w docenianiu pozytywów. Klasyczne — łączy się z lękiem antycypacyjnym + perfekcjonizmem („muszę przewidzieć każde zagrożenie").</div>
+      </div>
+    </div>
+    <div class="sch-row">
+      <span class="sch-icon">🛡️</span>
+      <div class="sch-body">
+        <div class="sch-name">SCHEMAT 3: TŁUMIENIE EMOCJI (Emotional Inhibition)</div>
+        <div class="sch-cont">„Emocje są niebezpieczne / niewłaściwe / oznaką słabości". Pacjent z OCPD chronicznie tłumi gniew, smutek, radość, czułość. Sztywna kontrola emocjonalna jako cnota. Konsekwencja: alexitymia, problemy somatyczne, brak głębi w relacjach.</div>
+      </div>
+    </div>
+    <div class="sch-row">
+      <span class="sch-icon">🎭</span>
+      <div class="sch-body">
+        <div class="sch-name">TRYB 1: KARZĄCY RODZIC (Punitive Parent Mode)</div>
+        <div class="sch-cont">Wewnętrzny głos krytykujący. Aktywuje się automatycznie przy potknięciu. „Znowu się nie udało". „Jesteś nieadekwatna". „Powinno być lepiej". Klasyczne: pacjent słyszy ten głos JAKO SWÓJ, nie jako kopię rodzica. Centralna praca w ST.</div>
+      </div>
+    </div>
+    <div class="sch-row">
+      <span class="sch-icon">⚙️</span>
+      <div class="sch-body">
+        <div class="sch-name">TRYB 2: PERFEKCJONISTYCZNY NAD-KONTROLER (Perfectionistic Overcontroller)</div>
+        <div class="sch-cont">Tryb działania: kontroluje wszystko, planuje wszystko, sprawdza wszystko. Cel: nie dopuścić do uruchomienia Karzącego Rodzica. Wyczerpujący, ale skuteczny w krótkim okresie. Klasyczny dla OCPD — łączy się z work-life imbalance.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Schemat samoreplikuje się</strong>. Pacjent NIEŚWIADOMIE wybiera: pracę z presją, partnera krytycznego, hobby z rygorem, znajomych ambitnych. Każde środowisko = wzmocnienie schematu. Odczuwa się jako „normalne", „pasujące do mnie". W rzeczywistości — schemat reprodukuje warunki dzieciństwa.</span></div>
+    <div class="element-row"><span class="element-icon">🗣️</span><span class="element-text"><strong>Karzący Rodzic AKTYWUJE się automatycznie</strong>. Małe potknięcie (5+ zamiast 6, drobny błąd e-maila, mała wpadka) = natychmiastowy wewnętrzny atak. Bez celowej refleksji. Pacjent czuje WSTYD, lęk, depresję — ale nie widzi, że to TRYB, nie rzeczywistość. Klasyczne: „samokrytyczny stan dnia".</span></div>
+    <div class="element-row"><span class="element-icon">💪</span><span class="element-text"><strong>Perfekcjonistyczny Nad-Kontroler — strategia obronna</strong>. Tryb działania: kontroluje wszystko, by Karzący Rodzic się nie pojawił. Listy, harmonogramy, sprawdzanie po sprawdzeniu. Krótkoterminowo działa. Długoterminowo wypala. Klasyczna pułapka — pacjent uważa Nad-Kontrolera za „swoją kompetencję", nie za tryb obronny.</span></div>
+    <div class="element-row"><span class="element-icon">🌱</span><span class="element-text"><strong>Healthy Adult — tryb do wzmocnienia</strong>. ST: cel terapii NIE jest „pozbycie się Karzącego Rodzica" (niemożliwe), lecz WZMOCNIENIE Healthy Adult (zdrowej dorosłej części), która umie SŁYSZEĆ Karzącego Rodzica i ODPOWIADAĆ inaczej. „Słyszę cię, ojcze, ale dziś nie jestem 8-letnią dziewczynką. Dobrze sobie radzę. 5+ jest świetną oceną".</span></div>
+  </div>
+
+  <div class="frame-quote">„Sama analiza poznawcza ('to przesada') rzadko wystarcza — schemat ma korzenie afektywne. Skuteczna jest praca DOŚWIADCZALNA: imagery rescripting, dialog z trybami, krzesła (chair work). Pacjent musi POCZUĆ, że Karzący Rodzic to nie on, lecz wewnętrzna kopia kogoś z dzieciństwa, którą można wyłączyć. To kluczowy moment w terapii OCPD."<span class="frame-quote-attr">— Jeffrey Young, Janet Klosko i Marjorie Weishaar (2003, Schema Therapy: A Practitioner''s Guide)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: schematy w OCPD mają korzenie afektywne — sama analiza poznawcza nie sięga. Klasyczna sekwencja ST: (a) psychoedukacja o trybach (rozumienie), (b) rozpoznawanie Karzącego Rodzica w czasie rzeczywistym (zauważanie), (c) chair work / dialog z trybami (afektywny kontakt), (d) imagery rescripting (rekonsolidacja pamięci), (e) wzmacnianie Healthy Adult (codziennie). Bamelis 2014 RCT: ST dla cluster C — d ≈ 1.0 (silny effect size), porównywalna z BPD. ST jest ZŁOTYM STANDARDEM dla OCPD.</div>
+
+  <div class="src">Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner''s Guide) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry — RCT N=323) · Bernstein, Arntz i de Vos (2007, Schema focused therapy in forensic settings) · Arntz i Jacob (2017, Schema Therapy in Practice: An Introductory Guide to the Schema Mode Approach) · Beck, Davis i Freeman (2015, Cognitive Therapy of Personality Disorders, 3rd ed.) · Lobbestael, van Vreeswijk i Arntz (2007, Schema modes and personality disorder symptoms, Journal of Personality Disorders)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twój Karzący Rodzic — głos wewnętrzny</div>
+  <h1 class="card-prompt">Które <em>krytyczne zdania</em> brzmią ci znajomo?</h1>
+  <p class="card-detail">8 typowych zdań Karzącego Rodzica w OCPD. Zaznacz te, które słyszysz wewnętrznie REGULARNIE. Klasyczne — pacjent z OCPD nie zauważa, że to TRYB, nie rzeczywistość. Mapa pomaga zobaczyć schemat jako schemat.</p>
+
+  <div class="voi-grid">
+    <div class="voi-row" id="v1" onclick="pickVoi('v1')">
+      <div class="voi-h">😤 „Mogłabyś / mogłeś lepiej"</div>
+      <div class="voi-d">Klasyczne. Po każdym osiągnięciu — wewnętrzny komentarz „ale mogłabyś / mogłeś lepiej". Brak prawdziwej satysfakcji z sukcesu. Klasyczne dla schematu Wygórowanych Standardów.</div>
+    </div>
+    <div class="voi-row" id="v2" onclick="pickVoi('v2')">
+      <div class="voi-h">😞 „Znowu się nie udało"</div>
+      <div class="voi-d">Po małej wpadce — wewnętrzny atak. Nawet drobny błąd uruchamia ten głos. Brak proporcji między wagą błędu a reakcją.</div>
+    </div>
+    <div class="voi-row" id="v3" onclick="pickVoi('v3')">
+      <div class="voi-h">😣 „Inni są lepsi ode mnie"</div>
+      <div class="voi-d">Chroniczne porównywanie się in minus. Każda osoba w pracy / życiu — punkt odniesienia, zawsze gorzej. Klasyczne dla OCPD + NPD overlap.</div>
+    </div>
+    <div class="voi-row" id="v4" onclick="pickVoi('v4')">
+      <div class="voi-h">🚫 „Nie powinnaś / nie powinieneś tak czuć"</div>
+      <div class="voi-d">Krytyka emocji. Smutek, gniew, lęk — niewłaściwe. „Powinnam być silna". Klasyczny schemat tłumienia emocji. Konsekwencja: alexitymia, problemy somatyczne.</div>
+    </div>
+    <div class="voi-row" id="v5" onclick="pickVoi('v5')">
+      <div class="voi-h">⏰ „Tracę czas, powinnam coś produktywnego robić"</div>
+      <div class="voi-d">Każda chwila „bezproduktywna" wywołuje wewnętrzną krytykę. Brak prawa do odpoczynku, zabawy, leniuchowania. Klasyczne dla schematu Wygórowanych Standardów + tryb Nad-Kontroler.</div>
+    </div>
+    <div class="voi-row" id="v6" onclick="pickVoi('v6')">
+      <div class="voi-h">🎯 „Powinnam była przewidzieć"</div>
+      <div class="voi-d">Po każdym nieprzewidzianym problemie — samokrytyka „powinnam była przewidzieć". Niepojęta odpowiedzialność za wszystko. Klasyczne dla schematu Negatywności + Wygórowanych Standardów.</div>
+    </div>
+    <div class="voi-row" id="v7" onclick="pickVoi('v7')">
+      <div class="voi-h">🤐 „Nie skarżyć się, inni mają gorzej"</div>
+      <div class="voi-d">Tłumienie własnego cierpienia przez „inni mają gorzej". Brak prawa do narzekania, prośby o pomoc, wyrażenia niezadowolenia. Klasyczne dla schematu tłumienia emocji.</div>
+    </div>
+    <div class="voi-row" id="v8" onclick="pickVoi('v8')">
+      <div class="voi-h">🏃 „Muszę się więcej starać"</div>
+      <div class="voi-d">Klasyczne. Niezależnie od stanu — zawsze „więcej". Wypalenie, choroba, rozpacz — odpowiedź jedna: więcej. Brak granic, brak odpoczynku. Klasyczna pętla wypalenia.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myVoi" placeholder="Konkretnie: ile zdań rozpoznajesz REGULARNIE? Najczęstsze? Kiedy się aktywują (po jakich sytuacjach)? Czyim głosem brzmią — twoim, ojcem, matką, nauczycielem?" style="min-height: 110px;"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Dystans od krytycznego głosu wewnętrznego — TERAZ</div>
+    <div class="scale-bounds"><span>0 — to JESTEM ja</span><span>10 — to TRYB</span></div>
+    <input type="range" class="scale-input" id="bDist" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bDistv">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: 5-8 zdań chronicznie obecnych = klasyczny obraz Karzącego Rodzica w OCPD. Pierwsza praca: NAZWANIE głosu — „TO JEST mój Karzący Rodzic". Druga: ROZPOZNANIE czyim głosem brzmi (ojciec? matka? nauczyciel?). Trzecia: stopniowe ODPOWIADANIE z trybu Healthy Adult. Bez pierwszego kroku reszta jest niemożliwa.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Dialog z trybami — chair work mentalny</div>
+  <h1 class="card-prompt">Sformułuj <em>odpowiedź Healthy Adult</em></h1>
+  <p class="card-detail">Klasyczne ćwiczenie ST — chair work (Young 2003, Bernstein 2007). W terapii pacjent dosłownie siedzi na różnych krzesłach reprezentujących tryby. Tu wersja mentalna — wpisz krytyczne zdanie + odpowiedź zdrowej dorosłej części.</p>
+
+  <textarea class="thought-input" id="critic" placeholder="① ZDANIE KARZĄCEGO RODZICA — konkretne, ostatnie 24 godziny. (np.: „Po wczorajszej rozmowie z koleżanką w pracy słyszałam: 'powiedziałaś coś głupiego, ona się pewnie zorientowała, że jestem niekompetentna, znowu się ośmieszyłam'")." style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="origin" placeholder="② CZYJ TO GŁOS — czyj głos to jest? Ojca? Matki? Nauczyciela? Pierwszego szefa? Spróbuj rozpoznać AUTORA. (np.: „to brzmi jak mama — gdy w klasie 4 powiedziałam coś przed klasą i pomyliłam się, ona później powiedziała 'nie powinnaś się odzywać, jak nie jesteś pewna')." style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="adult" placeholder="③ ODPOWIEDŹ HEALTHY ADULT — co zdrowa dorosła Ty mogłaby odpowiedzieć Karzącemu Rodzicowi? Spokojnie, racjonalnie, z lekkim ciepłem. (np.: 'Dziękuję, mamo, za chęć ochrony. Ale dziś jestem 38-letnią dorosłą. Powiedziałam coś, co miałam na myśli — nawet jeśli niedoskonale. Koleżanka raczej tego nie zauważyła, a nawet jeśli — to jest OK. Nie muszę być nieomylna, by być akceptowana')." style="min-height: 150px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch w OCPD — odpowiedź Healthy Adult „przezwyciężająca" („musisz pomyśleć inaczej", „pora dorosnąć"). To nie jest Healthy Adult — to KOLEJNY Karzący Rodzic. Test: czy odpowiedziałabyś tymi słowami koleżance w identycznej sytuacji? Jeśli nie — za surowo. Healthy Adult brzmi jak SPOKOJNY MENTOR, nie zawodnik krytyki.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — codzienne wzmacnianie Healthy Adult</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> pracy ze schematami</h1>
+  <p class="card-detail">Praca ze schematami w OCPD to wieloletni proces (terapia ST 18-30 sesji, Bamelis 2014). Te cztery kroki tworzą strukturę praktyczną dla codziennego treningu. Klucz: regularność + dialog + wzmacnianie zdrowej części.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — codzienna praktyka</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>DZIENNIK KARZĄCEGO RODZICA — pierwszy tydzień, po prostu zapisuj</strong>. Każde wewnętrzne krytyczne zdanie — natychmiast notuj (telefon, notatnik). Bez zmieniania, bez analizy. Tylko REJESTRACJA. Po tygodniu masz 30-50 zdań. Patrzysz: powtarzające się tematy, autora głosu, sytuacje aktywujące. Pierwsza świadomość = pierwszy dystans.</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>NAZWANIE — „To mój Karzący Rodzic"</strong>. Drugi tydzień. Gdy słyszysz krytyczny głos — NAZWIJ go w głowie: „aha, to mój Karzący Rodzic". Krótko. Bez walczenia. Tylko nazwanie. Klasyczne: pacjenci raportują, że samo nazwanie odbiera 20-30% mocy głosu — bo widzisz go jako TRYB, nie rzeczywistość.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>DIALOG Z TRYBAMI — chair work mentalny</strong>. Trzeci-czwarty tydzień. Po nazwaniu — krótka odpowiedź Healthy Adult. „Widzę cię, Karzący Rodzicu. Dziękuję za chęć ochrony, ale dziś sobie radzę". 30 sekund. Bez długich tłumaczeń. Klasyczna technika. Po 4-6 tygodniach codziennego dialogu — głos KARZĄCEGO RODZICA staje się słabszy.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>TERAPIA ST — z certyfikowanym terapeutą</strong>. Pełna terapia ST: 18-30 sesji (Bamelis 2014 protokół), z certyfikowanym terapeutą ISST. Imagery rescripting, chair work z terapeutą, limited reparenting. Sama samodzielna praca daje 30-50% efektu — pełna terapia daje 70-90% (RCT Bamelis 2014). OCPD jest jednym z najlepiej odpowiadających na ST.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: kiedy zaczynasz tydzień rejestracji Karzącego Rodzica? Gdzie zapisywać (notatnik / aplikacja)? Czy znajdujesz certyfikowanego terapeutę ST (ISST.com/find-a-therapist) w nadchodzącym kwartale?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: Bamelis 2014 RCT N=323, Schema Therapy dla cluster C (w tym OCPD) — recovery rate 81% po 3 latach (vs 51% w treatment as usual + clarification-oriented psychotherapy 60%). Effect size d ≈ 1.0 — silny. ST jest ZŁOTYM STANDARDEM empirycznym dla OCPD. Sama CBT lub ACT są SŁABSZE — bo nie sięgają afektywnych korzeni schematów. Inwestycja w pełną ST (18-30 sesji) opłaca się długoterminowo.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>dystans</em> od głosu wzrósł?</h1>
+  <p class="card-detail">Wróć tu po identyfikacji zdań Karzącego Rodzica (punkt 2) i sformułowaniu dialogu (punkt 3). Mierzymy dystans od krytycznego głosu — czy widzisz go teraz jako TRYB, nie jako siebie. Pierwsza refleksja zwykle daje wzrost o 1-2 punkty. Pełne osłabienie głosu wymaga miesięcy/lat.</p>
+
+  <div class="scale">
+    <div class="scale-title">Dystans od krytycznego głosu — po refleksji</div>
+    <div class="scale-bounds"><span>0 — to JESTEM ja</span><span>10 — to TRYB</span></div>
+    <input type="range" class="scale-input" id="aDist" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aDistv">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz, że Karzący Rodzic to TRYB, nie ty? Co byłoby Twoim pierwszym krokiem (tydzień rejestracji? Nazwanie głosu? Szukanie certyfikowanego terapeuty ST?)?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: schematy w OCPD mają korzenie afektywne — sama analiza poznawcza nie sięga. Klasyczna sekwencja: rejestracja → nazwanie → dialog → terapia ST z certyfikowanym terapeutą. Bamelis 2014 RCT: ST dla cluster C (w tym OCPD) — recovery rate 81% (vs 51% TAU). Złoty standard. Pełna terapia 18-30 sesji. Sama samodzielna praca daje 30-50% efektu, pełna terapia 70-90%.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Schematy OCPD: <em>Wygórowane Standardy + Negatywność + Tłumienie Emocji + Karzący Rodzic + Perfekcjonistyczny Nad-Kontroler</em>. Karzący Rodzic to TRYB, nie tożsamość — wewnętrzna kopia rodzica z dzieciństwa. <strong>Praca ST: rejestracja → nazwanie → dialog z trybami → wzmacnianie Healthy Adult</strong>. Sama analiza poznawcza nie sięga — schemat afektywny. Bamelis 2014 RCT N=323: ST dla cluster C — recovery 81%, d ≈ 1.0. Złoty standard empiryczny. 18-30 sesji.</div>
+  </div>
+
+  <div class="src">Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner''s Guide) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry — RCT N=323) · Bernstein, Arntz i de Vos (2007, Schema focused therapy in forensic settings) · Arntz i Jacob (2017, Schema Therapy in Practice: An Introductory Guide to the Schema Mode Approach) · Beck, Davis i Freeman (2015, Cognitive Therapy of Personality Disorders, 3rd ed.) · Lobbestael, van Vreeswijk i Arntz (2007, Schema modes and personality disorder symptoms, Journal of Personality Disorders)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickVoi(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bDist').value || 0, 10);
+    var aU = parseInt(document.getElementById('aDist').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Dystans od głosu Karzącego Rodzica wzrósł o ' + dU + ' — widzisz, że krytyczny głos nie JEST tobą, jest CUDZĄ kopią z dzieciństwa. To kluczowy wgląd w ST. Z czasem głos słabnie.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszym kontakcie z koncepcją trybów. Pełna identyfikacja i dystansowanie od Karzącego Rodzica wymaga miesięcy pracy z terapeutą ST.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że głos krytyczny jest tak zlany z tożsamością, że jeszcze nie da się go wyodrębnić. To NORMALNE w OCPD. Pierwszy krok: zapisywanie konkretnych wewnętrznych zdań krytycznych — tydzień rejestracji.';
+    else msg = 'Spadek — czasem zauważanie skali Karzącego Rodzica aktywuje smutek („tyle lat sama siebie tak traktowałam"). To NIE jest porażka — to świadomość. Praca z trybami w ST to wieloletnia.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.voi-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_schematy_ocpd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_schematy_ocpd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bDist','aDist'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Monitor vs odwrócenie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.aba-grid { display: flex; gap: 8px; margin: 12px 0 14px; }
+.aba-day { flex: 1; padding: 14px 12px; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; text-align: center; }
+.aba-day .aba-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.aba-day .aba-h.A { color: var(--warm); }
+.aba-day .aba-h.B { color: var(--sage-deep); }
+.aba-day .aba-task { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 6px; }
+.aba-day .aba-days { font-size: 11px; color: var(--ink-mute); font-weight: 600; }
+
+.belief-card { padding: 14px 16px; background: rgba(122,146,112,0.12); border-left: 3px solid var(--warm); border-radius: 0 10px 10px 0; margin: 10px 0; }
+.belief-card .bc-h { font-size: 12px; color: var(--ink); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.04em; text-transform: uppercase; }
+.belief-card textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--sage); border-radius: 8px; background: rgba(255,255,255,0.7); font-family: inherit; font-size: 13px; line-height: 1.4; color: var(--ink); resize: vertical; min-height: 50px; }
+.belief-card textarea:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.demo-card { padding: 14px 16px; background: rgba(28,38,32,0.95); color: var(--bg); border-radius: 12px; margin: 10px 0 14px; }
+.demo-card .demo-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+.demo-card .demo-row { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+.demo-card .demo-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--warm); flex-shrink: 0; width: 24px; text-align: center; line-height: 1.4; }
+.demo-card .demo-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.5; flex: 1; }
+.demo-card .demo-text strong { color: var(--bg); font-weight: 600; }
+
+.compare-table { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 14px; }
+.cmp-row { display: flex; gap: 8px; padding: 12px 14px; background: rgba(255,255,255,0.5); border-radius: 10px; align-items: center; }
+.cmp-row.a { border-left: 3px solid var(--warm); }
+.cmp-row.b { border-left: 3px solid var(--sage-deep); }
+.cmp-row .cmp-day { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; flex-shrink: 0; min-width: 70px; }
+.cmp-row.a .cmp-day { color: var(--warm); }
+.cmp-row.b .cmp-day { color: var(--sage-deep); }
+.cmp-row .cmp-input { flex: 1; padding: 6px 8px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(255,255,255,0.6); font-family: inherit; font-size: 13px; color: var(--ink); }
+.cmp-row .cmp-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Monitor vs odwrócenie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Im bardziej <em>słuchasz</em>, tym mocniej bije</h1>
+  <p class="card-detail">Selektywna uwaga skierowana na ciało <em>nasila</em> objawy. Clark (1997) zaliczył nadmierne monitorowanie ciała do zachowań zabezpieczających. Ehlers (1995) wykazał, że osoby z zaburzeniem panicznym lepiej wykrywają własne bicie serca niż osoby zdrowe — ta „umiejętność" podtrzymuje lęk, bo każde wzmożone odczucie interpretowane jest jako sygnał choroby.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery prawdy o uwagi na ciało (Clark 1997, Ehlers 1995)</div>
+    <div class="element-row">
+      <span class="element-icon">🔍</span>
+      <span class="element-text"><strong>Uwaga = wzmocnienie</strong> — im mocniej szukasz objawów, tym więcej znajdujesz.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🛡️</span>
+      <span class="element-text"><strong>Forma zabezpieczenia</strong> — pacjent wierzy, że monitoring chroni przed katastrofą.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">↩️</span>
+      <span class="element-text"><strong>Paradoks</strong> — odwrócenie uwagi <em>zmniejsza dostęp</em> do objawów, nie objawy.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📊</span>
+      <span class="element-text"><strong>Eksperyment ABA</strong> — porównanie dni z monitoringiem i bez. Dane przekonują mocniej niż argumenty.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Trening odwrócenia uwagi od ciała redukuje częstość ataków paniki w eksperymencie laboratoryjnym".
+    <span class="frame-quote-attr">— Ehlers i Breuer (1996, Behaviour Research and Therapy)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: pacjent zwykle wierzy, że <em>musi</em> monitorować ciało, bo inaczej „nie zauważy zagrożenia". Eksperyment ABA pokazuje przeciwnie: dni <em>bez</em> monitoringu mają <em>mniej</em> objawów i lęku — to selektywna uwaga pacjenta generuje większość objawów.</div>
+
+  <div class="src">Clark (1997, „Panic disorder: From theory to therapy"); Ehlers (1995); Ehlers i Breuer (1996, Behaviour Research and Therapy); Craske i Barlow (2007, MAP-4); NICE (2011) CG113.</div>
+</section>
+
+<!-- ============== KROK 2 — Twoje przekonanie ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje przekonanie</div>
+  <h1 class="card-prompt">Sformułuj <em>przekonanie do zbadania</em></h1>
+  <p class="card-detail">Eksperyment celuje w konkretne przekonanie. Najczęstsza forma: „<em>Muszę monitorować ciało, bo inaczej nie zauważę zagrożenia</em>". Wybierz wariant najbliższy Tobie albo wpisz własny.</p>
+
+  <div class="examples-h">Typowe przekonania o monitorowaniu</div>
+  <div class="example-chips">
+    <button class="example-chip" id="b1" onclick="pickB('b1', 'Muszę sprawdzać puls / nasłuchiwać serca, bo inaczej nie zauważę zawału')">tętno / serce</button>
+    <button class="example-chip" id="b2" onclick="pickB('b2', 'Muszę kontrolować oddech, bo inaczej zacznę się dusić')">oddech</button>
+    <button class="example-chip" id="b3" onclick="pickB('b3', 'Muszę obserwować zawroty głowy, bo inaczej zemdleję bez ostrzeżenia')">zawroty</button>
+    <button class="example-chip" id="b4" onclick="pickB('b4', 'Muszę sprawdzać czy mam zawroty / mrowienie, bo to ostrzeżenie udaru')">objawy neurologiczne</button>
+    <button class="example-chip" id="b5" onclick="pickB('b5', 'Muszę monitorować jak się czuję, bo bez kontroli wszystko się rozsypie')">ogólne</button>
+  </div>
+
+  <div class="belief-card">
+    <div class="bc-h">Twoje przekonanie</div>
+    <textarea id="myBelief" placeholder="np. „Muszę sprawdzać puls 4 razy dziennie, bo inaczej nie zauważę zawału""></textarea>
+  </div>
+
+  <div class="scale">
+    <div class="scale-label"><span>Pewność, że to przekonanie jest <em>prawdziwe</em> (przed eksperymentem)</span></div>
+    <input type="range" min="0" max="100" value="65" class="scale-input" id="beforeP" data-default="65" oninput="document.getElementById('beforePR').textContent=this.value+'%';updateD()">
+    <div class="scale-readout"><span>0%</span><span id="beforePR">65%</span><span>100%</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Wskazówka</strong>: eksperyment ma sens tylko, jeśli wiara w przekonanie jest <em>powyżej 40%</em>. Poniżej tego progu pacjent „już wie" — mózg nie nauczy się niczego nowego. Jeśli wiara jest niska, dobierz <em>silniejsze</em> przekonanie do testu.</div>
+</section>
+
+<!-- ============== KROK 3 — Demonstracja na sesji ============== -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Demonstracja</div>
+  <h1 class="card-prompt">Trzyminutowa <em>demonstracja</em> mechanizmu</h1>
+  <p class="card-detail">Zanim zaczniesz eksperyment ABA, wykonaj krótką demonstrację — pokazuje natychmiast, jak uwaga zmienia odczucie. Można zrobić tu i teraz.</p>
+
+  <div class="demo-card">
+    <div class="demo-h">Demonstracja: serce + ulubiony film (3 minuty)</div>
+    <div class="demo-row">
+      <span class="demo-num">1</span>
+      <span class="demo-text"><strong>60 sekund</strong> — usiądź wygodnie, połóż dłoń na klatce, skup się <em>tylko</em> na biciu serca. Licz uderzenia, próbuj wyczuć każde.</span>
+    </div>
+    <div class="demo-row">
+      <span class="demo-num">2</span>
+      <span class="demo-text"><strong>60 sekund</strong> — pomyśl o ulubionym filmie. Wyobraź sobie ulubioną scenę. Co tam się działo? Kto był w obsadzie?</span>
+    </div>
+    <div class="demo-row">
+      <span class="demo-num">3</span>
+      <span class="demo-text"><strong>Pytanie kluczowe</strong> — „Jak teraz <em>czujesz</em> serce?" Typowa odpowiedź: <em>„nie czuję"</em>. Wniosek: serce biło tak samo — zmieniła się <strong>uwaga</strong>, nie ciało.</span>
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Twoja obserwacja</strong> po demonstracji:</p>
+  <textarea class="thought-input" id="demoObs" placeholder="np. „W 1. minucie czułem każde uderzenie, kołatanie wydawało się szybsze. W 2. minucie po 30 sekundach myśli o filmie zapomniałem o sercu — w ogóle go nie czułem""></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: uwaga skierowana do wnętrza wzmacnia detekcję słabych sygnałów. Im mocniej szukasz objawów, tym więcej znajdujesz — i tym łatwiej je katastrofizujesz. Zdejmowanie uwagi z ciała zmniejsza <em>dostęp</em> do objawów, nie objawy. To kluczowy paradoks zaburzenia panicznego.</div>
+</section>
+
+<!-- ============== KROK 4 — Eksperyment ABA ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Eksperyment ABA</div>
+  <h1 class="card-prompt">Tydzień <em>kontrolowanego porównania</em></h1>
+  <p class="card-detail">Klasyczny dizajn ABA (Ehlers, 1995): naprzemiennie dni z monitoringiem (A) i bez (B). Po tygodniu liczbowy przegląd — która grupa dni miała więcej objawów i lęku.</p>
+
+  <div class="aba-grid">
+    <div class="aba-day">
+      <div class="aba-h A">📋 Dni A</div>
+      <div class="aba-task">MONITORUJ ciało normalnie. Sprawdzaj puls 4× dziennie, „nasłuchuj" objawów, zapisuj.</div>
+      <div class="aba-days">poniedziałek, środa, piątek</div>
+    </div>
+    <div class="aba-day">
+      <div class="aba-h B">↩️ Dni B</div>
+      <div class="aba-task">ZAKAZ monitorowania. Gdy pojawi się impuls — przenieś uwagę na zewnątrz (5–4–3–2–1 zmysły).</div>
+      <div class="aba-days">wtorek, czwartek, sobota</div>
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:6px"><strong>Kotwice sensoryczne</strong> dla dni B (gdy uwaga ucieka do ciała):</p>
+  <p class="card-detail" style="margin-top:0;font-size:13px;line-height:1.6">5️⃣ rzeczy, które <em>widzę</em> · 4️⃣ rzeczy, które <em>słyszę</em> · 3️⃣ rzeczy, których <em>dotykam</em> · 2️⃣ rzeczy, które <em>czuję zapachem</em> · 1️⃣ rzecz, którą <em>smakuję</em></p>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Wpisz dane po tygodniu</strong> — dla każdego dnia: liczba zauważonych objawów + maksymalny lęk (SUDS — subiektywna skala dystresu, 0–10).</p>
+
+  <div class="compare-table">
+    <div class="cmp-row a">
+      <span class="cmp-day">📋 Pn</span>
+      <input type="text" class="cmp-input" id="dayA1" placeholder="np. 8 objawów, lęk 6">
+    </div>
+    <div class="cmp-row b">
+      <span class="cmp-day">↩️ Wt</span>
+      <input type="text" class="cmp-input" id="dayB1" placeholder="np. 3 objawy, lęk 3">
+    </div>
+    <div class="cmp-row a">
+      <span class="cmp-day">📋 Śr</span>
+      <input type="text" class="cmp-input" id="dayA2" placeholder="np. 7 objawów, lęk 7">
+    </div>
+    <div class="cmp-row b">
+      <span class="cmp-day">↩️ Czw</span>
+      <input type="text" class="cmp-input" id="dayB2" placeholder="np. 2 objawy, lęk 2">
+    </div>
+    <div class="cmp-row a">
+      <span class="cmp-day">📋 Pt</span>
+      <input type="text" class="cmp-input" id="dayA3" placeholder="np. 9 objawów, lęk 8">
+    </div>
+    <div class="cmp-row b">
+      <span class="cmp-day">↩️ So</span>
+      <input type="text" class="cmp-input" id="dayB3" placeholder="np. 4 objawy, lęk 3">
+    </div>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: odwrócenie uwagi <em>nie</em> może stać się formą unikania. Nie chodzi o to, by „nie myśleć o niczym", tylko by wrócić do <em>aktywności</em> (rozmowa, praca, hobby). Cel: uwaga wraca do <em>otoczenia i zadania</em>, nie do innego zabezpieczenia.</div>
+</section>
+
+<!-- ============== KROK 5 — Wniosek + plan ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Wniosek</div>
+  <h1 class="card-prompt">Dane są <em>silniejsze</em> niż argumenty</h1>
+  <p class="card-detail">Po tygodniu przejrzyj dane. Typowy wynik: dni A (monitoring) mają 2–3× więcej zauważonych objawów i wyższy maks. lęk niż dni B (odwrócenie). To są <em>Twoje</em> dane — nie czyjeś argumenty.</p>
+
+  <p class="card-detail" style="margin-top:6px"><strong>Twoje porównanie</strong>:</p>
+  <textarea class="thought-input" id="comparison" placeholder="np. „Dni A: średnio 8 objawów, lęk 7. Dni B: średnio 3 objawy, lęk 3. Różnica wyraźna""></textarea>
+
+  <div class="scale">
+    <div class="scale-label"><span>Pewność w przekonaniu z kroku 2 (PO eksperymencie)</span></div>
+    <input type="range" min="0" max="100" value="20" class="scale-input" id="afterP" data-default="20" oninput="document.getElementById('afterPR').textContent=this.value+'%';updateD()">
+    <div class="scale-readout"><span>0%</span><span id="afterPR">20%</span><span>100%</span></div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Wniosek transsytuacyjny</strong>:</p>
+  <textarea class="thought-input" id="transitive" placeholder="np. „Monitorowanie nie chroni przed zawałem — generuje objawy przez selektywną uwagę. Mogę przestać sprawdzać i nic się nie stanie""></textarea>
+
+  <div class="examples-h">Plan na nadchodzące tygodnie</div>
+  <div class="example-chips">
+    <button class="example-chip" id="p1" onclick="togPlan('p1')">Stopniowe wycofanie monitorowania w codziennym życiu</button>
+    <button class="example-chip" id="p2" onclick="togPlan('p2')">Kotwice sensoryczne 5-4-3-2-1 gdy uwaga ucieka do ciała</button>
+    <button class="example-chip" id="p3" onclick="togPlan('p3')">Po 2 tygodniach — drugi eksperyment ABA dla potwierdzenia</button>
+    <button class="example-chip" id="p4" onclick="togPlan('p4')">Łączenie z ekspozycją interoceptywną</button>
+    <button class="example-chip" id="p5" onclick="togPlan('p5')">Bez sprawdzania w internecie objawów</button>
+  </div>
+
+  <div class="final-msg">Pacjent może zapytać: <em>„A co jeśli NAPRAWDĘ coś jest nie tak?"</em>. Odpowiedź empiryczna: <em>„Czy kiedykolwiek monitorowanie uratowało Ci życie? Czy 4 wizyty na SOR z zapisem EKG w normie nie są dowodem, że serce jest OK?"</em>. Odpowiedzialność medyczna ≠ ciągły monitoring — to dwie różne rzeczy.</div>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: jeśli różnica między dniami A a B nie jest wyraźna, sprawdź: (1) czy w dniach B faktycznie odwracałeś uwagę (a nie po prostu „starałeś się"), (2) czy zapisywałeś <em>liczbowo</em>, nie z pamięci, (3) czy nie zastąpiłeś monitoringu innym zabezpieczeniem.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Im bardziej <strong>słuchasz</strong> serca, tym mocniej bije. Selektywna uwaga generuje większość objawów. Odwrócenie uwagi <em>nie</em> jest unikaniem — jest <strong>wycofaniem zabezpieczenia</strong>, które samo było źródłem problemu.</div>
+  </div>
+
+  <div class="src">Clark (1997, „Panic disorder: From theory to therapy"); Ehlers (1995, Behaviour Research and Therapy — heartbeat detection); Ehlers i Breuer (1996, Behaviour Research and Therapy); Craske i Barlow (2007, MAP-4); Salkovskis (1991); NICE (2011) CG113.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickB(id, text) {
+  document.querySelectorAll('.example-chip').forEach(function(b){
+    if (['b1','b2','b3','b4','b5'].indexOf(b.id) >= 0) b.classList.remove('picked');
+  });
+  var el = document.getElementById(id);
+  if (el) el.classList.add('picked');
+  var ta = document.getElementById('myBelief');
+  if (ta) ta.value = text;
+}
+
+function togPlan(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+function updateD() {
+  var beforeEl = document.getElementById('beforeP');
+  var afterEl = document.getElementById('afterP');
+  var list = document.getElementById('diffList');
+  if (!beforeEl || !afterEl || !list) return;
+  var before = parseInt(beforeEl.value, 10);
+  var after = parseInt(afterEl.value, 10);
+  var delta = before - after;
+  var dCls = delta < 0 ? ' neg' : '';
+  list.innerHTML = '<div class="diff-row"><span><strong>Pewność przed:</strong></span><span class="diff-delta">' + before + '%</span></div>' +
+                   '<div class="diff-row"><span><strong>Pewność po:</strong></span><span class="diff-delta">' + after + '%</span></div>' +
+                   '<div class="diff-row"><span><strong>Spadek:</strong></span><span class="diff-delta' + dCls + '">' + (delta >= 0 ? '−' : '+') + Math.abs(delta) + ' p.p.</span></div>';
+}
+
+function onStepChange(step) {
+  if (step === 5) updateD();
+}
+
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(el => el.classList.remove('picked'));
+  setTimeout(updateD, 50);
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_pan_be_body_vigilance — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_pan_be_body_vigilance";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(updateD, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

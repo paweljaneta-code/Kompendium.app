@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Zobowiązania uprzednie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === Commitment device specific === */
+.cd-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.cd-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.cd-icon { font-size: 22px; line-height: 1; }
+.cd-name { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+.cd-strength {
+  margin-left: auto; font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--sage-deep); font-weight: 700;
+}
+.cd-desc { font-size: 12.5px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 6px; }
+.cd-eg {
+  font-size: 11.5px; color: var(--ink-mute); line-height: 1.5;
+  background: rgba(184,197,168,0.12); padding: 6px 10px; border-radius: 6px;
+  font-style: italic;
+}
+
+.contract-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.contract-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.contract-row { padding: 5px 0; font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.contract-row strong { color: var(--bg); font-weight: 600; }
+.contract-row em { color: var(--sage); font-style: italic; }
+
+.compare-row {
+  display: grid; grid-template-columns: 1fr 22px 1fr; gap: 10px;
+  align-items: center; padding: 8px 0;
+  border-bottom: 1px dashed rgba(184,197,168,0.3);
+  font-size: 12.5px;
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-bad { color: #a64a3a; }
+.compare-arrow { font-family: 'Fraunces', serif; color: var(--sage-deep); text-align: center; }
+.compare-good { color: var(--sage-deep); font-weight: 500; }
+
+.friction-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin: 10px 0;
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Zobowiązania uprzednie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============ KROK 1 — Wprowadzenie ============ -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Zobowiąż <em>spokojne ja</em>, by chroniło <em>kuszone ja</em></h1>
+    <p class="card-detail">Thomas Schelling — laureat Nagrody Nobla w ekonomii — opisał <strong>commitment device</strong> (zobowiązanie uprzednie) jako mechanizm, w którym osoba decydująca <em>w spokoju</em> wiąże się z decyzją w sposób kosztowny do złamania <em>w impulsie</em>. Klasyczny przykład to Odyseusz: kazał się przywiązać do masztu, by nie ulec syrenom, gdy zacznie ich słuchać. W problematycznym używaniu pornografii (PPU) ten mechanizm bywa najbardziej skutecznym narzędziem prewencji nawrotu — bo w impulsie siła woli jest najsłabsza, a wtedy musi pracować <em>za ciebie</em> coś, co ustawiłeś/aś wcześniej.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery cechy mocnego commitment device</div>
+      <div class="element-row">
+        <span class="element-icon">⏰</span>
+        <span class="element-text"><strong>Ustawione w spokoju</strong> — gdy spokojne ja decyduje na rzecz spokojnego siebie w przyszłości, nie kuszonego ja w impulsie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💸</span>
+        <span class="element-text"><strong>Kosztowne do złamania</strong> — finansowo, relacyjnie, reputacyjnie. Jeśli złamanie nie boli, nie chroni.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">👤</span>
+        <span class="element-text"><strong>Włączona osoba trzecia</strong> — partner, terapeuta, sponsor; ktoś, kto egzekwuje koszt. Sam kontrakt z sobą rozpada się w impulsie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📜</span>
+        <span class="element-text"><strong>Konkretne, sprawdzalne</strong> — "nie oglądam pornografii" (binarne), nie "będę się starać" (uznaniowe). Bez konkretu nie ma jak egzekwować.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Klucz do zmiany nawyku nie leży w sile woli — leży w zaprojektowaniu sytuacji, w której zła decyzja jest droższa niż dobra. Spokojne ja musi związać kuszone ja, zanim ono się obudzi."
+      <span class="frame-quote-attr">— parafraza po Schelingu (1984, „Self-Command in Practice, in Policy, and in a Theory of Rational Choice")</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: commitment device <em>nie jest karą</em> ani <em>aktem siły woli</em> — to <strong>asymetria czasowa</strong>. Spokojne ja, które dziś czyta tę kartę, ma jasność, której kuszone ja w nocy nie ma. Twoim zadaniem jest <em>wykorzystać tę chwilę jasności</em> do zaprojektowania zewnętrznego ograniczenia, które zadziała, gdy jasność zniknie.</div>
+
+    <div class="src">Schelling (1984, „Self-Command in Practice"); Ashraf, Karlan &amp; Yin (2006, „Tying Odysseus to the mast" — empiryczne badanie commitment savings); Bryan, Karlan &amp; Nelson (2010, „Commitment devices" — przegląd); Thaler &amp; Benartzi (2004, „Save More Tomorrow"); Ariely (2008, „Predictably Irrational" — pre-commitment).</div>
+  </section>
+
+  <!-- ============ KROK 2 — Audyt ============ -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — czy masz coś już</div>
+    <h1 class="card-prompt">Sprawdź <em>obecne zobowiązania</em></h1>
+    <p class="card-detail">Wielu osobom z PPU wydaje się, że już ma jakieś commitment devices — najczęściej są to jednak <em>postanowienia z sobą</em>, które nie spełniają warunku osoby trzeciej w pętli. Sprawdź, co realnie działa.</p>
+
+    <div class="examples-h">Co już masz wdrożone</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="hPart" onclick="this.classList.toggle('picked')">Accountability partner — kontakt regularny</button>
+      <button type="button" class="example-chip" id="hReport" onclick="this.classList.toggle('picked')">Software z raportem (Covenant Eyes)</button>
+      <button type="button" class="example-chip" id="hPwd" onclick="this.classList.toggle('picked')">Hasło u osoby trzeciej</button>
+      <button type="button" class="example-chip" id="hFin" onclick="this.classList.toggle('picked')">Finansowy depozyt (StickK / Beeminder)</button>
+      <button type="button" class="example-chip" id="hPub" onclick="this.classList.toggle('picked')">Publiczne zobowiązanie — terapeuta, grupa</button>
+      <button type="button" class="example-chip" id="hPhys" onclick="this.classList.toggle('picked')">Fizyczne — komputer w widocznym miejscu</button>
+      <button type="button" class="example-chip" id="hUlys" onclick="this.classList.toggle('picked')">Pisemny kontrakt (Ulysses contract)</button>
+      <button type="button" class="example-chip" id="hSelf" onclick="this.classList.toggle('picked')">Tylko postanowienie z sobą</button>
+      <button type="button" class="example-chip" id="hNoth" onclick="this.classList.toggle('picked')">Nic — żadnych zobowiązań</button>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy w impulsie potrafisz "wynegocjować" wyjście?</span><span></span></div>
+      <input type="range" class="scale-input" id="negotiate" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nigdy</span><span id="negotiateval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy złamanie boli realnie (ktoś zobaczy, koszt finansowy)?</span><span></span></div>
+      <input type="range" class="scale-input" id="cost" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = nie boli</span><span id="costval">3</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Ile osób zobaczy, jeśli złamiesz?</span><span></span></div>
+      <input type="range" class="scale-input" id="audience" min="0" max="5" step="1" value="0" data-default="0">
+      <div class="scale-readout"><span>0 = nikt</span><span id="audienceval">0</span></div>
+    </div>
+
+    <div class="term-note"><strong>Reguła oceny</strong>: jeśli możesz wynegocjować wyjście (≥6) lub złamanie nie boli (≤3) — twoje obecne zobowiązania <em>nie pełnią funkcji commitment device</em>. To <strong>postanowienia</strong>, nie <strong>kontrakty</strong>. Różnica jest fundamentalna.</div>
+  </section>
+
+  <!-- ============ KROK 3 — Wybór typu ============ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — jaki typ zobowiązania</div>
+    <h1 class="card-prompt">Wybierz <em>jedną dźwignię</em></h1>
+    <p class="card-detail">Cztery główne typy commitment devices różnią się siłą i trudnością wdrożenia. Wybierz <strong>jeden</strong> dopasowany do twojej sytuacji — wdrożenie wszystkich naraz zwykle się nie udaje.</p>
+
+    <div class="cd-card">
+      <div class="cd-h">
+        <span class="cd-icon">🤝</span>
+        <span class="cd-name">Accountability — raport do osoby</span>
+        <span class="cd-strength">★★★★★</span>
+      </div>
+      <div class="cd-desc">Zaufana osoba dostaje regularny raport (tygodniowo) — albo z aplikacji monitorującej, albo bezpośrednio od ciebie. Stawka: musisz powiedzieć, gdy złamałeś/aś.</div>
+      <div class="cd-eg">Przykład: Krzysztof (brat) dostaje co niedzielę o 20:00 wiadomość ode mnie z raportem tygodnia: "było/nie było, jakie sytuacje, co zadziałało".</div>
+    </div>
+
+    <div class="cd-card">
+      <div class="cd-h">
+        <span class="cd-icon">💰</span>
+        <span class="cd-name">Finansowe — depozyt z konsekwencją</span>
+        <span class="cd-strength">★★★★</span>
+      </div>
+      <div class="cd-desc">StickK, Beeminder — wpłacasz pieniądze, które trafiają na cel <em>nielubiany</em> (organizacja, z którą się nie zgadzasz; partia polityczna; antywybór), jeśli nie osiągniesz celu. Sędzia: osoba trzecia.</div>
+      <div class="cd-eg">Przykład: 200 zł na StickK, sędzia: terapeuta, anti-charity: organizacja, której nie wspieram. 30 dni bez PPU = pieniądze wracają.</div>
+    </div>
+
+    <div class="cd-card">
+      <div class="cd-h">
+        <span class="cd-icon">📢</span>
+        <span class="cd-name">Publiczne zobowiązanie</span>
+        <span class="cd-strength">★★★★</span>
+      </div>
+      <div class="cd-desc">Powiedzenie celu osobie, którą szanujesz — terapeucie, grupie wsparcia, sponsorowi. Wstyd przed złamaniem słowa danego osobie staje się fizycznym hamulcem.</div>
+      <div class="cd-eg">Przykład: na grupie 12 kroków mówisz: "deklaruję 30 dni bez PPU, raport co tydzień". Następne spotkanie — sprawdzenie. Nie ma "po cichu się wycofam".</div>
+    </div>
+
+    <div class="cd-card">
+      <div class="cd-h">
+        <span class="cd-icon">🔐</span>
+        <span class="cd-name">Hasło u osoby trzeciej</span>
+        <span class="cd-strength">★★★★</span>
+      </div>
+      <div class="cd-desc">Hasło do blokera, parental controls, accountability software u kogoś innego. By obejść — musisz <em>poprosić</em>, co samo w sobie jest barierą emocjonalną.</div>
+      <div class="cd-eg">Przykład: NextDNS skonfigurowane przez brata. Hasło on. Jeśli chcę zmienić — pisać do niego z prośbą i powodem. W praktyce — niemożliwe.</div>
+    </div>
+
+    <div class="cd-card">
+      <div class="cd-h">
+        <span class="cd-icon">📜</span>
+        <span class="cd-name">Ulysses contract — pisemny kontrakt</span>
+        <span class="cd-strength">★★★</span>
+      </div>
+      <div class="cd-desc">Pisemna deklaracja celu, warunków, konsekwencji złamania — podpisana przez ciebie i osobę trzecią. Słabszy bez połączenia z innymi typami; mocny gdy stanowi <em>ramę</em> dla innych.</div>
+      <div class="cd-eg">Przykład: dokument PDF z celem (90 dni bez PPU), warunkami, konsekwencjami (300 zł na cel niechciany), podpisany przez ciebie i partnera. Wysłany do terapeuty.</div>
+    </div>
+
+    <div class="examples-h">Wybierz jeden typ do wdrożenia w 7 dni</div>
+    <button type="button" class="rel-btn" id="cAcc" onclick="pickType('Acc')">
+      <span class="rel-name">🤝 Accountability — raport do osoby</span>
+      <span class="rel-desc">Najsilniejszy zwrot. Wymaga rozmowy z osobą trzecią o problemie. Wdrożenie: 1 rozmowa + 30 minut.</span>
+    </button>
+    <button type="button" class="rel-btn" id="cFin" onclick="pickType('Fin')">
+      <span class="rel-name">💰 Finansowy — StickK / Beeminder</span>
+      <span class="rel-desc">Mocny dla osób z silną awersją do straty. Wdrożenie: 30—60 min konfiguracji + sędzia.</span>
+    </button>
+    <button type="button" class="rel-btn" id="cPub" onclick="pickType('Pub')">
+      <span class="rel-name">📢 Publiczne — terapeuta, grupa</span>
+      <span class="rel-desc">Wymaga obecnej grupy / regularnej terapii. Wdrożenie: 1 spotkanie z deklaracją.</span>
+    </button>
+    <button type="button" class="rel-btn" id="cPwd" onclick="pickType('Pwd')">
+      <span class="rel-name">🔐 Hasło — u osoby trzeciej</span>
+      <span class="rel-desc">Łączy się z blokerami. Wdrożenie: 30 min + obecność osoby trzeciej.</span>
+    </button>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: bierz typ, który możesz wdrożyć <em>w ciągu 7 dni</em>. Zaplanowany na "potem" — nie powstanie. Jeden mocny commitment device > pięć słabych planów.</div>
+  </section>
+
+  <!-- ============ KROK 4 — Praktyka ============ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — projektowanie kontraktu</div>
+    <h1 class="card-prompt">Zaprojektuj <em>twój kontrakt</em></h1>
+    <p class="card-detail">Każdy commitment device ma <strong>cztery elementy</strong>: cel binarny, czas, koszt złamania, sędzia. Brak któregokolwiek osłabia całość. Wypełnij — wynik zobaczysz w ramce poniżej.</p>
+
+    <div class="examples-h">A. Cel binarny (sprawdzalny tak/nie)</div>
+    <textarea class="thought-input" id="goalA" placeholder="np. „Nie oglądam pornografii (żaden serwis, żaden tryb prywatny). Nie scrolluję treści seksualnych w social media.”" rows="2"></textarea>
+
+    <div class="examples-h">B. Czas (start + długość)</div>
+    <textarea class="thought-input" id="goalB" placeholder="np. „Start: poniedziałek 06:00. Czas: 30 dni. Następna rewizja: 30. dnia o 20:00 z bratem.”" rows="2"></textarea>
+
+    <div class="examples-h">C. Koszt złamania (musi boleć)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="kF1" onclick="this.classList.toggle('picked')">200 zł na anti-charity</button>
+      <button type="button" class="example-chip" id="kF2" onclick="this.classList.toggle('picked')">500 zł na anti-charity</button>
+      <button type="button" class="example-chip" id="kR1" onclick="this.classList.toggle('picked')">Powiedzenie partnerowi</button>
+      <button type="button" class="example-chip" id="kR2" onclick="this.classList.toggle('picked')">Powiedzenie terapeucie</button>
+      <button type="button" class="example-chip" id="kR3" onclick="this.classList.toggle('picked')">Powiedzenie grupie wsparcia</button>
+      <button type="button" class="example-chip" id="kP1" onclick="this.classList.toggle('picked')">Tydzień bez ulubionej aktywności</button>
+    </div>
+    <textarea class="thought-input" id="goalC" placeholder="Lub własna konsekwencja — taka, by realnie bolała…" rows="2"></textarea>
+
+    <div class="examples-h">D. Sędzia / osoba trzecia (kto egzekwuje)</div>
+    <textarea class="thought-input" id="goalD" placeholder="np. „Krzysztof (brat). Numer mam, mówiłem mu wcześniej o problemie. Egzekucja: w przypadku złamania piszę do niego w ciągu 24h, on zatwierdza konsekwencję na StickK.”" rows="2"></textarea>
+
+    <button type="button" class="rel-btn" id="composeBtn" onclick="composeContract()">
+      <span class="rel-name">📜 Złóż kontrakt</span>
+      <span class="rel-desc">Kliknij, by zobaczyć ostateczną treść Ulysses contract</span>
+    </button>
+
+    <div class="contract-card" id="contractOut" style="display:none">
+      <div class="contract-h">Twój Ulysses contract</div>
+      <div class="contract-row" id="cL1"></div>
+      <div class="contract-row" id="cL2"></div>
+      <div class="contract-row" id="cL3"></div>
+      <div class="contract-row" id="cL4"></div>
+      <div class="contract-row" id="cL5" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(184,197,168,0.3);"></div>
+    </div>
+
+    <div class="friction-card">
+      <div class="examples-h" style="margin-top:0">Słaby kontrakt vs mocny kontrakt</div>
+      <div class="compare-row">
+        <div class="compare-bad">"Będę się starać"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-good">"Nie oglądam pornografii"</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-bad">"Niedługo coś zrobię"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-good">"Start poniedziałek, 30 dni"</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-bad">"Będzie mi przykro"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-good">"200 zł na cel niechciany"</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-bad">"Sam siebie pilnuję"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-good">"Brat egzekwuje konsekwencję"</div>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: <em>asymetria czasowa</em> — spokojne ja teraz wybiera koszt, który kuszone ja w nocy będzie musiało zapłacić. Bez kosztu nie ma kontraktu — jest postanowienie. Bez sędziego nie ma egzekucji — jest życzenie.</div>
+  </section>
+
+  <!-- ============ KROK 5 — Po ============ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy kontrakt <em>realnie chroni</em>?</h1>
+    <p class="card-detail">Wróć tu po pierwszym tygodniu obowiązywania kontraktu — albo po pierwszym epizodzie testowym (urge wysoki). Sprawdź, czy zobowiązanie pracuje.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy kontrakt przyszedł do głowy w impulsie?</span><span></span></div>
+      <input type="range" class="scale-input" id="postRecall" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postRecallval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy myśl o koszcie zatrzymała sięgnięcie?</span><span></span></div>
+      <input type="range" class="scale-input" id="postStop" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postStopval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy raport / kontakt z sędzią się wydarzył?</span><span></span></div>
+      <input type="range" class="scale-input" id="postReport" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postReportval">5</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: dobry kontrakt <em>przychodzi do głowy</em> w impulsie (≥7), <em>zatrzymuje sięgnięcie</em> (≥6) i <em>raport rzeczywiście się dzieje</em> (≥7). Brak któregoś z trzech — kontrakt jest słaby; wzmocnij go najsłabszym ogniwem (najczęściej sędzia lub koszt).</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Commitment device to <em>nie magia</em> — to <em>infrastruktura</em>. Pierwszy działa rzadko ideal­nie; każdy kolejny jest mocniejszy, bo widzisz, gdzie poprzedni miał słabe ogniwa. Po 2—3 cyklach (każdy 30—90 dni) commitment devices stają się tłem twojego życia, a nie heroicznym wysiłkiem. Pamiętaj: <strong>spokojne ja zna prawdę, kuszone ja zna wymówki</strong> — twoim zadaniem jest dać spokojnemu ja realne narzędzia, by ono wygrywało.</div>
+    </div>
+
+    <div class="src">Schelling (1984); Ashraf, Karlan &amp; Yin (2006); Bryan, Karlan &amp; Nelson (2010, „Commitment devices" — przegląd); Ariely (2008); zastosowanie do compulsive behavior: Hall (2013); Carnes (2001).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['negotiate','cost','audience','postRecall','postStop','postReport'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedType = null;
+function pickType(code) {
+  window.pickedType = code;
+  ['cAcc','cFin','cPub','cPwd'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('c' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function composeContract() {
+  var a = (document.getElementById('goalA').value || '').trim();
+  var b = (document.getElementById('goalB').value || '').trim();
+  var c = (document.getElementById('goalC').value || '').trim();
+  var d = (document.getElementById('goalD').value || '').trim();
+  var box = document.getElementById('contractOut');
+  if (!box) return;
+  if (!a && !b && !c && !d) { box.style.display = 'none'; return; }
+  document.getElementById('cL1').innerHTML = '<strong>Cel:</strong> <em>' + (a || '—') + '</em>';
+  document.getElementById('cL2').innerHTML = '<strong>Czas:</strong> <em>' + (b || '—') + '</em>';
+  document.getElementById('cL3').innerHTML = '<strong>Koszt złamania:</strong> <em>' + (c || '—') + '</em>';
+  document.getElementById('cL4').innerHTML = '<strong>Sędzia:</strong> <em>' + (d || '—') + '</em>';
+  document.getElementById('cL5').innerHTML = '<strong>Podpis:</strong> spokojne ja, dziś. Egzekucja w przypadku złamania — w ciągu 24 godzin.';
+  box.style.display = 'block';
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var rec = parseInt(document.getElementById('postRecall').value, 10);
+  var stop = parseInt(document.getElementById('postStop').value, 10);
+  var rep = parseInt(document.getElementById('postReport').value, 10);
+
+  var rows = [];
+  var recW = rec <= 3 ? 'nie' : (rec <= 6 ? 'czasem' : 'tak');
+  rows.push('<div class="diff-row"><strong>Przyszedł do głowy</strong><span class="diff-delta">' + rec + '/10 — ' + recW + '</span></div>');
+  var stopW = stop <= 3 ? 'nie' : (stop <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Zatrzymał sięgnięcie</strong><span class="diff-delta">' + stop + '/10 — ' + stopW + '</span></div>');
+  var repW = rep <= 3 ? 'nie' : (rep <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Raport do sędziego</strong><span class="diff-delta">' + rep + '/10 — ' + repW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (rec >= 7 && stop >= 6 && rep >= 7) {
+      msg = '<strong>Kontrakt pracuje.</strong> Przychodzi do głowy, zatrzymuje, raport idzie. <em>Utrzymuj cykl 30 dni</em>; po nim zastąp wzmocnioną wersją (większy koszt lub dodatkowa warstwa).';
+    } else if (rec >= 5 && stop >= 5) {
+      msg = '<strong>Kontrakt zaczyna działać.</strong> Wzmocnij najsłabsze ogniwo: jeśli rzadko przychodzi do głowy — dodaj fizyczny przypomnienie (kartka na lustrze). Jeśli nie zatrzymuje — zwiększ koszt.';
+    } else if (rec <= 3) {
+      msg = '<strong>Kontrakt nie żyje w głowie.</strong> Zwykła przyczyna: brak fizycznego przypomnienia. Wydrukuj kontrakt, połóż przy łóżku; ustaw przypomnienie na telefonie 22:00 z treścią: "kontrakt aktywny do <em>data</em>".';
+    } else if (rep <= 3) {
+      msg = '<strong>Sędzia nie egzekwuje.</strong> Najsłabsze ogniwo. Bez kontaktu z osobą trzecią kontrakt zwyrodnia w postanowienie. Umów <em>stały dzień i godzinę</em> raportu — najlepiej osobiście lub przez wiadomość głosową.';
+    } else {
+      msg = '<strong>Częściowy efekt.</strong> Kontrakt pracuje, ale nie pełną mocą. Przejrzyj cztery elementy z kroku 4 — który jest najmniej konkretny? Tam wzmocnij.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['hPart','hReport','hPwd','hFin','hPub','hPhys','hUlys','hSelf','hNoth'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['cAcc','cFin','cPub','cPwd'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedType = null;
+  var box = document.getElementById('contractOut');
+  if (box) box.style.display = 'none';
+}
+
+['postRecall','postStop','postReport'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_commitment_device — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_commitment_device";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['Acc','Fin','Pub','Pwd'].forEach(function(code){
+    var el = document.getElementById('c' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedType = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

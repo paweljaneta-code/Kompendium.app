@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Ekspozycja w wielu kontekstach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Ekspozycja w wielu kontekstach</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Dlaczego sukces w gabinecie <em>nie wystarcza</em></h1>
+  <p class="card-detail">Ekspozycja, która zadziałała w jednym miejscu, często zawodzi w innym. Zjawisko nazywa się <em>renewal effect</em>: lęk wraca w nowym kontekście, mimo że został wygaszony w pierwotnym. Bouton (2002) pokazał w serii badań laboratoryjnych, że uczenie hamujące jest silnie kontekstowe — mózg koduje „w gabinecie u terapeuty pies nie był groźny\", ale ten ślad nie obejmuje automatycznie ulicy, parku ani własnego domu. Rozwiązaniem jest <em>deepened extinction</em> Craske i in. (2014): tę samą ekspozycję powtarzasz w wielu różnych kontekstach.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Pięć wymiarów wariacji kontekstu</div>
+    <div class="element-row">
+      <span class="element-icon">📍</span>
+      <span class="element-text"><strong>Lokalizacja</strong> — gabinet, dom, ulica, park, inne miasto. Każde miejsce to inny kontekst dla mózgu.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🕐</span>
+      <span class="element-text"><strong>Pora dnia</strong> — rano przy świetle, południe, wieczór po ciemku. Inne tło sensoryczne, inne uczenie.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎭</span>
+      <span class="element-text"><strong>Stan emocjonalny</strong> — wypoczęty/a, zmęczony/a, lekko zestresowany/a, po dobrym dniu. Mózg uczy się szerzej.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👥</span>
+      <span class="element-text"><strong>Towarzystwo</strong> — sam/a, z bliską osobą, z osobą obcą. Brak osoby asekurującej to osobny kontekst do nauki.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Ekspozycja w jednym kontekście daje 'office cure' — działa w gabinecie, znika poza nim. Ekspozycja w pięciu kontekstach generuje uczenie odporne na nawrót.\"
+    <span class="frame-quote-attr">— Craske i in. (2014, deepened extinction)</span>
+  </div>
+
+  <div class="term-note"><strong>Renewal effect</strong>: po skutecznym wygaszeniu lęku w jednym kontekście, lęk wraca w nowym kontekście — czasami z pełną siłą. To nie jest porażka pacjenta ani terapeuty, to charakterystyka uczenia hamującego. Profilaktyka nawrotu polega właśnie na różnicowaniu kontekstów już w trakcie aktywnej terapii, nie po jej zakończeniu.</div>
+
+  <div class="src">Bouton (2002, contextual learning) · Craske i in. (2014) · Mystkowski i in. (2002) · Vansteenwegen (badania laboratoryjne) · Culver i in. (2012)</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja bazowa ekspozycja</div>
+  <h1 class="card-prompt">Wybierz <em>jedną</em> ekspozycję, którą już potrafisz wykonać</h1>
+  <p class="card-detail">Ten arkusz nie służy do budowania hierarchii od zera — zakłada, że masz już krok, który opanowałeś/aś w jednym kontekście (zwykle gabinet lub kontrolowane warunki domowe). Wybór tej ekspozycji jest punktem startu: rozszerzysz ją na inne konteksty, żeby uczenie hamujące się uogólniło.</p>
+
+  <div class="examples-h">Typy bazowej ekspozycji (zaznacz tę, której dotyczy ten arkusz)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="b-zw" onclick="this.classList.toggle('picked')">Kontakt ze zwierzęciem (pies, kot, pająk, wąż)</button>
+    <button class="example-chip" id="b-wys" onclick="this.classList.toggle('picked')">Wysokość (balkon, wieża, szklana podłoga)</button>
+    <button class="example-chip" id="b-zam" onclick="this.classList.toggle('picked')">Zamknięta przestrzeń (winda, tunel, MRI)</button>
+    <button class="example-chip" id="b-igl" onclick="this.classList.toggle('picked')">Krew/igła/uraz (pobranie, zastrzyk, zranienie)</button>
+    <button class="example-chip" id="b-lat" onclick="this.classList.toggle('picked')">Latanie samolotem</button>
+    <button class="example-chip" id="b-bur" onclick="this.classList.toggle('picked')">Burza, piorun, woda</button>
+    <button class="example-chip" id="b-jaz" onclick="this.classList.toggle('picked')">Jazda samochodem / mostem / autostradą</button>
+  </div>
+
+  <div class="card-detail" style="margin-top:14px"><strong>Opisz ekspozycję, którą już opanowałeś/aś w jednym kontekście</strong>:</div>
+  <textarea class="thought-input" id="baz" placeholder="np. „Pies średniej wielkości, na smyczy, na korytarzu w gabinecie terapeuty. 5 minut, dystans 1 metr, bez gładzenia. Sukces — lęk z 70 spadł do 30, oczekiwanie ugryzienia naruszone trzy razy z rzędu.\"" rows="4"></textarea>
+
+  <div class="term-note"><strong>Kryterium gotowości</strong>: jeśli daną ekspozycję wykonałeś/aś co najmniej trzy razy z rzędu w bazowym kontekście, z naruszeniem oczekiwania w każdej (Craske, 2014), jesteś gotów/owa do wariacji kontekstu. Jeśli jeszcze nie — wróć do bazowego kontekstu, dopracuj go i potem rozszerzaj.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Pięć różnych lokalizacji</div>
+  <h1 class="card-prompt">Zaplanuj <em>tę samą ekspozycję</em> w pięciu miejscach</h1>
+  <p class="card-detail">Lokalizacja to najsilniejszy wymiar kontekstu. Mózg wiąże uczenie ze szczegółami otoczenia: zapachem, oświetleniem, układem przestrzennym, dźwiękiem. Im bardziej różnorodne lokalizacje, tym szerzej uogólnia się nowe uczenie. Cel: pięć miejsc, każde wyraźnie różne, ta sama ekspozycja w każdym.</p>
+
+  <div class="examples-h">Typowe lokalizacje (zaznacz pięć, które wykorzystasz)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="l-gab" onclick="this.classList.toggle('picked')">Gabinet terapeuty (start)</button>
+    <button class="example-chip" id="l-dom" onclick="this.classList.toggle('picked')">Własny dom (kuchnia, salon, korytarz)</button>
+    <button class="example-chip" id="l-ul" onclick="this.classList.toggle('picked')">Ulica w pobliżu domu</button>
+    <button class="example-chip" id="l-park" onclick="this.classList.toggle('picked')">Park, las, przestrzeń otwarta</button>
+    <button class="example-chip" id="l-pra" onclick="this.classList.toggle('picked')">Miejsce pracy lub uczelnia</button>
+    <button class="example-chip" id="l-skl" onclick="this.classList.toggle('picked')">Galeria handlowa, sklep, muzeum</button>
+    <button class="example-chip" id="l-tr" onclick="this.classList.toggle('picked')">Środki transportu (autobus, pociąg, metro)</button>
+    <button class="example-chip" id="l-mia" onclick="this.classList.toggle('picked')">Inne miasto (wyjazd weekendowy)</button>
+    <button class="example-chip" id="l-prz" onclick="this.classList.toggle('picked')">Przyjaciel/a w innym mieszkaniu</button>
+  </div>
+
+  <div class="card-detail" style="margin-top:14px"><strong>Twój konkretny plan pięciu lokalizacji</strong> (z datami):</div>
+  <textarea class="thought-input" id="lok" placeholder="np. „1) Gabinet — czwartek 14:00 (już opanowane). 2) Korytarz w bloku — sobota 11:00 z koleżanką, która ma psa. 3) Park Szczytnicki — niedziela 16:00. 4) Galeria Magnolia — środa po pracy. 5) Wrocław Stary Rynek — sobota za tydzień, z mężem.\"" rows="5"></textarea>
+
+  <div class="term-note"><strong>Tempo</strong>: nie musisz przejść wszystkich pięciu lokalizacji w tygodniu. Realistyczne tempo to jedna lokalizacja na 2–4 dni. Po każdej — krótki zapis: jakie oczekiwanie, co naprawdę się stało, co odkryłeś/aś nowego o miejscu i obiekcie. Pomiędzy lokalizacjami mózg konsoliduje uczenie.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Wariacja pory i stanu</div>
+  <h1 class="card-prompt">Po lokalizacjach — różnicuj <em>czas i emocje</em></h1>
+  <p class="card-detail">Po opanowaniu pięciu lokalizacji (zwykle 2–4 tygodnie pracy) wprowadzasz drugi i trzeci wymiar wariacji. Pora dnia daje inny kontekst sensoryczny: rano światło, ruch, zapachy są inne niż wieczorem. Stan emocjonalny — także. Mózg pacjenta, który wykonał ekspozycję wyłącznie po wypoczęciu, w nowym, męczącym dniu może doświadczyć powrotu lęku.</p>
+
+  <div class="examples-h">Pory dnia do przepracowania (zaznacz wszystkie)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="t-r" onclick="this.classList.toggle('picked')">Wcześnie rano (przed 9:00)</button>
+    <button class="example-chip" id="t-pol" onclick="this.classList.toggle('picked')">Południe (12:00–14:00)</button>
+    <button class="example-chip" id="t-pp" onclick="this.classList.toggle('picked')">Późne popołudnie (16:00–18:00)</button>
+    <button class="example-chip" id="t-w" onclick="this.classList.toggle('picked')">Wieczór (po 20:00)</button>
+    <button class="example-chip" id="t-noc" onclick="this.classList.toggle('picked')">Po zmroku, przy sztucznym świetle</button>
+  </div>
+
+  <div class="examples-h" style="margin-top:14px">Stany emocjonalne do przepracowania (zaznacz wszystkie)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="s-wyp" onclick="this.classList.toggle('picked')">Wypoczęty/a, po dobrym śnie</button>
+    <button class="example-chip" id="s-zm" onclick="this.classList.toggle('picked')">Zmęczony/a, po długim dniu</button>
+    <button class="example-chip" id="s-str" onclick="this.classList.toggle('picked')">Lekko zestresowany/a (presja w pracy)</button>
+    <button class="example-chip" id="s-rad" onclick="this.classList.toggle('picked')">Radosny/a, po dobrej wiadomości</button>
+    <button class="example-chip" id="s-sm" onclick="this.classList.toggle('picked')">Smutny/a, po trudnej rozmowie</button>
+    <button class="example-chip" id="s-zmr" onclick="this.classList.toggle('picked')">Zmrożony/a, na czczo, lekko głodny/a</button>
+  </div>
+
+  <div class="card-detail" style="margin-top:14px"><strong>Pierwsza wariacja — co konkretnie zmienisz</strong>:</div>
+  <textarea class="thought-input" id="war" placeholder="np. „W tym tygodniu te same trzy lokalizacje wykonam wieczorem (po 19:00) zamiast w południe. W weekend dodam jedną sesję po stresującej rozmowie służbowej, zamiast tylko po wypoczynku.\"" rows="4"></textarea>
+
+  <div class="term-note"><strong>Łączenie wymiarów</strong>: najsilniejsze uczenie powstaje, gdy łączysz dwa lub trzy wymiary jednocześnie — na przykład nowa lokalizacja, wieczorem, sam/a, po męczącym dniu. To jest deepened extinction Craske i in. (2014): mózg koduje „nawet w trudnym kontekście obiekt nie jest groźny\", co daje najtrwalsze uczenie.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Monitoring uogólnienia</div>
+  <h1 class="card-prompt">Sprawdź, czy uczenie się <em>uogólnia</em></h1>
+  <p class="card-detail">Po przepracowaniu pięciu lokalizacji w różnych porach i stanach mózg powinien dawać podobne wyniki niezależnie od kontekstu. Test: oceń poziom lęku w każdym kontekście, w którym wykonałeś/aś ekspozycję. Jeśli wartości są zbliżone — uczenie się uogólniło. Jeśli różnice są duże — pewne konteksty wymagają jeszcze pracy.</p>
+
+  <div class="card-detail"><strong>Liczba lokalizacji, w których wykonałeś/aś ekspozycję</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="lok-n" min="1" max="10" step="1" value="3" data-default="3" oninput="document.getElementById('lok-n-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Lokalizacje:</span><span id="lok-n-val">3</span></div>
+  </div>
+
+  <div class="card-detail"><strong>Średni szczyt lęku w nowych kontekstach (1–10)</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="lek-now" min="1" max="10" step="1" value="6" data-default="6" oninput="document.getElementById('lek-now-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Lęk:</span><span id="lek-now-val">6</span></div>
+  </div>
+
+  <div class="card-detail"><strong>Stabilność wyników między kontekstami (1=duże różnice, 10=podobne wszędzie)</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="stab" min="1" max="10" step="1" value="5" data-default="5" oninput="document.getElementById('stab-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Stabilność:</span><span id="stab-val">5</span></div>
+  </div>
+
+  <div class="card-detail"><strong>Konteksty, w których lęk jeszcze wraca</strong>:</div>
+  <textarea class="thought-input" id="wraca" placeholder="np. „Lęk wraca przy psie wieczorem na ciemnej ulicy — sumarycznie 3 wymiary trudności. Plan: dodać dwie ekspozycje wieczorem na słabo oświetlonej ulicy, w pobliżu domu, z kontrolowanym psem na smyczy.\"" rows="3"></textarea>
+
+  <div class="final-msg" id="finalMsg">
+    <strong>Wprowadź dane</strong> — pojawi się tu ocena uogólnienia.
+  </div>
+
+  <div class="term-note"><strong>Kryterium ukończenia</strong>: pięć lokalizacji, w trzech różnych porach dnia, w przynajmniej dwóch stanach emocjonalnych, ze stabilnością ≥7/10 — to klasyczne kryterium konsolidacji w modelu Craske i in. (2014). Po jego spełnieniu prawdopodobieństwo nawrotu spada o 40–60% w stosunku do ekspozycji w jednym kontekście (Bouton, 2002).</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Sukces w jednym miejscu to <strong>początek, nie koniec</strong> pracy. Mózg koduje uczenie hamujące kontekstowo — bez wariacji wraca w nowych sytuacjach. Pięć lokalizacji, różne pory, różne stany emocjonalne i bez stałej osoby asekurującej tworzą uczenie odporne na nawrót.</div>
+  </div>
+
+  <div class="src">Bouton (2002) · Craske i in. (2014) · Mystkowski i in. (2002) · Culver i in. (2012) · Vansteenwegen i in. · Hermans i in. (2006)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateLearning() {
+  var n = parseInt(document.getElementById('lok-n').value, 10);
+  var l = parseInt(document.getElementById('lek-now').value, 10);
+  var s = parseInt(document.getElementById('stab').value, 10);
+  var msg = document.getElementById('finalMsg');
+  if (isNaN(n) || isNaN(l) || isNaN(s)) return;
+  var ocena, em;
+  if (n >= 5 && s >= 7 && l <= 4) {
+    ocena = 'Uogólnienie osiągnięte: ' + n + ' lokalizacji, stabilność ' + s + '/10';
+    em = 'uczenie hamujące jest odporne na nowe konteksty. Faza konsolidacji ukończona. Możesz przejść do testów w warunkach skrajnych (pora nocna, sam/a, bez zachowań zabezpieczających).';
+  } else if (n >= 3 && s >= 5) {
+    ocena = 'Częściowe uogólnienie: ' + n + ' lokalizacji, stabilność ' + s + '/10';
+    em = 'dobry postęp. Dodaj jeszcze 2 lokalizacje i 1 wariację pory dnia. Cel: stabilność ≥7 i co najmniej 5 lokalizacji.';
+  } else if (l >= 7) {
+    ocena = 'Wysoki lęk w nowych kontekstach: ' + l + '/10';
+    em = 'kontekst zewnętrzny był zbyt trudny lub wykonałeś/aś za mało powtórzeń w bazowym. Wróć do bazowego kontekstu na dwie sesje, potem rozszerzaj wolniej.';
+  } else if (s <= 4) {
+    ocena = 'Duża zmienność między kontekstami: stabilność ' + s + '/10';
+    em = 'mózg jeszcze nie uogólnił uczenia. Powtórz ekspozycję w kontekstach, gdzie lęk był wyższy — 2–3 razy dodatkowo.';
+  } else {
+    ocena = 'Faza wczesna: ' + n + ' lokalizacji';
+    em = 'kontynuuj plan. Dodawaj jedną nową lokalizację co 3–5 dni. Pamiętaj o zapisie po każdej ekspozycji.';
+  }
+  msg.innerHTML = '<strong>' + ocena + '</strong>: ' + em;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateLearning();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_fb_be_context — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_fb_be_context";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+updateLearning();
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

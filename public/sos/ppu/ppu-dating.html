@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Randkowanie w odzyskiwaniu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.context-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.context-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.context-icon { font-size: 22px; line-height: 1; }
+.context-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.context-q { font-size: 12px; color: var(--ink-mute); font-style: italic; margin-bottom: 6px; }
+.context-input {
+  width: 100%; min-height: 50px; padding: 8px 10px;
+  border: 1px solid var(--sage); border-radius: 8px;
+  background: rgba(255,255,255,0.5); font-family: inherit;
+  font-size: 12.5px; line-height: 1.5; color: var(--ink); resize: vertical;
+}
+.context-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.timing-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.timing-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.timing-row {
+  padding: 8px 0; border-bottom: 1px dashed rgba(184,197,168,0.25);
+  display: grid; grid-template-columns: 80px 1fr; gap: 10px;
+  font-size: 12.5px; line-height: 1.55;
+}
+.timing-row:last-child { border-bottom: none; }
+.timing-stage { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); }
+.timing-text { color: rgba(244,241,234,0.92); }
+.timing-text strong { color: var(--bg); display: block; margin-bottom: 2px; }
+.timing-text em { color: var(--sage); font-style: italic; }
+
+.warn-clinical {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+.flag-card {
+  background: rgba(166,74,58,0.12); border-left: 3px solid #a64a3a;
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.flag-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #a64a3a; margin-bottom: 4px; }
+.flag-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.flag-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Randkowanie w odzyskiwaniu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Randkowanie w odzyskiwaniu — <em>świadoma decyzja</em></h1>
+    <p class="card-detail">Patrick Carnes (autor „Out of the Shadows", 1983 — pionier pracy z hipersksualnością) i Paula Hall (autorka „Understanding and Treating Sex and Pornography Addiction", 2013) opracowali ramy pracy z osobami pojedynczymi (single) lub po rozstaniu, które jednocześnie pracują z PPU i chcą wracać do randkowania. Eli Finkel („The All-or-Nothing Marriage", 2017) udokumentował, że <strong>aplikacje randkowe</strong> dla niektórych osób z PPU stają się <em>bezpośrednim wyzwalaczem</em> — swipe, validation, anonimowy kontakt aktywują podobne mechanizmy dopaminowe co PPU. Jednocześnie izolacja od relacji nie jest rozwiązaniem. Praca polega na <strong>świadomym, intencjonalnym</strong> randkowaniu — nie ucieczce w nie, nie izolacji od niego.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady randkowania w odzyskiwaniu</div>
+      <div class="element-row"><span class="element-icon">⏳</span><span class="element-text"><strong>Czas po PPU</strong> — minimalne 6—12 mies. aktywnej pracy nad PPU przed wracaniem do randkowania (Carnes). Wcześniej ryzyko, że randkowanie staje się <em>kompensacją</em>, nie autentycznym wyborem.</span></div>
+      <div class="element-row"><span class="element-icon">📱</span><span class="element-text"><strong>Aplikacje randkowe</strong> = potencjalny trigger. Jeśli były używane jako PPU-pokrewna stymulacja (swipe, validation), <em>wymagają pauzy</em>. Jeśli były funkcjonalne (jeden cel: poznać kogoś) — OK z czujnością.</span></div>
+      <div class="element-row"><span class="element-icon">🤝</span><span class="element-text"><strong>Ujawnianie</strong> nowemu partnerowi — <em>nie na pierwszym spotkaniu</em>, ale <strong>zanim relacja staje się zaangażowana</strong> (3—6 mies., gdy emocjonalnie zaczyna być coś poważnego). Szczerość proporcjonalna do głębi relacji.</span></div>
+      <div class="element-row"><span class="element-icon">🚦</span><span class="element-text"><strong>Self-awareness</strong> — kluczowe pytanie: <em>"czy randkuję z miejsca pełni, czy z miejsca samotności i triggera?"</em>. Pierwsza odpowiedź wskazuje gotowość; druga — sygnał ostrzegawczy.</span></div>
+    </div>
+
+    <div class="frame-quote">„Randkowanie nie jest ani zakazane, ani obowiązkowe w odzyskiwaniu. Jest decyzją. Świadoma decyzja wymaga świadomego momentu — kiedy randkujesz z pełni, nie z deficytu."
+      <span class="frame-quote-attr">— parafraza po Patricku Carnesie, „Out of the Shadows" (1983, 2001 — wydanie rozszerzone)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ten Karta wsparcia jest dla osób <strong>pojedynczych lub po rozstaniu</strong>, które aktywnie pracują z PPU. Pomaga ocenić gotowość do randkowania, zaplanować bezpieczne podejście do aplikacji, ujawnianie partnerowi i rozpoznać własne <em>red flags</em> — sytuacje, w których randkowanie staje się ucieczką, nie zdrowym wyborem. Praca z terapeutą jest często niezbędna — randkowanie w odzyskiwaniu to obszar, gdzie sama "siła woli" nie wystarcza.</div>
+
+    <div class="src">Carnes (1983, 2001 — wydanie rozszerzone, „Out of the Shadows"); Carnes (2005, „Facing the Shadow" — adaptacje); Hall (2013, „Understanding and Treating Sex and Pornography Addiction"); Finkel, Eastwick &amp; Karney (2017, „The All-or-Nothing Marriage"); Finkel i in. (2012, „Online Dating: A Critical Analysis from the Perspective of Psychological Science"); SLAA (Sex and Love Addicts Anonymous) — guidelines „bottom lines" w randkowaniu.</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoja gotowość</div>
+    <h1 class="card-prompt">Sprawdź <em>z jakiego miejsca randkujesz</em></h1>
+    <p class="card-detail">Najważniejsze pytanie nie brzmi <em>"czy mogę randkować"</em>, lecz <strong>"z jakiego miejsca chcę randkować"</strong>. Pełnia czy deficyt? Świadomy wybór czy ucieczka? Sprawdź uczciwie — odpowiedź determinuje, czy randkowanie wzmocni twoją pracę z PPU, czy ją zniszczy.</p>
+
+    <div class="examples-h">A. Czas pracy z PPU</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="t1" onclick="this.classList.toggle('picked')">&lt;3 mies. aktywnej pracy</button>
+      <button type="button" class="example-chip" id="t2" onclick="this.classList.toggle('picked')">3—6 mies.</button>
+      <button type="button" class="example-chip" id="t3" onclick="this.classList.toggle('picked')">6—12 mies.</button>
+      <button type="button" class="example-chip" id="t4" onclick="this.classList.toggle('picked')">12+ mies.</button>
+    </div>
+
+    <div class="examples-h">B. Stabilność pracy</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="s1" onclick="this.classList.toggle('picked')">Mam regularną terapię (cotygodniowo)</button>
+      <button type="button" class="example-chip" id="s2" onclick="this.classList.toggle('picked')">Stabilna abstynencja / kontrola (≥2 mies.)</button>
+      <button type="button" class="example-chip" id="s3" onclick="this.classList.toggle('picked')">Mam grupę wsparcia / sponsora</button>
+      <button type="button" class="example-chip" id="s4" onclick="this.classList.toggle('picked')">Rozumiem swoje wzorce (po pracy nad łańcuchem)</button>
+      <button type="button" class="example-chip" id="s5" onclick="this.classList.toggle('picked')">Self-empathy działa po lapsie</button>
+      <button type="button" class="example-chip" id="s6" onclick="this.classList.toggle('picked')">Mam wsparcie poza relacją romantyczną</button>
+    </div>
+
+    <div class="examples-h">C. Czerwone flagi — sygnały, że to nie czas</div>
+    <div class="example-chips" style="opacity:0.85;">
+      <button type="button" class="example-chip" id="r1" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Aktywna depresja / głęboki kryzys</button>
+      <button type="button" class="example-chip" id="r2" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Świeżo po rozstaniu (&lt;6 mies.)</button>
+      <button type="button" class="example-chip" id="r3" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">"Muszę kogoś znaleźć szybko" (presja)</button>
+      <button type="button" class="example-chip" id="r4" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Aplikacje aktywują dopaminę jak PPU</button>
+      <button type="button" class="example-chip" id="r5" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Serial hookups jako regulacja afektu</button>
+      <button type="button" class="example-chip" id="r6" onclick="this.classList.toggle('picked')" style="background:rgba(166,74,58,0.15); border-color:#a64a3a; color:#a64a3a;">Ucieczka od pustki, nie wybór z pełni</button>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Z jakiego miejsca chcesz randkować?</span><span></span></div>
+      <input type="range" class="scale-input" id="fromWhere" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = z deficytu</span><span id="fromWhereval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Stabilność pracy z PPU (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="ppuStable" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = niestabilna</span><span id="ppuStableval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy aplikacje aktywują u ciebie dopaminę PPU-podobną?</span><span></span></div>
+      <input type="range" class="scale-input" id="appsTrigger" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = funkcjonalne</span><span id="appsTriggerval">5</span></div>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Sygnały do odroczenia</div>
+      <div class="warn-body">Jeśli zaznaczyłeś/aś ≥2 czerwone flagi (sekcja C) lub <em>"z jakiego miejsca"</em> ≤4 — <strong>odrocz aktywne randkowanie</strong> o 3—6 mies. To nie znaczy "nigdy" — znaczy "teraz nie czas". Pracuj nad: stabilizacją PPU, terapią głębszych mechanizmów (samotność, schemat Wadliwości), wsparciem niesksualnym (przyjaźnie, grupa, sponsor). Wróć do tej decyzji za 3—6 mies. <em>Czas inwestowany w stabilność jest czasem zaoszczędzonym</em> w późniejszych relapsach.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła trzech "tak"</strong>: gotowość do randkowania to <em>zbieg</em> trzech warunków: (1) <strong>czas</strong> ≥6 mies. aktywnej pracy z PPU; (2) <strong>stabilność</strong> ≥6/10 (terapia, grupa, kontrola); (3) <strong>z jakiego miejsca</strong> ≥6/10 (z pełni, nie z deficytu). Brak któregokolwiek z warunków = sygnał do oczekiwania. Pojedynczy warunek nie wystarczy.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — etapy randkowania</div>
+    <h1 class="card-prompt">Cztery etapy <em>z różnymi regułami</em></h1>
+    <p class="card-detail">Randkowanie w odzyskiwaniu nie jest <em>jednym</em> stanem — to proces przez 4 etapy, każdy z innymi pytaniami i ryzykami. Świadomość, w którym jesteś, pomaga uniknąć przeskakiwania (najczęstszy błąd) i podjąć właściwe decyzje na każdym etapie.</p>
+
+    <div class="timing-card">
+      <div class="timing-h">Etapy randkowania w odzyskiwaniu</div>
+      <div class="timing-row">
+        <span class="timing-stage">Etap 1</span>
+        <span class="timing-text"><strong>Eksploracja (1—3 spotkania)</strong>Pierwsze spotkania, poznawanie. <em>Kluczowe pytanie</em>: czy ta osoba jest w ogóle w obrębie zainteresowania? <em>Reguły</em>: brak ujawnienia PPU; ostrożność z fizyczną intymnością; obserwowanie własnych reakcji.</span>
+      </div>
+      <div class="timing-row">
+        <span class="timing-stage">Etap 2</span>
+        <span class="timing-text"><strong>Pogłębienie (1—3 mies.)</strong>Częstsze spotkania, więcej rozmów, czasem pierwsza intymność fizyczna (wybór indywidualny). <em>Kluczowe pytanie</em>: czy chcę inwestować emocjonalnie? <em>Reguły</em>: jeszcze brak ujawnienia (zwykle); czujność na własne wzorce.</span>
+      </div>
+      <div class="timing-row">
+        <span class="timing-stage">Etap 3</span>
+        <span class="timing-text"><strong>Zaangażowanie (3—6 mies.)</strong>Relacja staje się "czymś". Pojawia się ekskluzywność, plany razem. <em>Kluczowe pytanie</em>: czy widzę z tą osobą długoterminową drogę? <em>Reguły</em>: <strong>tu jest moment ujawnienia PPU</strong> — zanim zaangażowanie się pogłębi.</span>
+      </div>
+      <div class="timing-row">
+        <span class="timing-stage">Etap 4</span>
+        <span class="timing-text"><strong>Wspólne życie (6+ mies.)</strong>Wspólne mieszkanie, plany długoterminowe, integracja życia. <em>Kluczowe pytanie</em>: jak wbudować pracę z PPU w relację bez tajemnic? <em>Reguły</em>: pełna transparencja, ewentualnie terapia par, oboje znają zasady.</span>
+      </div>
+    </div>
+
+    <div class="examples-h">W którym etapie obecnie jesteś?</div>
+    <button type="button" class="rel-btn" id="e1" onclick="pickStage('1')">
+      <span class="rel-name">📍 Etap 1 — Eksploracja</span>
+      <span class="rel-desc">Pierwsze spotkania. Pytanie: czy ta osoba jest w obrębie zainteresowania? Bez ujawnienia.</span>
+    </button>
+    <button type="button" class="rel-btn" id="e2" onclick="pickStage('2')">
+      <span class="rel-name">📍 Etap 2 — Pogłębienie</span>
+      <span class="rel-desc">Częstsze spotkania, pierwsza intymność. Pytanie: czy chcę inwestować emocjonalnie? Czujność.</span>
+    </button>
+    <button type="button" class="rel-btn" id="e3" onclick="pickStage('3')">
+      <span class="rel-name">📍 Etap 3 — Zaangażowanie</span>
+      <span class="rel-desc">Relacja staje się "czymś". Moment ujawnienia PPU — zanim zaangażowanie się pogłębi.</span>
+    </button>
+    <button type="button" class="rel-btn" id="e4" onclick="pickStage('4')">
+      <span class="rel-name">📍 Etap 4 — Wspólne życie</span>
+      <span class="rel-desc">Plany długoterminowe. Pełna transparencja, ewentualnie terapia par.</span>
+    </button>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Najczęstszy błąd</div>
+      <div class="warn-body"><strong>Przeskakiwanie etapów</strong>. Najczęstsze formy: (1) <em>natychmiastowe ujawnienie na pierwszej randce</em> ("muszę być uczciwy") — zwykle skutkuje końcem relacji + retraumatyzacją obojga; (2) <em>ukrywanie przez całe życie wspólne</em> — toksyczne dla relacji, niemożliwe długoterminowo; (3) <em>seks przed emocjonalną gotowością</em> — używanie randkowania jako kompensacji PPU. Świadomość etapu jest ochroną przed tymi błędami.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła momentu ujawnienia</strong>: optymalny moment to <strong>etap 3</strong> — relacja jest już realna, ale jeszcze nie ma wspólnych planów dalekosiężnych. Ujawnienie wcześniej = brak kontekstu emocjonalnego dla partnera; ujawnienie później = "dlaczego tak długo to ukrywałeś/aś". <em>Etap 3 daje partnerowi szansę podjąć świadomą decyzję</em> przy realnym zaangażowaniu.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — aplikacje, intymność, ujawnienie</div>
+    <h1 class="card-prompt">Konkretne <em>zasady działania</em></h1>
+    <p class="card-detail">Trzy obszary wymagają konkretnego planu: aplikacje randkowe (potencjalny trigger), wczesna intymność fizyczna (ryzyko regulacji afektu seksem), ujawnienie nowemu partnerowi (jak i kiedy). Każdy obszar ma swoje pułapki — ale i konkretne praktyki, które pomagają.</p>
+
+    <div class="context-card">
+      <div class="context-h">
+        <span class="context-icon">📱</span>
+        <span class="context-name">A. Aplikacje randkowe — bezpieczne podejście</span>
+      </div>
+      <div class="context-q">Aplikacje to potencjalny trigger. Reguła: <em>jeśli aktywują dopaminę PPU-podobną, używaj minimum lub wcale</em>. Ostrożność z swipe / validation / liczbą "matchy".</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="aA1" onclick="this.classList.toggle('picked')">Limit czasu w aplikacji (max 15 min/dzień)</button>
+        <button type="button" class="example-chip" id="aA2" onclick="this.classList.toggle('picked')">Tylko 1 aplikacja jednocześnie</button>
+        <button type="button" class="example-chip" id="aA3" onclick="this.classList.toggle('picked')">Aplikacja na komputerze, nie telefonie</button>
+        <button type="button" class="example-chip" id="aA4" onclick="this.classList.toggle('picked')">Brak swipe sesji wieczornych</button>
+        <button type="button" class="example-chip" id="aA5" onclick="this.classList.toggle('picked')">Cel: spotkanie w realu w 7—14 dni od matcha</button>
+        <button type="button" class="example-chip" id="aA6" onclick="this.classList.toggle('picked')">Pełen profil (zdjęcie, opis, intencje)</button>
+        <button type="button" class="example-chip" id="aA7" onclick="this.classList.toggle('picked')">Brak aktywności po lapsie PPU 24h</button>
+      </div>
+      <div class="flag-card">
+        <div class="flag-h">🚨 Czerwone sygnały w aplikacjach</div>
+        <div class="flag-body">Sprawdzasz "czy ktoś nowy się pojawił" 5+× dziennie; matchujesz z osobami, z którymi nie planujesz spotkania (validation); używasz aplikacji jako rozrywki gdy się nudzisz; rozpraszasz się przeglądaniem profili przed snem. Te wzorce <em>zlewają się z PPU</em> — wymagają pauzy.</div>
+      </div>
+    </div>
+
+    <div class="context-card">
+      <div class="context-h">
+        <span class="context-icon">💗</span>
+        <span class="context-name">B. Wczesna intymność fizyczna</span>
+      </div>
+      <div class="context-q">Seks na pierwszej randce, "friends with benefits", serial hookup — czy są regulacją afektu czy świadomym wyborem? Pytanie do siebie, nie do partnera.</div>
+      <textarea class="context-input" id="intim" placeholder='Sprawdź uczciwie. np. „Po rozstaniu rok temu — kilka razy seks na 1—2 spotkaniu z osobami z aplikacji. Po analizie: większość była regulacją samotności, nie autentycznym wyborem. Decyzja: dla siebie wprowadzam zasadę »minimum 5 spotkań przed pierwszą intymnością« — daje to czas na sprawdzenie, czy autentycznie chcę z tą osobą.”' rows="5"></textarea>
+    </div>
+
+    <div class="context-card">
+      <div class="context-h">
+        <span class="context-icon">🤝</span>
+        <span class="context-name">C. Ujawnianie PPU nowemu partnerowi</span>
+      </div>
+      <div class="context-q">Kiedy: w etapie 3 (3—6 mies.), przed pełnym zaangażowaniem. Jak: spokojnie, bez dramy, z pewnym kontekstem o swojej pracy. Ile szczegółów: <em>poziom 1—2</em> wg modelu Corley &amp; Schneider — ramy ogólne + istotne dla partnera, nie szczegóły scen.</div>
+      <textarea class="context-input" id="disclose" placeholder='Plan rozmowy ujawniającej. np. „Kontekst: »Chcę o czymś z tobą porozmawiać, bo nasza relacja staje się dla mnie ważna i chcę być z tobą szczery/a.« Treść: »W przeszłości miałem/am poważny problem z pornografią — od lat. Od X miesięcy aktywnie pracuję — terapia cotygodniowo, grupa, sponsor. Nie ukrywam tego, bo widzę jak ten problem rozwala relacje, kiedy jest schowany.« Co teraz: »Chciałbym/abym, żebyś znała tę część mnie zanim będziemy razem dalej. Możesz pytać, możesz potrzebować czasu, możesz iść — szanuję każdą decyzję.«”' rows="7"></textarea>
+    </div>
+
+    <div class="examples-h">D. Twój plan — wybierz minimum 1 z każdej kategorii</div>
+    <textarea class="thought-input" id="myPlan" placeholder='Konkretny plan na ten miesiąc. np. „Aplikacje: limit 15 min/dzień, brak po 22:00, cel — spotkanie w 10 dni. Intymność: minimum 5 spotkań przed pierwszą intymnością. Ujawnienie: gdy dojdziemy do etapu 3, pisemny plan rozmowy z terapeutą najpierw.”' rows="5"></textarea>
+
+    <div class="examples-h">E. Self-awareness — codzienne pytanie</div>
+    <textarea class="thought-input" id="awareness" placeholder='Codziennie wieczorem 1 minuta refleksji. np. „1. Czy randkuję dziś z miejsca pełni czy deficytu? 2. Czy aplikacje były dziś triggerem? 3. Czy spotkania były świadomym wyborem czy ucieczką? 4. Czy moja praca z PPU jest stabilna? 5. Czy potrzebuję rozmowy z terapeutą / sponsorem o czymś?”' rows="5"></textarea>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Reakcje partnera na ujawnienie</div>
+      <div class="warn-body">Możliwe reakcje partnera: <strong>akceptacja z pytaniami</strong> (najczęstsze przy zdrowo prowadzonym ujawnieniu); <strong>potrzeba czasu na przemyślenie</strong> (też zdrowe — szanuj); <strong>zerwanie</strong> (też prawomocna reakcja — nie znaczy, że źle to zrobiłeś/aś); <strong>traumatyzacja</strong> (jeśli ma własną historię zdrady — może wymagać własnej terapii). <em>Brak "dobrego" lub "złego" wyniku</em> — twoja rola: prawomocnie ujawnić, szanować reakcję partnera, nie mówić "wybacz, to było dawno".</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: świadome randkowanie wymaga: (1) <em>konkretnych zasad dla aplikacji</em> (limit, brak swipe, cel spotkanie); (2) <em>opóźnienia intymności</em> do realnej znajomości; (3) <em>świadomego momentu ujawnienia</em> w etapie 3; (4) <em>codziennego self-awareness</em>. Wszystkie cztery razem chronią przed kompensacyjnym randkowaniem. Bez nich randkowanie staje się <em>nową formą PPU</em> — z innymi kostiumami, ale tym samym mechanizmem.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy randkujesz <em>z pełni</em>?</h1>
+    <p class="card-detail">Wróć tu po 4—8 tygodniach świadomej pracy nad randkowaniem (lub po pierwszym ujawnieniu nowemu partnerowi). Praca jest <em>niesamowita</em> — daje informację o tym, czy randkowanie jest częścią zdrowienia czy ucieczką.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy randkujesz z miejsca pełni (vs deficytu)?</span><span></span></div>
+      <input type="range" class="scale-input" id="postFrom" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = deficyt</span><span id="postFromval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy aplikacje są pod kontrolą (czas, cel)?</span><span></span></div>
+      <input type="range" class="scale-input" id="postApps" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postAppsval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy stabilność pracy z PPU się utrzymuje?</span><span></span></div>
+      <input type="range" class="scale-input" id="postPpuStable" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postPpuStableval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy odbywasz codzienne self-awareness?</span><span></span></div>
+      <input type="range" class="scale-input" id="postAware" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>0 = nie</span><span id="postAwareval">4</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: zdrowe randkowanie w odzyskiwaniu = <em>z miejsca pełni</em> ≥6 + <em>aplikacje pod kontrolą</em> ≥6 + <em>stabilność PPU utrzymana</em> ≥6 + <em>codzienne self-awareness</em> ≥5. Najczęstsza luka: stabilność PPU spada przy zaangażowaniu w randkowanie — sygnał, że randkowanie staje się <em>kompensacją</em>. W tej sytuacji <strong>pauza w randkowaniu</strong>, powrót do skupienia na PPU, potem ponownie do randkowania z lepszego miejsca.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Randkowanie w odzyskiwaniu jest <em>możliwe</em>, ale wymaga świadomego podejścia — nie izolacji, nie ucieczki w randkowanie. Trzy warunki gotowości: <strong>czas</strong> (≥6 mies. pracy z PPU), <strong>stabilność</strong> (≥6/10), <strong>z jakiego miejsca</strong> (≥6/10). Aplikacje wymagają konkretnych zasad (limit, cel spotkanie, brak swipe sesji wieczornych); intymność wymaga opóźnienia do realnej znajomości; ujawnienie ma swój moment (etap 3, 3—6 mies.). <strong>Codzienne self-awareness</strong> jest fundamentem — bez tego randkowanie staje się nową formą PPU. Praca z terapeutą jest często niezbędna — randkowanie aktywuje wzorce, które same w ciemność trudno zobaczyć. <em>Czas inwestowany w stabilność jest czasem zaoszczędzonym</em> w przyszłych relapsach. Cierpliwość z samym/samą sobą jest aktem dorosłym.</div>
+    </div>
+
+    <div class="src">Carnes (1983, 2001 — wydanie rozszerzone, „Out of the Shadows"); Carnes (2005, „Facing the Shadow"); Hall (2013); Finkel, Eastwick &amp; Karney (2017); Finkel i in. (2012); SLAA (Sex and Love Addicts Anonymous) — guidelines „bottom lines"; Hertlein (2012, „Internet sexuality"); Briere &amp; Scott (2014, ogólne ramy traumy w relacjach).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['fromWhere','ppuStable','appsTrigger','postFrom','postApps','postPpuStable','postAware'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedStage = null;
+function pickStage(code) {
+  window.pickedStage = code;
+  ['e1','e2','e3','e4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('e' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var fr = parseInt(document.getElementById('postFrom').value, 10);
+  var apps = parseInt(document.getElementById('postApps').value, 10);
+  var ppu = parseInt(document.getElementById('postPpuStable').value, 10);
+  var aw = parseInt(document.getElementById('postAware').value, 10);
+
+  var rows = [];
+  var fW = fr <= 3 ? 'deficyt' : (fr <= 6 ? 'mieszanie' : 'pełnia');
+  rows.push('<div class="diff-row"><strong>Z jakiego miejsca</strong><span class="diff-delta">' + fr + '/10 — ' + fW + '</span></div>');
+  var aW = apps <= 3 ? 'trigger' : (apps <= 6 ? 'częściowo' : 'kontrola');
+  rows.push('<div class="diff-row"><strong>Aplikacje</strong><span class="diff-delta">' + apps + '/10 — ' + aW + '</span></div>');
+  var pW = ppu <= 3 ? 'spada' : (ppu <= 6 ? 'stabilnie' : 'rośnie');
+  rows.push('<div class="diff-row"><strong>Stabilność PPU</strong><span class="diff-delta">' + ppu + '/10 — ' + pW + '</span></div>');
+  var awW = aw <= 3 ? 'nie' : (aw <= 6 ? 'czasem' : 'codziennie');
+  rows.push('<div class="diff-row"><strong>Self-awareness</strong><span class="diff-delta">' + aw + '/10 — ' + awW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (fr >= 6 && apps >= 6 && ppu >= 6 && aw >= 5) {
+      msg = '<strong>Zdrowe randkowanie.</strong> Z pełni, aplikacje pod kontrolą, PPU stabilne, codzienne self-awareness. <em>Kontynuuj</em> — to dobry rytm.';
+    } else if (ppu <= 4) {
+      msg = '<strong>Stabilność PPU spada — sygnał alarmowy.</strong> Najczęstsze: randkowanie staje się kompensacją. <em>Pauza w randkowaniu na 4—6 tyg.</em>, powrót do skupienia na PPU, ponowna ocena. Lepiej zatrzymać teraz niż relapsować.';
+    } else if (apps <= 3) {
+      msg = '<strong>Aplikacje są aktywnym triggerem.</strong> Wprowadź konkretne zasady: limit 15 min/dzień, brak po 22:00, cel — spotkanie w 7—14 dni. Bez tego aplikacje stają się nową formą PPU.';
+    } else if (fr <= 4) {
+      msg = '<strong>Randkujesz z deficytu.</strong> Najczęstsza przyczyna: niewystarczająca praca nad samotnością i niesksualnym wsparciem. <em>Wzmocnij grupę wsparcia, przyjaźnie, terapię</em> — randkowanie jako uzupełnienie pełni, nie wypełnienie pustki.';
+    } else if (aw <= 3) {
+      msg = '<strong>Brak codziennego self-awareness.</strong> Bez tego randkowanie idzie automatycznie. Wprowadź: 1 min wieczorem 5 pytań (z kroku 4E). Bez tej praktyki wzorce uciekają świadomości.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Randkowanie w odzyskiwaniu wymaga 3—6 mies. świadomej pracy. Kontynuuj.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['t1','t2','t3','t4','s1','s2','s3','s4','s5','s6','r1','r2','r3','r4','r5','r6','aA1','aA2','aA3','aA4','aA5','aA6','aA7'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['e1','e2','e3','e4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedStage = null;
+}
+
+['postFrom','postApps','postPpuStable','postAware'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_dating — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_dating";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['1','2','3','4'].forEach(function(code){
+    var el = document.getElementById('e' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedStage = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

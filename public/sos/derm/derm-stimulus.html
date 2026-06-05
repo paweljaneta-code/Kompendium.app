@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Kontrola bodźców</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.audit-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.audit-row { display: grid; grid-template-columns: 28px 1fr 80px; gap: 10px; align-items: center; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 8px; padding: 9px 12px; }
+.audit-icon { font-size: 18px; text-align: center; }
+.audit-text { font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
+.audit-text strong { color: var(--ink); font-weight: 600; }
+.audit-yn { display: flex; gap: 4px; }
+.audit-btn { flex: 1; padding: 5px 0; border: 1px solid var(--sage); border-radius: 6px; background: white; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--ink); }
+.audit-btn:hover, .audit-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.mod-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.mod-card { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: flex-start; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 11px 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: left; }
+.mod-card:hover, .mod-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.mod-card.picked .mod-h, .mod-card.picked .mod-desc, .mod-card.picked .mod-icon { color: var(--bg); }
+.mod-icon { font-size: 18px; text-align: center; line-height: 1.4; }
+.mod-content { display: flex; flex-direction: column; gap: 2px; }
+.mod-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+.mod-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Kontrola bodźców</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Środowisko <em>kształtuje</em> nawyk</h1>
+  <p class="card-detail">Kontrola bodźców (stimulus control) to drugi po HRT filar leczenia behawioralnego BFRB. Założenie: dłubanie nie zdarza się <em>wszędzie</em> — zdarza się w konkretnych miejscach, w konkretnych sytuacjach, z konkretnymi narzędziami w zasięgu ręki. Modyfikując środowisko, redukujesz częstość bez „walki z sobą". Friction zwiększasz tam, gdzie wcześniej było zerowe.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery dźwignie środowiskowe</div>
+    <div class="element-row"><span class="element-icon">🪞</span><span class="element-text"><strong>Lustro</strong> — najsilniejszy bodziec dla świadomego stylu. Zasłonięcie redukuje 30–50% epizodów (Lochner, 2017)</span></div>
+    <div class="element-row"><span class="element-icon">💡</span><span class="element-text"><strong>Oświetlenie</strong> — jasne światło punktowe wyolbrzymia nierówności. Miękkie rozproszone — nie wyzwala</span></div>
+    <div class="element-row"><span class="element-icon">🛠️</span><span class="element-text"><strong>Narzędzia</strong> — pęsety, igły, szpilki, lusterka powiększające — odłóż poza zasięg lub usuń z domu</span></div>
+    <div class="element-row"><span class="element-icon">🧤</span><span class="element-text"><strong>Bariery na dłonie</strong> — rękawiczki, opaski, plastry. Dotknięcie skóry wymaga zatrzymania i namysłu</span></div>
+  </div>
+
+  <div class="frame-quote">„Stimulus control nie polega na walce z impulsem — polega na zmniejszeniu liczby sytuacji, w których impuls się pojawia. To inżynieria środowiska, nie heroizm woli."
+    <span class="frame-quote-attr">— Falkenstein i wsp. (2016, ComB-Skin Picking)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: kontrola bodźców jest najsilniejsza dla <em>stylu świadomego</em> (przed lustrem, w łazience). Dla automatycznego stylu (przy telefonie) działa słabiej — tu lepiej działa świadomość + competing response. Dlatego najpierw określ swój styl (zob. „Czym jest dermatillomania?"), potem wybierz interwencję.</div>
+
+  <div class="src">Źródła: Falkenstein i wsp. (2016, ComB-SP); Lochner i wsp. (2017, treatment review); Teng i in. (2006, BFRB stimulus control); Snorrason i in. (2012, SPS-R)</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Audyt Twojego środowiska</div>
+  <h1 class="card-prompt">Co <em>masz</em> w zasięgu ręki?</h1>
+  <p class="card-detail">Krótki audyt — odpowiedz tak/nie na 6 pytań o swoje środowisko. Cel: zauważyć, że dłubanie nie jest „samoistne" — ma konkretne sygnały i narzędzia. Każde TAK to potencjalna dźwignia do modyfikacji.</p>
+
+  <div class="audit-list">
+    <div class="audit-row">
+      <span class="audit-icon">🪞</span>
+      <span class="audit-text"><strong>Lustro w łazience</strong> — używasz przed lub po dłubaniu</span>
+      <span class="audit-yn">
+        <button class="audit-btn" id="aud_lustro_y" onclick="pickAudit('lustro','y')" type="button">Tak</button>
+        <button class="audit-btn" id="aud_lustro_n" onclick="pickAudit('lustro','n')" type="button">Nie</button>
+      </span>
+    </div>
+    <div class="audit-row">
+      <span class="audit-icon">🔍</span>
+      <span class="audit-text"><strong>Lusterko powiększające</strong> w domu</span>
+      <span class="audit-yn">
+        <button class="audit-btn" id="aud_powieksz_y" onclick="pickAudit('powieksz','y')" type="button">Tak</button>
+        <button class="audit-btn" id="aud_powieksz_n" onclick="pickAudit('powieksz','n')" type="button">Nie</button>
+      </span>
+    </div>
+    <div class="audit-row">
+      <span class="audit-icon">🛠️</span>
+      <span class="audit-text"><strong>Pęseta / igła / szpilka</strong> w łazience lub przy biurku</span>
+      <span class="audit-yn">
+        <button class="audit-btn" id="aud_peseta_y" onclick="pickAudit('peseta','y')" type="button">Tak</button>
+        <button class="audit-btn" id="aud_peseta_n" onclick="pickAudit('peseta','n')" type="button">Nie</button>
+      </span>
+    </div>
+    <div class="audit-row">
+      <span class="audit-icon">💡</span>
+      <span class="audit-text"><strong>Jasne, punktowe światło</strong> przy lustrze</span>
+      <span class="audit-yn">
+        <button class="audit-btn" id="aud_swiatlo_y" onclick="pickAudit('swiatlo','y')" type="button">Tak</button>
+        <button class="audit-btn" id="aud_swiatlo_n" onclick="pickAudit('swiatlo','n')" type="button">Nie</button>
+      </span>
+    </div>
+    <div class="audit-row">
+      <span class="audit-icon">📱</span>
+      <span class="audit-text"><strong>Telefon w łóżku wieczorem</strong> z wolną drugą ręką</span>
+      <span class="audit-yn">
+        <button class="audit-btn" id="aud_telefon_y" onclick="pickAudit('telefon','y')" type="button">Tak</button>
+        <button class="audit-btn" id="aud_telefon_n" onclick="pickAudit('telefon','n')" type="button">Nie</button>
+      </span>
+    </div>
+    <div class="audit-row">
+      <span class="audit-icon">🚪</span>
+      <span class="audit-text"><strong>Sam/sama wieczorem</strong> w łazience &gt;10 min</span>
+      <span class="audit-yn">
+        <button class="audit-btn" id="aud_sam_y" onclick="pickAudit('sam','y')" type="button">Tak</button>
+        <button class="audit-btn" id="aud_sam_n" onclick="pickAudit('sam','n')" type="button">Nie</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła audytu</strong>: każde „tak" to <em>obciążenie środowiskowe</em>. 4–6 odpowiedzi „tak" = środowisko mocno wzmacniające dłubanie. 0–2 = środowisko neutralne. Twój punkt startowy nie jest porażką — jest mapą do zmian.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór modyfikacji</div>
+  <h1 class="card-prompt">Wybierz <em>2–3 modyfikacje</em> na 14 dni</h1>
+  <p class="card-detail">Z poniższej listy wybierz 2–3 modyfikacje, które wprowadzisz jednocześnie na 14 dni. Nie więcej — nawet jeśli w audycie miałeś/miałaś 6 razy „tak". Cztery zmiany naraz przekraczają próg trwałości; dwie–trzy są utrzymywalne.</p>
+
+  <div class="mod-list">
+    <button class="mod-card" id="mod_lustro" onclick="pickMod('lustro')" type="button">
+      <span class="mod-icon">🪞</span>
+      <span class="mod-content">
+        <span class="mod-h">Zasłonięcie lustra w łazience</span>
+        <span class="mod-desc">ręcznikiem, kartonem, mlecznym sprayem — usunięcie lub zasłonięcie ≥80% powierzchni; najsilniejsza dźwignia</span>
+      </span>
+    </button>
+    <button class="mod-card" id="mod_peseta" onclick="pickMod('peseta')" type="button">
+      <span class="mod-icon">🛠️</span>
+      <span class="mod-content">
+        <span class="mod-h">Usunięcie narzędzi z zasięgu</span>
+        <span class="mod-desc">pęseta, igły, lusterko powiększające — do innego pokoju, do zaklejonego pudełka, do osoby trzeciej</span>
+      </span>
+    </button>
+    <button class="mod-card" id="mod_swiatlo" onclick="pickMod('swiatlo')" type="button">
+      <span class="mod-icon">💡</span>
+      <span class="mod-content">
+        <span class="mod-h">Miękkie oświetlenie w łazience</span>
+        <span class="mod-desc">ciepła żarówka, abażur, kinkiet zamiast punktowego światła; nierówności przestają być widoczne</span>
+      </span>
+    </button>
+    <button class="mod-card" id="mod_rekawice" onclick="pickMod('rekawice')" type="button">
+      <span class="mod-icon">🧤</span>
+      <span class="mod-content">
+        <span class="mod-h">Bawełniane rękawiczki wieczorem</span>
+        <span class="mod-desc">od 21:00 do snu; bariera fizyczna; dotknięcie skóry wymaga zatrzymania i namysłu</span>
+      </span>
+    </button>
+    <button class="mod-card" id="mod_plastry" onclick="pickMod('plastry')" type="button">
+      <span class="mod-icon">🩹</span>
+      <span class="mod-content">
+        <span class="mod-h">Plastry hydrokoloidowe na zmianach</span>
+        <span class="mod-desc">zasłonięcie aktywnych zmian; dodatkowo wspierają gojenie; dłubanie po nich = świadomość</span>
+      </span>
+    </button>
+    <button class="mod-card" id="mod_pora" onclick="pickMod('pora')" type="button">
+      <span class="mod-icon">⏰</span>
+      <span class="mod-content">
+        <span class="mod-h">Skrócenie czasu w łazience</span>
+        <span class="mod-desc">stoper na 10 min wieczorem; gdy dzwoni — wychodzisz; ograniczenie okna ekspozycji</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="term-note"><strong>💡 Reguła „dwa–trzy"</strong>: badania nad zmianą nawyków (Lally i in., 2010) pokazują, że jednocześnie utrzymywalne są 2–3 modyfikacje. Czwarta dochodzi po 14 dniach, gdy pierwsze są już automatyczne. Kolejność: zacznij od najsilniejszej dźwigni (zwykle lustro lub narzędzia).</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Wdrożenie 14 dni</div>
+  <h1 class="card-prompt">Plan <em>konkretny</em> — kiedy, jak, gdzie</h1>
+  <p class="card-detail">Wybór modyfikacji nie wystarczy — potrzebny jest konkretny plan: kiedy zaczynam, jak fizycznie wykonuję, gdzie kładę narzędzia, kto ewentualnie pomoże. Im konkretniej, tym mniejsza szansa, że wycofasz się po 3 dniach.</p>
+
+  <p class="examples-h">Plan dla modyfikacji #1</p>
+  <textarea class="thought-input" id="plan1" placeholder="np. „Modyfikacja: zasłonięcie lustra w łazience.&#10;Kiedy zaczynam: sobota wieczór.&#10;Jak: wieszam ręcznik na haku nad lustrem przed snem, zdejmuję rano przed wyjściem.&#10;Gdzie problem: poranny makijaż — odsłaniam tylko prawą połowę lustra na 5 min.&#10;Kto wie: partner, prosi o zamykanie drzwi do łazienki, gdy zostawiam ręcznik."" rows="6"></textarea>
+
+  <p class="examples-h">Plan dla modyfikacji #2 (jeśli wybrałeś/wybrałaś dwie)</p>
+  <textarea class="thought-input" id="plan2" placeholder="np. „Modyfikacja: usunięcie pęsety.&#10;Kiedy: niedziela rano.&#10;Jak: oddaję pęsetę partnerowi, prosi o niewydawanie przez 14 dni.&#10;Plan B: jeśli muszę w nagłej potrzebie — proszę o zwrot z notatką, dlaczego."" rows="5"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka „od jutra"</strong>: nie planuj na „następny tydzień" — planuj na <em>najbliższy weekend</em>, najlepiej w ciągu 48 godzin. Im dłuższe odroczenie, tym mniejsza szansa wdrożenia. „Sobota o 21:00 zasłaniam lustro" to plan; „od jutra zacznę" to życzenie.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar po 14 dniach</div>
+  <h1 class="card-prompt">Jak zmieniła się <em>częstość</em>?</h1>
+  <p class="card-detail">Po 14 dniach z modyfikacjami środowiska oszacuj zmianę częstości dłubania w skali 0–10. Stimulus control rzadko daje pełną remisję sam — typowy efekt to spadek o 30–50% (Lochner, 2017). Reszta wymaga HRT i ewentualnie ACT.</p>
+
+  <div class="scale">
+    <div class="scale-label"><span>Przed — częstość dłubania</span></div>
+    <input type="range" class="scale-input" id="preEnv" min="0" max="10" step="1" value="8" data-default="8">
+    <div class="scale-readout"><span>0 — brak</span><span id="preEnvVal">8</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-label"><span>Po 14 dniach — częstość dłubania</span></div>
+    <input type="range" class="scale-input" id="postEnv" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>10 — maksymalna</span><span id="postEnvVal">5</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>2 modyfikacje wybrane</strong> — dobrze dopasowana liczba. Wprowadź je jednocześnie na 7–14 dni i mierz różnicę. Częstość zwykle spada o 30–50% w pierwszych 2 tyg.</div>
+
+  <div class="term-note"><strong>📐 Reguła kalibracji</strong>: stimulus control działa <em>natychmiast</em> (już w dzień 1.), ale efekt stabilizuje się dopiero po 14 dniach. Po tym okresie modyfikacje stają się automatyczne — ręcznik na lustrze wisi „bez decyzji". Dopiero wtedy można dodać kolejną.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Środowisko <strong>kształtuje</strong> nawyk silniej niż wola. Każda modyfikacja, która zwiększa friction (zasłonięcie lustra, usunięcie pęsety, miękkie światło), zmniejsza częstość dłubania bez walki. <em>Połączenie z HRT</em> daje efekt skuteczniejszy niż każda metoda osobno.</div>
+  </div>
+
+  <div class="src">Źródła: Falkenstein i wsp. (2016, ComB-SP); Lochner i wsp. (2017, treatment review); Teng i in. (2006, BFRB stimulus control); Lally i in. (2010, habit formation 66 days); Snorrason i in. (2012, SPS-R); Roberts i in. (2013, BFRB across the lifespan)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickAudit(item, val) {
+  var yes = document.getElementById('aud_' + item + '_y');
+  var no = document.getElementById('aud_' + item + '_n');
+  if (yes && no) {
+    if (val === 'y') { yes.classList.add('picked'); no.classList.remove('picked'); }
+    else { yes.classList.remove('picked'); no.classList.add('picked'); }
+  }
+}
+function pickMod(m) {
+  var el = document.getElementById('mod_' + m);
+  if (el) el.classList.toggle('picked');
+}
+function onReset() {
+  document.querySelectorAll('.audit-btn.picked, .mod-card.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+function updateAfter() {
+  var b = parseInt(document.getElementById('preEnv').value, 10) || 0;
+  var a = parseInt(document.getElementById('postEnv').value, 10) || 0;
+  document.getElementById('preEnvVal').textContent = b;
+  document.getElementById('postEnvVal').textContent = a;
+  var picked = document.querySelectorAll('.mod-card.picked').length;
+  var msg = document.getElementById('finalMsg');
+  if (msg) {
+    if (picked === 0) msg.innerHTML = '<strong>Brak wybranych modyfikacji</strong> — wróć do kroku 3 i wybierz 2–3. Bez nich kontrola bodźców jest tylko teorią.';
+    else if (picked >= 5) msg.innerHTML = '<strong>' + picked + ' modyfikacji wybranych</strong> — to zbyt wiele naraz. Wybierz 2–3 najmocniejsze i zacznij od nich. Resztę dodaj po 2 tygodniach, gdy pierwsze będą stałym elementem.';
+    else msg.innerHTML = '<strong>' + picked + ' modyfikacje wybrane</strong> — dobrze dopasowana liczba. Wprowadź je jednocześnie na 7–14 dni i mierz różnicę. Częstość zwykle spada o 30–50% w pierwszych 2 tyg.';
+  }
+}
+function onStepChange(s) { if (s === 5) updateAfter(); }
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_derm_stimulus — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_derm_stimulus";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.addEventListener('input', function(e) {
+  if (!e.target) return;
+  if (e.target.id === 'preEnv' || e.target.id === 'postEnv') updateAfter();
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

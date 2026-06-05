@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · przywiązanie w AvPD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.matrix-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.matrix-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.matrix-cell { background: rgba(244,241,234,0.06); border: 1px solid rgba(244,241,234,0.18); border-radius: 8px; padding: 12px 14px; }
+.matrix-cell.highlight { background: rgba(245,180,180,0.18); border-color: rgba(245,180,180,0.5); }
+.matrix-cell-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage); margin-bottom: 6px; font-weight: 700; }
+.matrix-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.85); }
+.matrix-axis { font-size: 10.5px; color: rgba(244,241,234,0.6); text-align: center; margin: 6px 0; font-style: italic; font-family: 'DM Sans', sans-serif; }
+
+.id-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.id-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.id-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.id-row.picked .id-d { color: rgba(244,241,234,0.85) !important; }
+.id-h { font-weight: 600; font-size: 13.5px; }
+.id-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>przywiązanie w AvPD</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Przywiązanie — gdy <em>model z dzieciństwa</em> filtruje dorosłe relacje</h1>
+  <p class="card-detail">Teoria przywiązania — John Bowlby (1969, 1973, 1980, „Attachment and Loss") jako pierwszy pokazał, że więź dziecko-opiekun tworzy „wewnętrzny model roboczy" (internal working model) — szablon przyszłych relacji. Mary Ainsworth (1978, „Patterns of Attachment") rozróżniła style: secure, anxious-resistant, anxious-avoidant. Mary Main (1985, AAI — Adult Attachment Interview) — pomiar przywiązania u dorosłych. Kim Bartholomew i Leonard Horowitz (1991, „Attachment styles among young adults", Journal of Personality and Social Psychology) zaproponowali czteropolową matrycę dla dorosłych — opartą na dwóch wymiarach: model siebie (pozytywny/negatywny) × model innych (pozytywny/negatywny). AvPD najczęściej koreluje z FEARFUL-AVOIDANT — negatywny model siebie + negatywny model innych. „Chcę bliskości i się jej boję".</p>
+
+  <div class="matrix-card">
+    <div class="matrix-h">Cztery style przywiązania (Bartholomew & Horowitz 1991)</div>
+    <div class="matrix-axis">↑ pozytywny model SIEBIE ↑</div>
+    <div class="matrix-grid">
+      <div class="matrix-cell">
+        <div class="matrix-cell-h">🔵 SECURE — bezpieczny</div>
+        <div class="matrix-cont">Pozytywny model siebie + pozytywny model innych. „Jestem wart miłości, inni są godni zaufania". 50-60% populacji. W relacjach: bliskość bez lęku, granice bez wycofania.</div>
+      </div>
+      <div class="matrix-cell">
+        <div class="matrix-cell-h">🟢 DISMISSING — odrzucający</div>
+        <div class="matrix-cont">Pozytywny model siebie + negatywny model innych. „Sam sobie wystarczę, innym nie ufam". Niezależność jako wartość. Często schizoid lub NPD. Dystans bez tęsknoty.</div>
+      </div>
+      <div class="matrix-cell">
+        <div class="matrix-cell-h">🟡 PREOCCUPIED — pochłonięty</div>
+        <div class="matrix-cont">Negatywny model siebie + pozytywny model innych. „Nie jestem warta, ale inni są wartościowi". Lgnięcie, lęk przed porzuceniem. Klasyczny dla BPD/HPD. Bliskość kosztem siebie.</div>
+      </div>
+      <div class="matrix-cell highlight">
+        <div class="matrix-cell-h">🔴 FEARFUL-AVOIDANT — AvPD</div>
+        <div class="matrix-cont">Negatywny model siebie + negatywny model innych. „Nie jestem warta + nie można ufać". Pragnienie bliskości + lęk przed nią + brak narzędzi do bezpiecznego kontaktu. ~25% populacji AvPD.</div>
+      </div>
+    </div>
+    <div class="matrix-axis">↓ negatywny model SIEBIE ↓</div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🧬</span><span class="element-text"><strong>Internal working model jako filtr percepcji</strong> (Bowlby 1973). Wewnętrzny model roboczy z pierwszych 3 lat życia działa jak FILTR percepcji w dorosłych relacjach. Niejednoznaczne sygnały od partnera są interpretowane zgodnie z modelem. „Muszę kończyć rozmowę" zostaje odczytane jako „nudzi się ze mną" — i napędza wycofanie. Filtr operuje pozaświadomie.</span></div>
+    <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Self-fulfilling prophecy</strong>. Pacjent z fearful-avoidant interpretuje neutralne sygnały jako odrzucające → wycofuje się → partner faktycznie reaguje chłodno (nie wiedząc czemu) → „miałam rację, nie chciał ze mną być". Model się POTWIERDZA przez własne zachowanie. Pętla samowzmacniająca, niewidoczna z wewnątrz.</span></div>
+    <div class="element-row"><span class="element-icon">🌱</span><span class="element-text"><strong>EARNED SECURE ATTACHMENT</strong> (Main 1985, AAI). Koncepcja kluczowa: osoby z trudną historią mogą rozwinąć bezpieczne przywiązanie później — przez stabilną relację (terapeuta, partner, bliski). Saunders, Jacobvitz, Zaccagnino i Beverung (2011): earned secure jest mierzalne i koreluje z wszystkimi pozytywnymi outcome''ami secure (mniejszy lęk, lepsze relacje, niższy stres rodzicielski). NIE determinizm.</span></div>
+    <div class="element-row"><span class="element-icon">⏱️</span><span class="element-text"><strong>Czas i przewidywalność jako warunki zmiany</strong>. Nowy model roboczy nie powstaje przez argumenty — wymaga POWTÓRZEŃ doświadczeń korygujących. Terapeuta musi być przewidywalny (te same godziny, te same granice, brak nagłych zmian) — tylko wtedy nowy model może utworzyć się w pamięci proceduralnej. To trwa lata.</span></div>
+  </div>
+
+  <div class="frame-quote">„Pracy z przywiązaniem nie da się przyspieszyć. Internal working model formował się przez 3-7 lat dzieciństwa — i wymaga lat dorosłej pracy, by się przekształcił. Krytyczne: terapeuta musi być przewidywalny. Te same godziny. Te same granice. Brak nagłych zmian. Tylko w warunkach przewidywalności nowy model może utworzyć się w pamięci proceduralnej."<span class="frame-quote-attr">— Mary Main (1985, na podstawie Adult Attachment Interview)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: pacjent z fearful-avoidant ma SZCZEGÓLNĄ trudność w terapii — bo terapia sama jest relacją, którą filtr odbiera jako potencjalne odrzucenie. Pierwsze 6-12 miesięcy: pacjent testuje terapeutę (drobnymi prowokacjami, milczeniem, nagłymi rezygnacjami). To NIE jest „opór" — to model roboczy w działaniu. Klucz: terapeuta zostaje, jest przewidywalny, walidujący. Stopniowo nowy model może się utworzyć.</div>
+
+  <div class="src">Bowlby (1969, 1973, 1980, Attachment and Loss, vol. 1-3) · Ainsworth, Blehar, Waters i Wall (1978, Patterns of Attachment) · Main, Kaplan i Cassidy (1985, Security in infancy, childhood, and adulthood: A move to the level of representation, Monographs of the Society for Research in Child Development) · Bartholomew i Horowitz (1991, Attachment styles among young adults: A test of a four-category model, Journal of Personality and Social Psychology) · Saunders, Jacobvitz, Zaccagnino i Beverung (2011, Pathways to earned-security, Attachment & Human Development) · Mikulincer i Shaver (2007, Attachment in Adulthood: Structure, Dynamics, and Change)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Cechy fearful-avoidant — twoje doświadczenie</div>
+  <h1 class="card-prompt">Które <em>cechy</em> rozpoznajesz w swoich relacjach?</h1>
+  <p class="card-detail">Te 8 stwierdzeń pokazuje typowe przejawy fearful-avoidant w dorosłych relacjach. NIE jest to formalny ECR-R (Experiences in Close Relationships) — to mapa wstępnego rozpoznania. Zaznacz te, które rozpoznajesz CHRONICZNIE u siebie (nie tylko w jednej trudnej relacji).</p>
+
+  <div class="id-grid">
+    <div class="id-row" id="i1" onclick="pickId('i1')">
+      <div class="id-h">💔 „Pragnę bliskości — i jej się boję"</div>
+      <div class="id-d">Centralna sygnatura fearful-avoidant. Tęsknię za relacją, gdy jestem sama. Boję się jej, gdy jest blisko. Przyciąganie + odpychanie w tej samej osobie. Ambiwalencja jako stan.</div>
+    </div>
+    <div class="id-row" id="i2" onclick="pickId('i2')">
+      <div class="id-h">🚪 Wycofuję się, gdy ktoś się zbliża</div>
+      <div class="id-d">Klasyczny przebieg: ktoś okazuje zainteresowanie → początkowy entuzjazm → wycofanie, gdy bliskość wzrasta. Nie umiem wytrzymać w niej. Sabotaż relacji w momencie pogłębiania.</div>
+    </div>
+    <div class="id-row" id="i3" onclick="pickId('i3')">
+      <div class="id-h">📡 Filtruję wszystkie sygnały jako potencjalnie odrzucające</div>
+      <div class="id-d">„Muszę kończyć rozmowę" → „nudzi go ze mną". „Dziś nie da się spotkać" → „nie chce mnie więcej widzieć". Niejednoznaczne sygnały filtrowane jednoznacznie negatywnie. Filter w działaniu.</div>
+    </div>
+    <div class="id-row" id="i4" onclick="pickId('i4')">
+      <div class="id-h">🤐 Nie pokazuję autentycznych potrzeb</div>
+      <div class="id-d">Boję się okazać partnerowi, że na NIM mi zależy — bo wtedy mógłby odejść z większą siłą. Maska niezależności. „Wszystko OK, nie potrzebuję niczego". Klasyczne dla fearful-avoidant.</div>
+    </div>
+    <div class="id-row" id="i5" onclick="pickId('i5')">
+      <div class="id-h">🔁 Powtarzający się wzorzec krótkich, intensywnych relacji</div>
+      <div class="id-d">Historie 3-6 miesięcznych relacji, w których pierwsze tygodnie są intensywne, a potem nagłe wycofanie z mojej strony. Albo ja porzucam, albo prowokuję porzucenie. Trzeci miesiąc jako próg.</div>
+    </div>
+    <div class="id-row" id="i6" onclick="pickId('i6')">
+      <div class="id-h">😨 Ataki paniki w bliskości fizycznej / emocjonalnej</div>
+      <div class="id-d">Gdy partner się przytula, gdy ktoś mówi „kocham cię", gdy ktoś mnie zauważa głębiej — fizyczna reakcja paniki. Chęć ucieczki. Ciało reaguje silnie nawet przy „dobrym" zbliżeniu.</div>
+    </div>
+    <div class="id-row" id="i7" onclick="pickId('i7')">
+      <div class="id-h">🎭 Gram „silną, niezależną" mimo wewnętrznego pragnienia</div>
+      <div class="id-d">Maska samowystarczalności wobec partnera, znajomych. Dystans jako bezpieczeństwo. W środku — pragnienie bliskości. Partner widzi „chłodną, opanowaną osobę" — ja w środku łaknę kontaktu.</div>
+    </div>
+    <div class="id-row" id="i8" onclick="pickId('i8')">
+      <div class="id-h">🏃 Po konflikcie: silna potrzeba zerwania + silna potrzeba uchowania</div>
+      <div class="id-d">Konflikt aktywuje silne reakcje: „skończyć to" + „naprawić za wszelką cenę". Oba naraz. Klasyczna dezorganizacja w fearful-avoidant. Trudność w prostych negocjacjach (każdy konflikt = potencjalny koniec).</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myId" placeholder="Konkretnie: ile cech rozpoznajesz? Najsilniejsze? Czy widzisz wzorzec — np. 3-miesięczny próg, sabotaż w bliskości, filtrowanie sygnałów?" style="min-height: 100px;"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Czytelność stylu przywiązania u siebie — TERAZ</div>
+    <div class="scale-bounds"><span>0 — chaos</span><span>10 — czytelne</span></div>
+    <input type="range" class="scale-input" id="bUnd" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bUndv">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: 5-8 cech obecnych chronicznie w różnych relacjach = wysokie prawdopodobieństwo fearful-avoidant. Formalny pomiar: ECR-R (36-pytaniowy kwestionariusz online) lub AAI (godzinny wywiad u terapeuty znającego attachment theory). AAI jest „złotym standardem" — daje profil i jakość opowiadania o własnym przywiązaniu.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Konkretna relacja — twój filtr w działaniu</div>
+  <h1 class="card-prompt">Wpisz <em>jedną relację</em> i zauważ filtr</h1>
+  <p class="card-detail">Wybierz jedną relację (partner, bliska przyjaciółka, rodzic) i przyjrzyj się, jak filtr internal working model działa w tej relacji. Konkrety, nie abstrakcje. Sytuacja z ostatniego tygodnia.</p>
+
+  <textarea class="thought-input" id="rel" placeholder="① RELACJA + SYTUACJA — kogo wybierasz? Jaka konkretna sytuacja w ostatnim tygodniu? (np.: „partner, w czwartek wieczorem powiedział, że jest zmęczony i woli sam pograć w gry")." style="min-height: 90px;"></textarea>
+
+  <textarea class="thought-input" id="filter" placeholder="② FILTR — jak Twój wewnętrzny model zinterpretował tę sytuację? Pierwsza reakcja, automatyczna myśl. (np.: „znudził się ze mną, dystansuje się, to początek końca, znowu mnie zostawi". Konkret tej myśli, którą poszedł filtr)." style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="alternative" placeholder="③ ALTERNATYWNA INTERPRETACJA — neutralna, oparta na faktach. (np.: „był zmęczony po pełnym dniu pracy, naturalnie potrzebuje regeneracji. Gry to jego sposób relaksu, nie wiadomość o relacji. To NIE jest sygnał odrzucenia — to sygnał zmęczenia"). Co WIESZ o tej osobie poza filtrem?" style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="reaction" placeholder="④ TWOJA REAKCJA — co zrobiłaś z filtrem? Klasycznie w fearful-avoidant: wycofanie („dobra, ja też idę"), karanie ciszą, sabotaż („widzę, że nie chcesz"), albo lgnięcie z paniką. Co konkretnie zrobiłaś? Jaki był skutek dla relacji?" style="min-height: 100px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch — interpretowanie zachowania partnera bez pytania go. „Wiem, że...". Filtr operuje na DOMYSŁACH, nie pytaniach. Antidotum: zapytaj. „Co czujesz teraz?", „chcesz być dziś osobno czy mam się odezwać?". Konkretna informacja > domysł filtrowany przez model roboczy.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — drogi do earned secure</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> rozwoju earned secure attachment</h1>
+  <p class="card-detail">Earned secure attachment (Main 1985) — koncepcja kluczowa: osoby z trudną historią MOGĄ rozwinąć bezpieczne przywiązanie. Wymaga lat. Te cztery kroki tworzą strukturę praktyczną. Zwykle: 3-5 lat systematycznej pracy.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — drogi do earned secure</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>STABILNA RELACJA TERAPEUTYCZNA — 2-4 lata</strong>. Najsilniej empirycznie wsparta droga (Saunders 2011). Terapia ST, MBT (mentalization-based) lub PIT (psychodynamic-interpersonal). Klucz: ten sam terapeuta przez lata, przewidywalny, walidujący. Fearful-avoidant będzie testować — to NORMALNE. Terapeuta zostaje. Z czasem nowy model roboczy.</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>JEDNA STABILNA, BEZPIECZNA RELACJA poza terapią</strong>. Może być partner z secure attachment, długoletnia przyjaciółka, członek rodziny. Klucz: stabilność. Doświadczenie konkretne, że ktoś nie odchodzi mimo Twoich „testów" wycofania. Saunders 2011: konkretne stabilne relacje są drogą do earned secure.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>NARRATYWNA INTEGRACJA — opowiadaj swoją historię koherentnie</strong>. AAI (Main 1985): osoby earned secure mówią o trudnym dzieciństwie KOHERENTNIE — z bólem, ale uporządkowanie. Bez idealizacji („nic złego się nie stało") i bez dezorganizacji („wszystko jest chaosem"). Praca z terapeutą + pisanie autobiograficzne integruje narrację.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>ZAUWAŻAJ FILTR — w bieżących relacjach codziennie</strong>. Dziennik filtrów: kiedy zinterpretowałaś coś jako odrzucenie? Co WIESZ o tej osobie poza filtrem? Czy zapytałaś o intencje? Codzienne zauważanie filtrów osłabia ich automatyczność. Po miesiącach: filtr działa, ale Ty go widzisz — i możesz wybierać reakcję.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: jaki krok podejmujesz w nadchodzącym miesiącu? Krok 1 (terapia długoterminowa)? Krok 2 (jedna stabilna relacja)? Krok 3 (narrative writing)? Krok 4 (dziennik filtrów)?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: Saunders 2011 (badanie z 87 osobami z trudnym dzieciństwem): 30-40% rozwinęło earned secure attachment dzięki długoletniej terapii i/lub stabilnym dorosłym relacjom. Earned secure działa identycznie jak continuous secure pod względem stresu, jakości relacji, rodzicielstwa. Nie jest „drugą kategorią" — jest pełnowartościowym secure. Wymaga 3-5 lat — i jest możliwe.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>styl przywiązania</em> stał się czytelny?</h1>
+  <p class="card-detail">Wróć tu po refleksji. Mierzymy czytelność stylu — czy widzisz, że Twoje wzorce relacyjne nie są wadą charakteru, lecz nauczonym modelem roboczym z dzieciństwa, który można przekształcić. Pierwsza refleksja zwykle daje wzrost o 1-2 punkty.</p>
+
+  <div class="scale">
+    <div class="scale-title">Czytelność stylu przywiązania — po refleksji</div>
+    <div class="scale-bounds"><span>0 — chaos</span><span>10 — czytelne</span></div>
+    <input type="range" class="scale-input" id="aUnd" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aUndv">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz, że filtr operuje pozaświadomie? Co byłoby pierwszym krokiem ku earned secure w nadchodzącym miesiącu (terapia, stabilna relacja, narrative writing, dziennik filtrów)?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: praca z przywiązaniem jest długoterminowa — 3-5 lat systematycznej pracy. NIE ma „szybkiego naprawienia" stylu z dzieciństwa. ALE: earned secure jest empirycznie udokumentowane (Saunders 2011) i mierzalne. Nie wymaga zmiany historii — wymaga nowych doświadczeń korygujących. Stabilna relacja terapeutyczna + jedna stabilna relacja w życiu = standardowa droga.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">AvPD: <em>fearful-avoidant attachment (Bartholomew & Horowitz 1991) — negatywny model siebie + negatywny model innych</em>. „Chcę bliskości i się jej boję". Internal working model jako filtr percepcji (Bowlby). Self-fulfilling prophecy. <strong>EARNED SECURE jest możliwe (Saunders 2011) — wymaga 3-5 lat stabilnej terapii + bezpiecznych relacji</strong>. NIE determinizm. Filtr można zauważać → wybierać reakcję.</div>
+  </div>
+
+  <div class="src">Bowlby (1969, 1973, 1980, Attachment and Loss, vol. 1-3) · Ainsworth, Blehar, Waters i Wall (1978, Patterns of Attachment) · Main, Kaplan i Cassidy (1985, Security in infancy, childhood, and adulthood, Monographs of the Society for Research in Child Development) · Bartholomew i Horowitz (1991, Attachment styles among young adults, Journal of Personality and Social Psychology) · Saunders, Jacobvitz, Zaccagnino i Beverung (2011, Pathways to earned-security, Attachment & Human Development) · Mikulincer i Shaver (2007, Attachment in Adulthood: Structure, Dynamics, and Change) · Levine i Heller (2010, Attached: The New Science of Adult Attachment)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickId(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bUnd').value || 0, 10);
+    var aU = parseInt(document.getElementById('aUnd').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Czytelność stylu wzrosła o ' + dU + ' — widzisz, że Twoje wzorce relacyjne nie są wadą charakteru, lecz nauczonym modelem roboczym z dzieciństwa. To otwiera drogę do earned secure attachment.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszej refleksji nad przywiązaniem. Pełna integracja modelu wymaga miesięcy pracy z terapeutą + bezpiecznych relacji w teraźniejszości.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że potrzebujesz konkretnego AAI (Adult Attachment Interview) lub ECR-R (Experiences in Close Relationships) by zobaczyć profil. Skonsultuj z terapeutą znającym attachment theory.';
+    else msg = 'Spadek — czasem rozpoznanie modelu roboczego aktywuje smutek („więc to przez moje dzieciństwo"). To NIE jest determinizm. Earned secure jest możliwe — wymaga lat, ale jest mierzalne (Saunders 2011).';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.id-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_attachment_avpd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_attachment_avpd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bUnd','aUnd'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

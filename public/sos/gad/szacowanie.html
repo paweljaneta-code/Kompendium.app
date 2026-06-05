@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Szacowanie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --bg-deep: #ebe6da;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --line: #c9c2b0;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+.element-text em { color: var(--sage); font-style: italic; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; display: block; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; z-index: 100; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+/* === GAD-specific shared classes === */
+.proto-card { background: rgba(184,197,168,0.14); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.proto-step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed rgba(122,146,112,0.3); }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 15px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.5; color: var(--ink-soft); flex: 1; }
+.proto-text strong { color: var(--ink); font-weight: 600; }
+.proto-text em { font-style: italic; color: var(--sage-deep); }
+
+.tldr-box { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; line-height: 1.55; color: var(--ink); margin: 0 0 14px; border-left: 3px solid var(--sage-deep); }
+.tldr-box strong { color: var(--sage-deep); font-weight: 700; }
+
+
+.gauge { display: flex; gap: 8px; align-items: center; padding: 8px 10px; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; margin: 6px 0; }
+.gauge-label { font-size: 13px; font-weight: 600; color: var(--sage-deep); min-width: 110px; }
+.gauge-bar { flex: 1; }
+.gauge-val { font-size: 13px; font-weight: 700; color: var(--ink); min-width: 56px; text-align: right; }
+.bias-card { padding: 10px 12px; background: rgba(212,165,154,0.16); border: 1px solid #d4a59a; border-radius: 10px; margin: 8px 0; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.bias-card strong { color: var(--sage-deep); }
+.evi-row { padding: 8px 10px; background: rgba(255,255,255,0.6); border-left: 3px solid var(--sage-deep); border-radius: 0 8px 8px 0; margin: 4px 0; font-size: 13px; line-height: 1.5; }
+
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Szacowanie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1: WPROWADZENIE -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt"><em>Szacowanie</em> prawdopodobieństwa</h1>
+  
+  <div class="tldr-box"><strong>⚡ W skrócie:</strong> szacowanie prawdopodobieństwa (Beck i wsp., 1985) to konfrontacja subiektywnej <em>pewności</em> zagrożenia z empirycznym <em>prawdopodobieństwem</em>. W GAD pacjenci systematycznie <strong>10–100×</strong> zawyżają prawdopodobieństwo katastrof (Eysenck, 1992); empiryczne dane redukują katastroficzną pewność. Pytanie kluczowe: w 100 podobnych sytuacjach — w ilu zdarzyło się to, czego się boisz?</div>
+  
+  <p class="card-detail">W GAD <strong>subiektywna pewność</strong> i <strong>empiryczne prawdopodobieństwo</strong> są rozjechane. „Czuję, że to się stanie na 90%" — często znaczy realnie ≤5%. Ten rozjazd jest mechanizmem podtrzymującym lęk. Mózg przyjmuje subiektywną pewność jako informację (<em>emotional reasoning</em>; Burns, 1980). Pisemne, liczbowe szacowanie jest <em>narzędziem korekcyjnym</em>: oddziela uczucie od faktu.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery pytania szacowania</div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Subiektywne</strong> — jak bardzo <em>czuję</em>, że to się stanie (0–100%)?</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📊</span>
+      <span class="element-text"><strong>Empiryczne</strong> — w 100 podobnych sytuacjach — w ilu się stało?</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔍</span>
+      <span class="element-text"><strong>Dane</strong> — czy mam realne dane (statystyki, historia)?</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚖️</span>
+      <span class="element-text"><strong>Korekta</strong> — jak duża luka między „czuję" a „realnie"?</span>
+    </div>
+    <div class="frame-quote">„Pacjenci z lękiem nie szacują źle <em>raz</em>. Szacują źle <em>systematycznie</em> — to nie błąd, to wzorzec. Trzeba pokazać im wzorzec, nie tylko jeden przypadek."<span class="frame-quote-attr">— Aaron T. Beck (1985, Anxiety Disorders and Phobias)</span></div>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong>: w GAD nie chodzi o stwierdzenie „nie ma się o co martwić". Chodzi o <em>uczciwą</em> ocenę: ile to NAPRAWDĘ procent? Nawet 10% to za mało, by martwić się 24/7 — i to często wystarczy, żeby umysł zaczął odpuszczać.</div>
+  
+  <div class="src">A. T. Beck i wsp. (1985, Anxiety Disorders and Phobias) · Eysenck (1992, Anxiety: The Cognitive Perspective) · Butler i Hope (1995, Manage Your Mind) · Clark i Beck (2010) · Burns (1980) · J. S. Beck (1995, 2011)</div>
+</section>
+
+<!-- KROK 2: SUBIEKTYWNE -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Subiektywne</div>
+  <h1 class="card-prompt">Co czuję, ile to procent?</h1>
+  <p class="card-detail">Wybierz <strong>jedno konkretne martwienie</strong> z ostatnich 24–48 godzin (lęk ≥50/100). Sformułuj je jako <em>zdanie warunkowe</em>: „a co jeśli X". Następnie zapisz <strong>subiektywne</strong> przekonanie — ile czujesz, że to się stanie. Nie liczbę „rozsądną" — liczbę, która oddaje twój <em>lęk</em>.</p>
+  
+  <div class="term-note"><strong>Reguła subiektywnego</strong>: pisz liczbę, którą czujesz <em>w ciele</em>, nie tę, którą uważasz za „logiczną". Jeśli na pytanie „ile to procent?" pierwsza odpowiedź to „70%, ale wiem że logicznie to 5%" — zapisz <strong>70%</strong>. Cel: zobaczyć rozjazd. Tylko jawna liczba pokazuje go.</div>
+  
+  <div class="examples-h">Twoje katastroficzne martwienie (zdanie warunkowe)</div>
+  <textarea class="thought-input" id="worry" rows="3" placeholder="np. „A co jeśli ten ból w klatce piersiowej to zawał?"></textarea>
+  
+  <div class="gauge">
+    <span class="gauge-label">Subiektywnie czuję:</span>
+    <input type="range" min="0" max="100" value="70" class="scale-input gauge-bar" id="subj" data-default="70" oninput="document.getElementById('subjVal').textContent=this.value+'%'">
+    <span class="gauge-val" id="subjVal">70%</span>
+  </div>
+  
+  <div class="proto-card">
+    <div class="proto-h">Pomocnicze pytania</div>
+    <div class="proto-step">
+      <span class="proto-num">💭</span>
+      <span class="proto-text">Co dokładnie <em>czuję w ciele</em> teraz, gdy o tym myślę?</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">⏰</span>
+      <span class="proto-text">Jak długo dziś już <em>nosiłam</em> w głowie tę myśl?</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">🌀</span>
+      <span class="proto-text">Czy <em>działam</em> tak, jakby to się działo (sprawdzam, unikam)?</span>
+    </div>
+  </div>
+</section>
+
+<!-- KROK 3: EMPIRYCZNE -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Empirycznie</div>
+  <h1 class="card-prompt">100 podobnych sytuacji</h1>
+  <p class="card-detail">Teraz <strong>wyciągasz dane</strong>. Wyobraź sobie 100 osób w sytuacji takiej jak twoja — albo 100 razy <em>twoja</em> historia. W ilu z tych 100 zdarzeń katastrofa <em>faktycznie się stała</em>? Zwróć uwagę: nie „mogłaby się stać", tylko „stała się". Dane, nie strach.</p>
+  
+  <div class="term-note"><strong>Reguła „100 sytuacji"</strong>: jeśli nie znasz dokładnej liczby — szacuj rzędem wielkości. „Bardzo rzadko" = 1–5/100. „Raz na jakiś czas" = 5–15/100. „Czasem" = 15–35/100. „Często" = 35–60/100. „Bardzo często" = 60+/100. Lepiej rząd wielkości niż dokładna fałszywa liczba.</div>
+  
+  <div class="examples-h">Skąd biorę dane (osobiste / statystyczne)</div>
+  <textarea class="thought-input" id="dane" rows="3" placeholder="np. „Osobiście: w ciągu ostatnich 5 lat miałam ten ból w klatce ok. 30 razy — 0 razy okazało się to zawałem. Statystyki: ryzyko zawału u 35-letniej kobiety bez czynników ryzyka = ~0,01% rocznie (NHS, 2022)"></textarea>
+  
+  <div class="term-note"><strong>Reguła źródeł</strong>: <em>osobiste</em> dane (twoja historia, dziennik samomonitorowania) są zwykle silniejsze niż globalne statystyki, bo dotyczą <em>ciebie</em>. Statystyki dodają kontekst: jeśli w 100 ludzi 1 ma zawał — w ciebie też nie celują częściej niż w innych.</div>
+  
+  <div class="gauge">
+    <span class="gauge-label">Empirycznie (na 100):</span>
+    <input type="range" min="0" max="100" value="3" class="scale-input gauge-bar" id="emp" data-default="3" oninput="document.getElementById('empVal').textContent=this.value+'%'">
+    <span class="gauge-val" id="empVal">3%</span>
+  </div>
+  
+  <div class="examples-h">Dowody „za" (że TAK się stanie)</div>
+  <div class="evi-row">⚖️ Co konkretnie wskazuje, że tym razem <em>jest</em> inaczej?</div>
+  <textarea class="thought-input" id="za" rows="3" placeholder="np. „Ból trwa dłużej niż zwykle (15 min vs 2 min). Mam dziś więcej stresu (jutro prezentacja)"></textarea>
+  
+  <div class="examples-h">Dowody „przeciw" (że NIE się stanie)</div>
+  <div class="evi-row">⚖️ Co konkretnie wskazuje, że tym razem <em>jest</em> jak zwykle?</div>
+  <textarea class="thought-input" id="przeciw" rows="3" placeholder="np. „1) Ten typ bólu zawsze tak wygląda (pulsujący, w jednym miejscu). 2) EKG sprzed 6 mies. czyste. 3) Po położeniu się ból słabnie — w zawale nie. 4) Zawal byłby zwykle z drętwieniem ramienia, ja nie mam"></textarea>
+</section>
+
+<!-- KROK 4: KOREKTA + ZNIEKSZTAŁCENIA -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Korekta</div>
+  <h1 class="card-prompt">Dlaczego <em>czuję</em> więcej niż jest</h1>
+  <p class="card-detail">Porównujesz dwie liczby: <em>subiektywna</em> i <em>empiryczna</em>. Różnica między nimi nazywa się <strong>luką katastrofizacji</strong>. W GAD ta luka jest typowo 10–30× (Eysenck, 1992). Powód jest mózgowy: 4 zniekształcenia, które systematycznie wykrzywiają percepcję ryzyka.</p>
+  
+  <div class="bias-card">
+    <strong>1. Heurystyka dostępności</strong> (Tversky i Kahneman, 1973) — rzeczy, które łatwo sobie wyobrazić, wydają się prawdopodobniejsze. Widziałaś 1 reportaż o zawałach u młodych — mózg notuje „to się zdarza często".
+  </div>
+  <div class="bias-card">
+    <strong>2. Emotional reasoning</strong> (Burns, 1980) — „bardzo to czuję, więc to musi być prawdziwe". Lęk staje się <em>dowodem</em> zagrożenia, choć jest <em>reakcją</em> na zagrożenie.
+  </div>
+  <div class="bias-card">
+    <strong>3. Selektywna uwaga</strong> (Mathews i MacLeod, 2005) — w GAD uwaga skacze do sygnałów zagrożenia (ten ból, ten mejl), ignorując sygnały bezpieczeństwa.
+  </div>
+  <div class="bias-card">
+    <strong>4. Niedopuszczanie pamięci o „nieskończonych" przypadkach</strong> — pamiętasz, gdy tym razem się obeszło? Mózg odrzuca te dane jako „nieistotne". Ale to są właśnie <em>dane</em>.
+  </div>
+  
+  <div class="term-note"><strong>Reguła luki</strong>: jeśli luka subiektywne/empiryczne wynosi mniej niż 2× — twoje szacowanie jest dość kalibrowane (pracuj raczej na <span data-go="rozpoznanie-iu" class="qg-link">tolerancji niepewności</span>). Jeśli luka 2–10× — klasyczna przestrzeń dla restrukturyzacji. Powyżej 10× — sięgaj również po pisemną <span data-go="ekspozycja-pisemna" class="qg-link">ekspozycję na najgorszy scenariusz</span>.</div>
+  
+  <div class="examples-h">Luka katastrofizacji w twoim przypadku</div>
+  <textarea class="thought-input" id="luka" rows="3" placeholder="np. „Subiektywnie: 70%. Empirycznie: 3%. Luka: 23×. Powód: heurystyka dostępności (zapamiętałam reportaż o zawale u 30-letniej kobiety) + emotional reasoning (mam dziś dużo stresu, więc lęk = realne zagrożenie). Selektywnie ignoruję 30 wcześniejszych przypadków, kiedy ten sam ból minął"></textarea>
+  
+  <div class="examples-h">Zbalansowana odpowiedź</div>
+  <textarea class="thought-input" id="bal" rows="3" placeholder="np. „Ten ból to z dużym prawdopodobieństwem (97/100) napięcie mięśniowe lub stres. Mogę zrobić proste sprawdzenie: oddychanie, rozluźnienie, 30 min obserwacji. Jeśli nie minie po godzinie LUB pojawi się drętwienie — dzwonię do lekarza. Nie odbieram telefonu do dziadka teraz, dotrwam do końca dnia"></textarea>
+</section>
+
+<!-- KROK 5: KALIBRACJA -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Kalibracja</div>
+  <h1 class="card-prompt"><em>Treningowa</em> uważność na liczby</h1>
+  <p class="card-detail">Szacowanie prawdopodobieństwa nie jest jednorazowym ćwiczeniem. To <strong>trening uważności na własne szacunki</strong>. Po 50–100 zapisach zauważysz, że umysł <em>sam</em> zaczyna pytać: „a w ilu na 100?". To jest cel — aby empiryczna uważność stała się odruchem.</p>
+  
+  <div class="proto-card">
+    <div class="proto-h">Codzienny micro-zapis (3 min)</div>
+    <div class="proto-step">
+      <span class="proto-num">1</span>
+      <span class="proto-text"><strong>Martwienie</strong> — wybierz najsilniejsze z dnia (lęk ≥50/100).</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">2</span>
+      <span class="proto-text"><strong>Subiektywnie</strong> — ile czuję, że się stanie (0–100%)?</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">3</span>
+      <span class="proto-text"><strong>Empirycznie</strong> — w 100 sytuacjach, w ilu się stało (oszacowanie)?</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">4</span>
+      <span class="proto-text"><strong>Luka</strong> — różnica × ile? Krótka notatka 1 zdaniem o powodzie luki.</span>
+    </div>
+  </div>
+  
+  <div class="examples-h">Plan na 14 dni</div>
+  <textarea class="thought-input" id="plan14" rows="3" placeholder="np. „Codziennie 1 micro-zapis (3 min, telefon). Po 14 dniach robię przegląd: jakie kategorie martwień się powtarzają? Jaka jest średnia luka? Powtarzające się zniekształcenia? Te zniekształcenia to moje punkty pracy z <span data-go='znieksztalcenia' class='qg-link'>zniekształceniami poznawczymi</span>"></textarea>
+  
+  <div class="examples-h">Plan B — gdy luka nie maleje</div>
+  <textarea class="thought-input" id="planB" rows="3" placeholder="np. „Jeśli po 14 dniach nadal subiektywne dramatycznie przewyższa empiryczne (mimo zapisów) — luka utrzymuje się przez metaprzekonanie «martwienie chroni mnie». Wtedy: <span data-go='metaprzekonania' class='qg-link'>test metaprzekonań o martwieniu</span> (MCT, Wells, 2009). Konsultuję z psychoterapeutą"></textarea>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Subiektywna <em>pewność</em> ≠ empiryczne <em>prawdopodobieństwo</em>. W GAD luka jest typowo 10–30×. Pytanie kluczowe: w 100 podobnych sytuacjach — w ilu się stało? Cztery zniekształcenia podtrzymujące lukę: dostępność, emotional reasoning, selektywna uwaga, ignorowanie „nieskończonych" przypadków. Cel: empiryczna uważność jako <em>odruch</em>, nie inspiracja. Po 50–100 zapisach — automatyzm.</div>
+  </div>
+  
+  <div class="src">A. T. Beck i wsp. (1985) · Eysenck (1992) · Tversky i Kahneman (1973) · Burns (1980) · Mathews i MacLeod (2005) · Butler i Hope (1995) · J. S. Beck (1995, 2011)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór SAD v580 + uniwersalny picker v585) ===== */
+(function(){
+  var KEY = "sos_szacowanie";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+  window.save = save;
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Eksperyment behawioralny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.proto-step { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin-bottom: 6px; background: rgba(184,197,168,0.18); border-radius: 8px; }
+.proto-step .ps-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--warm); flex-shrink: 0; width: 28px; text-align: center; line-height: 1.4; }
+.proto-step .ps-content { flex: 1; }
+.proto-step .ps-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.proto-step .ps-body { font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); }
+.proto-step .ps-body em { color: var(--sage-deep); font-style: italic; }
+.proto-step .ps-body strong { color: var(--ink); font-weight: 600; }
+
+.bad-good { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.bg-row { padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; }
+.bg-row.bad { background: rgba(201,165,114,0.18); border-left: 3px solid var(--warm); color: var(--ink-soft); }
+.bg-row.good { background: rgba(122,146,112,0.16); border-left: 3px solid var(--sage-deep); color: var(--ink-soft); }
+.bg-row .bg-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mute); font-weight: 700; margin-bottom: 4px; }
+.bg-row strong { color: var(--ink); font-weight: 600; }
+
+.input-stack input[type="text"], .input-stack textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--sage); border-radius: 8px; background: rgba(255,255,255,0.6); font-family: inherit; font-size: 13px; color: var(--ink); margin-bottom: 8px; }
+.input-stack textarea { min-height: 50px; line-height: 1.4; resize: vertical; }
+.input-stack input:focus, .input-stack textarea:focus { outline: none; border-color: var(--sage-deep); background: white; }
+.input-stack .lbl { font-size: 12px; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; display: block; }
+
+.scale-pair { display: flex; flex-direction: column; gap: 12px; margin: 10px 0 14px; padding: 12px 14px; background: rgba(122,146,112,0.12); border-left: 3px solid var(--warm); border-radius: 0 8px 8px 0; }
+.scale-pair .sp-h { font-size: 11.5px; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Eksperyment behawioralny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Doświadczenie <em>przekonuje</em> mocniej niż argumenty</h1>
+  <p class="card-detail">Eksperyment behawioralny (behavioural experiment) to zaplanowany test konkretnej katastroficznej prognozy w rzeczywistej sytuacji. Bennett-Levy i in. (2004, „Oxford Guide to Behavioural Experiments") sformalizowali tę technikę dla całej gamy zaburzeń. McManus i in. (2012) wykazali, że jest to <em>najsilniejszy pojedynczy komponent</em> terapii poznawczo-behawioralnej (CBT — Cognitive Behavioural Therapy) paniki.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery zasady eksperymentu (Bennett-Levy 2004)</div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Konkretna prognoza</strong> — mierzalna, sprawdzalna, z liczbą i horyzontem czasowym.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📊</span>
+      <span class="element-text"><strong>Wiara przed</strong> — siła przekonania 0–100% przed eksperymentem (baseline).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🛡️</span>
+      <span class="element-text"><strong>Bez zabezpieczeń</strong> — bez zachowań zabezpieczających, bez dystrakcji, w pełni doświadczane.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔁</span>
+      <span class="element-text"><strong>Powtórzenia z wariacjami</strong> — różne sytuacje, pory dnia, stany ciała. 5–10 razy.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Pacjent może wiedzieć, że nie zemdleje, a jednocześnie czuć, że zemdleje. Werbalna wiedza i emocjonalne przekonanie żyją w dwóch różnych systemach. Eksperyment łączy je".
+    <span class="frame-quote-attr">— Bennett-Levy i in. (2004, „Oxford Guide to Behavioural Experiments")</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: według modelu uczenia hamującego (Craske i in., 2014) cel eksperymentu to <em>naruszenie oczekiwania</em> (expectancy violation), nie redukcja lęku w trakcie. „Myślałem, że zemdleję — nie zemdlałem" uczy mocniej niż „już się nie boję".</div>
+
+  <div class="src">Bennett-Levy i in. (2004, „Oxford Guide to Behavioural Experiments", Oxford University Press); McManus i in. (2012); Clark (1999); Craske i in. (2014, „Maximizing exposure therapy"); NICE (2011) CG113.</div>
+</section>
+
+<!-- ============== KROK 2 — Konkretna vs ogólna prognoza ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja prognoza</div>
+  <h1 class="card-prompt">Konkretna i <em>sprawdzalna</em>, nie ogólna</h1>
+  <p class="card-detail">Najczęstszy bug eksperymentu: prognoza zbyt ogólna („będzie źle"). Bez konkretu nie ma wyraźnego momentu, w którym wynik <em>narusza</em> oczekiwanie. Porównaj poniższe przykłady i sformułuj swoją prognozę.</p>
+
+  <div class="bad-good">
+    <div class="bg-row bad">
+      <div class="bg-label">❌ Źle — prognoza ogólna</div>
+      <strong>„Pojadę autobusem i będzie źle"</strong>. Co znaczy „źle"? Niewielkie napięcie? Atak? Omdlenie? Bez konkretu wynik zawsze potwierdzi prognozę („było średnio = było źle").
+    </div>
+    <div class="bg-row good">
+      <div class="bg-label">✅ Dobrze — prognoza konkretna i sprawdzalna</div>
+      <strong>„Jeśli pojadę autobusem 3 przystanki bez leku w kieszeni, dostanę ataku paniki o sile ≥80 SUDS w pierwszych 10 minutach i będę musiał wysiąść"</strong>. Mierzalne, sprawdzalne, z liczbą i horyzontem.
+    </div>
+  </div>
+
+  <div class="input-stack">
+    <p class="card-detail" style="margin-bottom:6px;font-weight:600">Twoja sytuacja</p>
+    <input type="text" id="situation" placeholder="np. „Jazda metrem M1 z Centrum do Politechniki bez ksanaxu w torebce"">
+
+    <span class="lbl">Twoja katastroficzna prognoza — KONKRETNIE</span>
+    <textarea id="prediction" placeholder="np. „Dostanę ataku paniki o SUDS ≥80 w pierwszych 5 minutach. Będę musiał wysiąść na pierwszej stacji""></textarea>
+
+    <span class="lbl">Po czym poznam, że prognoza się spełniła? (kryterium wyniku)</span>
+    <textarea id="criterion" placeholder="np. „Wysiądę przed Politechniką = spełniła się; dojadę do końca = nie spełniła się""></textarea>
+  </div>
+
+  <div class="scale">
+    <div class="scale-label"><span>Wiara w prognozę PRZED eksperymentem (0–100%)</span></div>
+    <input type="range" min="0" max="100" value="75" class="scale-input" id="beforeP" data-default="75" oninput="document.getElementById('beforePR').textContent=this.value+'%';updateDelta()">
+    <div class="scale-readout"><span>0%</span><span id="beforePR">75%</span><span>100%</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Wskazówka</strong>: Craske i in. (2014) wskazują na <em>prediction error</em> jako neurobiologiczny mechanizm zmiany. Im wyższa wiara w prognozę przed i im niższa po, tym mocniejsze uczenie. Bez konkretu nie ma czego porównywać.</div>
+</section>
+
+<!-- ============== KROK 3 — 8-krokowy protokół ============== -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Protokół 8 kroków</div>
+  <h1 class="card-prompt">Pełny <em>algorytm</em> eksperymentu</h1>
+  <p class="card-detail">Bennett-Levy i in. (2004) opisali standardowy protokół. Każdy krok ma swoje miejsce — pominięcie któregokolwiek osłabia uczenie. Przejrzyj algorytm przed wykonaniem.</p>
+
+  <div class="proto-step">
+    <span class="ps-num">1</span>
+    <div class="ps-content">
+      <div class="ps-name">Konkretna prognoza</div>
+      <div class="ps-body">Mierzalna i sprawdzalna. Z liczbą, horyzontem czasowym, obserwowalnym kryterium. <em>Wpisz w kroku 2 tego narzędzia</em>.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">2</span>
+    <div class="ps-content">
+      <div class="ps-name">Wiara przed</div>
+      <div class="ps-body">0–100% — baseline. Najlepiej zapisać wraz z prognozą.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">3</span>
+    <div class="ps-content">
+      <div class="ps-name">Kryterium wyniku</div>
+      <div class="ps-body">Po czym poznasz? <em>„Wysiądę przed celem"</em> vs <em>„dojadę do końca"</em>. Obserwowalne, jednoznaczne.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">4</span>
+    <div class="ps-content">
+      <div class="ps-name">Wejście w sytuację</div>
+      <div class="ps-body"><strong>Bez zabezpieczeń</strong> — bez leku, bez telefonu w dłoni, bez towarzysza, bez sprawdzania pulsu. <em>Pełna ekspozycja</em>.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">5</span>
+    <div class="ps-content">
+      <div class="ps-name">Monitoring w trakcie</div>
+      <div class="ps-body">SUDS (subiektywna skala dystresu) 0–100, ale <em>nie skracaj</em>. Zostań do naturalnego końca sytuacji.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">6</span>
+    <div class="ps-content">
+      <div class="ps-name">Porównanie wyniku z prognozą</div>
+      <div class="ps-body">Spełniła się? Częściowo? Wcale? <em>„Prognoza: zemdleję. Wynik: SUDS doszło do 75, spadło do 40. Nie zemdlałem. 0/1 dla prognozy"</em>.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">7</span>
+    <div class="ps-content">
+      <div class="ps-name">Wiara po</div>
+      <div class="ps-body">Ponowna ocena 0–100%. Zwykle spada o 20–40% po jednym eksperymencie.</div>
+    </div>
+  </div>
+  <div class="proto-step">
+    <span class="ps-num">8</span>
+    <div class="ps-content">
+      <div class="ps-name">Powtórzenia z wariacjami</div>
+      <div class="ps-body">5–10 razy w różnych warunkach (pora dnia, stan ciała, miejsce). Wariacja wzmacnia uogólnienie (Craske 2014).</div>
+    </div>
+  </div>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: kroki 1–3 budują <em>oczekiwanie</em>. Krok 4 wystawia je na próbę. Kroki 6–7 mierzą <em>naruszenie</em>. Krok 8 utrwala. Pominięcie któregokolwiek kroku blokuje cykl uczenia hamującego — i eksperyment zamienia się w „zwykłą trudną sytuację".</div>
+</section>
+
+<!-- ============== KROK 4 — Wynik + analiza ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Wynik</div>
+  <h1 class="card-prompt">Co się <em>realnie</em> wydarzyło?</h1>
+  <p class="card-detail">Po wykonaniu eksperymentu wracasz tu i odpowiadasz na pytania. Krytyczne: szukaj <em>strukturalnego</em> wyjaśnienia różnicy między prognozą a wynikiem („organizm reguluje lęk po 10–20 min"), nie atrybucji do szczęścia („miałem fart").</p>
+
+  <div class="input-stack">
+    <span class="lbl">Co się NAPRAWDĘ stało? (obserwowalne fakty)</span>
+    <textarea id="reality" placeholder="np. „Wsiadłem do metra, lęk wzrósł do SUDS 70 w 5. minucie. Po 10 min spadł do 40. Dojechałem do końca""></textarea>
+
+    <span class="lbl">Czy prognoza się spełniła? (Tak / Częściowo / Nie)</span>
+    <textarea id="verdict" placeholder="np. „Nie. Lęk był silny, ale nie wysiadłem, nie zemdlałem. Atak nie przebił 80 SUDS""></textarea>
+
+    <span class="lbl">Strukturalne wyjaśnienie różnicy (NIE „bo miałem szczęście")</span>
+    <textarea id="explanation" placeholder="np. „Lęk ma naturalny szczyt w 10 min i spada sam. Adrenalina się wyczerpuje. Bez ucieczki ciało wraca do normy""></textarea>
+  </div>
+
+  <div class="scale-pair">
+    <div>
+      <div class="sp-h">Wiara w prognozę PO eksperymencie (0–100%)</div>
+      <div class="scale">
+        <input type="range" min="0" max="100" value="30" class="scale-input" id="afterP" data-default="30" oninput="document.getElementById('afterPR').textContent=this.value+'%';updateDelta()">
+        <div class="scale-readout"><span>0%</span><span id="afterPR">30%</span><span>100%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+
+  <div class="final-msg" id="finalMsg">Wpisz wartości i sprawdź naruszenie oczekiwania.</div>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: częsta atrybucja „miałem szczęście / dziś był wyjątkowy dzień / ten odcinek metra był pusty". Każda taka atrybucja blokuje uczenie się — bo pacjent zamiast zaktualizować przekonanie, wymyśla wyjątek. Dlatego krok 8 (powtórzenia z <em>wariacjami</em>) jest nieusuwalny.</div>
+</section>
+
+<!-- ============== KROK 5 — Plan na 5–10 powtórzeń ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Plan powtórzeń</div>
+  <h1 class="card-prompt">5–10 razy z <em>wariacjami</em></h1>
+  <p class="card-detail">Pojedynczy eksperyment to początek. Mózg potrzebuje 5–10 powtórzeń w różnych warunkach, żeby uogólnić uczenie. Po 10 eksperymentach pacjent ma własne dane — nie czyjeś argumenty.</p>
+
+  <div class="examples-h">Wariacje, które wzmocnią uogólnienie</div>
+  <div class="example-chips">
+    <button class="example-chip" id="v1" onclick="togVar('v1')">Inna pora dnia (rano vs wieczorem)</button>
+    <button class="example-chip" id="v2" onclick="togVar('v2')">Inny stan ciała (po kawie, po wysiłku, po posiłku)</button>
+    <button class="example-chip" id="v3" onclick="togVar('v3')">Inna lokalizacja (różne linie, dzielnice, sklepy)</button>
+    <button class="example-chip" id="v4" onclick="togVar('v4')">Inna intensywność (krótszy / dłuższy odcinek)</button>
+    <button class="example-chip" id="v5" onclick="togVar('v5')">Sam vs z osobą obojętną (nie bliskim)</button>
+    <button class="example-chip" id="v6" onclick="togVar('v6')">Bez zegarka / bez telefonu</button>
+    <button class="example-chip" id="v7" onclick="togVar('v7')">W godzinach szczytu vs spokojnie</button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-label"><span>Pewność, że <em>wykonam</em> 5 powtórzeń w 2 tygodnie</span></div>
+    <input type="range" min="0" max="100" value="55" class="scale-input" id="convE" data-default="55" oninput="document.getElementById('convER').textContent=this.value+'%'">
+    <div class="scale-readout"><span>0%</span><span id="convER">55%</span><span>100%</span></div>
+  </div>
+
+  <div class="final-msg">Po 10 eksperymentach przejrzyj zapisy: <strong>„Ile prognoz na 10 naprawdę się spełniło?"</strong>. Odpowiedź to niemal zawsze 0 lub 1. To odkrycie zmienia eksperyment z „ćwiczenia" na <em>dowód sądowy</em> przeciw katastroficznemu przekonaniu — którego pacjent jest sam autorem i świadkiem.</div>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: jeśli wiara po nie spada o ≥20 punktów procentowych, sprawdź: (1) czy prognoza była <em>konkretna</em>, (2) czy wszedłeś w sytuację <em>bez zabezpieczeń</em>, (3) czy nie skracałeś. Jeden z tych warunków zwykle nie został spełniony.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Eksperyment behawioralny zamienia <em>katastroficzne przekonanie</em> w <strong>testowalną hipotezę</strong>. Konkretna prognoza + wejście bez zabezpieczeń + porównanie z wynikiem = naruszenie oczekiwania. Po 5–10 powtórzeniach z wariacjami mózg <em>aktualizuje</em> przekonanie — automatycznie.</div>
+  </div>
+
+  <div class="src">Bennett-Levy i in. (2004, „Oxford Guide to Behavioural Experiments", Oxford University Press); McManus i in. (2012); Clark (1999); Craske i in. (2014, „Maximizing exposure therapy: An inhibitory learning approach", Behaviour Research and Therapy); Salkovskis i in. (1999); NICE (2011) CG113.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function togVar(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+function updateDelta() {
+  var beforeEl = document.getElementById('beforeP');
+  var afterEl = document.getElementById('afterP');
+  var list = document.getElementById('diffList');
+  var msg = document.getElementById('finalMsg');
+  if (!beforeEl || !afterEl) return;
+  var before = parseInt(beforeEl.value, 10);
+  var after = afterEl ? parseInt(afterEl.value, 10) : null;
+  if (!list || !msg || after === null) return;
+  var delta = before - after;
+  var dCls = delta < 0 ? ' neg' : '';
+  list.innerHTML = '<div class="diff-row"><span><strong>Wiara przed:</strong></span><span class="diff-delta">' + before + '%</span></div>' +
+                   '<div class="diff-row"><span><strong>Wiara po:</strong></span><span class="diff-delta">' + after + '%</span></div>' +
+                   '<div class="diff-row"><span><strong>Naruszenie oczekiwania:</strong></span><span class="diff-delta' + dCls + '">' + (delta >= 0 ? '−' : '+') + Math.abs(delta) + ' p.p.</span></div>';
+  if (delta >= 30) msg.innerHTML = '<strong>Silne naruszenie oczekiwania.</strong> Powtórz z 4–5 wariacjami, by uogólnić uczenie.';
+  else if (delta >= 10) msg.innerHTML = '<strong>Częściowy efekt.</strong> Sprawdź: czy prognoza była konkretna? Czy wszedłeś bez zabezpieczeń?';
+  else if (delta >= 0) msg.innerHTML = '<strong>Minimalny efekt.</strong> Sprawdź pułapki — często „miałem szczęście" blokuje uczenie. Powtórz z wariacjami.';
+  else msg.innerHTML = '<strong>Wzrost wiary.</strong> Zwykle oznacza, że eksperyment był za trudny lub prognoza zbyt ogólna. Cofnij się o krok.';
+}
+
+function onStepChange(step) {
+  if (step === 4) updateDelta();
+}
+
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(el => el.classList.remove('picked'));
+  setTimeout(updateDelta, 50);
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_eksperymenty_pan — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_eksperymenty_pan";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(updateDelta, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

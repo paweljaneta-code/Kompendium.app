@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Model niskiej samooceny (Fennell)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.fn-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 10px; }
+.fn-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.diagram-frame { background: rgba(255,253,247,0.8); border: 1px solid var(--sage); border-radius: 12px; padding: 14px; margin: 12px 0; overflow-x: auto; }
+.diagram-frame svg { display: block; margin: 0 auto; max-width: 100%; height: auto; color: var(--ink); }
+
+.rule-pick { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.rule-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 11px 13px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; line-height: 1.5; font-style: italic; }
+.rule-btn:hover, .rule-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rule-btn .rl-q { font-size: 11.5px; color: var(--ink-mute); display: block; margin-top: 3px; font-style: normal; }
+.rule-btn.picked .rl-q { color: rgba(244,241,234,0.85); }
+
+.cycle-grid { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.cycle-cell { padding: 11px 13px; border-radius: 10px; border-left: 4px solid var(--sage-deep); background: rgba(184,197,168,0.15); }
+.cycle-cell .cy-h { font-weight: 600; font-size: 12.5px; color: var(--sage-deep); margin-bottom: 6px; }
+.cycle-cell textarea { width: 100%; min-height: 50px; padding: 8px 10px; border: 1px solid var(--sage); border-radius: 8px; background: rgba(255,253,247,0.7); font-family: inherit; font-size: 12.5px; line-height: 1.5; color: var(--ink); resize: vertical; }
+.cycle-cell textarea:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Model niskiej samooceny (Fennell)</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Model niskiej samooceny — <em>jak działa pętla</em></h1>
+    <p class="card-detail">Melanie Fennell (1999, 2016) zaproponowała kompleksowy model konceptualizacji niskiej samooceny w CBT. Wyjaśnia, dlaczego niska samoocena jest tak <em>odporna</em> na zmianę: nie jest pojedynczym zniekształceniem, tylko samowzmacniającym się systemem trzech warstw — bottom line, rules for living, oraz cyklu podtrzymującego (sytuacja → predykcja → krytyk → zachowania zabezpieczające).</p>
+
+    <div class="diagram-frame">
+      <svg viewBox="0 0 680 480" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="afn2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+        <text x="340" y="24" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="500" fill="currentColor">Model niskiej samooceny — Fennell (1999, 2016)</text>
+        <rect x="180" y="46" width="320" height="42" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.5"/>
+        <text x="340" y="64" text-anchor="middle" font-family="system-ui" font-size="11.5" font-weight="500" fill="#791F1F">Wczesne doświadczenia</text>
+        <text x="340" y="79" text-anchor="middle" font-family="system-ui" font-size="9.5" fill="#A32D2D">Krytyka, porzucenie, zaniedbanie, porównywanie</text>
+        <line x1="340" y1="88" x2="340" y2="110" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#afn2)"/>
+        <rect x="180" y="110" width="320" height="36" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="340" y="132" text-anchor="middle" dominant-baseline="central" font-family="system-ui" font-size="11.5" font-weight="500" fill="#712B13">BOTTOM LINE — „jestem bezwartościowy/wadliwy"</text>
+        <line x1="340" y1="146" x2="340" y2="168" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#afn2)"/>
+        <rect x="140" y="168" width="400" height="42" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+        <text x="340" y="186" text-anchor="middle" font-family="system-ui" font-size="11.5" font-weight="500" fill="#633806">RULES FOR LIVING — „jeśli...to..."</text>
+        <text x="340" y="201" text-anchor="middle" font-family="system-ui" font-size="9.5" fill="#854F0B">„Jeśli będę perfekcyjny, to OK"; „Jeśli się nie odrzucą, to wartościowy"</text>
+        <line x1="340" y1="210" x2="340" y2="232" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#afn2)"/>
+        <rect x="180" y="232" width="320" height="36" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="340" y="254" text-anchor="middle" dominant-baseline="central" font-family="system-ui" font-size="11.5" font-weight="500" fill="#3C3489">Sytuacja TRIGGER (złamanie zasady)</text>
+        <line x1="340" y1="268" x2="340" y2="290" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#afn2)"/>
+        <rect x="60" y="290" width="280" height="42" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+        <text x="200" y="308" text-anchor="middle" font-family="system-ui" font-size="11.5" font-weight="500" fill="#0C447C">ANXIOUS PREDICTIONS</text>
+        <text x="200" y="323" text-anchor="middle" font-family="system-ui" font-size="9.5" fill="#185FA5">„Zrobię z siebie idiotę", „Odrzucą mnie"</text>
+        <rect x="340" y="290" width="280" height="42" rx="8" fill="#FBEBE3" stroke="#8A3A1A" stroke-width="0.5"/>
+        <text x="480" y="308" text-anchor="middle" font-family="system-ui" font-size="11.5" font-weight="500" fill="#5A1F0A">SELF-CRITICAL THOUGHTS</text>
+        <text x="480" y="323" text-anchor="middle" font-family="system-ui" font-size="9.5" fill="#8A3A1A">„Widzisz, jesteś beznadziejny", „Znowu zawiodłem"</text>
+        <line x1="200" y1="332" x2="340" y2="366" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#afn2)"/>
+        <line x1="480" y1="332" x2="340" y2="366" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#afn2)"/>
+        <rect x="180" y="366" width="320" height="42" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="340" y="384" text-anchor="middle" font-family="system-ui" font-size="11.5" font-weight="500" fill="#085041">Zachowania zabezp. + unikanie + perfekcjonizm</text>
+        <text x="340" y="399" text-anchor="middle" font-family="system-ui" font-size="9.5" fill="#0F6E56">Krótkoterminowa ulga, długoterminowe WZMOCNIENIE</text>
+        <path d="M180 388 Q40 388 40 130 Q40 108 178 130" fill="none" stroke="#0F6E56" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.5" marker-end="url(#afn2)"/>
+        <text x="50" y="258" font-family="system-ui" font-size="9.5" fill="#0F6E56" opacity="0.75" font-style="italic" transform="rotate(-90 50 258)">potwierdzenie</text>
+        <text x="340" y="450" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.4">Fennell (1999, 2016); Waite i in. (2012, RCT); McManus i in. (2009)</text>
+      </svg>
+    </div>
+
+    <div class="frame-card">
+      <div class="frame-h">Skąd to się wzięło</div>
+      <div class="element-row">
+        <span class="element-icon">🧬</span>
+        <span class="element-text"><strong>Tradycja</strong> — Fennell (1997, 1999, „Overcoming Low Self-Esteem"): kompleksowy protokół CBT specyficznie dla niskiej samooceny. Model 3-warstwowy: doświadczenia → bottom line → rules for living → cykl podtrzymujący. Padesky (2020): rozszerzenie modelu o pracę z constructive new self-perception.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚙️</span>
+        <span class="element-text"><strong>Mechanizm</strong> — bottom line jest tłumiona przez rules („dopóki spełniam zasady, czuję się OK"). Złamanie zasady (raport spóźniony, ktoś mnie nie polubił) → bottom line aktywuje się → predykcje katastroficzne i samokrytyczne myśli → zachowania zabezpieczające → krótkoterminowa ulga, ale <em>długoterminowe wzmocnienie</em> bottom line („jak dobrze, że unikałem — bo by się okazało, że jestem zła/y").</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Dane</strong> — Waite, McManus, Shafran (2012, RCT, 60 osób): protokół Fennell (10 sesji) → spadek RSES o 1.4 SD i utrzymanie efektów po 12 miesiącach. Hall, Tarrier (2003): nawet 1-godzinna sesja edukacyjna o modelu Fennell daje istotny krótkoterminowy wzrost samooceny.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✨</span>
+        <span class="element-text"><strong>Efekt</strong> — formulacja „mój system" zamiast „moja toksyczność" zmienia ramę leczenia z tożsamościowej na strukturalną. Zmiana modelu poznawczego o sobie ↓ wstyd, ↑ motywacja do interwencji.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Bottom line nie da się obalić raz — można ją tylko osłabić przez powtarzane dowody sprzeczne. Zasady życiowe są bronią, która stała się klatką: chroniły w dzieciństwie, teraz więżą. Cel terapii: wymienić sztywne zasady na elastyczne wytyczne — chciałbym, a nie muszę."
+      <span class="frame-quote-attr">— parafraza Fennell (2016, „Overcoming Low Self-Esteem")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: model Fennell to <span id="t-fennell-mapa">narzędzie konceptualizacyjne</span> — nie sam zmienia samooceny. Mapa potrzebna jest, żeby zaplanować trafne interwencje (eksperymenty behawioralne na zasadach, dziennik dowodów na bottom line, redukcja zachowań zabezpieczających).</div>
+
+    <div class="src">Fennell (1997, Behavioural and Cognitive Psychotherapy); Fennell (1999, 2016, „Overcoming Low Self-Esteem"); Waite, McManus, Shafran (2012, J. Behav Therapy and Experimental Psychiatry — RCT); Padesky (2020, „Beyond Diagnosis"); Hall, Tarrier (2003)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Krok 1 — bottom line</div>
+    <h1 class="card-prompt">Twoja <em>najgłębsza</em> myśl o sobie</h1>
+    <p class="card-detail">Bottom line to ta jedna myśl, która pojawia się w najgorszych chwilach — gdy wszystko idzie źle, gdy ktoś Cię odrzucił, gdy popełniasz błąd. Często krótka, dychotomiczna, bardzo wczesna w pochodzeniu. Dokończ zdanie „Głęboko wewnątrz, gdy wszystko idzie źle, wierzę, że jestem…".</p>
+
+    <textarea class="fn-input" id="bottomLine" placeholder="„Najczęściej kończy się jednym z: bezwartościowy/a, wadliwy/a, niewystarczający/a, głupi/a, inny/a, niegodny/a miłości, brzydki/a, ofiarą, nikt mnie nie chce."" rows="3"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Siła wiary w bottom line (gdy bottom line jest aktywna)</div>
+      <div class="scale-bounds"><span>(0% = wcale)</span><span>(100% = całkowicie)</span></div>
+      <input type="range" class="scale-input" id="preBL" min="0" max="100" step="5" value="80" data-default="80">
+      <div class="scale-readout"><span>%</span><span id="preBLval">80</span></div>
+    </div>
+
+    <textarea class="fn-input" id="origin" placeholder="„Jakie wczesne doświadczenia mogły to przekonanie ukształtować? Krytyka rodzica? Porzucenie? Powtarzane porównywanie? Przemoc? Zaniedbanie?"" rows="3"></textarea>
+
+    <div class="term-note"><strong>📌 Reguła zatrzymania</strong>: bottom line jest tym przekonaniem, które ZNA Twoja dorosła racjonalność („wiem, że to nieprawda"), ale Twoja emocja nadal ją <em>czuje</em> jako prawdziwą. Ten rozjazd — racjonalne wiem ↔ emocjonalne czuję — jest sygnałem, że trafiłaś/eś.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Krok 2 — rules for living</div>
+    <h1 class="card-prompt">Zasady, które <em>tłumią</em> bottom line</h1>
+    <p class="card-detail">Rules for living to życiowe założenia w formule „jeśli… to…". Powstają jako próba radzenia sobie z bottom line — póki spełniasz zasadę, bottom line jest cicha. Złamanie zasady → bottom line aktywuje się. Dlatego klienci z niską samooceną często są perfekcjonistami, ludźmi-od-każdego-zadania, niezdolnymi do odmowy.</p>
+
+    <p style="font-size:12px;color:var(--ink-mute);margin:0 0 10px;">Wybierz 1–3 zasady, które najbardziej do Ciebie pasują:</p>
+
+    <div class="rule-pick">
+      <button id="rPerf" class="rule-btn" onclick="this.classList.toggle('picked')">
+        „Muszę być perfekcyjny/a we wszystkim, co robię."
+        <span class="rl-q">Co Cię chroni: jeśli jestem perfekcyjny/a, nikt nie zauważy mojej wadliwości.</span>
+      </button>
+      <button id="rPlease" class="rule-btn" onclick="this.classList.toggle('picked')">
+        „Muszę wszystkim się podobać i nikomu nie sprawić zawodu."
+        <span class="rl-q">Co Cię chroni: jeśli wszyscy mnie lubią, nie zostanę odrzucony/a.</span>
+      </button>
+      <button id="rWeak" class="rule-btn" onclick="this.classList.toggle('picked')">
+        „Nie wolno mi okazać słabości, prosić o pomoc, pokazać emocji."
+        <span class="rl-q">Co Cię chroni: jeśli będę silny/a, nikt nie zobaczy, jaki/a jestem.</span>
+      </button>
+      <button id="rAlone" class="rule-btn" onclick="this.classList.toggle('picked')">
+        „Muszę wszystko sama/sam. Nie mogę liczyć na innych."
+        <span class="rl-q">Co Cię chroni: jeśli nie zaufam, nikt mnie nie zawiedzie.</span>
+      </button>
+      <button id="rApprove" class="rule-btn" onclick="this.classList.toggle('picked')">
+        „Muszę osiągać sukcesy, żeby zasługiwać na szacunek."
+        <span class="rl-q">Co Cię chroni: jeśli osiągam, mam dowód, że nie jestem bezwartościowy/a.</span>
+      </button>
+      <button id="rConflict" class="rule-btn" onclick="this.classList.toggle('picked')">
+        „Muszę unikać konfliktów. Nie wolno mi się gniewać."
+        <span class="rl-q">Co Cię chroni: jeśli nie ma konfliktu, ludzie zostaną przy mnie.</span>
+      </button>
+    </div>
+
+    <textarea class="fn-input" id="ownRule" placeholder="„Jeśli żadna z powyższych nie pasuje — sformułuj swoją zasadę jako 'jeśli… to…'. Np. 'Jeśli zawsze będę pierwsza z wszystkim w domu, nikt nie powie, że nic nie wnoszę.'"" rows="3"></textarea>
+
+    <div class="term-note"><strong>📜 Funkcja zasad</strong>: rules są <span id="t-rules-funkcja">zbroją wokół bottom line</span>. Dopóki je spełniasz, jesteś bezpieczny/a. Problem: zbroja jest ciężka i ogranicza ruchy. Cel terapii nie jest pozbycie się zasad, ale zamiana ich z absolutnych na elastyczne („chciałbym wykonać dobrze, ale jeśli nie wyjdzie, to też jest OK"). Eksperymenty behawioralne (celowe drobne łamanie zasady) → falsyfikacja przewidywań („świat nie zawalił się").</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Krok 3 — cykl podtrzymujący</div>
+    <h1 class="card-prompt">Konkretna sytuacja — <em>cała pętla</em></h1>
+    <p class="card-detail">Wybierz JEDEN niedawny epizod, w którym bottom line się aktywowała. Zmapuj cykl: trigger → przewidywania lękowe → samokrytyka → zachowania zabezpieczające. To pokazuje, gdzie są punkty interwencji.</p>
+
+    <div class="cycle-grid">
+      <div class="cycle-cell">
+        <div class="cy-h">1) TRIGGER — co się wydarzyło? (złamanie zasady)</div>
+        <textarea id="trigger" placeholder="„np. 'Spóźniłam raport o 4 dni — złamałam moją zasadę bycia perfekcjonistką.'"" rows="2"></textarea>
+      </div>
+      <div class="cycle-cell">
+        <div class="cy-h">2) PRZEWIDYWANIA LĘKOWE — co najgorszego się stanie?</div>
+        <textarea id="predictions" placeholder="„np. 'Szefowa się rozczaruje. Następne projekty mi nie powierzy. Może mnie zwolni. Wszyscy zauważą, że jestem nieodpowiedzialna.'"" rows="2"></textarea>
+      </div>
+      <div class="cycle-cell">
+        <div class="cy-h">3) MYŚLI SAMOKRYTYCZNE — co krytyk mówi?</div>
+        <textarea id="critic" placeholder="„np. 'Znowu zawiodłaś. Jesteś leniwa. Inni nigdy by tego nie zrobili. Powinnaś się wstydzić.'"" rows="2"></textarea>
+      </div>
+      <div class="cycle-cell">
+        <div class="cy-h">4) ZACHOWANIA ZABEZPIECZAJĄCE — co robisz?</div>
+        <textarea id="safety" placeholder="„np. 'Pracuję do 1:00 w nocy nad kolejnym raportem, żeby nadrobić. Unikam oczu szefowej. Sprawdzam mail co 5 minut. Jutro przyjdę pół godziny wcześniej.'"" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Pętla wzmacniająca</strong>: zachowania zabezpieczające dają <em>krótkoterminową ulgę</em> (lęk spada, czujesz się chwilowo OK), ale <em>długoterminowo wzmacniają</em> bottom line. Mózg uczy się: „gdyby nie te wszystkie zabezpieczenia, prawdopodobnie by się okazało, że jestem zła/y". Falsyfikacja tej hipotezy wymaga eksperymentów behawioralnych — celowego rezygnowania z zachowań zabezpieczających.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Krok 4 — punkt interwencji i nowy zarys</div>
+    <h1 class="card-prompt">Gdzie <em>zacząć</em> przerywać cykl?</h1>
+    <p class="card-detail">Mając pełną mapę systemu, możesz wybrać punkt interwencji. Fennell zaleca zaczynać od <em>zachowań zabezpieczających</em> (kroku 4 cyklu) — bo eksperymenty behawioralne najszybciej dają nowe dane. Wybierz JEDNO konkretne zachowanie zabezpieczające, którego spróbujesz zrezygnować w nadchodzącym tygodniu.</p>
+
+    <textarea class="fn-input" id="experiment" placeholder="„Konkretne zachowanie do eksperymentu — co zrobisz inaczej? Hipoteza: co przewidujesz, że się stanie? Jak sprawdzisz wynik? Np.: 'Wyślę raport po 2 sprawdzeniach zamiast 5. Hipoteza: szef znajdzie błąd i mnie skrytykuje. Sprawdzenie: czy faktycznie znajdzie? Czy faktycznie skrytykuje?'"" rows="5"></textarea>
+
+    <textarea class="fn-input" id="newSummary" placeholder="„Twoja jedno- lub dwuzdaniowa formulacja systemu — w pierwszej osobie, dla pamięci: 'Mam bottom line: [X]. Tłumię ją zasadą: [Y]. Gdy zasada się złamie, uruchamia się cykl: [Z]. Najszybszy punkt zmiany to: [eksperyment].'"" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Po zrobieniu mapy — czy widzisz system jako <em>strukturę</em>, nie tożsamość?</div>
+      <div class="scale-bounds"><span>(0 = to ja)</span><span>(10 = to mechanizm)</span></div>
+      <input type="range" class="scale-input" id="postDist" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wynik</span><span id="postDistval">6</span></div>
+    </div>
+
+    <div class="diff-list">
+      <div class="diff-row"><span><strong>Bottom line (siła)</strong></span><span class="diff-delta" id="dBL">—</span></div>
+      <div class="diff-row"><span><strong>Dystans od systemu</strong></span><span class="diff-delta" id="dDi">—</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsgFn">Mapa Fennell jest narzędziem konceptualizacyjnym — sama nie zmienia samooceny, ale pozwala zaplanować trafne interwencje. Eksperyment behawioralny zaplanowany dziś jest pierwszym krokiem zmiany. Po 8–12 tygodniach systematycznych eksperymentów + dziennika dowodów + pracy na zasadach typowy spadek RSES jest 1.0–1.4 SD (Waite i in., 2012).</div>
+
+    <div class="term-note"><strong>🔁 Sekwencja interwencji</strong>: Fennell (2016) zaleca kolejność: (1) <em>psychoedukacja modelu</em> (to narzędzie); (2) <em>eksperymenty behawioralne</em> na zachowaniach zabezpieczających; (3) <em>elastyczność zasad</em> (zamiana „muszę" na „chciałbym"); (4) <em>dziennik dowodów</em> przeciw bottom line; (5) <em>pozytywna autobiografia</em> (Fennell, rozdz. 11) — systematyczne odzyskiwanie pozytywnych dowodów z całego życia.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Niska samoocena to <em>system</em>, nie tożsamość. Trzy warstwy: <strong>bottom line ↑ rules for living ↑ cykl podtrzymujący</strong>. Pętla wzmacniająca: złamanie zasady → predykcje + krytyka → zachowania zabezpieczające → krótka ulga → wzmocnienie bottom line. Punkt zmiany: eksperymenty behawioralne na zachowaniach zabezpieczających.</div>
+    </div>
+
+    <div class="src">Fennell (1999, 2016, „Overcoming Low Self-Esteem"); Fennell (1997, BCBP); Waite, McManus, Shafran (2012, RCT); McManus i in. (2009, BCBP); Padesky (2020, „Beyond Diagnosis"); Hall, Tarrier (2003)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateDiff() {
+  var preBL = parseInt(document.getElementById('preBL').value);
+  var postD = parseInt(document.getElementById('postDist').value);
+  function fmt(d) { return d; }
+  var dBLe = document.getElementById('dBL');
+  var dDie = document.getElementById('dDi');
+  dBLe.textContent = preBL + '%'; dBLe.className = 'diff-delta';
+  dDie.textContent = postD; dDie.className = 'diff-delta';
+
+  var msg = document.getElementById('finalMsgFn');
+  if (postD >= 7) {
+    msg.innerHTML = 'Wysoki dystans — udało się zobaczyć system jako strukturę, a nie własną wadę. To kluczowy moment dla pracy: z tej pozycji eksperymenty behawioralne mają autentyczną siłę. Wykonaj zaplanowany eksperyment w nadchodzącym tygodniu i wróć do mapy z wynikami.';
+  } else if (postD >= 5) {
+    msg.innerHTML = 'Średni dystans — proces obserwacji już zaczął się dziać, ale jest jeszcze kruchy. Pomóc może powtórne czytanie mapy raz dziennie przez 7 dni — wzorzec stopniowo się utrwala jako struktura, nie tożsamość.';
+  } else if (postD <= 3) {
+    msg.innerHTML = 'Niski dystans oznacza, że bottom line nadal czujesz jako tożsamość, nie jako historyczne przekonanie. To częste przy chronicznej niskiej samoocenie. Sama mapa nie wystarczy — pomocna jest praca z imagery rescripting (Arntz, Weertman, 1999) lub schema therapy (Young, 2003), które pracują z emocjonalną warstwą bottom line.';
+  } else {
+    msg.innerHTML = 'Średni dystans — system jest częściowo widoczny. Powtórz mapę dla 2–3 innych epizodów w nadchodzącym tygodniu. Po kilku rundach widzisz <em>powtarzający się wzorzec</em>: ta sama bottom line, ten sam cykl, te same zachowania zabezpieczające. To wzmacnia perspektywę systemową.';
+  }
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    var id = e.target.id;
+    var out = document.getElementById(id + 'val');
+    if (out) out.textContent = e.target.value;
+    if (curStep === 5) updateDiff();
+  }
+});
+
+function onReset() {
+  ['preBL','postDist'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      var v = el.getAttribute('data-default') || '50';
+      el.value = v;
+      var out = document.getElementById(id + 'val');
+      if (out) out.textContent = v;
+    }
+  });
+  ['dBL','dDi'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = 'diff-delta'; }
+  });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_se_fennell_model — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_se_fennell_model";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

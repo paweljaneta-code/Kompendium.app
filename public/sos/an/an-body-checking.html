@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Body checking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.cat-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 700; margin: 12px 0 6px; }
+.check-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.check-row { display: grid; grid-template-columns: 1fr 100px; gap: 10px; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; border: 1px solid transparent; transition: all 0.15s; }
+.check-row.active { background: rgba(74,99,71,0.18); border-color: var(--sage-deep); }
+.check-name { font-size: 12.5px; color: var(--ink); line-height: 1.4; }
+.check-name strong { color: var(--ink); font-weight: 600; }
+.check-num { padding: 6px 10px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px; text-align: center; }
+.check-num:focus { outline: 1px solid var(--sage-deep); }
+
+.paradox-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 8px 0 12px; }
+.paradox-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--bg); margin-bottom: 10px; letter-spacing: 0.04em; }
+.paradox-arrow { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.paradox-arrow:first-of-type { border-top: none; }
+.paradox-cell { font-size: 12.5px; color: rgba(244,241,234,0.92); line-height: 1.5; padding: 8px 10px; background: rgba(244,241,234,0.06); border-radius: 6px; }
+.paradox-cell.warm { background: rgba(201,122,82,0.18); border-left: 2px solid #c97a52; }
+.paradox-cell.sage { background: rgba(184,197,168,0.18); border-left: 2px solid var(--sage); }
+.paradox-cell strong { color: var(--bg); font-weight: 600; }
+.paradox-mid { color: var(--sage); font-size: 18px; font-weight: 700; text-align: center; }
+
+.hier-card { background: rgba(255,255,255,0.55); border: 1.5px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.hier-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 8px; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; }
+.hier-row { display: grid; grid-template-columns: 30px 1fr 90px; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); align-items: center; }
+.hier-row:first-of-type { border-top: none; }
+.hier-pos { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 14px; text-align: center; }
+.hier-input { padding: 7px 10px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 13px; }
+.hier-input:focus { outline: 1px solid var(--sage-deep); background: white; }
+.hier-suds { padding: 7px 8px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; text-align: center; }
+
+.delay-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.delay-card strong { color: var(--ink); font-weight: 700; }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Body checking</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Body checking — <em>obsesyjne sprawdzanie</em></h1>
+  <p class="card-detail">Body checking (Shafran i in., 2004) to <strong>rytualne, wielokrotne sprawdzanie ciała</strong> w celu redukcji lęku o wagę i kształt. Pomiary obwodów, ważenia 10–30 razy dziennie, długie sesje przed lustrem, dotykanie kości obojczyka „czy widoczne", porównywanie z dawnymi zdjęciami, próbowanie ubrań „czy ciasne". Wszystko to <em>rytuały kontrolne</em>. Paradoks: im <strong>więcej</strong> sprawdzasz, tym <strong>bardziej</strong> niezadowolony/a — nie mniej. Mechanizm: selektywna uwaga wzmacnia to, co „źle", nie rejestruje tego, co „normalnie".</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery typy sprawdzania</div>
+    <div class="element-row">
+      <span class="element-icon">⚖️</span>
+      <span class="element-text"><strong>Pomiary i ważenie</strong> — waga wielokrotnie dziennie, taśma miernicza obwodów, sprawdzanie kości</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🪞</span>
+      <span class="element-text"><strong>Wzrokowe</strong> — długie sesje przed lustrem, wybranych części ciała, robienie selfie, porównywanie zdjęć</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👕</span>
+      <span class="element-text"><strong>Przez ubranie</strong> — „czy spodnie pasują", próbowanie ciasnych rzeczy, „czy koszulka napina się na brzuchu"</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👁️</span>
+      <span class="element-text"><strong>Społeczne porównywanie</strong> — z innymi osobami w przestrzeni publicznej, z modelkami, z aktorkami, z dawnymi zdjęciami siebie</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Body checking jest <em>bezpośrednim</em> mechanizmem podtrzymującym niezadowolenie z ciała. Paradoksalnie — im więcej pacjent sprawdza, tym bardziej niezadowolony, nie mniej. Mechanizm: selektywna uwaga wzmacnia to, co „źle", nie rejestruje tego, co „normalnie"."
+    <span class="frame-quote-attr">— Shafran, Lee i in. (2004, <em>Behaviour Research and Therapy</em>)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — body checking <em>nie</em> daje informacji o ciele. Daje krótkotrwałą iluzję kontroli, po której powraca lęk — silniejszy niż przed sprawdzeniem. To samonapędzający się cykl: sprawdzenie → ulga (kilka minut) → narastający lęk → kolejne sprawdzenie. Każde powtórzenie wzmacnia obsesyjność.</div>
+  
+  <div class="term-note"><strong>Walidacja</strong> — body checking <em>nie</em> jest wadą charakteru. Jest objawem zaburzenia. Twoja kora przedczołowa próbuje zarządzić niepewnością ciała przez kompulsywne mierzenie — tak samo jak w OCD pacjent sprawdza zamknięcie drzwi 30 razy. Mechanizm jest pokrewny. Nie krytykuj się za samo sprawdzanie — pracuj z jego stopniową redukcją.</div>
+  
+  <div class="src"><em>📚 Shafran, Lee i in. (2004, 2007, Behav Res Ther — body checking konstrukt); Reas i in. (2002, Body Checking Questionnaire); Fairburn (2008, Cognitive Behavior Therapy and Eating Disorders, rozdz. 10); Cooper i Fairburn (2011, Int J Eat Disord).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja lista</div>
+  <h1 class="card-prompt">Ile razy <em>dziennie</em></h1>
+  <p class="card-detail">Pierwsza praca z body checking to <strong>dokładna inwentaryzacja</strong> — bez tego nie wiesz, z czym pracujesz. Większość pacjentów <em>znacznie zaniża</em> liczby, bo wiele sprawdzeń jest zautomatyzowanych. Wpisz przybliżone liczby. Spójrz uczciwie. To dane, nie ocena.</p>
+  
+  <div class="cat-h">Pomiary i ważenie</div>
+  <div class="check-list">
+    <div class="check-row">
+      <span class="check-name"><strong>Ważenie</strong> — ile razy dziennie?</span>
+      <input type="number" id="bch-wazenie" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+    <div class="check-row">
+      <span class="check-name"><strong>Mierzenie obwodów</strong> taśmą — ile razy?</span>
+      <input type="number" id="bch-tasma" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+    <div class="check-row">
+      <span class="check-name"><strong>Dotykanie kości</strong> (obojczyk, żebra, biodra) — ile razy?</span>
+      <input type="number" id="bch-kosci" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+  </div>
+  
+  <div class="cat-h">Wzrokowe</div>
+  <div class="check-list">
+    <div class="check-row">
+      <span class="check-name"><strong>Lustro</strong> — ile sesji dłuższych niż 1 minuta?</span>
+      <input type="number" id="bch-lustro" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+    <div class="check-row">
+      <span class="check-name"><strong>Selfie</strong> i analiza zdjęć — ile razy?</span>
+      <input type="number" id="bch-selfie" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+    <div class="check-row">
+      <span class="check-name"><strong>Porównywanie z dawnymi zdjęciami</strong></span>
+      <input type="number" id="bch-stare" class="check-num" min="0" placeholder="× / tydz.">
+    </div>
+  </div>
+  
+  <div class="cat-h">Przez ubranie i kontekst</div>
+  <div class="check-list">
+    <div class="check-row">
+      <span class="check-name"><strong>Próbowanie „testowych" ubrań</strong></span>
+      <input type="number" id="bch-ubrania" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+    <div class="check-row">
+      <span class="check-name"><strong>Sprawdzanie napięcia ubrania</strong> w lustrze, na brzuchu</span>
+      <input type="number" id="bch-napiecie" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+    <div class="check-row">
+      <span class="check-name"><strong>Porównywanie z innymi</strong> w sytuacjach publicznych</span>
+      <input type="number" id="bch-porown" class="check-num" min="0" placeholder="× / dzień">
+    </div>
+  </div>
+  
+  <div class="examples-h">Twoje własne formy sprawdzania, których tu nie ma</div>
+  <textarea id="bch-wlasne" class="thought-input" rows="3" placeholder="Inne sposoby, w jakie kontrolujesz ciało wzrokowo, dotykiem, pomiarem…"></textarea>
+  
+  <div class="term-note"><strong>Wskazówka</strong> — typowy pacjent z anoreksją wykonuje 30–80 sprawdzeń dziennie, gdy zacznie liczyć dokładnie. Wstępne oszacowanie wynosi zwykle 5–10. Po tygodniu obserwacji liczby <em>znacznie</em> rosną — nie dlatego, że więcej sprawdzasz, ale dlatego, że <em>zauważasz</em> więcej zautomatyzowanych aktów.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Paradoks</div>
+  <h1 class="card-prompt">Im <em>więcej</em> sprawdzasz, tym gorzej</h1>
+  <p class="card-detail">Najważniejsze odkrycie badań nad body checking — sprawdzanie <em>nie</em> uspokaja, ono wzmacnia obsesję. To wygląda kontrintuicyjnie. Pacjenci początkowo nie wierzą. Mechanizm jest jednak dokładnie udokumentowany w badaniach (Shafran i in., 2007). Rozumienie tego paradoksu jest punktem zwrotnym.</p>
+  
+  <div class="paradox-card">
+    <div class="paradox-h">① Co Ci się wydaje, że robi sprawdzanie</div>
+    <div class="paradox-arrow">
+      <div class="paradox-cell sage"><strong>Lęk</strong> jest wysoki</div>
+      <span class="paradox-mid">→</span>
+      <div class="paradox-cell sage"><strong>Sprawdzam</strong> i czuję ulgę</div>
+    </div>
+  </div>
+  
+  <div class="paradox-card">
+    <div class="paradox-h">② Co naprawdę dzieje się w skali tygodnia</div>
+    <div class="paradox-arrow">
+      <div class="paradox-cell warm">Sprawdzam (ulga 2 min)</div>
+      <span class="paradox-mid">→</span>
+      <div class="paradox-cell warm">Lęk wraca <strong>silniejszy</strong></div>
+    </div>
+    <div class="paradox-arrow">
+      <div class="paradox-cell warm">Sprawdzam ponownie</div>
+      <span class="paradox-mid">→</span>
+      <div class="paradox-cell warm">Lęk wraca <strong>jeszcze silniejszy</strong></div>
+    </div>
+  </div>
+  
+  <div class="paradox-card">
+    <div class="paradox-h">③ Mechanizm — selektywna uwaga</div>
+    <div class="paradox-arrow">
+      <div class="paradox-cell sage">Patrzysz na brzuch <strong>10 minut</strong></div>
+      <span class="paradox-mid">→</span>
+      <div class="paradox-cell warm">Mózg widzi <strong>tylko brzuch</strong>, reszta znika</div>
+    </div>
+    <div class="paradox-arrow">
+      <div class="paradox-cell sage">Powtarzasz codziennie</div>
+      <span class="paradox-mid">→</span>
+      <div class="paradox-cell warm">Brzuch staje się <strong>monstrualny</strong> w głowie</div>
+    </div>
+  </div>
+  
+  <div class="examples-h">Sprawdź sam/a — przypomnij sobie ostatni epizod sprawdzania</div>
+  <textarea id="bch-przyk" class="thought-input" rows="3" placeholder="Co konkretnie sprawdziłeś/aś? Jak czułeś/aś się przed? Bezpośrednio po? Po godzinie? Następnego dnia?…"></textarea>
+  
+  <div class="examples-h">Co jest pierwszą myślą po sprawdzeniu?</div>
+  <textarea id="bch-mysl" class="thought-input" rows="3" placeholder="Często: „muszę sprawdzić jeszcze raz, żeby się upewnić", „a może z innej strony", „może po jedzeniu inaczej"…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — myśl „jeszcze raz, żeby się upewnić" to <em>sygnał</em> samonapędzającego się cyklu. Sprawdzanie nigdy nie daje pewności — daje tylko tymczasową ulgę, która natychmiast się rozpada. Pewność ciała przychodzi z <em>akceptacji niepewności</em>, nie z mierzenia.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan redukcji</div>
+  <h1 class="card-prompt">Stopniowo, <em>nie naraz</em></h1>
+  <p class="card-detail">Próba „rzucenia" wszystkich form sprawdzania naraz prawie zawsze kończy się porażką — lęk jest zbyt intensywny, pacjent wraca do wszystkiego po kilku dniach. Strategia działa: <em>hierarchia</em> od najłatwiejszego do powstrzymania, stopniowa redukcja, jedna forma naraz. Wybierz pięć i oceń każdą — jak trudno byłoby ją powstrzymać (SUDS 0–10).</p>
+  
+  <div class="hier-card">
+    <div class="hier-h">Hierarchia trudności — pięć form</div>
+    <div class="hier-row">
+      <span class="hier-pos">①</span>
+      <input type="text" id="bch-h1" class="hier-input" placeholder="Forma sprawdzania, np. „porównywanie z modelkami na Insta"">
+      <input type="number" id="bch-s1" class="hier-suds" min="0" max="10" placeholder="SUDS">
+    </div>
+    <div class="hier-row">
+      <span class="hier-pos">②</span>
+      <input type="text" id="bch-h2" class="hier-input" placeholder="Druga forma">
+      <input type="number" id="bch-s2" class="hier-suds" min="0" max="10" placeholder="SUDS">
+    </div>
+    <div class="hier-row">
+      <span class="hier-pos">③</span>
+      <input type="text" id="bch-h3" class="hier-input" placeholder="Trzecia forma">
+      <input type="number" id="bch-s3" class="hier-suds" min="0" max="10" placeholder="SUDS">
+    </div>
+    <div class="hier-row">
+      <span class="hier-pos">④</span>
+      <input type="text" id="bch-h4" class="hier-input" placeholder="Czwarta forma">
+      <input type="number" id="bch-s4" class="hier-suds" min="0" max="10" placeholder="SUDS">
+    </div>
+    <div class="hier-row">
+      <span class="hier-pos">⑤</span>
+      <input type="text" id="bch-h5" class="hier-input" placeholder="Piąta forma — najtrudniejsza">
+      <input type="number" id="bch-s5" class="hier-suds" min="0" max="10" placeholder="SUDS">
+    </div>
+  </div>
+  
+  <div class="examples-h">Wybierz pierwszą — strefa SUDS 3–5</div>
+  <textarea id="bch-pierwsza" class="thought-input" rows="2" placeholder="Konkretna forma, którą zaczniesz redukować. Pamiętaj: nie najtrudniejsza, nie najłatwiejsza — strefa „wyzwania, ale wykonalnego"…"></textarea>
+  
+  <div class="examples-h">Konkretny cel redukcji w pierwszym tygodniu</div>
+  <textarea id="bch-cel" class="thought-input" rows="2" placeholder="Nie „przestaję całkowicie". Stopniowo. Np. „Z 8× dziennie ważenia → 3× w tygodniu". „Z lustra 30 min rano → 5 min". „Z porównywania z modelkami codziennie → 2× w tygodniu"…"></textarea>
+  
+  <div class="delay-card"><strong>Technika opóźnienia</strong> — gdy przychodzi impuls do sprawdzenia, <em>opóźnij</em> go o 30 minut. Postaw timer. Nie mów „nigdy" — mów „nie teraz". Po 30 minutach: jeśli nadal chcesz, sprawdź. Większość pacjentów zauważa, że impuls znika sam, gdy go nie nakarmisz natychmiast. Powtarzaj. Po tygodniu: opóźnij o 60 minut. Stopniowo.</div>
+  
+  <div class="examples-h">Jak usuniesz wyzwalacze ze swojego otoczenia?</div>
+  <textarea id="bch-wyzw" class="thought-input" rows="3" placeholder="Konkretne kroki — „waga do zaufanej osoby na 3 miesiące", „odinstalowanie aplikacji śledzącej", „zakrycie lustra w łazience", „wypisanie się z kont modelek na Insta"…"></textarea>
+  
+  <div class="term-note"><strong>Walidacja</strong> — gdy chcesz sprawdzić i powstrzymujesz się, lęk będzie intensywny. To <em>spodziewane</em>. Po 30–60 minutach zaczyna słabnąć. Zostań z nim. To uczenie mózgu: „bez sprawdzania da się żyć". Po 4–6 tygodniach systematycznej redukcji wielu pacjentów zgłasza, że <em>myślą o ciele mniej</em> — nie więcej, jak by się wydawało.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Cierpliwość</div>
+  <h1 class="card-prompt">Cztery <em>tygodnie</em> redukcji</h1>
+  <p class="card-detail">Zarys czterech tygodni systematycznej redukcji <em>jednej</em> formy sprawdzania. To realistyczne tempo. Anoreksja chce „od razu". Biologia uczenia działa w tygodniach, nie w dniach.</p>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Tydzień 1 — opóźnianie</strong>. Każdy impuls do sprawdzenia: opóźniaj o 30 min. Notuj — ile razy impuls wraca, ile razy zniknął sam. Pierwsze dane.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Tydzień 2 — redukcja częstotliwości</strong>. Z 8× → 5× dziennie (albo z 30 min lustra → 15 min). Konkretny cel ilościowy. Trzymaj.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>Tydzień 3 — usuwanie wyzwalaczy</strong>. Waga do zaufanej osoby. Aplikacja odinstalowana. Lustro zakryte. Mniej okazji = łatwiejsza redukcja.</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Tydzień 4 — przejście do drugiej formy</strong>. Pierwsza już znacznie zredukowana. Wybierasz drugą z hierarchii (SUDS 4–6). Powtarzasz cykl.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Body checking <em>nie</em> uspokaja — <strong>wzmacnia obsesję</strong>. Im więcej sprawdzasz, tym bardziej niezadowolony/a, nie mniej. Pracujesz <em>z jedną formą naraz</em>, w hierarchii od najłatwiejszej do najtrudniejszej. Technika opóźnienia (30 → 60 → 90 min) jest kluczowa. Usuwanie wyzwalaczy z otoczenia — drugi filar. Po 4–6 tygodniach: znaczna redukcja i <em>paradoksalna</em> zmiana — myślisz o ciele <strong>mniej</strong>, a nie więcej.</div>
+  </div>
+  
+  <div class="final-msg"><strong>Skuteczność redukcji body checking</strong> — Shafran i in. (2004, 2007, <em>Behav Res Ther</em>): redukcja body checking daje 20–30% spadek niezadowolenia z ciała w ciągu 8–12 tygodni. To jedna z najszybciej działających interwencji w pracy z obrazem ciała. Często wcześniejsza niż zmiana w ważeniu czy w pie chart samooceny.</div>
+  
+  <div class="src"><em>📚 Shafran, Lee i in. (2004, 2007, Behav Res Ther — body checking konstrukt); Reas i in. (2002, Body Checking Questionnaire); Fairburn (2008, Cognitive Behavior Therapy and Eating Disorders, rozdz. 10); Cooper i Fairburn (2011, Int J Eat Disord).</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Brak interaktywnego JS — inputs liczbowe, persystencja zapisuje. */
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_body_checking — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_body_checking";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

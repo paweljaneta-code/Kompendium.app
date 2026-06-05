@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Okno tolerancji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.win-diagram { background: linear-gradient(180deg, rgba(168,70,70,0.18) 0%, rgba(168,70,70,0.10) 22%, rgba(184,197,168,0.18) 22%, rgba(184,197,168,0.18) 78%, rgba(70,90,140,0.10) 78%, rgba(70,90,140,0.18) 100%); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 12px 0; font-family: 'DM Sans', sans-serif; }
+.win-zone { padding: 8px 0; border-bottom: 1px dashed rgba(122,107,90,0.25); }
+.win-zone:last-child { border-bottom: none; }
+.win-zone-h { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.win-zone-txt { font-size: 12px; color: var(--ink); line-height: 1.45; }
+.win-zone.hyper .win-zone-h { color: rgba(168,70,70,1); }
+.win-zone.okno .win-zone-h { color: var(--sage-deep); }
+.win-zone.hypo .win-zone-h { color: rgba(70,90,140,1); }
+
+.tech-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+.tech-row:hover, .tech-row.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.tech-row.picked .tech-name, .tech-row.picked .tech-desc { color: var(--bg) !important; }
+.tech-row.picked .tech-desc { color: rgba(244,241,234,0.85) !important; }
+.tech-name { font-size: 13px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 3px; }
+.tech-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; display: block; }
+
+.scale-wrap { background: rgba(184,197,168,0.12); border-radius: 10px; padding: 14px; margin: 10px 0; }
+.scale-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.scale-row input[type="range"] { flex: 1; accent-color: var(--sage-deep); }
+.scale-val { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; color: var(--sage-deep); min-width: 28px; text-align: center; }
+.scale-label { font-size: 11px; color: var(--ink-mute); display: flex; justify-content: space-between; padding: 0 4px; }
+.scale-readout { background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--ink); margin-top: 6px; line-height: 1.5; min-height: 36px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Okno tolerancji</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ====== KROK 1 — WPROWADZENIE ====== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Trzy strefy <em>układu nerwowego</em></h1>
+    <p class="card-detail">Okno tolerancji (Siegel 1999) to strefa, w której można jednocześnie czuć i myśleć — między hiperpobudzeniem (panika, gniew) a hipopobudzeniem (odrętwienie, dysocjacja). W C-PTSD okno bywa bardzo wąskie: emocje szybko wybijają poza nie. Faza 1 leczenia ma jeden cel — <em>poszerzyć</em> okno przez konsekwentny trening.</p>
+
+    <div class="win-diagram">
+      <div class="win-zone hyper">
+        <div class="win-zone-h">▲ Hiperpobudzenie (sympathetic)</div>
+        <div class="win-zone-txt">Panika, gniew, rozedrganie, flashback, agresja, hiperczujność. Serce wali, oddech płytki, mięśnie spięte. Walka lub ucieczka.</div>
+      </div>
+      <div class="win-zone okno">
+        <div class="win-zone-h">━ Okno tolerancji (ventral vagal)</div>
+        <div class="win-zone-txt">Strefa, w której myślę i czuję jednocześnie. Mogę być smutny/a, zły/a, niespokojny/a — i wciąż słyszeć drugą osobę, planować, decydować. To jest stan społecznego zaangażowania.</div>
+      </div>
+      <div class="win-zone hypo">
+        <div class="win-zone-h">▼ Hipopobudzenie (dorsal vagal)</div>
+        <div class="win-zone-txt">Odrętwienie, „mgła”, dysocjacja, pustka, zamarznięcie, brak kontaktu z ciałem. Reakcja zamrożenia — najgłębszy poziom obrony.</div>
+      </div>
+    </div>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery fakty o oknie w C-PTSD</div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Mechanizm zawężenia</strong> — chroniczna trauma uczy ciało stałego alarmu (Lanius i in. 2010). Amygdala hiperreaktywna, kora przedczołowa offline w trudnych momentach.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>„Przełączanie”</strong> — w C-PTSD typowe jest skakanie hyper → hypo bez przejścia przez okno. To biologiczna reakcja, nie słabość.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌱</span>
+        <span class="element-text"><strong>Okno się poszerza</strong> — neuroplastyczność autonomicznego układu nerwowego (Porges 2011). Każda powtórzona regulacja zwiększa pojemność okna o niewielki kawałek.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🤝</span>
+        <span class="element-text"><strong>Współregulacja działa</strong> — obecność spokojnej osoby (terapeuta, partner) aktywuje ventral vagal przez zarażanie. To nie metafora — to fizjologia.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Okno tolerancji nie jest miejscem, do którego się dochodzi — jest pojemnością, którą się buduje. Każdy dzień regulacji poszerza je o milimetr. To brzmi mało, dopóki nie pomyślisz, ile dni w roku.”
+      <span class="frame-quote-attr">— parafraza idei Daniela Siegela (1999)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: praca z oknem to <em>tytulacja</em> (Levine) — krótkie kontakty z aktywacją + powrót do zasobu. Bez tytulacji ryzyko retraumatyzacji. Z tytulacją — okno powoli się poszerza, mózg uczy się, że można bezpiecznie oscylować.</div>
+
+    <div class="src">Siegel (1999, The Developing Mind); Ogden, Minton, Pain (2006, Sensorimotor); Porges (2011, Polyvagal Theory); Levine (1997, Somatic Experiencing); Lanius i in. (2010, neuroobrazowanie C-PTSD)</div>
+  </section>
+
+  <!-- ====== KROK 2 — MAPOWANIE ====== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Mapowanie</div>
+    <h1 class="card-prompt">Gdzie <em>jesteś</em> teraz?</h1>
+    <p class="card-detail">Skala 0–10: 0 to głębokie zamarznięcie (hypo), 5 to środek okna, 10 to szczyt paniki (hyper). Przesuwaj suwak, by zobaczyć opis swojej strefy. To narzędzie do codziennego użytku — robi się to 3–4 razy dziennie, nie tylko w kryzysie.</p>
+
+    <div class="scale-wrap">
+      <div class="scale-row">
+        <span class="scale-val" id="winVal">5</span>
+        <input type="range" id="winSlider" min="0" max="10" step="1" value="5" oninput="updateWindowReadout()">
+      </div>
+      <div class="scale-label">
+        <span>0 — hypo</span><span>5 — okno</span><span>10 — hyper</span>
+      </div>
+      <div class="scale-readout" id="winReadout">
+        Środek okna. Mogę myśleć, czuć, wybierać. Stan optymalny — moment dobry na pracę nad sobą, ale też na zwykłą codzienność.
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Twój dominujący wzorzec</strong> — co ostatnio przeważa: hyper, hypo czy „przełączanie”?</p>
+    <textarea class="thought-input" id="wzorzec" placeholder="np. „Częściej hyper rano, hypo wieczorem. Przełączanie pojawia się głównie w sytuacjach społecznych z kolegami z pracy.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>📌 Reguła mapowania</strong>: identyfikacja stanu jest warunkiem regulacji. Polyvagal mapping (Porges) — uczy klienta nazywać stan, zanim z nim pracuje. Bez nazwania nie ma regulacji, bo mózg nie wie, co reguluje. Notuj wynik 3 razy dziennie przez tydzień — pojawi się wzorzec dnia.</div>
+  </section>
+
+  <!-- ====== KROK 3 — TECHNIKI HYPER ====== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wyjście z hyper</div>
+    <h1 class="card-prompt">Gdy jesteś <em>powyżej 7</em></h1>
+    <p class="card-detail">Hiperpobudzenie domaga się <strong>tonowania w dół</strong> — uspokojenia układu współczulnego. Zaznacz techniki, które chcesz mieć w swoim zestawie.</p>
+
+    <div class="tech-row" id="hyA" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">🌬️ Wydłużony wydech (4–8)</span>
+      <span class="tech-desc">Wdech 4 sekundy, wydech 8 sekund. Dłuższy wydech aktywuje nerw błędny, obniża tętno i kortyzol. 3–5 minut. Bez wstrzymywania oddechu — to nie 4-7-8, tylko wahadło.</span>
+    </div>
+
+    <div class="tech-row" id="hyB" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">❄️ Zimna woda na twarz (TIPP)</span>
+      <span class="tech-desc">Zimna woda na okolicę oczu i nosa wywołuje odruch nurkowy — natychmiastowa bradykardia i aktywacja parasympatyka. DBT skill (Linehan). Działa w 30–60 s.</span>
+    </div>
+
+    <div class="tech-row" id="hyC" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">🦶 Grounding 5-4-3-2-1</span>
+      <span class="tech-desc">Pięć rzeczy, które widzę; cztery, które słyszę; trzy, które dotykam; dwa zapachy; jeden smak. Aktywacja kory przedczołowej przez wymuszenie konkretnego nazywania (Najavits 2002).</span>
+    </div>
+
+    <div class="tech-row" id="hyD" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">💪 Progresywna relaksacja mięśni (PMR)</span>
+      <span class="tech-desc">Napinanie i rozluźnianie kolejnych grup mięśni. 10–15 minut. Uczy ciało rozróżniania napięcie/luz. Klasyk (Jacobson). Dobre, gdy hyper trzyma godzinami.</span>
+    </div>
+
+    <div class="tech-row" id="hyE" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">🚶 Intensywny ruch przez 5–10 min</span>
+      <span class="tech-desc">Szybki spacer, bieg w miejscu, pompki. „Spalenie” adrenaliny w sympatyku skraca jej działanie. Po ruchu — wydech 4–8, by wrócić do okna, nie zostać w hyper.</span>
+    </div>
+
+    <div class="term-note"><strong>💡 Klucz</strong>: w hyper kora myślowa działa słabo — nie próbuj „przemyśleć” paniki. Najpierw <em>fizjologia</em>, potem słowa. Wybierz dwie techniki, które będziesz miał/a pod ręką — przećwicz je w spokoju, nie tylko w kryzysie. Inaczej w kryzysie nie zadziałają.</div>
+  </section>
+
+  <!-- ====== KROK 4 — TECHNIKI HYPO ====== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Wyjście z hypo</div>
+    <h1 class="card-prompt">Gdy jesteś <em>poniżej 3</em></h1>
+    <p class="card-detail">Hipopobudzenie domaga się <strong>tonowania w górę</strong> — łagodnego pobudzenia. Tu nie chodzi o „rozruszanie się” siłą — chodzi o przywołanie systemu społecznego zaangażowania. Zaznacz techniki dla siebie.</p>
+
+    <div class="tech-row" id="hoA" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">🚶 Ruch — wstań i chodź</span>
+      <span class="tech-desc">Najprostsze i najskuteczniejsze. Spacer 10 minut na zewnątrz. Ruch wybudza ciało z dorsal vagal. Bez ruchu hypo trwa godzinami.</span>
+    </div>
+
+    <div class="tech-row" id="hoB" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">❄️ Zimno na twarz lub kark</span>
+      <span class="tech-desc">Zimny okład, zimny prysznic na nogi, kostka lodu w dłoni. Silny bodziec sensoryczny przebija „mgłę”. Działa w 30–90 s.</span>
+    </div>
+
+    <div class="tech-row" id="hoC" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">🎵 Mocny rytm (muzyka, klaśnięcia)</span>
+      <span class="tech-desc">Energetyczna muzyka, klaśnięcia, tupanie do rytmu. Rytm angażuje móżdżek i ośrodki motoryczne — wybudza system społeczny.</span>
+    </div>
+
+    <div class="tech-row" id="hoD" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">👀 Orienting — rozejrzyj się</span>
+      <span class="tech-desc">Powolne skanowanie pomieszczenia wzrokiem (Levine). Zatrzymuj się na każdym obiekcie. „Co tu jest? Czy jest bezpiecznie?” Aktywuje neurocepcję bezpieczeństwa.</span>
+    </div>
+
+    <div class="tech-row" id="hoE" onclick="this.classList.toggle('picked')">
+      <span class="tech-name">🤝 Kontakt z drugą osobą</span>
+      <span class="tech-desc">Telefon do bliskiej osoby, krótka rozmowa, nawet o pogodzie. Współregulacja przez ventral vagal. Jeśli nikt nie jest dostępny — głośne czytanie na głos działa podobnie (włączenie krtani).</span>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: hypo to dorsal vagal — najgłębszy poziom obrony. Mózg „wyłącza” żeby przetrwać. Wyjście wymaga sygnałów bezpieczeństwa: ruch, ciepły kontakt, zewnętrzna obecność. Sama wola nie wystarczy — potrzebny jest bodziec, który ciało rozpozna jako „można już”.</div>
+  </section>
+
+  <!-- ====== KROK 5 — CODZIENNIE ====== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Praktyka codzienna</div>
+    <h1 class="card-prompt">Jak <em>poszerzasz</em> okno?</h1>
+    <p class="card-detail">Okno poszerza się przez konsekwencję, nie przez wysiłek pojedynczych „dużych” praktyk. Niżej szkielet codzienności, który pracuje w tle.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Codzienna minimalna praktyka okna (10 min)</div>
+      <div class="element-row">
+        <span class="element-icon">📊</span>
+        <span class="element-text"><strong>3× dziennie mapowanie</strong> — rano, w południe, wieczorem: gdzie jestem na skali 0–10? 30 sekund. Notatka w telefonie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌬️</span>
+        <span class="element-text"><strong>5 minut wahadła oddechowego</strong> — wdech 4, wydech 8. Najlepiej rano lub po pracy. Bez tej praktyki techniki kryzysowe nie działają, bo nie ma „mięśnia”.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚶</span>
+        <span class="element-text"><strong>Ruch — 30 min, 4× w tygodniu</strong> — spacer, joga, basen. Aktywność fizyczna obniża podstawowy kortyzol i poszerza okno trwale (van der Kolk 2014).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🤝</span>
+        <span class="element-text"><strong>Współregulacja codziennie</strong> — kontakt z bliską osobą lub zwierzęciem. Nawet 10 minut. Ventral vagal najlepiej trenuje się w relacji.</span>
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Twój plan na najbliższy tydzień</strong> — co konkretnie wprowadzasz (jedno, dwie rzeczy, nie wszystko naraz)?</p>
+    <textarea class="thought-input" id="planTydzien" placeholder="np. „Mapowanie 3× dziennie. Pięć minut wydłużonego wydechu rano przy kawie. Niedziela — godzinny spacer z sąsiadką.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>📐 Reguła progresji</strong>: nie próbuj wprowadzić wszystkiego naraz. Wybierz 1–2 nawyki, daj sobie 6 tygodni. Cloitre i in. (2010, RCT STAIR): regularna praktyka regulacji 6–8 tygodni daje statystycznie istotne poszerzenie okna mierzonego HRV. Pośpiech jest wrogiem.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Okno tolerancji = <strong>pojemność, nie miejsce</strong>. Hyper toń w dół (wydech, zimno, ruch). Hypo toń w górę (ruch, kontakt, orienting). Mapuj 3× dziennie. Codzienne 10 minut buduje to, czego nie zbuduje pojedyncza próba w kryzysie. <em>Milimetr każdego dnia</em> — to jest tempo poszerzania okna.</div>
+    </div>
+
+    <div class="src">Siegel (1999); Ogden i in. (2006); Porges (2011); Levine (1997, 2010); Lanius i in. (2010); Najavits (2002, Seeking Safety); Linehan (1993, DBT TIPP); Cloitre i in. (2010, RCT STAIR); van der Kolk (2014)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateWindowReadout() {
+  var v = parseInt(document.getElementById('winSlider').value, 10);
+  document.getElementById('winVal').textContent = v;
+  var msg = '';
+  if (v <= 2) {
+    msg = 'Hipopobudzenie głębokie. Mgła, odrętwienie, dysocjacja. Potrzebna stymulacja — ruch, zimno, kontakt z drugą osobą. Krok 4 ma techniki dla tego stanu.';
+  } else if (v <= 4) {
+    msg = 'Lekkie hypo — zmęczenie, wycofanie, mała energia. Pomaga ruch, krótki spacer, woda na twarz, telefon do bliskiej osoby.';
+  } else if (v <= 6) {
+    msg = 'Środek okna. Mogę myśleć, czuć, wybierać. Stan optymalny — moment dobry na pracę nad sobą, ale też na zwykłą codzienność.';
+  } else if (v <= 8) {
+    msg = 'Lekkie hyper — niepokój, napięcie, rozedrganie. Pomaga wydech 4–8, grounding 5-4-3-2-1, krótka przerwa, woda. Krok 3 ma więcej technik.';
+  } else {
+    msg = 'Hiperpobudzenie wysokie — panika, gniew, flashback. Najpierw fizjologia: zimna woda na twarz, wydech 4–8, intensywny ruch przez 5 min. Słowa później.';
+  }
+  document.getElementById('winReadout').textContent = msg;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_okno_cptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_okno_cptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Trening autogenny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.tldr-box { background: rgba(184,197,168,0.18); border-left: 3px solid var(--warm); padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); margin: 12px 0; }
+.tldr-h { font-weight: 700; color: var(--ink); display: block; margin-bottom: 4px; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.formula-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-left: 4px solid var(--sage-deep); border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 8px 0; }
+.formula-num { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 13px; }
+.formula-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; color: var(--ink); margin: 4px 0; line-height: 1.4; }
+.formula-effect { font-size: 12px; color: var(--ink-mute); line-height: 1.45; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Trening autogenny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============ KROK 1 ============ -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Trening <em>autogenny</em> — autosugestia w 6 formułach</h1>
+  <p class="card-detail">Trening autogenny opracował niemiecki neurolog <strong>Johannes Heinrich Schultz</strong> w 1932 roku, opierając się na obserwacjach klinicznej hipnozy. Metoda polega na powtarzaniu krótkich, ustandaryzowanych formuł autosugestii, które wywołują wymierne zmiany fizjologiczne — odczucie ciężaru, ciepła, regulację rytmu serca i oddechu. To klasyk psychosomatyki, używany w medycynie psychosomatycznej, sportowej, a w Polsce wprowadzony przez <strong>Stanisława Gerstmanna</strong> i <strong>Karola Aleksandrowicza</strong> (lata 60.).</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Sześć formuł podstawowych (Schultz 1932)</div>
+    <div class="element-row">
+      <span class="element-icon">⚓</span>
+      <span class="element-text"><strong>1. Ciężar</strong> — „Moja prawa ręka jest ciężka". Aktywuje rozluźnienie mięśni szkieletowych przez sugestię.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔥</span>
+      <span class="element-text"><strong>2. Ciepło</strong> — „Moja prawa ręka jest ciepła". Wywołuje rozszerzenie naczyń obwodowych, wzrost przepływu krwi.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🫀</span>
+      <span class="element-text"><strong>3. Serce</strong> — „Moje serce bije spokojnie i równomiernie". Stabilizuje rytm serca, przesuwa balans wegetatywny.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌬️</span>
+      <span class="element-text"><strong>4. Oddech</strong> — „Mój oddech jest spokojny i równy". Wycisza tempo oddechowe.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌞</span>
+      <span class="element-text"><strong>5. Splot słoneczny</strong> — „Mój splot słoneczny jest ciepły". Ciepło w nadbrzuszu, rozluźnienie trzewne.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">❄️</span>
+      <span class="element-text"><strong>6. Czoło</strong> — „Moje czoło jest chłodne". Skupienie umysłowe + rozluźnienie napięcia w czole/skroniach.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Trening autogenny to autosystemowa regulacja organizmu poprzez koncentrację na formułach. Nie hipnoza — nie ma tu hipnotyzującego ani hipnotyzowanego. Uczysz mózg, że możesz zmieniać stan ciała przez świadome skupienie."
+    <span class="frame-quote-attr">— Johannes Heinrich Schultz (1932, „Das autogene Training", parafraza)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: <em>nie wymuszasz</em> ciężaru ani ciepła. Tylko powtarzasz formułę i <em>zauważasz</em>, jak ciało odpowiada. Po 7–14 dniach codziennej praktyki samo powtarzanie formuły <em>wyzwala</em> opisany efekt — bez wysiłku.</div>
+
+  <div class="tldr-box">
+    <span class="tldr-h">W skrócie</span>
+    Sześć formuł, każda 4–8 powtórzeń, sesja 10–15 minut. Wprowadzasz formuły kolejno (nie wszystkie naraz) — formuła 1 przez tydzień, potem dodajesz 2., itd. Pełny program: 6–8 tygodni do opanowania wszystkich 6.
+  </div>
+
+  <div class="src">Schultz J.H. (1932, „Das autogene Training") · Schultz J.H., Luthe W. (1969, „Autogenic Therapy", t. I-VI) · Stetter F., Kupper S. (2002, Applied Psychophysiology and Biofeedback — meta-analiza skuteczności w 73 RCT) · Aleksandrowicz J.W. (1996, „Psychoterapia. Podręcznik dla studentów medycyny")</div>
+</section>
+
+<!-- ============ KROK 2 ============ -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje wskazanie</div>
+  <h1 class="card-prompt">Określ <em>cel</em> i przygotowanie</h1>
+  <p class="card-detail">Trening autogenny ma najsilniejszy efekt udowodniony w trzech grupach problemów. Sprawdź, czy twój problem mieści się w nich.</p>
+
+  <p class="card-detail"><strong>Twoje wskazanie</strong>:</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+    <button type="button" class="rel-btn" id="wskA" onclick="pickWsk('A');">
+      <span class="rel-name">A · Zaburzenia psychosomatyczne</span>
+      <span class="rel-desc">Migrena, choroba wrzodowa, nadciśnienie pierwotne, kolka jelitowa. Klasyczne wskazanie. Meta-analiza Stettera/Kuppera (2002) — silny efekt na nadciśnienie i bóle głowy.</span>
+    </button>
+    <button type="button" class="rel-btn" id="wskB" onclick="pickWsk('B');">
+      <span class="rel-name">B · Zaburzenia lękowe + bezsenność</span>
+      <span class="rel-desc">Lęk uogólniony, panika, trudności z zasypianiem. Trening autogenny jako uzupełnienie CBT (terapii poznawczo-behawioralnej) lub samodzielnie.</span>
+    </button>
+    <button type="button" class="rel-btn" id="wskC" onclick="pickWsk('C');">
+      <span class="rel-name">C · Stres przewlekły / wypalenie</span>
+      <span class="rel-desc">Praca pod presją, opieka nad bliskim, nieprzespane noce. Codzienny trening autogenny jako bufor regeneracyjny.</span>
+    </button>
+    <button type="button" class="rel-btn" id="wskD" onclick="pickWsk('D');">
+      <span class="rel-name">D · Sport, koncentracja, regulacja pobudzenia</span>
+      <span class="rel-desc">Zawodowo lub amatorsko — aktorzy, sportowcy, mówcy publiczni. Schultz/Luthe rozwinęli wersje sportowe. Krótka formuła „chłodne czoło" przed występem.</span>
+    </button>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość wrażeń wegetatywnych — przed (0 — niska, 10 — bardzo wysoka)</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="swiadStart" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>Świadomość</span><span id="swiadStartVal">4</span></div>
+  </div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Pozycja do treningu</strong> — wybierz jedną i opisz:</p>
+  <textarea class="thought-input" id="pozycja" placeholder="np. „Pozycja dorożkarza — siedzę na krześle, łokcie oparte na kolanach, głowa lekko opadnięta. Plecy w lekkim ułuku."" rows="2"></textarea>
+
+  <div class="term-note"><strong>Reguła pozycji</strong>: trzy klasyczne pozycje Schultza — <em>leżąca</em> (łatwa, ryzyko zaśnięcia), <em>foteloea</em> (wygodna, wymaga oparcia karku), <em>dorożkarza</em> (siedząca z opadniętą głową — najtrudniejsza, ale uniwersalna w pracy).</div>
+</section>
+
+<!-- ============ KROK 3 ============ -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór formuły na dziś</div>
+  <h1 class="card-prompt">Wybierz <em>etap</em> i formułę</h1>
+  <p class="card-detail">Trening autogenny <strong>nie polega</strong> na robieniu wszystkich 6 formuł od razu. Wprowadzasz formuły STOPNIOWO — jedna formuła przez 5–7 dni, potem dodajesz kolejną.</p>
+
+  <div class="formula-card">
+    <span class="formula-num">Formuła 1 — Ciężar (tydzień 1)</span>
+    <div class="formula-text">„Moja prawa ręka jest ciężka. Moja lewa ręka jest ciężka. Obie ręce są ciężkie. Moje nogi są ciężkie. Moje ręce i nogi są ciężkie. Cały jestem/jestem cała ciężki/a."</div>
+    <div class="formula-effect">Efekt po 5–7 dniach: spontaniczne uczucie ciężaru w kończynach przy samej myśli o formule.</div>
+  </div>
+
+  <div class="formula-card">
+    <span class="formula-num">Formuła 2 — Ciepło (tydzień 2)</span>
+    <div class="formula-text">„Moja prawa ręka jest ciepła. Lewa ręka jest ciepła. Obie ręce ciepłe. Nogi ciepłe. Cały jestem/jestem cała ciepły/a."</div>
+    <div class="formula-effect">Powtarzasz po formule 1. Pełny zestaw teraz: ciężar + ciepło. Efekt: przepływ krwi w obwodzie, ciepło w dłoniach.</div>
+  </div>
+
+  <div class="formula-card">
+    <span class="formula-num">Formuła 3 — Serce (tydzień 3)</span>
+    <div class="formula-text">„Moje serce bije spokojnie i równomiernie."</div>
+    <div class="formula-effect">Tylko 4–6 powtórzeń. Po formułach 1+2. Ostrożność: jeśli masz arytmię/lęk kardiologiczny — pomiń, zostań przy 1+2+4.</div>
+  </div>
+
+  <div class="formula-card">
+    <span class="formula-num">Formuła 4 — Oddech (tydzień 4)</span>
+    <div class="formula-text">„Mój oddech jest spokojny i równy. Coś we mnie oddycha."</div>
+    <div class="formula-effect">Po formule 3. Druga część kluczowa — sugeruje pasywność („coś oddycha") zamiast kontroli.</div>
+  </div>
+
+  <div class="formula-card">
+    <span class="formula-num">Formuła 5 — Splot słoneczny (tydzień 5)</span>
+    <div class="formula-text">„Mój splot słoneczny jest miło ciepły."</div>
+    <div class="formula-effect">Działa głęboko, na trzewia. UWAGA: pomiń przy chorobie wrzodowej w stanie ostrym, krwawieniach. Po wszystkich poprzednich.</div>
+  </div>
+
+  <div class="formula-card">
+    <span class="formula-num">Formuła 6 — Czoło (tydzień 6)</span>
+    <div class="formula-text">„Moje czoło jest przyjemnie chłodne."</div>
+    <div class="formula-effect">Końcowa. Jeśli wcześniejsze opanowane — sama formuła „chłodne czoło" potrafi wyciszyć w 30 sekund w sytuacjach stresowych.</div>
+  </div>
+
+  <p class="card-detail"><strong>Twój etap (tydzień)</strong> — która formuła dziś?</p>
+  <textarea class="thought-input" id="etap" placeholder="np. „Tydzień 2 — formuły 1 (ciężar) + 2 (ciepło). Formuła 1 zaczyna działać sama — czuję ciężar zaraz po wypowiedzeniu zdania."" rows="3"></textarea>
+
+  <div class="term-note"><strong>Klucz wprowadzania</strong>: <em>nie spiesz się</em>. Klasyczna metoda zakłada minimum 5 dni na każdą formułę. Próba opanowania wszystkich 6 w tydzień to przepis na płytkie wykonanie. Lepiej 6 tygodni głęboko niż 1 tydzień powierzchownie.</div>
+</section>
+
+<!-- ============ KROK 4 ============ -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — sesja 10 minut</div>
+  <h1 class="card-prompt">Wykonaj <em>sesję</em> autogenną</h1>
+  <p class="card-detail">Usiądź w wybranej pozycji. Zamknij oczy. Powtarzaj kolejne formuły, każdą po 4–8 razy w głowie. Po sesji wykonaj „wycofanie" (kluczowe — bez tego pozostaniesz senny/a).</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Sekwencja sesji</div>
+    <div class="element-row">
+      <span class="element-icon">①</span>
+      <span class="element-text"><strong>Wstęp 30 sek</strong> — „Jestem zupełnie spokojny/a. Otaczająca rzeczywistość jest mi obojętna." 2–3 powtórzenia.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">②</span>
+      <span class="element-text"><strong>Formuły opanowane</strong> — każda 4–8 powtórzeń. Powtarzasz powoli, z luką na zauważenie efektu.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">③</span>
+      <span class="element-text"><strong>Formuła aktualna (uczona)</strong> — 6–8 powtórzeń. Jeśli efekt słaby, nie wymuszaj — kontynuuj jutro.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">④</span>
+      <span class="element-text"><strong>Wycofanie</strong> — KONIECZNE: „Zaciskam pięści. Zginam ramiona w łokciach. Otwieram oczy. Biorę głęboki wdech." Bez tego pozostaniesz w stanie ospałym 30–60 minut.</span>
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Notatka po sesji</strong>:</p>
+  <textarea class="thought-input" id="notatka" placeholder="np. „Tydzień 1, dzień 4. Prawa ręka — ciężka po 3. powtórzeniu, wyraźnie. Lewa — słabiej, dopiero po 6. Splot słoneczny — sama myśl o przyszłej formule wyzwoliła ciepło w brzuchu (transfer)."" rows="3"></textarea>
+
+  <div class="term-note"><strong>Mechanizm autogeniczny</strong>: powtarzanie formuły wytwarza warunkowe powiązanie między <em>słowem</em> a <em>stanem ciała</em>. Po 100–200 powtórzeniach (2–4 tygodnie) sama formuła wystarczy do wywołania efektu — bez sesji. To jest właściwy cel: dostęp do stanu spokoju w 30 sekund.</div>
+</section>
+
+<!-- ============ KROK 5 ============ -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po sesji</div>
+  <h1 class="card-prompt">Sprawdź <em>efekt</em> i postępy treningu</h1>
+  <p class="card-detail">Po sesji autogennej zwykle czujesz miękkość w ciele, lekkość, kontrast w stosunku do napięcia sprzed. Świadomość wrażeń wegetatywnych — to czego mierzysz teraz — to kluczowy wskaźnik postępu.</p>
+
+  <div class="scale">
+    <div class="scale-title">Świadomość wrażeń wegetatywnych po sesji</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="swiadEnd" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Świadomość</span><span id="swiadEndVal">6</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Wyrazistość wrażenia z dziś (np. „prawa ręka ciężka") (0 — brak, 10 — bardzo silne)</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="wyraz" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Wyrazistość</span><span id="wyrazVal">5</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Wprowadź pomiary — pokażę diagnozę.</div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Plan na tydzień</strong> — kiedy ćwiczysz, kiedy przejście do następnej formuły?</p>
+  <textarea class="thought-input" id="planTyg" placeholder="np. „Codziennie 10 min, rano i wieczorem. Tydzień 1 do soboty — formuła 1 (ciężar). Niedziela jako podsumowanie. Od poniedziałku formuła 2 (ciepło)."" rows="3"></textarea>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: typowy czas opanowania formuły to <em>5–7 dni</em> dwóch sesji dziennie. Sygnał gotowości do następnej: efekt pojawia się <em>w ciągu 3 powtórzeń</em>, automatycznie. Jeśli po 7 dniach efekt nadal słaby — zostań tydzień dłużej. Bez fundamentu kolejne formuły są chwiejne.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Trening autogenny to <strong>warunkowanie</strong> — słowo wyzwala stan ciała. Sześć formuł stopniowo. <em>Bez wycofania nie kończysz sesji.</em> Po 6–8 tygodniach masz w użyciu „pilota" do stanów wegetatywnych: ciężar, ciepło, spokój serca i oddechu, ciepło trzewne, chłód czoła. Ten zestaw jest twój na życie.</div>
+  </div>
+
+  <div class="src">Schultz J.H. (1932, „Das autogene Training", Thieme) · Schultz J.H., Luthe W. (1969, „Autogenic Therapy", t. I–VI, Grune & Stratton) · Stetter F., Kupper S. (2002, Applied Psychophysiology and Biofeedback — meta-analiza 73 RCT) · Linden W. (1994, „Autogenic Training: A Clinical Guide") · Aleksandrowicz J.W. (1996, „Psychoterapia. Podręcznik")</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateScales() {
+  ['swiadStart','swiadEnd','wyraz'].forEach(function(id){
+    var el = document.getElementById(id);
+    var val = document.getElementById(id+'Val');
+    if (el && val) val.textContent = el.value;
+  });
+}
+
+function pickWsk(letter) {
+  ['wskA','wskB','wskC','wskD'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var picked = document.getElementById('wsk'+letter);
+  if (picked) picked.classList.add('picked');
+  save();
+}
+
+function calcDiff() {
+  var ss = parseInt(document.getElementById('swiadStart').value, 10);
+  var se = parseInt(document.getElementById('swiadEnd').value, 10);
+  var w = parseInt(document.getElementById('wyraz').value, 10);
+  var dSw = se - ss;
+  
+  var msg;
+  if (w >= 7 && dSw >= 2) msg = '<strong>Solidny postęp.</strong> Wyrazistość '+w+'/10 — wrażenie pojawia się szybko i wyraźnie. Świadomość wzrosła o '+dSw+'. Możesz przejść do następnej formuły, gdy efekt utrzyma się przez 3 dni z rzędu.';
+  else if (w >= 5) msg = '<strong>Standardowa pozycja w treningu.</strong> Wyrazistość '+w+'/10 — typowo dla 3.–5. dnia formuły. Kontynuuj 2–4 dni, efekt urośnie. Nie spiesz się do następnej formuły.';
+  else if (w >= 3) msg = '<strong>Trening jeszcze w fazie wczesnej.</strong> '+w+'/10 — wrażenie subtelne. To normalne dla pierwszych 3 dni. Klucz: <em>nie wymuszaj</em>. Wymuszanie zatrzymuje proces autogeniczny.';
+  else if (w >= 1) msg = '<strong>Bardzo subtelny początek.</strong> Wyrazistość '+w+'/10. Możliwe powody: pierwsza sesja, formuła nieopanowana, pozycja niewygodna. Spróbuj jutro w innej pozycji (leżącej zamiast siedzącej).';
+  else if (w === 0) msg = '<strong>Brak wrażenia.</strong> Trening autogenny u ~10–15% osób wymaga 2–3 tygodni, by efekt w ogóle się pojawił. Sprawdź: czy mówisz formułę z <em>uwagą na ręce</em>? Czy zostawiasz lukę na zauważenie? Czy nie przerywa cię telefon/hałas?';
+  else msg = '<strong>Niezwykły wynik.</strong> Sprawdź ponownie suwaki — wartości wyglądają sprzecznie.';
+  document.getElementById('finalMsg').innerHTML = msg;
+}
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    updateScales();
+    if (curStep === 5) calcDiff();
+  }
+});
+
+function onStepChange(s) {
+  updateScales();
+  if (s === 5) calcDiff();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_autogenic — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_autogenic";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+updateScales();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

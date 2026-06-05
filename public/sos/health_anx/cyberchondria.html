@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Dr Google</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.fact-row { background: rgba(201,165,114,0.12); border-left: 3px solid var(--warm); padding: 10px 12px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.fact-row strong { color: var(--ink); }
+.fact-row em { color: var(--sage-deep); font-style: italic; }
+.gap-card { background: rgba(184,197,168,0.12); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
+.gap-card:hover, .gap-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.gap-card.picked .gap-name, .gap-card.picked .gap-desc { color: var(--bg) !important; }
+.gap-name { font-weight: 600; font-size: 13.5px; color: var(--ink); display: block; margin-bottom: 3px; }
+.gap-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Dr Google</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Cyberchondria, czyli <em>Dr Google</em></h1>
+    <p class="card-detail">Cyberchondria (White i Horvitz, 2009, Microsoft Research): kompulsywne wyszukiwanie objawów w internecie prowadzące do <em>nasilenia</em>, nie redukcji lęku. W oryginalnym badaniu (N=515): u 38% użytkowników wyszukiwanie objawów zwiększyło niepokój zdrowotny. Starcevic i Berle (2013): cyberchondria nakłada się z lękiem zdrowotnym, ale ma własną dynamikę napędzaną przez algorytmy SEO.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Dlaczego Dr Google diagnozuje gorzej niż lęk</div>
+      <div class="element-row">
+        <span class="element-icon">📊</span>
+        <span class="element-text"><strong>Algorytmy SEO</strong> — wyniki wyszukiwania są rankingowane wg klikalności, nie prawdopodobieństwa. „Ból głowy" → strona 1: guz, udar, zapalenie. Strona 47: napięciowy ból głowy.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📚</span>
+        <span class="element-text"><strong>Rzadkie choroby mają więcej stron</strong> — bo są ciekawsze, przyciągają uwagę. Częste, banalne diagnozy mają mało materiału.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚫</span>
+        <span class="element-text"><strong>Google nie zna kontekstu</strong> — Twojego wieku, płci, historii, leków, kontekstu sytuacji. Lekarz to wszystko bierze pod uwagę.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔁</span>
+        <span class="element-text"><strong>Każde wyszukanie wzmacnia cykl</strong> — daje 5 min ulgi i godziny dodatkowego lęku. Krótkotrwale „pomaga", długoterminowo szkodzi.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Gdyby Google był lekarzem — każdy ból głowy stawałby się guzem, każdy kaszel rakiem, każde zmęczenie białaczką. Stracilibyśmy mu licencję."
+      <span class="frame-quote-attr">— parafraza z Starcevic i Berle (2013)</span>
+    </div>
+
+    <div class="fact-row">📈 <strong>White i Horvitz (2009)</strong>: w badaniu logów wyszukiwarki Microsoft (Bing) — 38% użytkowników po wpisaniu objawu eskalowało zapytania w stronę poważniejszych chorób w ciągu jednej sesji. Tylko 2% sesji kończyło się <em>uspokojeniem</em>.</div>
+
+    <div class="term-note"><strong>Klucz</strong>: cyberchondria nie jest objawem słabej woli. Jest skutkiem <em>współpracy</em> dwóch mechanizmów: lęku (szuka pewności) i algorytmu (sprzedaje uwagę). Rozwiązanie nie polega na „silniejszej woli" — polega na <em>strukturalnej</em> redukcji dostępu.</div>
+
+    <div class="src">White i Horvitz (2009, „Cyberchondria"); Starcevic i Berle (2013, Annual Review of Clinical Psychology); Brown i in. (2020, meta-analiza cyberchondria); Te'eni-Harari i in. (2022).</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Pomiar czasu</div>
+    <h1 class="card-prompt">Ile <em>realnie</em> googlujesz?</h1>
+    <p class="card-detail">Pacjenci często niedoszacowują o 50–70% (Starcevic, 2017). Pomyśl o ostatnich 7 dniach. Zsumuj minuty na sprawdzaniu objawów, czytaniu forów medycznych, oglądaniu filmów o chorobach. Ten pomiar jest punktem zerowym — nie ocenia Cię.</p>
+
+    <div class="scale">
+      <div class="scale-title">Łączny czas na zdrowotne wyszukiwania w ostatnim tygodniu (minuty)</div>
+      <div class="scale-bounds"><span>0 min</span><span>600+ min</span></div>
+      <input type="range" class="scale-input" id="minSlider" min="0" max="600" step="10" value="120" data-default="120" oninput="updateMin()">
+      <div class="scale-readout"><span><span id="minVal">120</span> min (<span id="godzVal">2.0</span> godz.)</span><span></span></div>
+    </div>
+
+    <textarea class="thought-input" id="cybKiedy" placeholder="W jakich momentach najczęściej googlujesz?&#10;np. Wieczorem, przed snem, gdy lęk się zaostrza. Na pracy w przerwie po kawie. Po artykule o chorobie kogoś znajomego." rows="4"></textarea>
+
+    <div class="term-note"><strong>Reguła pomiaru</strong>: granica klinicznie istotna to ≥30 min/dzień (~3,5 godz./tydz.). 60–90 min/dzień to wzorzec utrwalony, wymagający aktywnej redukcji. ≥2 godz. dziennie — wskazanie do CBT-HA z elementem cyberchondrii.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Twoja luka</div>
+    <h1 class="card-prompt">Co Cię <em>najbardziej</em> wciąga?</h1>
+    <p class="card-detail">Cztery typy „luk", przez które wchodzi się w cyberchondrię. Wybierz tę, która jest u Ciebie dominująca — pomoże dobrać strategię redukcji.</p>
+
+    <div class="gap-card" id="gpA" onclick="pickGap('A')">
+      <span class="gap-name">A. Dr Google na każdy nowy objaw</span>
+      <span class="gap-desc">Pierwsza reakcja na kłucie, ból, zmęczenie: telefon w rękę, wyszukiwarka. Strategia: blokada przeglądarki (Cold Turkey, BlockSite) 7 dni.</span>
+    </div>
+    <div class="gap-card" id="gpB" onclick="pickGap('B')">
+      <span class="gap-name">B. Fora medyczne i grupy wsparcia</span>
+      <span class="gap-desc">Czytanie historii pacjentów, zwłaszcza z najgorszymi przebiegami. Strategia: opuszczenie grup, blokada konkretnych stron.</span>
+    </div>
+    <div class="gap-card" id="gpC" onclick="pickGap('C')">
+      <span class="gap-name">C. YouTube / TikTok medyczny</span>
+      <span class="gap-desc">Filmy „objawy choroby X u młodych", „nie ignoruj tego sygnału". Strategia: usunięcie aplikacji lub używanie limitów ekranowych.</span>
+    </div>
+    <div class="gap-card" id="gpD" onclick="pickGap('D')">
+      <span class="gap-name">D. Sprawdzanie wyników badań w wyszukiwarce</span>
+      <span class="gap-desc">Każdy wynik laboratorium, każda wartość — wpisana w Google. Strategia: telefon do lekarza zamiast Google; jedno wiarygodne źródło (NHS, MedlinePlus, Medycyna Praktyczna).</span>
+    </div>
+
+    <div class="term-note"><strong>Reguła doboru</strong>: różne luki wymagają różnych blokad. Ogólna „blokada wszystkiego" zwykle nie działa — mózg znajdzie obejście. Konkretna blokada konkretnego strony / aplikacji daje wymierny efekt w 2–3 dni.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Plan redukcji 7-dniowy</div>
+    <h1 class="card-prompt">Twoje <em>siedem</em> dni bez Dr Google</h1>
+    <p class="card-detail">Klasyczny eksperyment z protokołu Salkovskisa: 7 dni z wyłącznym dostępem do <em>jednego</em> wiarygodnego źródła medycznego, z limitem 5 minut, jeśli pojawi się realnie nowy objaw. Reszta — blokada.</p>
+
+    <textarea class="thought-input" id="planBlok" placeholder="Co blokujesz?&#10;np. Cold Turkey: google.com/search?q=*objaw*, forumzdrowia.pl, doz.pl, youtube.com (kategoria zdrowie). Telefon: usunięcie aplikacji TikTok." rows="4"></textarea>
+    <textarea class="thought-input" id="planWyjat" placeholder="Wyjątek: jeden adres dozwolony przez 5 min/dzień&#10;np. medycynaprak tyczna.pl — tylko gdy nowy objaw trwa &gt;48h. Limit 5 min, ustawiony minutnik." rows="3"></textarea>
+    <textarea class="thought-input" id="planAlt" placeholder="Co robić zamiast googlowania?&#10;np. SMS do partnera: „chcę googlować, daj mi 20 min". Spacer 15 min. Lista „odczuć dnia"." rows="3"></textarea>
+
+    <div class="fact-row">📊 <strong>Brown i in. (2020, meta-analiza)</strong>: 7 dni systematycznej blokady redukuje średni czas wyszukiwań zdrowotnych o 70–85% i obniża SHAI o 4–7 punktów. Próg klinicznie istotny.</div>
+
+    <div class="term-note"><strong>Mechanizm wygaszania</strong>: pierwsze 48 godzin są najtrudniejsze (pojawia się silny impuls sprawdzania). Dzień 3–5 — spadek impulsu. Dzień 7 — większość raportuje, że „w ogóle o tym nie pomyślał/a". To dowód, że nawyk podtrzymuje się przez powtarzanie, nie przez głód informacyjny.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja</div>
+    <h1 class="card-prompt">Lęk po <em>oduczeniu</em> Dr Google</h1>
+    <p class="card-detail">Sama wiedza, jak działają algorytmy SEO, daje krótkotrwały spadek lęku u 40% pacjentów. Trwała zmiana wymaga 7–14 dni systematycznej blokady.</p>
+
+    <div class="scale">
+      <div class="scale-title">Lęk PRZED otwarciem ćwiczenia</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="preLek" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Poziom</span><span id="preLekDis">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Lęk PO przejściu wszystkich kroków</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="postLek" min="0" max="10" step="1" value="5" data-default="5" oninput="updateFinal()">
+      <div class="scale-readout"><span>Poziom</span><span id="postLekVal">5</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsg">Przesuń suwak „PO", żeby zobaczyć efekt.</div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: blokada przeglądarki to <em>najtańsza</em> i <em>najszybsza</em> interwencja w cyberchondrii. Działa nawet bez głębokiej terapii — bo odbiera mózgowi paliwo do cyklu (informację katastroficzną). Sukces blokady na 14 dni daje 30–50% szansę utrzymania bez ponownego instalowania.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Dr Google nie jest <strong>lekarzem</strong> ani <strong>encyklopedią</strong> — jest <strong>maszyną do sprzedawania uwagi</strong>. Algorytm wyświetla to, co generuje kliknięcia, a kliknięcia generują rzadkie, dramatyczne diagnozy. <em>Nie szukasz odpowiedzi — szukasz pewności, której nie da się tam znaleźć.</em> Rozwiązanie nie leży w lepszym wyszukiwaniu — leży w przestaniu szukać.</div>
+    </div>
+
+    <div class="src">White i Horvitz (2009, Microsoft Research); Starcevic i Berle (2013); Brown i in. (2020, meta-analiza); Te'eni-Harari i in. (2022); Salkovskis i Warwick (2001); Taylor i Asmundson (2004).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickGap(letter) {
+  ['gpA','gpB','gpC','gpD'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  const el = document.getElementById('gp' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function updateMin() {
+  var v = document.getElementById('minSlider').value;
+  document.getElementById('minVal').textContent = v;
+  var godz = (v/60).toFixed(1);
+  document.getElementById('godzVal').textContent = godz;
+}
+function updateFinal() {
+  var pre = parseInt(document.getElementById('preLek').value, 10);
+  var post = parseInt(document.getElementById('postLek').value, 10);
+  document.getElementById('postLekVal').textContent = post;
+  var diff = pre - post;
+  var msg = '';
+  if (diff > 0) msg = 'Spadek o <strong>' + diff + '</strong> punkt(y) — zobaczenie, że Dr Google jest <em>najgorszym lekarzem na świecie</em>, daje mózgowi powód, by przestać go słuchać. Działa, gdy lęk wynikał z wysokiej wiary w Google.';
+  else if (diff === 0) msg = 'Bez zmiany — sama wiedza o algorytmach SEO nie zatrzyma odruchu googlowania. Następny krok: zainstalowanie blokady (Cold Turkey, BlockSite) na 7 dni.';
+  else msg = 'Wzrost o <strong>' + (-diff) + '</strong> — zdarza się: zauważenie, ile czasu Cię to kosztuje, podnosi krótkotrwale lęk. Mija po 1–2 dniach.';
+  document.getElementById('finalMsg').innerHTML = msg;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_cyberchondria — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_cyberchondria";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+updateMin();
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

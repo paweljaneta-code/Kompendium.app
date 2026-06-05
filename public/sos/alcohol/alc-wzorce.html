@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wzorce picia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wzorce picia</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<div class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Krok 1 · zaczynamy</div>
+  <h2 class="card-prompt">Liczy się nie tylko <em>ile</em>, ale <em>jak</em>.</h2>
+  <p class="card-detail">Suma alkoholu w tygodniu nie wystarcza. Dwie osoby pijące tę samą ilość — jedna codziennie po jednym kieliszku, druga w sobotę cztery — mają <strong>różne ryzyka</strong>: różne uszkodzenia, różną neurobiologię, różne ścieżki leczenia. Pierwszy krok to rozpoznać <em>Twój</em> wzorzec.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery główne wzorce</div>
+    <div class="element-row"><span class="element-icon">💥</span><div class="element-text"><strong>BINGE</strong> — ≥5 drinków u mężczyzn, ≥4 u kobiet w jednym epizodzie (w 2 godziny). Najczęstszy w Polsce, zwłaszcza weekendowo.</div></div>
+    <div class="element-row"><span class="element-icon">📅</span><div class="element-text"><strong>CODZIENNE</strong> — regularne, mniejsze ilości. Podstępne, bo „nigdy się nie upijam".</div></div>
+    <div class="element-row"><span class="element-icon">🍷</span><div class="element-text"><strong>WEEKENDOWE</strong> — „tylko w piątek-sobotę", ale z eskalacją.</div></div>
+    <div class="element-row"><span class="element-icon">💼</span><div class="element-text"><strong>HIGH-FUNCTIONING</strong> — pijesz dużo, ale praca, finanse i relacje wyglądają na zewnątrz dobrze. Diagnoza opóźnia się o lata.</div></div>
+  </div>
+
+  <div class="frame-quote">
+    „Mało piję" znaczy zwykle: „mało liczę".
+    <span class="frame-quote-attr">— typowy mechanizm minimalizacji</span>
+  </div>
+
+  <div class="term-note"><strong>1 standardowy drink</strong> = 10 g czystego alkoholu = 250 ml piwa 5% = 100 ml wina 12% = 30 ml wódki 40%. Butelka wina (750 ml) = <em>3 drinki</em>, nie jeden.</div>
+  <div class="term-note"><strong>WHO — picie niskiego ryzyka:</strong> ≤2 drinki dziennie (mężczyźni), ≤1 (kobiety), <em>oraz</em> minimum 2 dni w tygodniu bez alkoholu.</div>
+  <div class="term-note"><strong>Binge ≠ alkoholizm.</strong> Możesz upijać się raz w tygodniu i nie spełniać kryteriów AUD — ale ostre ryzyko (zatrucie, wypadki, przemoc, ryzykowny seks) jest tej samej nocy ogromne.</div>
+  <div class="term-note"><strong>Jellinek (1960)</strong> opisał fazy alkoholizmu — model przestarzały, ale wciąż popularny w Polsce. Pacjenci go znają. Możesz go usłyszeć w grupie AA: faza zwiastunowa (palimpsesty) → krytyczna (utrata kontroli) → przewlekła.</div>
+  <div class="term-note"><strong>„Tylko wino" / „tylko piwo"</strong> to popularna obrona. Etanol zachowuje się tak samo bez względu na opakowanie. Trzy piwa wieczorem to 30 g — ten sam ładunek dla wątroby co trzy wódki.</div>
+
+  <div class="src">📚 NIAAA (2004), definicje wzorców; WHO (2018), <em>Global Status Report on Alcohol</em>; Jellinek (1960), <em>The Disease Concept of Alcoholism</em>.</div>
+</div>
+
+
+<div class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Krok 2 · dlaczego wzorzec</div>
+  <h2 class="card-prompt">Każdy wzorzec — <em>inny</em> mózg, inne leczenie.</h2>
+  <p class="card-detail">Diagnozowanie tylko po sumie tygodniowej to jak ważenie pacjenta bez sprawdzenia, ile waży jego ubranie. Dane są te same — ale obraz kliniczny zupełnie inny.</p>
+
+  <div class="term-note"><strong>BINGE — ostre uderzenie GABA.</strong> Mózg krótko, ale intensywnie zalany: ryzyko zatrucia, wypadków, śmierci. Po kilku godzinach — odbicie pobudzenia. Interwencja: edukacja o ostrych ryzykach + krótka interwencja motywacyjna.</div>
+
+  <div class="term-note"><strong>CODZIENNE — tolerancja i zależność fizyczna.</strong> Mózg „uczy się" obecności alkoholu — gdy odstawisz nagle, pojawiają się objawy odstawienne (drżenie, poty, lęk, w skrajnych — drgawki). Interwencja: planowane stopniowe ograniczenie, czasem farmakoterapia.</div>
+
+  <div class="term-note"><strong>WEEKENDOWE — błędne koło tygodnia.</strong> Praca cały tydzień → „zasłużony" weekend → kac w poniedziałek → potrzeba większej dawki w piątek. Interwencja: praca z funkcją (regulacja stresu, nuda, samotność), nie tylko z piciem.</div>
+
+  <div class="term-note"><strong>HFA — kompensacja i ukrywanie.</strong> Bardzo długo nie ma „dna". Diagnoza spóźnia się 8–10 lat. Markery laboratoryjne (GGT, MCV, CDT) wyprzedzają objawy psychospołeczne. Interwencja: dane z badań krwi jako lustro; nie konfrontacja.</div>
+
+  <div class="frame-quote">
+    „Pacjent, który nie pasuje do stereotypu 'alkoholika', może mieć cięższe AUD niż ten, który pasuje — bo pił dłużej w ukryciu."
+    <span class="frame-quote-attr">— Sarah Allen Benton (2009), <em>Understanding the High-Functioning Alcoholic</em></span>
+  </div>
+
+  <div class="src">📚 Naimi i wsp. (2003), binge drinking; Benton (2009), HFA; NIAAA, materiały dla klinicystów.</div>
+</div>
+
+
+<div class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Krok 3 · Twój obraz</div>
+  <h2 class="card-prompt">Wybierz <em>swój</em> dominujący wzorzec.</h2>
+  <p class="card-detail">Możesz mieć cechy więcej niż jednego — to częste. Wybierz ten, który najbardziej do Ciebie pasuje w ostatnich miesiącach.</p>
+
+  <button type="button" class="rel-btn" id="wzor-A" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');pokazTip('A')">
+    <span class="rel-name">A · BINGE</span>
+    <span class="rel-desc">W ciągu tygodnia mało lub nic, ale w jeden wieczór 5+ drinków (4+ jeśli kobieta). Często weekendowo, towarzysko, „odreagowywanie". Czasem tracisz wątki, masz palimpsesty.</span>
+  </button>
+  <button type="button" class="rel-btn" id="wzor-B" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');pokazTip('B')">
+    <span class="rel-name">B · CODZIENNE</span>
+    <span class="rel-desc">Każdego (lub prawie każdego) dnia kieliszek, drink albo dwa. „Nigdy się nie upijam". Trudno wyobrazić sobie tydzień bez alkoholu.</span>
+  </button>
+  <button type="button" class="rel-btn" id="wzor-C" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');pokazTip('C')">
+    <span class="rel-name">C · WEEKENDOWE</span>
+    <span class="rel-desc">Pon–czw nic lub niewiele. Pt–sb dużo. Niedziela — kac. Cykl powtarza się tygodniami.</span>
+  </button>
+  <button type="button" class="rel-btn" id="wzor-D" onclick="document.querySelectorAll('.rel-btn').forEach(b=>b.classList.remove('picked'));this.classList.add('picked');pokazTip('D')">
+    <span class="rel-name">D · HIGH-FUNCTIONING</span>
+    <span class="rel-desc">Pijesz dużo (codziennie wieczorem 3–5 drinków albo binge w weekend) — ale w pracy radzisz sobie dobrze, zarobki rosną, partner/ka „nie ma o co się czepiać". Pijesz najczęściej sama/sam.</span>
+  </button>
+
+  <div id="tip-box" class="term-note" style="display:none"></div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Twój tygodniowy bilans — szczerze.</strong> Wpisz, ile drinków średnio wypijasz w typowym tygodniu (1 drink = 10 g; 1 piwo = 1 drink; lampka wina = 1 drink; 30 ml wódki = 1 drink).</p>
+  <input type="number" id="bilans-tydzien" min="0" max="200" placeholder="np. 14" style="width:100%;padding:12px 14px;border:1px solid var(--sage);border-radius:10px;background:rgba(255,255,255,0.5);font-family:inherit;font-size:14px;color:var(--ink);margin-bottom:8px" />
+  <p style="font-size:12px;color:var(--ink-mute);margin-bottom:12px">Próg WHO „picie niskiego ryzyka": ≤14 drinków/tydzień (mężczyźni), ≤7 (kobiety).</p>
+</div>
+
+
+<div class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Krok 4 · konkretny ruch</div>
+  <h2 class="card-prompt">Pierwsza zmiana — <em>dopasowana do wzorca</em>.</h2>
+
+  <div class="term-note"><strong>Jeśli BINGE:</strong> ustal twardy limit przed wyjściem („dziś maksymalnie 3"). Naprzemiennie alkohol/woda. Powiedz komuś z kim wychodzisz, że pilnujesz limitu. Nie pij na pusty żołądek.</div>
+
+  <div class="term-note"><strong>Jeśli CODZIENNE:</strong> wprowadź <em>2 dni w tygodniu</em> bez alkoholu. Wybierz konkretne dni (np. wtorek i czwartek). To trudniejsze niż wydaje się — i jeśli nie potrafisz, masz odpowiedź na pytanie o zależność.</div>
+
+  <div class="term-note"><strong>Jeśli WEEKENDOWE:</strong> rozdziel piątek i sobotę. Zaplanuj jeden weekend „suchy" w miesiącu. Sprawdź, jak Twoje ciało i głowa się czują, gdy nie ma kaca.</div>
+
+  <div class="term-note"><strong>Jeśli HFA:</strong> zrób <em>uczciwy</em> dziennik picia przez 14 dni — zapisz każdy drink, godzinę, kontekst. Większość HFA pije więcej, niż sądzi. Liczby są nielitościwym lustrem.</div>
+
+  <p class="card-detail" style="margin-top:14px"><strong>Twoje dwa konkretne kroki na najbliższe 2 tygodnie:</strong></p>
+  <textarea class="thought-input" id="krok-1" placeholder="Krok 1: np. „Wtorek i czwartek bez alkoholu — bez wyjątku."></textarea>
+  <textarea class="thought-input" id="krok-2" placeholder="Krok 2: np. „Codziennie zapiszę każdy drink w aplikacji, bez oszukiwania."></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Na ile ufasz, że to wykonasz?</div>
+    <div class="scale-bounds"><span>0 — w ogóle</span><span>10 — w pełni</span></div>
+    <input type="range" id="zaufanie" class="scale-input" min="0" max="10" value="5" data-default="5" oninput="document.getElementById('zaufanie-num').textContent=this.value" />
+    <div class="scale-readout"><span id="zaufanie-num">5</span><span>/ 10</span></div>
+  </div>
+</div>
+
+
+<div class="card" data-step="5">
+  <div class="card-eyebrow">✨ Krok 5 · zapamiętaj</div>
+  <h2 class="card-prompt">Wzorzec — <em>nie</em> los.</h2>
+
+  <div class="final-msg">
+    Wzorzec picia <strong>jest wyuczony</strong>. To znaczy: można go odkształcić. Najtrudniejsze są pierwsze 14 dni — mózg protestuje, bo przyzwyczaił się do nagrody. Po tym czasie pojawia się przestrzeń, w której zaczyna być <em>łatwiej</em>.
+  </div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Co tydzień — krótki rachunek</div>
+    <div class="repeat-body">
+      Po każdym tygodniu zajrzyj tu z trzema pytaniami: <strong>Ile drinków w sumie?</strong> · <strong>Ile dni bez alkoholu?</strong> · <strong>Czy mój wzorzec się przesuwa?</strong> Wykres rzadko jest gładki — bywają złe tygodnie. Ale linia trendu po 6–8 tygodniach pokazuje, czy idziesz w dobrą stronę.
+    </div>
+  </div>
+
+  <div class="term-note"><strong>Najczęstsza pułapka:</strong> przeskoczyć z BINGE w weekend na codzienne picie kontrolowane („tylko po jednym drinku") — to często <em>pogorszenie</em>, nie poprawa, bo zaczyna budować się tolerancja i zależność.</div>
+
+  <div class="src">📚 NIAAA, definicje wzorców i ryzyka; WHO (2018); Babor i wsp. (2010), <em>Alcohol: No Ordinary Commodity</em>.</div>
+</div>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pokazTip(w) {
+  var box = document.getElementById('tip-box');
+  if (!box) return;
+  var t = '';
+  if (w === 'A') t = '<strong>BINGE.</strong> Ostre ryzyko jednej nocy: zatrucie, wypadek, ryzykowny seks, przemoc. Pomyśl o limicie <em>przed</em> wyjściem, nie w trakcie.';
+  if (w === 'B') t = '<strong>CODZIENNE.</strong> Główne ryzyko: zależność fizyczna i tolerancja. Test: czy potrafisz zrobić 7 dni z rzędu bez alkoholu? Jeśli to trudne — to ważna informacja.';
+  if (w === 'C') t = '<strong>WEEKENDOWE.</strong> Ryzyko: cykl tygodnia — picie staje się jedyną formą rozluźnienia. Pomyśl, co jeszcze (oprócz alkoholu) daje Ci pt-sb wieczorem ulgę.';
+  if (w === 'D') t = '<strong>HIGH-FUNCTIONING.</strong> Funkcjonujesz świetnie i właśnie dlatego diagnoza spóźnia się o lata. Zrób badania krwi (GGT, MCV, CDT) — to obiektywne lustro, którego trudno się wyprzeć.';
+  box.style.display = 'block';
+  box.innerHTML = t;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_alc_wzorce — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_alc_wzorce";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Nazywanie historii</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --story: #7a5c40; --story-deep: #5a4530;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,92,64,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--story); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--story); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--story); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--story); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--story); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,92,64,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--story); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--story); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — parchment story === */
+.frame-card { 
+  background: linear-gradient(180deg, #5a4530 0%, #3a2e22 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ NAMING THE STORY"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "📖"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.10; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.story-list {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.story-row {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 9px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.story-title { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--warm); font-weight: 600; }
+.story-desc { font-size: 11.5px; color: rgba(244,241,234,0.78); line-height: 1.4; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--story); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === STEP CARDS — 4 steps process === */
+.step-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.step-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--story);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.step-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.step-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--story); line-height: 1; min-width: 24px; }
+.step-name { font-size: 13px; font-weight: 700; flex: 1; letter-spacing: 0.04em; }
+.step-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 4px; }
+.step-howto strong { color: var(--ink); font-weight: 700; }
+.step-example {
+  font-size: 11.5px; color: var(--ink-mute);
+  font-style: italic;
+  padding: 6px 10px;
+  background: rgba(122,92,64,0.06);
+  border-radius: 6px;
+}
+.step-example::before { content: "✎ "; color: var(--story); }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--story);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--story); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--story); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,92,64,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--story); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--story); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Nazywanie historii</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Twój umysł <em>opowiada</em> historie</h1>
+    <p class="card-detail">Technika defuzji w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania) Russa Harrisa. <em>Twój umysł nie mówi prawdy — opowiada historie</em>. O tym, kim jesteś. Co cię czeka. Dlaczego wszystko pójdzie źle. Nazwanie historii — „O, znowu Saga Porażki" — tworzy <strong>dystans poznawczy</strong>: widzisz narrację jako narrację, nie jako rzeczywistość.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">5 typowych historii umysłu</div>
+      
+      <div class="story-list">
+        <div class="story-row">
+          <span class="story-title">„Jestem niewystarczający/a"</span>
+          <span class="story-desc">historia o wadliwości — wraca przy porównaniu</span>
+        </div>
+        <div class="story-row">
+          <span class="story-title">„Nie dam rady"</span>
+          <span class="story-desc">historia o niemocy — wraca przy nowym wyzwaniu</span>
+        </div>
+        <div class="story-row">
+          <span class="story-title">„Inni mają lepiej"</span>
+          <span class="story-desc">historia o porównywaniu — szczególnie aktywna na social media</span>
+        </div>
+        <div class="story-row">
+          <span class="story-title">„Coś złego się wydarzy"</span>
+          <span class="story-desc">historia o katastrofie — wraca przy niepewności</span>
+        </div>
+        <div class="story-row">
+          <span class="story-title">„Nie zasługuję"</span>
+          <span class="story-desc">historia o niegodności — wraca przy sukcesie</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Twój umysł jest <em>świetnym opowiadaczem</em>. Problem w tym, że często <em>nie odróżniasz historii od faktów</em>. Nazywanie historii odbudowuje to rozróżnienie."
+      <span class="frame-quote-attr">— Russ Harris (2009)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w fuzji historia jest „prawdą" — jeśli umysł mówi „nie dasz rady", to nie dasz rady. W defuzji historia jest <em>treścią</em>, nie rzeczywistością. Nazywanie tworzy mostek: widzisz, że <strong>słyszysz historię</strong>, a nie <strong>jesteś nią</strong>. Wybór bycia widzem, nie aktorem.</div>
+    
+    <div class="src">Harris (2009, ACT Made Simple) · Hayes (1999, ACT — An Experiential Approach)</div>
+  </section>
+
+  <!-- 2: DIAGNOSIS -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Twoja główna historia</div>
+    <h1 class="card-prompt">Nadaj jej <em>tytuł</em></h1>
+    <p class="card-detail">Pierwszy krok — <strong>znajdź swoją najczęstszą historię i nadaj jej tytuł</strong>. Im bardziej charakterystyczny i lekko zabawny, tym łatwiej ją rozpoznasz w przyszłości. „Wielka Saga Odrzucenia". „Kroniki Niewystarczalności". „Niekończąca się Opowieść o Tym, Że Nie Dasz Rady".</p>
+    
+    <div class="examples-h">Tytuł mojej najczęstszej historii (nadaj kreatywnie)</div>
+    <textarea class="thought-input" id="topTitle" placeholder='np. „Wielka Saga Odrzucenia", „Kroniki Porażki", „Niekończąca się Opowieść o Byciu Za Mało", „Saga Pana Doskonałości"...' rows="2"></textarea>
+    
+    <div class="examples-h">O czym jest ta historia? (1-2 zdania)</div>
+    <textarea class="thought-input" id="topPlot" placeholder='np. „Bohater próbuje, ale zawsze coś jest nie tak. Nigdy nie jest dość dobry. Wszyscy zauważają jego niedoskonałość. Powtarza się od dzieciństwa."' rows="3"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Ile razy w tygodniu „leci" ta historia?</div>
+      <div class="scale-label"><span>0 — rzadko</span><span>50+ — non-stop</span></div>
+      <input type="range" min="0" max="50" value="20" class="scale-input" id="freq" oninput="updateFreq()">
+      <div class="scale-readout"><span id="freqVal">20</span><span class="unit"> × tygodniowo</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="freqVerdict">
+      <span class="num">20×/tydzień</span> — <strong>regularna powtarzalność</strong>. Historia jest twoim domyślnym scenariuszem. Nazywanie zacznie ją odsłaniać jako <em>schemat</em>, nie prawdę.
+    </div>
+    
+    <div class="examples-h">Kiedy ta historia jest najgłośniejsza? (typowe wyzwalacze)</div>
+    <textarea class="thought-input" id="triggers" placeholder='np. „Wieczorem przed snem. Po porównaniu się z kimś z LinkedIn. Po krytyce w pracy. Po niedzieli z rodziną."' rows="3"></textarea>
+  </section>
+
+  <!-- 3: PROTOCOL — 4 STEPS -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Praktyka nazywania</div>
+    <h1 class="card-prompt">4 kroki <em>w czasie rzeczywistym</em></h1>
+    <p class="card-detail">Gdy złapiesz się na wciąganiu w historię, <strong>wykonaj te 4 kroki</strong>. Razem zajmują 10-30 sekund. Nie próbujesz historii „naprawić" lub „obalić" — tylko ją <em>nazywasz i przepuszczasz dalej</em>.</p>
+    
+    <div class="step-list">
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">1</span>
+          <span class="step-name">Zauważ ruminację — pauza</span>
+        </div>
+        <div class="step-howto"><strong>Pierwszy znak: krążenie tych samych myśli</strong>. Złap moment, gdy zauważasz, że już 10 minut analizujesz tę samą rzecz. Mała pauza — oddech, kontakt z otoczeniem.</div>
+        <div class="step-example">„Aha — siedzę w kuchni z kawą i już 15 minut wałkuję tę samą rozmowę z szefem"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">2</span>
+          <span class="step-name">Zapytaj: „Jaką historię słyszę?"</span>
+        </div>
+        <div class="step-howto"><strong>Bez oceniania, bez analizy</strong>. Po prostu pytanie. Często pierwsza odpowiedź — „prawdę słyszę, nie historię". Wytrzymaj. Po 5 sekundach pojawi się nazwa: „Aha, to znowu Historia o Niewystarczalności".</div>
+        <div class="step-example">„Tak — to Saga Tego, Że Sobie Nie Radzę W Pracy"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">3</span>
+          <span class="step-name">Powiedz: „To jest Historia o…"</span>
+        </div>
+        <div class="step-howto"><strong>Wypowiedz nazwę cicho lub na głos</strong>. „To jest [tytuł]". To werbalne potwierdzenie tworzy dystans — przesuwasz się z aktora na widza. Możesz dodać: „Dziękuję, umyśle, za tę klasykę".</div>
+        <div class="step-example">„O, to jest Niekończąca się Opowieść o Byciu Niewystarczającym. Dziękuję, umyśle"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">4</span>
+          <span class="step-name">Wróć do tego, co robisz</span>
+        </div>
+        <div class="step-howto"><strong>Nie oceniaj historii — po prostu wróć do działania</strong>. Historia może dalej iść w tle (jak radio). Ty robisz to, co robiłeś/aś — albo wybierasz nowe działanie zgodne z wartością.</div>
+        <div class="step-example">„OK, wracam do raportu. Historia gra — ja piszę"</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Pułapka</strong>: chęć „rozwiązania" historii zanim wrócisz do życia. „Najpierw zrozumiem, dlaczego tak myślę, potem zacznę działać". To pułapka — historia nigdy nie jest „rozwiązana", bo jest <em>schematem narracji</em>, nie problemem do rozwiązania. <strong>Nazwij — i idź dalej</strong>.</div>
+  </section>
+
+  <!-- 4: PRACTICE — TOP 3 STORIES -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Mapa moich historii</div>
+    <h1 class="card-prompt">3 najczęstsze <em>tytuły</em></h1>
+    <p class="card-detail">Stwórz <strong>swój katalog historii</strong> — 3 najczęstsze tytuły z ostatniego tygodnia. Im więcej historii zidentyfikujesz, tym mniej cię zaskakują. Gdy wraca historia z katalogu — od razu wiesz: „Aha, znowu ona".</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój katalog</div>
+      
+      <div class="commit-prompt-label">Historia 1 (tytuł + jeden zdaniem o czym)</div>
+      <textarea class="thought-input" id="story1" placeholder='np. „Saga »Nie Dam Rady« — bohater zaczyna nowe zadanie, paraliżuje się, nigdy nie ruszy"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Historia 2</div>
+      <textarea class="thought-input" id="story2" placeholder='np. „Kroniki »Inni Mają Lepiej« — bohater scrolluje LinkedIn i upewnia się, że jest przegrany"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Historia 3</div>
+      <textarea class="thought-input" id="story3" placeholder='np. „Wielka Opowieść »Coś Pójdzie Źle« — bohater planuje katastrofę z każdej możliwej sytuacji"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co się zmienia, gdy nazywam zamiast wchodzić?</div>
+      <textarea class="thought-input" id="effect" placeholder='np. „Czuję większy dystans. Historia traci trochę mocy. Mogę wybrać, czy jej słuchać. Pierwszy raz widzę te narracje jako schemat, nie jako »fakty o mnie«."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Bonus dla zaawansowanych</strong>: zauważ, że historie z katalogu często mają <em>tę samą fabułę</em>. Bohater jest niewystarczający → próbuje → zawodzi → cierpi. Albo: bohater oczekuje katastrofy → przygotowuje się → katastrofa nie nadchodzi → znajduje nową katastrofę. Powtarzalność fabuły = sygnał, że to schemat, a nie prawda.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Codzienna higiena</div>
+    <h1 class="card-prompt">Sygnał i <em>nawyk</em></h1>
+    <p class="card-detail">Nazywanie staje się skuteczne, gdy <em>jest nawykowe</em>. Stwórz <strong>jeden konkretny sygnał</strong>, który uruchomi technikę. Bez sygnału praktyka zostanie tylko teorią.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój nawyk nazywania</div>
+      
+      <div class="commit-prompt-label">Mój sygnał (kiedy włączam praktykę nazywania)</div>
+      <textarea class="thought-input" id="cue" placeholder='np. „Gdy łapię się, że już 10 minut wałkuję tę samą myśl. Albo: gdy czuję, że scrolluję bez celu — to znak ucieczki przed historią."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Moja krótka formułka (do wypowiadania)</div>
+      <textarea class="thought-input" id="phrase" placeholder='np. „Aha, to znowu Saga X. Dziękuję, umyśle." Albo: „O, to ta historia o niewystarczalności. Słyszę. Wracam do roboty."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Przegląd tygodniowy: 5 minut w niedzielę</div>
+      <textarea class="thought-input" id="review" placeholder='np. „Niedziela 19:00 — która historia była dominująca? Co ją wyzwala? Czy któraś nowa weszła do katalogu?"' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Reguła praktyki</div>
+    <div class="term-note">
+      <strong>W ciągu dnia</strong> — gdy zauważam ruminację, wykonuję 4 kroki (10-30s)<br>
+      <strong>Co tydzień</strong> — przegląd katalogu historii (5 min)<br>
+      <strong>Co miesiąc</strong> — czy pojawiły się nowe historie? Czy stare zniknęły?<br>
+      <strong>W kryzysie</strong> — pytanie: <em>słyszę historię, czy widzę fakty?</em>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body">Im zabawniejszy tytuł, <em>tym łatwiej zauważyć historię</em>. „Saga Wielkiego Tragika" lepsza niż „Historia o tym, że jestem smutny". <strong>Nazywanie ze szczyptą humoru</strong> osłabia powagę narracji — a powaga była tym, co dawało historii moc.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateFreq();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    ['topTitle','topPlot','triggers','story1','story2','story3','effect','cue','phrase','review'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('freq').value = 20;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function updateFreq() {
+  const v = parseInt(document.getElementById('freq').value);
+  document.getElementById('freqVal').textContent = v;
+  
+  const verdict = document.getElementById('freqVerdict');
+  if (v >= 40) {
+    verdict.innerHTML = `<span class="num">${v}×/tydzień</span> — <strong>historia dominująca</strong>. Niemal każdą sytuację filtruje przez ten schemat. Nazywanie musi być <em>wbudowane w codzienność</em> — przy każdym ruminowaniu.`;
+  } else if (v >= 20) {
+    verdict.innerHTML = `<span class="num">${v}×/tydzień</span> — <strong>regularna powtarzalność</strong>. Historia jest twoim domyślnym scenariuszem. Nazywanie zacznie ją odsłaniać jako <em>schemat</em>, nie prawdę.`;
+  } else if (v >= 10) {
+    verdict.innerHTML = `<span class="num">${v}×/tydzień</span> — <strong>częste wystąpienia</strong>. Aktywna w wielu sytuacjach. Praktyka pomoże ci zauważyć wzorzec — często ta sama historia w różnych „kostiumach".`;
+  } else if (v >= 3) {
+    verdict.innerHTML = `<span class="num">${v}×/tydzień</span> — <strong>okazjonalna historia</strong>. Aktywna przy konkretnych wyzwalaczach. Naucz się je rozpoznawać — łatwiej je przewidzieć.`;
+  } else {
+    verdict.innerHTML = `<span class="num">${v}×/tydzień</span> — <strong>rzadkie pojawianie</strong>. Albo masz dobrze przepracowaną relację z tym schematem, albo go <em>nie zauważasz</em>. Sprawdź drugą opcję — czasem niewidzialne historie są najsilniejsze.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_nazywanie_historii";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

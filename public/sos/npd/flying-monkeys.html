@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · triangulacja i flying monkeys</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.warn-card { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); border-radius: 10px; padding: 12px 14px; margin: 14px 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.warn-card strong { color: var(--ink); display: block; margin-bottom: 6px; font-size: 12.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.tri-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.tri-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.tri-flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
+.tri-stage { background: rgba(184,197,168,0.18); border: 1px solid rgba(184,197,168,0.4); padding: 10px 12px; border-radius: 8px; font-size: 12.5px; color: var(--bg); font-weight: 600; min-width: 95px; text-align: center; font-family: 'Fraunces', serif; }
+.tri-arrow { font-size: 18px; color: var(--sage); font-weight: 700; }
+
+.fm-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.fm-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.fm-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.fm-row.picked .fm-d { color: rgba(244,241,234,0.85) !important; }
+.fm-h { font-weight: 600; font-size: 13.5px; }
+.fm-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>triangulacja i flying monkeys</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Flying monkeys — gdy <em>narcyz</em> używa innych jako broni</h1>
+  <p class="card-detail">Triangulacja — pojęcie z teorii rodzinnej Murraya Bowena (lata 60., 1978, „Family Therapy in Clinical Practice"). Michael Kerr i Murray Bowen (1988, „Family Evaluation"): triangulacja to wciąganie trzeciej osoby w dwuosobowy konflikt, by zmniejszyć napięcie i zyskać sojusznika. „Flying monkeys" — termin z Wizard of Oz Lymana Frank Bauma (1900) — pojawia się w literaturze samopomocowej dla ofiar przemocy emocjonalnej (lata 2000+) jako metafora osób mobilizowanych przez narcyza przeciw partnerowi. Mechanizm: narcyz buduje publiczny wizerunek („taki miły", „tyle wycierpiał"). Gdy ofiara próbuje skończyć relację lub ujawnić abuse — narcyz mobilizuje sieć: rodzinę, przyjaciół, kolegów. DARVO (Deny-Attack-Reverse Victim-Offender) przesuwa się na poziom społeczny.</p>
+
+  <div class="warn-card">
+    <strong>⚕️ Kontekst tej karty</strong>
+    Triangulacja i flying monkeys są mechanizmami przemocowymi, które izolują ofiarę. Rozpoznanie wzorca jest pierwszym krokiem. Wyjście wymaga akceptacji STRATY części sieci społecznej — niektóre relacje były funkcjonalne tylko w ramach narracji narcyza i bez niej upadną. Praca z izolacją i odbudową niezależnych relacji wymaga miesięcy + wsparcia terapeutycznego.
+  </div>
+
+  <div class="tri-card">
+    <div class="tri-h">Triangulacja — schemat</div>
+    <div class="tri-flow">
+      <div class="tri-stage">NPD<br><span style="font-weight:400;font-size:11px;color:rgba(244,241,234,0.7);">narcyz</span></div>
+      <span class="tri-arrow">↘</span>
+      <div class="tri-stage">FLYING MONKEY<br><span style="font-weight:400;font-size:11px;color:rgba(244,241,234,0.7);">trzecia osoba</span></div>
+      <span class="tri-arrow">↙</span>
+      <div class="tri-stage">OFIARA<br><span style="font-weight:400;font-size:11px;color:rgba(244,241,234,0.7);">izolowana</span></div>
+    </div>
+    <div style="font-size: 11.5px; color: rgba(244,241,234,0.7); text-align: center; margin-top: 8px; font-style: italic; font-family: 'DM Sans', sans-serif;">narcyz mobilizuje sieć przeciw ofierze, ofiara traci zewnętrzne punkty walidacji</div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🎭</span><span class="element-text"><strong>Publiczna wersja narcyza</strong> — narcyz zwykle ma DUŻY publiczny urok. „Taki miły", „przykładny", „wszyscy go uwielbiają". Ofiara doświadcza prywatnej strony, która jest niedostępna dla otoczenia. Stąd niedowierzanie sieci: „on? on by tego nie zrobił".</span></div>
+    <div class="element-row"><span class="element-icon">📞</span><span class="element-text"><strong>Mobilizacja przed konfliktem</strong> — narcyz często ROZSIEWA NARRACJĘ z wyprzedzeniem. „Moja partnerka ma problemy psychiczne", „ojciec żyje pod jej terrorem", „nie wiem, jak długo wytrzymam". Gdy ofiara próbuje opowiedzieć swoją wersję — sieć jest już przygotowana do nie wierzenia.</span></div>
+    <div class="element-row"><span class="element-icon">⚔️</span><span class="element-text"><strong>DARVO społeczne</strong> — Freyd (1997). Po ujawnieniu abuse narcyz odwraca: „to ofiara jest agresorką, ja jestem cierpiącą ofiarą". Flying monkeys przekazują tę narrację dalej. Ofiara faktyczna staje się publicznie „toksyczną", „awanturującą się", „chcącą zniszczyć rodzinę".</span></div>
+    <div class="element-row"><span class="element-icon">🌫️</span><span class="element-text"><strong>Trzy typy flying monkeys</strong>. (1) ŚWIADOMI — wiedzą, że narcyz jest abusywny, ale wybierają jego stronę z lojalności / strachu / zysku. (2) NIEŚWIADOMI — nie widzą abuse, wierzą publicznej wersji. (3) AKTYWNI — sami uczestniczą w abuse, plotkują, wysyłają wiadomości w imieniu narcyza.</span></div>
+  </div>
+
+  <div class="frame-quote">„Triangulacja jest mechanizmem strukturalnym — nie zależy od dobrej lub złej woli flying monkeys. Większość z nich nie zdaje sobie sprawy, że uczestniczy w przemocy emocjonalnej. Wierzą publicznej wersji narcyza, bo nie mają dostępu do prywatnej. Próba przekonania ich rzadko działa — zwykle pogłębia ich pewność, że ofiara jest „toxic"."<span class="frame-quote-attr">— Michael Kerr i Murray Bowen (1988, Family Evaluation: An Approach Based on Bowen Theory)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: wyjście z triangulacji wymaga AKCEPTACJI straty części sieci społecznej. Niektóre relacje były funkcjonalne tylko w ramach narracji narcyza — bez tej narracji upadają. To bolesne, ale konieczne. Próba „przekonania" flying monkeys zwykle wzmacnia dynamikę. Skuteczna jest cisza i czas — wraz z odbudową niezależnych relacji.</div>
+
+  <div class="src">Bowen (1978, Family Therapy in Clinical Practice — koncepcja triangulacji) · Kerr i Bowen (1988, Family Evaluation: An Approach Based on Bowen Theory) · Freyd (1997, Violations of Power, Adaptive Blindness, and Betrayal Trauma Theory, Feminism & Psychology — DARVO) · Baum (1900, The Wonderful Wizard of Oz — flying monkeys) · Hare (1993, Without Conscience — manipulacja społeczna w cluster B) · Stout (2005, The Sociopath Next Door)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Identyfikacja flying monkeys</div>
+  <h1 class="card-prompt">Kto <em>w Twojej sieci</em> jest mobilizowany?</h1>
+  <p class="card-detail">Flying monkeys nie są jedną grupą — różnią się świadomością, motywacją, intensywnością działania. Świadomość ich kategorii pomaga wybrać strategię (kto może być odzyskany, kto stracony). Zaznacz typy, które rozpoznajesz w swojej sytuacji.</p>
+
+  <div class="fm-grid">
+    <div class="fm-row" id="f1" onclick="pickFm('f1')">
+      <div class="fm-h">👨‍👩‍👧 Rodzina narcyza — naturalna lojalność</div>
+      <div class="fm-d">Rodzice, rodzeństwo narcyza. Wieloletnia lojalność rodzinna często wyprzedza obiektywną ocenę faktów. „On nie mógłby tak postąpić — znam go całe życie". Najtrudniej do odzyskania.</div>
+    </div>
+    <div class="fm-row" id="f2" onclick="pickFm('f2')">
+      <div class="fm-h">🤝 Wspólni przyjaciele — niedostępność prywatnej wersji</div>
+      <div class="fm-d">Osoby, które znają was jako parę / rodzinę. Widzą publiczne zachowanie narcyza, nie prywatne. Często nieświadomi flying monkeys. Niektórzy mogą być odzyskani po dłuższym czasie.</div>
+    </div>
+    <div class="fm-row" id="f3" onclick="pickFm('f3')">
+      <div class="fm-h">👥 Twoja własna rodzina — narracja narcyza dotarła do nich</div>
+      <div class="fm-d">Twoi rodzice, rodzeństwo, kuzyni mogą uwierzyć narracji narcyza. „On taki miły, ona zawsze była trudna". Szczególnie bolesne — twoja własna rodzina przeciw Tobie.</div>
+    </div>
+    <div class="fm-row" id="f4" onclick="pickFm('f4')">
+      <div class="fm-h">💼 Koledzy z pracy — publiczny wizerunek dominuje</div>
+      <div class="fm-d">Współpracownicy widzą profesjonalną wersję narcyza. Nie znają prywatnej dynamiki. Nieświadomi flying monkeys. Często poza zasięgiem dyskusji o problemie.</div>
+    </div>
+    <div class="fm-row" id="f5" onclick="pickFm('f5')">
+      <div class="fm-h">🩺 Specjaliści — terapeuta par, ksiądz, prawnik</div>
+      <div class="fm-d">Niezamierzeni flying monkeys. Terapeuta par bez doświadczenia w pracy z NPD często staje się narzędziem dalszej manipulacji. Ksiądz może wzywać do „pojednania" w niemożliwych warunkach. Bez specjalistycznego rozumienia — nieświadomie wzmacniają dynamikę.</div>
+    </div>
+    <div class="fm-row" id="f6" onclick="pickFm('f6')">
+      <div class="fm-h">🌐 Aktywni współsprawcy — uczestniczą w plotkach, kontaktach</div>
+      <div class="fm-d">Osoby, które wysyłają wiadomości w imieniu narcyza, plotkują, śledzą Cię w mediach. Czasem rodzina narcyza, czasem wspólni znajomi. Klasyczna definicja „flying monkeys" — aktywne uczestnictwo.</div>
+    </div>
+    <div class="fm-row" id="f7" onclick="pickFm('f7')">
+      <div class="fm-h">📱 Sieć online — komentatorzy, „świadkowie"</div>
+      <div class="fm-d">W erze mediów społecznościowych — nowy typ. Osoby, które komentują Twoje wpisy, śledzą, „udzielają lekcji" w komentarzach. Często aktywowani publicznymi wpisami narcyza.</div>
+    </div>
+    <div class="fm-row" id="f8" onclick="pickFm('f8')">
+      <div class="fm-h">👶 Wasze dzieci (jeśli są) — najbardziej skomplikowany przypadek</div>
+      <div class="fm-d">Dzieci są mimowolnymi flying monkeys, gdy narcyz manipuluje informacją, wprowadza alienację rodzicielską, używa dzieci jako posłańców. Wymaga osobnego, profesjonalnego podejścia.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myMap" placeholder="Konkretnie: kto z Twojej sieci jest aktywnie zaangażowany przez narcyza? Kto jest nieświadomy, ale przekazuje narrację? Kto pozostaje neutralny lub po Twojej stronie?" style="min-height: 100px;"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła oceny</strong>: świadome flying monkeys (typ 1) zwykle nie są odzyskiwalni. Nieświadomi (typ 2) — niektórzy są (gdy zobaczą publiczne sygnały, np. fakty kryminalne). Aktywni współsprawcy (typ 3) — nie są. Neutralni — zachowuj. Nie próbuj przekonywać świadomych — to wzmacnia ich pewność, że jesteś „toxic".</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Akceptacja straty</div>
+  <h1 class="card-prompt">Wpisz <em>relacje</em> w trzech kategoriach</h1>
+  <p class="card-detail">Bolesny, ale konieczny krok: rozpoznanie, które relacje są stratą, a które można odbudować. Bez tego rozpoznania ofiara wydaje energię na próby „przekonania" osób, których nie da się przekonać — energii, która powinna iść w odbudowę autentycznych relacji.</p>
+
+  <textarea class="thought-input" id="cat1" placeholder="① RELACJE STRACONE — które relacje były funkcjonalne TYLKO w ramach narracji narcyza? Po wyjściu z systemu nie mają fundamentu. Bolesne, ale prawdziwe. „Rodzina narcyza", „nasi wspólni przyjaciele, którzy wybrali jego stronę"..." style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="cat2" placeholder="② RELACJE NIEPEWNE — które wymagają czasu, mogą być odzyskane lub nie? Czasem osoby, które potrzebują widzieć fakty publiczne, by zmienić narrację. „Ciotka X — może z czasem zauważy"..." style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="cat3" placeholder="③ RELACJE STABILNE — które są niezależne od narracji narcyza? Twoja długoletnia przyjaciółka. Twoja siostra. Nowi znajomi spoza systemu. Te relacje są fundamentem. Z nimi odbudowujesz siatkę." style="min-height: 100px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch — kategoryzowanie wszystkich w „niepewne" („może z czasem...") jako sposób uniknięcia żałoby. To pozornie ochronne, ale w praktyce blokuje proces. Akceptacja, że NIEKTÓRE relacje są naprawdę stracone (w wersji, w której funkcjonowały), pozwala zainwestować energię w stabilne i nowe.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — wyjście z triangulacji</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> ku niezależności</h1>
+  <p class="card-detail">Wyjście z triangulacji jest długoterminowym procesem. Te cztery kroki tworzą strukturę pierwszych miesięcy. Nie są jednorazową interwencją — są zasadami codziennymi.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — od triangulacji do niezależnej sieci</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>NIE PRÓBUJ PRZEKONYWAĆ FLYING MONKEYS</strong>. Pokusa jest naturalna („wystarczy, że im opowiem prawdę"). Skuteczna rzadko. Świadomi flying monkeys nie chcą prawdy. Nieświadomi potrzebują WIDZIEĆ fakty publicznie, nie słyszeć od Ciebie. Twoja wersja, podana im, zostanie odebrana jako „kontratak toxic ofiary".</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>CISZA + CZAS — z większością flying monkeys</strong>. Nie tłumacz. Nie obrażaj. Po prostu mniej kontaktu. Na pytania o sytuację: „dziękuję za troskę, nie chcę o tym rozmawiać". Bez szczegółów. Bez obronnych argumentów. Powtarzane spokojnie. Z czasem niektórzy zauważają fakty — niektórzy nie. Tego nie kontrolujesz.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>ODBUDOWA NIEZALEŻNYCH RELACJI</strong>. Nowi znajomi POZA systemem. Stare relacje, które byłaś zaniedbała w trakcie ekspozycji. Grupy wsparcia (np. dla osób po toksycznych relacjach). Terapeuta indywidualny. Cel: zbudowanie sieci, w której Twoja autentyczna self może istnieć — bez konkurowania z narracją narcyza.</para>.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>DOKUMENTACJA — na wypadek konsekwencji prawnych</strong>. W rozwodach, walce o dzieci, sprawach cywilnych narcyz może wykorzystać flying monkeys jako „świadków". Twoja dokumentacja (e-maile, sms, daty zdarzeń) chroni Cię prawnie. Bez niej Twoja wersja konkuruje ze zorganizowaną narracją narcyza.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: jaką jedną relację „straconą" akceptujesz w nadchodzącym tygodniu (przestajesz próbować odzyskać)? Jaką niezależną relację zaczynasz odbudowywać? Jaką dokumentację zaczynasz prowadzić?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: każdy zaakceptowany krok = jeden trening niezależności od triangulacji. Pierwsze 1-3 miesiące są najtrudniejsze (samotność, smutek, pokusa kontaktu z flying monkeys). Po 6-12 miesiącach niezależna sieć zaczyna być stabilna. Po 2-3 latach — ofiara zwykle ma autentyczną sieć, która nie istniała w systemie narcyza.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>system</em> stał się czytelniejszy?</h1>
+  <p class="card-detail">Wróć tu po wykonaniu kroków 3-4. Mierzymy jasność rozumienia triangulacji — czy widzisz wzorzec systemowy (jakie osoby są świadomymi flying monkeys, jakie nieświadomymi, jakie stabilnymi neutralami) czy nadal jest to chaos „dlaczego wszyscy są przeciw mnie". Pierwsza refleksja zwykle daje wzrost o 1-2 punkty.</p>
+
+  <div class="scale">
+    <div class="scale-title">Jasność rozumienia triangulacji — przed</div>
+    <div class="scale-bounds"><span>0 — chaos</span><span>10 — czytelny system</span></div>
+    <input type="range" class="scale-input" id="bClar" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bClarv">3</span></div>
+  </div>
+  <div class="scale">
+    <div class="scale-title">Jasność — po refleksji</div>
+    <div class="scale-bounds"><span>0 — chaos</span><span>10 — czytelny system</span></div>
+    <input type="range" class="scale-input" id="aClar" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aClarv">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy rozpoznajesz konkretne osoby w kategoriach? Co byłoby pierwszym krokiem szukania grupy wsparcia POZA systemem?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: wyjście z triangulacji to proces miesięcy do lat. Pierwsze 6-12 miesięcy są najtrudniejsze (samotność, smutek po stratach, pokusa kontaktu). Po 1-2 latach niezależna sieć zaczyna być stabilna. Bez akceptacji STRATY niektórych relacji — proces się nie rozpoczyna. To bolesne, ale konieczne. Praca z terapeutą indywidualnym + grupą wsparcia istotnie skraca proces.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Triangulacja: <em>narcyz mobilizuje sieć przeciw ofierze</em>. Flying monkeys: świadomi (lojalni z wyboru), nieświadomi (wierzą publicznej wersji), aktywni (uczestniczą w abuse). DARVO społeczne: ofiara staje się „agresorką", narcyz „cierpiącą ofiarą". <strong>Wyjście wymaga akceptacji STRATY części sieci + odbudowy niezależnych relacji</strong>. Próba przekonania flying monkeys rzadko działa — cisza i czas są skuteczniejsze.</div>
+  </div>
+
+  <div class="src">Bowen (1978, Family Therapy in Clinical Practice — koncepcja triangulacji) · Kerr i Bowen (1988, Family Evaluation: An Approach Based on Bowen Theory) · Freyd (1997, Violations of Power, Adaptive Blindness, and Betrayal Trauma Theory, Feminism & Psychology — DARVO) · Baum (1900, The Wonderful Wizard of Oz — flying monkeys jako metafora) · Stout (2005, The Sociopath Next Door) · Hare (1993, Without Conscience — manipulacja społeczna w cluster B)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickFm(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bC = parseInt(document.getElementById('bClar').value || 0, 10);
+    var aC = parseInt(document.getElementById('aClar').value || 0, 10);
+    var dC = aC - bC;
+    var msg = '';
+    if (dC >= 2) msg = 'Jasność dynamiki wzrosła o ' + dC + ' — triangulacja przestała być chaosem indywidualnych konfliktów, stała się rozpoznawalnym systemem. Akceptacja straty części sieci jest pierwszym krokiem wyjścia.';
+    else if (dC >= 1) msg = 'Drobny ruch (+' + dC + ') — typowy w pierwszej refleksji. Triangulacja jest STRUKTURALNA, nie indywidualna. Każdy z flying monkeys działa autonomicznie, ale wzorzec jest spójny.';
+    else if (dC === 0) msg = 'Bez zmian — możliwe, że wciąż masz nadzieję „przekonać" flying monkeys. Ten odruch jest naturalny, ale skuteczny rzadko. Akceptacja, że niektóre relacje były funkcjonalne tylko w ramach narracji NPD, jest trudna.';
+    else msg = 'Spadek — czasem rozpoznanie pełnej skali izolacji aktywuje smutek lub gniew. To NIE jest porażka. Świadomość strat jest częścią procesu wyjścia. Odbudowa NIEZALEŻNYCH relacji wymaga czasu.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.fm-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_flying_monkeys — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_flying_monkeys";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bClar','aClar'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

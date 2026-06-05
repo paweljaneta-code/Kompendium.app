@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wartości</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === WARTOSC-LIST === */
+.wart-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.wart-card { padding: 14px; background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.wart-card:hover, .wart-card:active { background: rgba(122,146,112,0.06); }
+.wart-card.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.wart-h { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.wart-icon { font-size: 20px; flex-shrink: 0; }
+.wart-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--ink); }
+.wart-tick { font-size: 16px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.wart-card.picked .wart-tick { opacity: 1; }
+.wart-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 30px; }
+.wart-desc strong { color: var(--ink); }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === COST-CARD (krok 3) === */
+.cost-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.cost-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 10px; }
+.cost-list { display: flex; flex-direction: column; gap: 6px; }
+.cost-item { padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.cost-item strong { color: var(--bg); }
+
+/* === MOTTO-CARD (krok 5) === */
+.motto-card { background: linear-gradient(135deg, rgba(122,146,112,0.12), rgba(216,225,205,0.4)); border: 1.5px solid var(--sage-deep); border-radius: 14px; padding: 18px 20px; margin: 6px 0 14px; }
+.motto-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; text-align: center; }
+.motto-input { width: 100%; padding: 14px 16px; border: 1.5px solid var(--sage-deep); background: rgba(255,255,255,0.85); border-radius: 10px; font-family: 'Fraunces', serif; font-size: 16px; line-height: 1.45; resize: none; color: var(--ink); font-style: italic; text-align: center; }
+.motto-input::placeholder { color: var(--ink-mute); font-style: italic; }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wartości</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Twoje <em>wartości</em> w SAD</h1>
+    <p class="card-detail"><strong>Wyjaśnianie wartości</strong> (values clarification, Hayes, Strosahl, Wilson 1999) — fundament terapii <strong>ACT</strong> (Acceptance and Commitment Therapy — terapia akceptacji i zaangażowania). Lęk społeczny wymusza <em>chroniczne unikanie</em> sytuacji, które są <strong>zgodne z twoimi wartościami</strong>: bliskie relacje, autentyczność, służba innym, rozwój. Każde uniknięcie jest <em>krótkoterminową ulgą + długoterminowym kosztem</em>. Wartości to nie to samo, co cele — <strong>wartości to kierunek</strong>, w którym idziesz, niezależnie od tego, co czujesz. Możesz iść <em>z lękiem</em>, ale w stronę wartości.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy pracy z wartościami</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🧭</span>
+          <span class="element-text"><strong>Kierunek</strong> = wartości to <em>kompas</em>, nie meta. Idziesz w stronę „bliskości”, nie do niej</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🚪</span>
+          <span class="element-text"><strong>Cena unikania</strong> = co lęk codziennie kradnie z życia zgodnego z wartościami</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">⚖️</span>
+          <span class="element-text"><strong>Bilans</strong> = czy chwilowa ulga z unikania jest warta utraty wartości</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Działanie</strong> = jeden konkretny krok w stronę wartości <em>z lękiem w plecaku</em></span>
+        </div>
+      </div>
+      <div class="frame-quote">„Wartości są jak <em>kompas</em>: pokazują kierunek, ale nigdy nie dochodzisz na sam północ.”
+        <span class="frame-quote-attr">— Steven C. Hayes (1999, ACT)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w SAD pacjenci często mówią <em>„moją wartością jest spokój / brak lęku”</em>. To <strong>nie jest wartość</strong> — to ucieczka od emocji. Wartość brzmi: <em>„być obecnym w bliskich relacjach”</em>, <em>„uczyć się i rozwijać”</em>. Można je realizować w lęku — i to <strong>jedyna droga</strong> do zmiany.</div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999, ACT) · Harris (2009, ACT Made Simple) · Wilson i DuFrene (2009, Mindfulness for Two) · Herbert i Cardaciotto (2005)</div>
+  </section>
+  <!-- 2: 5 FILARÓW -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 5 filarów</div>
+    <h1 class="card-prompt">Co dla ciebie <em>jest ważne</em>?</h1>
+    <p class="card-detail">Wybierz <strong>2-3 obszary</strong>, w których lęk społeczny <em>najbardziej</em> ogranicza twoje życie. Nie próbuj wszystkich naraz — to gwarantuje rozproszenie. Każdy obszar to konkretne sytuacje, które unikasz, a chciałeś być w nich obecny.</p>
+    
+    <div class="term-note"><strong>Reguła wyboru</strong>: 2-3 obszary maksimum w jednej sesji. Wartości są <em>całożyciowe</em> — nie musisz dziś rozwiązać wszystkiego. Wybierz tę, którą lęk <strong>najsilniej blokuje teraz</strong>.</div>
+    
+    <div class="wart-list">
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">💞</span>
+          <span class="wart-name">Bliskie relacje</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Bliskość z partnerem/ką, rodziną, przyjaciółmi. <strong>Co lęk kradnie</strong>: szczerość, pokazanie słabości, prośby o wsparcie, fizyczna obecność na spotkaniach.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">🤝</span>
+          <span class="wart-name">Przyjaźnie i społeczność</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Krąg znajomych, członkostwo w grupie, dzielenie się czasem. <strong>Co lęk kradnie</strong>: nowe znajomości, pogłębianie istniejących, propozycje spotkań.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">💼</span>
+          <span class="wart-name">Praca i rozwój zawodowy</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Wkład w pracy, nauka, awans, autentyczność zawodowa. <strong>Co lęk kradnie</strong>: zabieranie głosu, prezentowanie pomysłów, networking, prośby o pomoc / informację zwrotną.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">🎓</span>
+          <span class="wart-name">Edukacja i pasje</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Kursy, hobby, pasje wymagające ekspozycji społecznej. <strong>Co lęk kradnie</strong>: zapisy na warsztaty, udział w dyskusjach, prezentowanie własnych prac.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">💝</span>
+          <span class="wart-name">Romans, randki, partnerstwo</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Poznawanie kogoś, randki, intymność emocjonalna i fizyczna. <strong>Co lęk kradnie</strong>: pierwsze kroki, wyrażanie uczuć, przyjmowanie zainteresowania.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">🌱</span>
+          <span class="wart-name">Autentyczność i samorealizacja</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Bycie sobą, wyrażanie opinii, sprzeciw, indywidualność. <strong>Co lęk kradnie</strong>: niezgadzanie się, mówienie „nie”, wyrażanie potrzeb, pokazywanie siebie.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">🤲</span>
+          <span class="wart-name">Wkład i służba innym</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Pomaganie, wolontariat, mentoring, bycie potrzebnym. <strong>Co lęk kradnie</strong>: oferowanie pomocy, prowadzenie grupy, wystąpienia publiczne dla sprawy.</div>
+      </div>
+      
+      <div class="wart-card" onclick="togglePick(this)">
+        <div class="wart-h">
+          <span class="wart-icon">⚕️</span>
+          <span class="wart-name">Zdrowie i samoopieka</span>
+          <span class="wart-tick">✓</span>
+        </div>
+        <div class="wart-desc">Wizyty u lekarza, terapia, sport w grupie, dietetyk. <strong>Co lęk kradnie</strong>: regularne badania, rozmowy z lekarzem, zajęcia zespołowe.</div>
+      </div>
+    </div>
+  </section>
+  <!-- 3: AUDYT KOSZTU -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Audyt kosztu</div>
+    <h1 class="card-prompt">Co lęk <em>codziennie ci kradnie</em>?</h1>
+    <p class="card-detail">Konkretne, codzienne <strong>koszty unikania</strong>. Nie ogólnie „nie mam życia” — z konkretem: jaką sytuację, jaką rozmowę, jaką decyzję uniknąłeś w ostatnich 7 dniach. Każdy koszt = utracona okazja zgodna z wartością.</p>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: każdy zapisany koszt to <em>moneta</em>, którą codziennie płacisz lękowi. Po tygodniu liczenia kosztów — większość osób <strong>doświadcza wstrząsu</strong>: „nie zdawałem sobie sprawy, ile to mnie kosztuje”. To rozpoczyna realne zmiany.</div>
+    
+    <div class="cost-card">
+      <div class="cost-h">Typowe koszty unikania w SAD — przykłady</div>
+      <div class="cost-list">
+        <div class="cost-item"><strong>Niewysłany SMS</strong> do przyjaciela („nie chcę go niepokoić, mam zły dzień”)</div>
+        <div class="cost-item"><strong>Niewzięcie głosu</strong> na zebraniu, mimo że miałeś dobry pomysł</div>
+        <div class="cost-item"><strong>Niezadana prośba</strong> o pomoc / informację zwrotną / podwyżkę / urlop</div>
+        <div class="cost-item"><strong>Wyjście wcześniej</strong> z imprezy, na której chciałeś poznać kogoś</div>
+        <div class="cost-item"><strong>Odmówiona wizyta</strong> u rodziny / przyjaciela („dziś nie dam rady”)</div>
+        <div class="cost-item"><strong>Niepowiedziane „kocham”/„zależy mi”</strong> komuś bliskiemu</div>
+        <div class="cost-item"><strong>Nieasertywna zgoda</strong> — powiedziałeś „tak”, choć chciałeś odmówić</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoje konkretne koszty z ostatnich 7 dni</div>
+    <textarea class="thought-input" id="costInput" placeholder="np. „W poniedziałek nie zadzwoniłem do mamy, bo bałem się rozmowy. We wtorek nie zadałem pytania na spotkaniu zespołu — nie zrozumiałem czegoś, ale wstydziłem się przyznać. W piątek wyszedłem 30 min wcześniej z urodzin Ani, bo lęk wzrósł”..." rows="6"></textarea>
+    
+    <div class="examples-h">Stuknij, żeby dopisać do listy</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="appendCost(this)">Nie zadzwoniłem do bliskiej osoby</div>
+      <div class="example-chip" onclick="appendCost(this)">Nie wzięłam głosu na spotkaniu</div>
+      <div class="example-chip" onclick="appendCost(this)">Wyszedłem wcześniej z imprezy</div>
+      <div class="example-chip" onclick="appendCost(this)">Powiedziałam "tak", chociaż chciałam odmówić</div>
+      <div class="example-chip" onclick="appendCost(this)">Nie zapisałem się na warsztat</div>
+      <div class="example-chip" onclick="appendCost(this)">Nie pojechałem na rodzinną uroczystość</div>
+    </div>
+  </section>
+  <!-- 4: BILANS -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Bilans</div>
+    <h1 class="card-prompt">Czy <em>warto</em>?</h1>
+    <p class="card-detail">Sprawdź <strong>gotowość do działania w lęku</strong>. To nie jest pytanie „czy się czujesz odważny”. To pytanie: <em>czy jesteś gotów</em> nieść lęk po drodze do wartości. ACT nazywa to <strong>gotowością</strong> (willingness) — to gotowość, nie odwaga.</p>
+    
+    <div class="term-note"><strong>Reguła Hayesa</strong>: gotowość 0/10 = nie zaczynasz. Gotowość 10/10 = nieprawda. Realistycznie pracujemy <em>od 4-7</em>. Jeśli jesteś poniżej 4 — wybierz <strong>mniejszy mikrokrok</strong>. Wartość pozostaje — krok się dostosowuje.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Twoja gotowość do działania <em>w lęku</em> — w stronę wartości</div>
+      <div class="scale-label"><span>Nie chcę</span><span>Pełna gotowość</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="readiness" oninput="updateReadiness(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="readinessVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Co stoi po stronie „TAK”?</div>
+    <textarea class="thought-input" id="forSide" placeholder="np. „Chcę mieć bliską relację z bratem — nie widzieliśmy się 6 miesięcy” / „Awans wymaga prezentacji — bez tego utknę zawodowo”..." rows="3"></textarea>
+    
+    <div class="examples-h">Co stoi po stronie „NIE chcę”?</div>
+    <textarea class="thought-input" id="againstSide" placeholder="np. „Boję się że się sparaliżuję, że pomyślą że jestem dziwny” / „Łatwiej zostać w domu niż przeżyć ten dyskomfort”..." rows="3"></textarea>
+    
+    <div class="examples-h">Werdykt — który koszt jest większy?</div>
+    <textarea class="thought-input" id="verdict" placeholder="np. „Koszt unikania (utrata bliskości z bratem) jest długoterminowo większy niż koszt 1 godziny lęku podczas spotkania. Idę”..." rows="2"></textarea>
+  </section>
+  <!-- 5: TWOJE MOTTO -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Twoje motto</div>
+    <h1 class="card-prompt">Słowa na <em>trudne</em> chwile</h1>
+    <p class="card-detail">Stwórz <strong>jedno zdanie</strong>, które przypomni ci wartość, kiedy lęk próbuje cię zatrzymać. Krótkie, osobiste, w pierwszej osobie. <em>Nie cytat z internetu</em> — twoje słowa, twoja sytuacja, twoja wartość.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: wartości weryfikuje <em>działanie</em>, nie deklaracja. Jeśli „bliskość jest ważna”, a wybierasz unikanie — twoja faktyczna wartość to <em>spokój</em> (unikanie lęku). To nie ocena, tylko diagnoza. Zmiana zaczyna się od <strong>jednego małego ruchu</strong> w stronę zadeklarowanej wartości.</div>
+    
+    <div class="motto-card">
+      <div class="motto-h">Twoje motto wartości</div>
+      <textarea class="motto-input" id="mottoInput" placeholder="np. „Idę z lękiem w stronę bliskości, bo to ważne”..." rows="3"></textarea>
+    </div>
+    
+    <div class="examples-h">Inspiracje — stuknij i edytuj</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useMotto(this)">Idę z lękiem w stronę tego, co dla mnie ważne</div>
+      <div class="example-chip" onclick="useMotto(this)">Lęk to nie powód, by zatrzymać się</div>
+      <div class="example-chip" onclick="useMotto(this)">Mogę być przerażony i jednocześnie odważny</div>
+      <div class="example-chip" onclick="useMotto(this)">Wybieram życie zamiast bezpieczeństwa</div>
+      <div class="example-chip" onclick="useMotto(this)">Każda rozmowa to krok w stronę bliskości</div>
+      <div class="example-chip" onclick="useMotto(this)">Komfort to klatka — wartość to klucz</div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Kiedy będziesz tego używać?</div>
+    <textarea class="thought-input" id="whenUse" placeholder="np. „Przed każdą rozmową, na której chcę uciec” / „Rano w lustrze przez najbliższy tydzień” / „W aplikacji jako codzienne przypomnienie o 9:00”..." rows="3"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Wartości są <strong>kompasem</strong>, nie celem. Idziesz w stronę „bliskości” — nigdy nie osiągasz „pełnej bliskości”. Każdy <em>krok zgodny z wartością</em> w lęku to <strong>realny zysk życiowy</strong>. Lęk będzie wracać. Wartość pozostaje. <em>Wybór</em> to twoja codzienna praktyka.</div>
+    </div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999) · Harris (2009) · Wilson i DuFrene (2009) · Herbert i Cardaciotto (2005)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('costInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('forSide'); if (el) el.value = ''; }
+    { const el = document.getElementById('againstSide'); if (el) el.value = ''; }
+    { const el = document.getElementById('verdict'); if (el) el.value = ''; }
+    { const el = document.getElementById('mottoInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('whenUse'); if (el) el.value = ''; }
+    { const el = document.getElementById('readiness'); if (el) el.value = 5; }
+    document.querySelectorAll('.wart-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {}
+
+function togglePick(el) { el.classList.toggle('picked'); }
+
+function appendCost(el) {
+  const t = document.getElementById('costInput');
+  if (t.value.trim()) t.value += '\n';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function useMotto(el) {
+  document.getElementById('mottoInput').value = el.textContent;
+}
+
+function updateReadiness(v) { document.getElementById('readinessVal').textContent = v; }
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.wart-card';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-wartosci-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.wart-card, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

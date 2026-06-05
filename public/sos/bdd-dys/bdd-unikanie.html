@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mapa unikania i powrotu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mapa unikania i powrotu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<div class="card-step active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie — co BDD odbiera</div>
+  <h2 class="card-title">Każde unikanie ma swoją cenę</h2>
+  <p class="card-lead">Unikanie wygląda na bezpieczną strategię: nie idziesz na basen — nie ma cierpienia. Problem polega na tym, że razem z cierpieniem znika też wszystko, co działo się przy basenie: ruch, kontakt, wspomnienia. Veale i Neziroglu (2010) pokazują, że pełna lista unikania w BDD to zwykle 30—50% codziennego życia.</p>
+
+  <div class="frame-card">
+    <div class="frame-title">Cztery obszary unikania w BDD</div>
+    <ul class="bullet-list">
+      <li><strong>Fizyczne:</strong> basen, plaża, lustra, jasne światło, fotografie.</li>
+      <li><strong>Społeczne:</strong> randki, intymność, social media, bliskie rozmowy.</li>
+      <li><strong>Zawodowe:</strong> prezentacje, wideokonferencje, kontakt z klientami.</li>
+      <li><strong>Subtelne:</strong> chodzenie zawsze tą samą stroną ulicy, unikanie konkretnych osób, pewnych kątów światła.</li>
+    </ul>
+  </div>
+
+  <div class="frame-quote">
+    „Liczyłem/am ostatnio: w ciągu tygodnia odmówiłem/am 4 razy spotkaniom, 3 razy zdjęciom, 2 razy konferencjom online. Nie mogę powiedzieć, że nie mam życia — ja je co tydzień odsuwam."
+  </div>
+
+  <p class="card-lead">Ten arkusz buduje mapę Twojego unikania i pierwszą hierarchię powrotu. Cel długoterminowy: przy końcu CBT-BDD lista skraca się o 70—90% (Wilhelm i in., 2013). Cel dzisiaj: zobaczyć ją całą i wybrać pierwszy krok.</p>
+
+  <div class="term-note">
+    <strong>Termin:</strong> Unikanie — wszystkie zachowania, które chronią Cię przed lękiem, ale jednocześnie utrzymują przekonanie, że sytuacja jest niebezpieczna. W BDD obejmuje sytuacje, miejsca, ludzi, kąty, oświetlenie.
+  </div>
+
+  <div class="step-actions">
+    <button class="btn-primary" onclick="nextStep(2)">Zaczynam</button>
+  </div>
+</div>
+
+<div class="card-step" data-step="2">
+  <div class="card-eyebrow">🎯 Sytuacja — pełna mapa</div>
+  <h2 class="card-title">Wypisz wszystko, czego unikasz</h2>
+  <p class="card-lead">Pisz przez 5—10 minut bez cenzurowania. Także rzeczy „małe" — bo to one zwykle wykrwawiają codzienność najbardziej. Im pełniejsza mapa, tym łatwiej wybrać sensowny pierwszy ruch.</p>
+
+  <div class="form-block">
+    <label class="form-label">Fizyczne — miejsca, oświetlenie, sytuacje cielesne:</label>
+    <textarea class="text-area" data-save="cs1" rows="3" placeholder="np. basen, plaża, sauna; jasne światło; lustra w sklepach; przymierzalnie; bieganie w dzień"></textarea>
+
+    <label class="form-label">Społeczne — relacje, intymność, towarzystwo:</label>
+    <textarea class="text-area" data-save="cs2" rows="3" placeholder="np. randki; bliskie rozmowy; intymność; nowi ludzie; spotkania z dawnymi znajomymi; zdjęcia rodzinne"></textarea>
+
+    <label class="form-label">Zawodowe / cyfrowe:</label>
+    <textarea class="text-area" data-save="cs3" rows="3" placeholder="np. wideokonferencje z włączoną kamerą; prezentacje na żywo; zdjęcie profilowe na LinkedIn; kontakt twarzą w twarz z klientem"></textarea>
+
+    <label class="form-label">Subtelne — drobne wzorce, których łatwo nie zauważyć:</label>
+    <textarea class="text-area" data-save="cs4" rows="3" placeholder="np. zawsze ta sama strona ulicy; siedzenie pod kątem unikającym światła; brak kontaktu wzrokowego; krótkie odpowiedzi w wiadomościach"></textarea>
+
+    <label class="form-label">Ile rzeczy z Twojego życia odsuwa się przez wygląd? (orientacyjnie %)</label>
+    <input type="text" class="text-input" data-save="cs5" placeholder="np. 40—50%">
+  </div>
+
+  <div class="term-note">
+    <strong>Termin:</strong> Mapa unikania — wykaz wszystkich obszarów życia ograniczonych przez zaburzenie. Buduje się ją raz dokładnie, potem aktualizuje co 2—3 miesiące. Kluczowa do mierzenia postępu w terapii.
+  </div>
+
+  <div class="step-actions">
+    <button class="btn-secondary" onclick="prevStep(1)">Wstecz</button>
+    <button class="btn-primary" onclick="nextStep(3)">Dalej</button>
+  </div>
+</div>
+
+<div class="card-step" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór — hierarchia ekspozycji</div>
+  <h2 class="card-title">Uporządkuj listę od najlżejszej do najtrudniejszej</h2>
+  <p class="card-lead">Każdej pozycji nadaj SUDS 0—100. To Twoja prywatna hierarchia. Pracujesz od dołu — od najmniejszego SUDS, w górę. Bez przeskakiwania, bez forsowania.</p>
+
+  <div class="form-block">
+    <label class="form-label">Wybierz 1 sytuację z SUDS 30—40 (najłatwiejsza):</label>
+    <input type="text" class="text-input" data-save="cs6" placeholder="np. wyjście do lokalnego sklepu bez kamuflażu, 15 min — SUDS 35">
+
+    <label class="form-label">Wybierz 2 sytuacje z SUDS 50—60 (średnie):</label>
+    <textarea class="text-area" data-save="cs7" rows="2" placeholder="np. spotkanie z bliską przyjaciółką w jasnej kawiarni — SUDS 55; wideo z włączoną kamerą — SUDS 60"></textarea>
+
+    <label class="form-label">Wybierz 2 sytuacje z SUDS 70+ (trudne):</label>
+    <textarea class="text-area" data-save="cs8" rows="2" placeholder="np. zdjęcie profilowe bez retuszu — SUDS 75; randka — SUDS 85; basen — SUDS 90"></textarea>
+
+    <label class="form-label">Sytuacja, której teraz NIE ruszasz:</label>
+    <input type="text" class="text-input" data-save="cs9" placeholder="np. plaża latem — SUDS 95, zostaje na za 4—5 miesięcy">
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-title">Zasady budowania hierarchii</div>
+    <ul class="bullet-list">
+      <li>Sytuacja = konkretna, czas i miejsce, mierzalne wykonanie.</li>
+      <li>Pierwszy stopień — coś, co da się zrobić w tym tygodniu.</li>
+      <li>Powtarzasz każdy stopień 4—6 razy, aż SUDS spadnie do 30—40.</li>
+      <li>Dopiero wtedy przechodzisz do kolejnego stopnia.</li>
+      <li>Brak kamuflażu w trakcie ekspozycji — inaczej nie liczy się.</li>
+    </ul>
+  </div>
+
+  <div class="term-note">
+    <strong>Termin:</strong> SUDS (Subjective Units of Distress Scale) — skala 0—100 do oceny napięcia. 0 = pełen spokój, 100 = najwyższy lęk. Pozwala śledzić, jak każda sytuacja zmienia się w kolejnych powtórzeniach.
+  </div>
+
+  <div class="step-actions">
+    <button class="btn-secondary" onclick="prevStep(2)">Wstecz</button>
+    <button class="btn-primary" onclick="nextStep(4)">Dalej</button>
+  </div>
+</div>
+
+<div class="card-step" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — pierwszy ruch</div>
+  <h2 class="card-title">Zaplanuj konkretną ekspozycję na ten tydzień</h2>
+  <p class="card-lead">Pojedyncza dobrze zaplanowana ekspozycja jest cenniejsza od pięciu mglistych intencji. Im więcej konkretu (kiedy, gdzie, ile minut, bez czego), tym większa szansa, że się wydarzy.</p>
+
+  <div class="form-block">
+    <label class="form-label">Sytuacja (z hierarchii, z SUDS 30—40):</label>
+    <input type="text" class="text-input" data-save="cs10" placeholder="np. wyjście do sklepu osiedlowego bez czapki na 15 min">
+
+    <label class="form-label">Dzień i godzina:</label>
+    <input type="text" class="text-input" data-save="cs11" placeholder="np. środa 17:00">
+
+    <label class="form-label">Co konkretnie robisz BEZ czego (eliminacja kamuflażu)?</label>
+    <textarea class="text-area" data-save="cs12" rows="2" placeholder="np. bez czapki, bez kaptura; bez sprawdzania w lustrze przed wyjściem; bez patrzenia w okna sklepów"></textarea>
+
+    <label class="form-label">Co konkretnie obserwujesz podczas ekspozycji?</label>
+    <div class="chips-row">
+      <span class="example-chip" data-save="cs13a">SUDS na początku, w środku, na końcu</span>
+      <span class="example-chip" data-save="cs13b">ile osób zatrzyma wzrok dłużej niż 2s</span>
+      <span class="example-chip" data-save="cs13c">czy ktoś coś powie</span>
+      <span class="example-chip" data-save="cs13d">moja postawa (głowa w górze)</span>
+      <span class="example-chip" data-save="cs13e">pokusa kamuflażu — zauważyć, nie ulegać</span>
+    </div>
+
+    <label class="form-label">Plan B — co, jeśli SUDS skoczy do 80+?</label>
+    <textarea class="text-area" data-save="cs14" rows="2" placeholder="np. zostaję jeszcze 2 minuty; oddech 4-7-8; nie wracam do kamuflażu; jeśli naprawdę za dużo — wracam, ale jutro próbuję lżejszą wersję"></textarea>
+  </div>
+
+  <div class="frame-quote">
+    „Ekspozycja działa NIE wtedy, gdy lęk się nie pojawia, lecz wtedy, gdy zostajesz w sytuacji DESPITE lęku, bez kamuflażu, do momentu gdy układ nerwowy zauważy, że nic złego się nie dzieje (Wilhelm i in., 2013)."
+  </div>
+
+  <div class="term-note">
+    <strong>Termin:</strong> Ekspozycja stopniowana — kontrolowane wystawienie na unikany bodziec, zaczynając od najlżejszej wersji. Działa przez habituację — z każdym powtórzeniem reakcja lękowa staje się słabsza.
+  </div>
+
+  <div class="term-note">
+    <strong>Termin:</strong> Wzmocnienie naturalne — przyjemność, kontakt, sprawczość, które wracają do życia w miarę wycofywania się unikania. To one finalnie ugruntowują zmianę — terapia odbudowuje dostęp do nich, a nie tylko zmniejsza lęk.
+  </div>
+
+  <div class="step-actions">
+    <button class="btn-secondary" onclick="prevStep(3)">Wstecz</button>
+    <button class="btn-primary" onclick="nextStep(5)">Dalej</button>
+  </div>
+</div>
+
+<div class="card-step" data-step="5">
+  <div class="card-eyebrow">✨ Po sytuacji — system pracy</div>
+  <h2 class="card-title">Zamień jednorazowy ruch w rytm</h2>
+  <p class="card-lead">Powrót do unikanych sytuacji to nie pojedynczy bohaterski wyskok, tylko stała praktyka. Najmniej dramatyczna formuła zwykle daje najlepszy wynik: 2—3 ekspozycje tygodniowo, każda zapisana, każdy kolejny stopień po 4—6 powtórzeniach.</p>
+
+  <div class="form-block">
+    <label class="form-label">Plan na 14 dni — wybierz to, co realnie zrobisz:</label>
+    <div class="chips-row">
+      <span class="example-chip" data-save="cs15a">3 ekspozycje SUDS 30—40 w 1. tygodniu</span>
+      <span class="example-chip" data-save="cs15b">3 ekspozycje SUDS 30—40 w 2. tygodniu</span>
+      <span class="example-chip" data-save="cs15c">notatka po każdej (przewidywanie vs. wynik)</span>
+      <span class="example-chip" data-save="cs15d">brak kamuflażu w trakcie</span>
+      <span class="example-chip" data-save="cs15e">SUDS przed, w środku, po</span>
+      <span class="example-chip" data-save="cs15f">co tydzień przegląd hierarchii — co zmienić</span>
+    </div>
+
+    <label class="form-label">Co zrobisz, jeśli przez tydzień nie wyjdzie żadna ekspozycja?</label>
+    <textarea class="text-area" data-save="cs16" rows="2" placeholder="np. nie biczuję się; sprawdzam, co stało na drodze; obniżam pierwszy stopień (np. wyjście tylko na 5 min zamiast 15); jeśli powtarza się — rozmowa z terapeutą"></textarea>
+
+    <label class="form-label">Kogo informujesz o planie? (wsparcie):</label>
+    <input type="text" class="text-input" data-save="cs17" placeholder="np. terapeuta; bliska osoba; nikt — ale wtedy częstsze notatki">
+
+    <label class="form-label">Kiedy aktualizujesz mapę unikania?</label>
+    <input type="text" class="text-input" data-save="cs18" placeholder="np. co 4 tygodnie — sprawdzam, co spadło ze SUDS 60+ na SUDS 30—40">
+  </div>
+
+  <div class="repeat-reminder">
+    🔁 <strong>Powtarzaj:</strong> 2—3 ekspozycje tygodniowo, każda na tym samym stopniu hierarchii dopóki SUDS nie spadnie. Pełna redukcja unikania w BDD: 4—6 miesięcy regularnej pracy z CBT-BDD (Wilhelm i in., 2013).
+  </div>
+
+  <div class="src">
+    📚 Wilhelm, S., Phillips, K. A., Steketee, G. (2013). Cognitive-Behavioral Therapy for Body Dysmorphic Disorder. Guilford.
+  </div>
+  <div class="src">
+    📚 Veale, D., Neziroglu, F. (2010). Body Dysmorphic Disorder: A Treatment Manual. Wiley.
+  </div>
+  <div class="src">
+    📚 Fang, A., Wilhelm, S. (2015). Clinical features, cognitive biases, and treatment of body dysmorphic disorder. Annual Review of Clinical Psychology.
+  </div>
+
+  <div class="step-actions">
+    <button class="btn-secondary" onclick="prevStep(4)">Wstecz</button>
+    <button class="btn-reset" onclick="resetCard()">Wyzeruj kartę</button>
+  </div>
+</div>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bdd_unikanie — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bdd_unikanie";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

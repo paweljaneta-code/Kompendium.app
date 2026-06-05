@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Zrzuć kotwicę (ACE)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === ANCHOR FRAME === */
+.frame-card { 
+  background: linear-gradient(180deg, #2a4d6e 0%, #1c2a3a 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ KOTWICA W BURZY"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "⚓"; position: absolute; bottom: 10px; right: 15px;
+  font-size: 70px; opacity: 0.07; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; position: relative; z-index: 1; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === STEP CARDS (3 letters: A C E) === */
+.ace-card {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-left: 5px solid var(--sage);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.ace-card.warm-border { border-left-color: var(--warm); }
+.ace-h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.ace-letter { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; color: var(--sage-deep); line-height: 1; }
+.ace-card.warm-border .ace-letter { color: var(--warm); }
+.ace-name { font-size: 13px; font-weight: 700; flex: 1; }
+.ace-time { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.ace-instruction { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 8px; }
+.ace-instruction strong { color: var(--ink); font-weight: 700; }
+
+.ace-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 8px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.ace-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+.ace-input::placeholder { color: var(--ink-mute); }
+
+.ace-input-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 6px; }
+
+/* === MOVE CHECKLIST (C step) === */
+.move-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.move-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.move-item:hover { background: var(--sage-soft); }
+.move-item.done { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); }
+.move-check {
+  width: 18px; height: 18px;
+  border: 2px solid var(--ink-mute);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.5);
+  font-size: 12px;
+  font-weight: 700;
+  color: transparent;
+}
+.move-item.done .move-check { background: var(--sage-deep); border-color: var(--sage-deep); color: white; }
+.move-text { font-size: 13px; line-height: 1.4; color: var(--ink); }
+.move-text strong { font-weight: 700; }
+
+/* === 5-4-3 ENGAGE === */
+.engage-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.engage-row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.engage-num {
+  font-family: 'Fraunces', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--sage-deep);
+  text-align: center;
+  font-feature-settings: 'tnum' 1;
+}
+.engage-content { display: flex; flex-direction: column; gap: 4px; }
+.engage-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.engage-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink);
+}
+.engage-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === COMPARISON TABLE (step 5) === */
+.compare-table {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 4px 0 14px;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 12px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.compare-tech {
+  font-family: 'Fraunces', serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--ink);
+  display: flex; align-items: center;
+  text-align: center;
+  border-radius: 6px;
+  background: rgba(122,146,112,0.15);
+  padding: 6px;
+  justify-content: center;
+}
+.compare-when { font-size: 12px; line-height: 1.4; color: var(--ink-soft); display: flex; align-items: center; }
+.compare-when strong { color: var(--ink); font-weight: 700; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--sage-soft); border-color: var(--sage); color: var(--ink); }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Zrzuć kotwicę</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: ANCHOR vs CALM -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Łódź <em>w burzy</em></h1>
+    <p class="card-detail"><strong>Drop Anchor / ACE</strong> (Harris 2017, The Reality Slap) — sygnaturowa technika Russa Harrisa do zakotwiczenia w chwili obecnej w intensywnej emocji. Trzy kroki: <strong>A</strong> — Acknowledge (zauważ co jest), <strong>C</strong> — Connect (połącz z ciałem), <strong>E</strong> — Engage (zaangażuj w otoczenie). Jedno z najczęściej uczonych ćwiczeń <strong>ACT</strong> (terapia akceptacji i zaangażowania) na świecie.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Kotwica nie zatrzymuje fal — zatrzymuje łódź</div>
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">Cel ≠ spokój</div>
+          <div class="frame-text">ACE <strong>nie próbuje uciszyć myśli</strong>. Nie zmniejsza emocji. Nie redukuje lęku.</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">Cel = obecność</div>
+          <div class="frame-text">ACE <strong>rozszerza świadomość</strong>, tak by emocja była JEDNYM z elementów pola, a nie CAŁYM światem.</div>
+        </div>
+      </div>
+      <div class="frame-quote">„Fala nadal jest. Ale łódź (ja) nie odpływa. Emocja tu jest, ja też tu jestem. Oboje mamy miejsce."
+      <span class="frame-quote-attr">— Russ Harris (2017)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Częsty błąd</strong>: ludzie pytają „czemu wciąż czuję lęk po ACE?". To nieporozumienie — ACE <em>nie jest lekiem na emocje</em>. Jego celem jest <strong>nieodpływanie</strong> z chwili obecnej, a nie zniknięcie emocji. Emocja może trwać godzinami — kotwica utrzymuje cię w obecności, dopóki fala nie minie.</div>
+    
+    <div class="src">Harris (2017, The Reality Slap)</div>
+  </section>
+
+  <!-- 2: A - ACKNOWLEDGE -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Krok A</div>
+    <h1 class="card-prompt">Acknowledge — <em>zauważ</em></h1>
+    <p class="card-detail">Pierwsza warstwa kotwicy — <strong>nazwij, co jest</strong>. Bez oceniania, bez naprawiania. Trzy obszary: myśli, ciało, impuls. Możesz pisać krótko — celem jest świadomość, nie raport.</p>
+    
+    <div class="ace-card">
+      <div class="ace-h">
+        <span class="ace-letter">A</span>
+        <span class="ace-name">Acknowledge — zauważ co jest</span>
+        <span class="ace-time">30 sek-1 min</span>
+      </div>
+      <div class="ace-instruction">Trzy pytania, każde z odpowiedzią <strong>„zauważam, że..."</strong> — to formuła Harrisa, która sama już buduje dystans obserwatora.</div>
+      
+      <div class="ace-input-label">„Zauważam, że mam myśli o..."</div>
+      <textarea class="ace-input" id="aThoughts" placeholder="np. „o tym, że się zbłaźnię" / „o tym, że nikt mnie nie wesprze" / „o wczorajszej rozmowie"..." rows="2"></textarea>
+      
+      <div class="ace-input-label">„Zauważam, że czuję _______ w [miejsce ciała]"</div>
+      <textarea class="ace-input" id="aBody" placeholder="np. „ścisk w klatce piersiowej" / „gorąco w twarzy" / „napięcie w żołądku"..." rows="2"></textarea>
+      
+      <div class="ace-input-label">„Zauważam, że mam impuls..."</div>
+      <textarea class="ace-input" id="aUrge" placeholder="np. „uciec z tego pokoju" / „sięgnąć po telefon" / „krzyknąć"..." rows="2"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: formuła „zauważam, że..." nie jest stylistycznym ozdobnikiem. To <em>prefiks defuzji</em> wbudowany w technikę. Mówiąc „zauważam, że mam myśl o X", nie jesteś już zlanym/zlaną z X — stajesz się obserwatorem swoich treści wewnętrznych.</div>
+  </section>
+
+  <!-- 3: C - CONNECT -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Krok C</div>
+    <h1 class="card-prompt">Connect — <em>z ciałem</em></h1>
+    <p class="card-detail">Druga warstwa kotwicy — <strong>fizyczne uziemienie</strong>. Trzy ruchy. Wykonaj je teraz. Po każdym zaznacz check. Nie chodzi o relaks ani rozciąganie — chodzi o <em>obecność w ciele jako całości</em>, a nie tylko w bolącym miejscu.</p>
+    
+    <div class="ace-card">
+      <div class="ace-h">
+        <span class="ace-letter">C</span>
+        <span class="ace-name">Connect — połącz z ciałem</span>
+        <span class="ace-time">30 sek-1 min</span>
+      </div>
+      <div class="ace-instruction">Każdy ruch trwa <strong>10-15 sekund</strong>. Wykonuj <em>uważnie</em>, nie mechanicznie.</div>
+      
+      <div class="move-list">
+        <div class="move-item" onclick="toggleMove(this)">
+          <div class="move-check">✓</div>
+          <div class="move-text"><strong>Stopy</strong> — poczuj stopy na ziemi, przenieś ciężar z lewej na prawą, z pięt na palce</div>
+        </div>
+        <div class="move-item" onclick="toggleMove(this)">
+          <div class="move-check">✓</div>
+          <div class="move-text"><strong>Plecy i ramiona</strong> — wyprostuj plecy, rozciągnij ramiona, opuść barki</div>
+        </div>
+        <div class="move-item" onclick="toggleMove(this)">
+          <div class="move-check">✓</div>
+          <div class="move-text"><strong>Głowa</strong> — obróć głowę w lewo, w prawo, lekko w górę i w dół</div>
+        </div>
+      </div>
+      
+      <div class="ace-input-label">Co poczułem/am po tych 3 ruchach?</div>
+      <textarea class="ace-input" id="cReflection" placeholder="np. „bardziej obecny/a w ciele" / „zauważyłem/am, że barki były wysoko" / „lepsze ugruntowanie"..." rows="2"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Klucz Harrisa</strong>: ruchy <em>całego ciała</em>, nie tylko bolącego miejsca. Jeśli boli klatka piersiowa, nie skupiasz się na klatce — <em>rozszerzasz</em> uwagę na całe ciało. To rozszerzenie pola jest istotą kotwicy.</div>
+  </section>
+
+  <!-- 4: E - ENGAGE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Krok E</div>
+    <h1 class="card-prompt">Engage — <em>z otoczeniem</em></h1>
+    <p class="card-detail">Trzecia warstwa kotwicy — <strong>kontakt z otoczeniem</strong>. Klasyczna sekwencja zmysłów: 5 widzę, 4 słyszę, 3 dotykam. Wpisuj <em>konkretne</em> rzeczy — nie „dużo zieleni", tylko „liść klonu, plama słońca, kabel zasilający".</p>
+    
+    <div class="ace-card warm-border">
+      <div class="ace-h">
+        <span class="ace-letter">E</span>
+        <span class="ace-name">Engage — zaangażuj się w świat</span>
+        <span class="ace-time">1-2 min</span>
+      </div>
+      <div class="ace-instruction">Patrz, słuchaj, dotykaj <em>aktywnie</em>. To nie liczenie — to <strong>zaangażowanie</strong>.</div>
+      
+      <div class="engage-grid">
+        <div class="engage-row">
+          <span class="engage-num">5</span>
+          <div class="engage-content">
+            <span class="engage-label">rzeczy, które WIDZĘ</span>
+            <input type="text" class="engage-input" id="see" placeholder="np. czerwony kubek, lampa, okno z deszczem, książka, kabel">
+          </div>
+        </div>
+        <div class="engage-row">
+          <span class="engage-num">4</span>
+          <div class="engage-content">
+            <span class="engage-label">dźwięki, które SŁYSZĘ</span>
+            <input type="text" class="engage-input" id="hear" placeholder="np. szum lodówki, deszcz, odgłos kroków na zewnątrz, własny oddech">
+          </div>
+        </div>
+        <div class="engage-row">
+          <span class="engage-num">3</span>
+          <div class="engage-content">
+            <span class="engage-label">rzeczy, które DOTYKAM</span>
+            <input type="text" class="engage-input" id="touch" placeholder="np. tkanina spodni, krawędź biurka, telefon w dłoni">
+          </div>
+        </div>
+      </div>
+      
+      <div class="ace-input-label">Po E — co się zmieniło? Wróć mentalnie do A i porównaj</div>
+      <textarea class="ace-input" id="ePostCheck" placeholder="np. „emocja nadal jest, ale jest jednym elementem pola, nie całym światem" / „mniej fuzji z myślami" / „bardziej tu i teraz"..." rows="2"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Pętla ACE</strong>: po E możesz wrócić do A. Powtarzaj <em>tyle razy, ile trzeba</em>. Harris: 10× dziennie przez pierwszy miesiąc <em>nie jest przesadą</em>. Jeden cykl = 3-5 min. Osoba po ataku paniki może potrzebować 2-3 cykli.</div>
+  </section>
+
+  <!-- 5: WHEN + COMPARISON -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan stosowania</div>
+    <h1 class="card-prompt">Kiedy <em>kotwiczyć</em>?</h1>
+    <p class="card-detail">ACE jest najszerszą z technik chwili obecnej. Działa w sytuacjach <strong>silnej fali emocjonalnej</strong> — paniki, flashbacku, intensywnej złości, dysocjacji. Mniej przydatna do codziennej praktyki (dla tej lepszy STOP).</p>
+    
+    <div class="day-h">Sytuacje, w których zrzucam kotwicę</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useTrigger(this)">Atak paniki</div>
+      <div class="example-chip" onclick="useTrigger(this)">Flashback / wspomnienie traumatyczne</div>
+      <div class="example-chip" onclick="useTrigger(this)">Silna złość przed wybuchem</div>
+      <div class="example-chip" onclick="useTrigger(this)">Dysocjacja / oddalenie od ciała</div>
+      <div class="example-chip" onclick="useTrigger(this)">Lęk społeczny przed wystąpieniem</div>
+      <div class="example-chip" onclick="useTrigger(this)">Konflikt — gdy chcę zniknąć lub wybuchnąć</div>
+    </div>
+    <textarea class="thought-input" id="situations" placeholder="lub własne sytuacje..." rows="2"></textarea>
+    
+    <div class="day-h">Porównanie z innymi technikami chwili obecnej</div>
+    <div class="compare-table">
+      <div class="compare-row">
+        <div class="compare-tech">ACE<br><span style="font-size:10px;font-weight:400">3-5 min</span></div>
+        <div class="compare-when"><strong>Kryzys emocjonalny</strong> — panika, flashback, dysocjacja. Funkcjonalna w akcie.</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-tech">STOP<br><span style="font-size:10px;font-weight:400">30-60 s</span></div>
+        <div class="compare-when"><strong>Codzienna mikropauza</strong> — przerywacz autopilota, 5-10× dziennie.</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-tech">RAIN<br><span style="font-size:10px;font-weight:400">15-20 min</span></div>
+        <div class="compare-when"><strong>Praca z wstydem, samokrytyką</strong> — głębsza, dodaje warstwę współczucia.</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-tech">5-4-3-2-1<br><span style="font-size:10px;font-weight:400">2-3 min</span></div>
+        <div class="compare-when"><strong>Czyste ugruntowanie zmysłami</strong>. ACE = 5-4-3-2-1 + samoświadomość emocjonalna (A).</div>
+      </div>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body"><strong>„Emocja tu jest, ja też tu jestem. Oboje mamy miejsce."</strong> — to zdanie kluczowe ACE. Nie próbujesz emocji wypchnąć. Robisz miejsce — sobie i jej. To jest istota akceptacji <em>w działaniu</em>, nie w teorii.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.move-item.done').forEach(b => b.classList.remove('done'));
+    ['aThoughts','aBody','aUrge','cReflection','see','hear','touch','ePostCheck','situations'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleMove(el) { el.classList.toggle('done'); }
+
+function useTrigger(el) {
+  const t = document.getElementById('situations');
+  if (t.value.trim()) t.value += ', ';
+  t.value += el.textContent;
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_zrzuc_kotwice";
+  var clickSel0 = '.move-item';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("done")) {
+          rows0[i].classList.add("done");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("done")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.move-item')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

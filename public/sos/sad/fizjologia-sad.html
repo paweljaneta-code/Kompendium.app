@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Fizjologia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === SYMPTOM-GRID (krok 1) === */
+.symptom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 14px; }
+.symptom-btn { background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: all 0.2s; text-align: center; font-family: inherit; }
+.symptom-btn:hover, .symptom-btn:active { background: rgba(122,146,112,0.08); border-color: var(--sage-deep); }
+.symptom-btn.picked { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-width: 2.5px; }
+.symptom-icon { font-size: 24px; margin-bottom: 4px; }
+.symptom-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.symptom-sub { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.02em; }
+
+/* === SCALE-CARD (kroki 2, 3, 5) === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === DATA-BOX (krok 3) === */
+.data-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 14px; margin: 6px 0 14px; }
+.data-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.data-row { display: flex; gap: 12px; align-items: baseline; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; margin-bottom: 6px; }
+.data-row strong { color: var(--bg); font-weight: 700; }
+.data-stat { font-family: 'Fraunces', serif; font-size: 16px; color: var(--warm); font-weight: 700; flex-shrink: 0; min-width: 60px; }
+.data-text { font-size: 12.5px; color: rgba(244,241,234,0.95); line-height: 1.5; flex: 1; }
+
+/* === MOVE-LIST (krok 4) === */
+.move-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.move-card { padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; border-left: 3px solid var(--sage-deep); cursor: pointer; transition: all 0.2s; }
+.move-card:hover, .move-card:active { background: rgba(122,146,112,0.08); }
+.move-card.picked { background: rgba(122,146,112,0.15); border-left-width: 5px; }
+.move-h { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.move-icon { font-size: 16px; flex-shrink: 0; }
+.move-name { font-size: 13.5px; font-weight: 700; flex: 1; color: var(--ink); }
+.move-tick { font-size: 14px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.move-card.picked .move-tick { opacity: 1; }
+.move-desc { font-size: 12px; line-height: 1.5; color: var(--ink-soft); padding-left: 26px; }
+
+/* === DIFF-NUM (krok 5) === */
+.diff-block { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 14px; background: rgba(122,146,112,0.06); border-radius: 12px; margin: 8px 0 10px; }
+.diff-side { text-align: center; flex: 1; }
+.diff-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.diff-num.before { color: var(--warm); }
+.diff-num.after { color: var(--sage-deep); }
+.diff-lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; font-weight: 600; }
+.diff-arrow { font-size: 22px; color: var(--ink-mute); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Fizjologia</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Termometr <em>fizjologii</em></h1>
+    <p class="card-detail"><strong>Zniekształcenie widoczności</strong> (visibility distortion, Mauss i in. 2004; Hofmann i Otto 2008) — w lęku społecznym <em>twój wewnętrzny termometr objawów fizjologicznych jest miażdżąco zawyżony</em>. Czujesz palący rumieniec, drżenie głosu, kołatanie serca jak <strong>10/10</strong> — a obserwator zewnętrzny widzi 1–2/10. Teoria poliwagalna (polyvagal theory, Porges 2011) tłumaczy biologiczny mechanizm: ciało reaguje na bodziec społeczny <em>jak na zagrożenie życia</em>. Ale to nie znaczy, że <strong>widać tyle, ile czujesz</strong>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy techniki</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🌡</span>
+          <span class="element-text"><strong>Wewnętrzny termometr</strong> = subiektywne odczucie objawu (zwykle 8–10/10)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">👁</span>
+          <span class="element-text"><strong>Zewnętrzny termometr</strong> = ile naprawdę widać (zwykle 1–3/10)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📊</span>
+          <span class="element-text"><strong>Różnica</strong> = miara zniekształcenia (zwykle 5–7 punktów)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔄</span>
+          <span class="element-text"><strong>Kalibracja</strong> = pomiar po sytuacji uczy mózg, że termometr kłamie</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Lęk widoczności <em>nie</em> jest proporcjonalny do widoczności obiektywnej.”
+        <span class="frame-quote-attr">— Hofmann i Otto (2008, CBT for SAD)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: nie próbuj <em>tłumić</em> objawów ani z nimi walczyć. Walka aktywuje współczulny układ nerwowy → objawy się <em>nasilają</em>. Cel: <strong>zauważyć i kontynuować rozmowę</strong>. Objaw przyspiesza, gdy się na nim skupiasz.</div>
+    
+    <div class="src">Hofmann i Otto (2008, CBT for Social Anxiety) · Porges (2011, polyvagal theory) · Clark i Wells (1995) · Mauss i in. (2004)</div>
+  </section>
+  <!-- 2: SKANUJ CIAŁO -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Skanuj ciało</div>
+    <h1 class="card-prompt">Który objaw <em>uderza</em> najmocniej?</h1>
+    <p class="card-detail">Wybierz <strong>JEDEN</strong> dominujący objaw — nie próbuj walczyć ze wszystkimi naraz. Skupienie na jednym ogranicza uwaga skierowana na siebie (kluczowy mechanizm SAD wg Clarka i Wellsa).</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: jeśli wybierasz „rumieniec” — pamiętaj, że <em>czujesz go znacznie wcześniej i mocniej niż widać</em>. Naczynia rozszerzają się przy 0,5°C wzrostu, ale wzrok dostrzega zmianę dopiero przy 2–3°C.</div>
+    
+    <div class="symptom-grid">
+      <button class="symptom-btn" data-s="rumieniec" onclick="pickSymptom(this)">
+        <div class="symptom-icon">🔴</div>
+        <div class="symptom-name">Rumieniec</div>
+        <div class="symptom-sub">Twarz, uszy, szyja</div>
+      </button>
+      <button class="symptom-btn" data-s="drzenie" onclick="pickSymptom(this)">
+        <div class="symptom-icon">〰️</div>
+        <div class="symptom-name">Drżenie</div>
+        <div class="symptom-sub">Ręce, głos</div>
+      </button>
+      <button class="symptom-btn" data-s="serce" onclick="pickSymptom(this)">
+        <div class="symptom-icon">❤️</div>
+        <div class="symptom-name">Kołatanie</div>
+        <div class="symptom-sub">Serce, oddech</div>
+      </button>
+      <button class="symptom-btn" data-s="pocenie" onclick="pickSymptom(this)">
+        <div class="symptom-icon">💧</div>
+        <div class="symptom-name">Pocenie</div>
+        <div class="symptom-sub">Czoło, dłonie, plecy</div>
+      </button>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Mój wewnętrzny termometr — jak bardzo czuję?</div>
+      <div class="scale-label"><span>Niezauważalne</span><span>Maksimum</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="internalScale" oninput="updateInternal(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="internalVal">7</span><span> / 10</span></div>
+    </div>
+  </section>
+  <!-- 3: FAKTY ZAMIAST WRAŻEŃ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Fakty zamiast wrażeń</div>
+    <h1 class="card-prompt">Co <em>naprawdę</em> widzą inni?</h1>
+    <p class="card-detail">Twój termometr to subiektywne <em>odczucie</em>. Oto <strong>dane empiryczne</strong> z badań. Ile osób Z BOKU rzeczywiście zauważyło objaw — w eksperymentach z prawdziwymi obserwatorami i nagraniami wideo.</p>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: wewnętrzny termometr SAD jest skalibrowany do <em>twojego doświadczenia</em>, nie do tego, co widzą inni. Wg teorii poliwagalnej ciało reaguje na bodziec społeczny <strong>jak na zagrożenie</strong> — ale obserwator nie dostrzega większości tego, co czujesz.</div>
+    
+    <div class="data-card">
+      <div class="data-h">Dane z badań — ile osób ZAUWAŻYŁO objaw?</div>
+      <div class="data-row">
+        <span class="data-stat">8–15%</span>
+        <span class="data-text"><strong>Rumieniec</strong> — Mulkens i in. (1999): w realnych rozmowach 1 na 7 obserwatorów zauważył; uczestnicy szacowali 60%+.</span>
+      </div>
+      <div class="data-row">
+        <span class="data-stat">5–12%</span>
+        <span class="data-text"><strong>Drżenie głosu</strong> — Hofmann i in. (2004): nagrania prezentacji; widzialne tylko przy poziomie 7+/10 wewnętrznie.</span>
+      </div>
+      <div class="data-row">
+        <span class="data-stat">3–8%</span>
+        <span class="data-text"><strong>Drżenie rąk</strong> — Stevens i in. (2008): mikrodrgania wykrywane tylko z odległości &lt;1 m; przy stole prawie niewidoczne.</span>
+      </div>
+      <div class="data-row">
+        <span class="data-stat">~10%</span>
+        <span class="data-text"><strong>Pocenie</strong> — wymaga widocznych kropli; subiektywne uczucie „lepkości” praktycznie niewykrywalne wzrokowo.</span>
+      </div>
+      <div class="data-row">
+        <span class="data-stat">0%</span>
+        <span class="data-text"><strong>Kołatanie serca</strong> — niewidoczne dla obserwatora. Nawet pod ciasnym ubraniem ledwo wyczuwalne.</span>
+      </div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Termometr po danych — ile teraz <em>szacuję</em>, że widać?</div>
+      <div class="scale-label"><span>Niewidoczne</span><span>Wszyscy widzą</span></div>
+      <input type="range" min="0" max="10" value="3" class="scale-input" id="externalScale" oninput="updateExternal(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="externalVal">3</span><span> / 10</span></div>
+    </div>
+  </section>
+  <!-- 4: CO TERAZ ZROBIĆ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Co teraz zrobić</div>
+    <h1 class="card-prompt">Jeden <em>ruch</em> i wracam</h1>
+    <p class="card-detail">Cel <strong>nie</strong> brzmi „uspokoić objaw”. Brzmi: <em>kontynuować rozmowę z objawem obecnym</em>. Wybierz <strong>JEDEN</strong> ruch — minimalna interwencja, bez zwracania uwagi.</p>
+    
+    <div class="term-note"><strong>Pułapka</strong>: <em>nie chowaj się</em>. Zachowania zabezpieczające (chowanie rumieńca pod włosami, schładzanie dłoni) <strong>wzmacniają</strong> SAD długoterminowo. Cel: być widoczny/a <em>i</em> kontynuować — to leczy.</div>
+    
+    <div class="move-list">
+      <div class="move-card" onclick="pickMove(this)">
+        <div class="move-h">
+          <span class="move-icon">🌬</span>
+          <span class="move-name">Wydłużony wydech (4-7-8)</span>
+          <span class="move-tick">✓</span>
+        </div>
+        <div class="move-desc">Wdech 4 sek nosem, zatrzymanie 7 sek, wydech 8 sek ustami. <strong>Aktywuje nerw błędny</strong> (Porges) — obniża rytm serca w 10–20 sekund.</div>
+      </div>
+      <div class="move-card" onclick="pickMove(this)">
+        <div class="move-h">
+          <span class="move-icon">🦶</span>
+          <span class="move-name">Stopy w ziemię, „kotwica”</span>
+          <span class="move-tick">✓</span>
+        </div>
+        <div class="move-desc">Poczuj <strong>kontakt podeszw z podłogą</strong>. Przekieruj uwagę z głowy do stóp na 5 sekund. Uwaga skierowana na siebie słabnie.</div>
+      </div>
+      <div class="move-card" onclick="pickMove(this)">
+        <div class="move-h">
+          <span class="move-icon">👀</span>
+          <span class="move-name">Wzrok w rozmówcę</span>
+          <span class="move-tick">✓</span>
+        </div>
+        <div class="move-desc">Zamiast monitorować siebie, <strong>spójrz na drugą osobę</strong>: jej brwi, kąciki ust. Uwaga zewnętrzna = mniej wewnętrznych objawów.</div>
+      </div>
+      <div class="move-card" onclick="pickMove(this)">
+        <div class="move-h">
+          <span class="move-icon">👁</span>
+          <span class="move-name">Dystans obserwatora</span>
+          <span class="move-tick">✓</span>
+        </div>
+        <div class="move-desc">Powiedz w głowie: <strong>„Mam rumieniec. To informacja, nie alarm”</strong>. Defuzja od objawu — objaw jest, ale nie jesteś objawem.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Co konkretnie zrobię w najbliższej minucie</div>
+    <textarea class="thought-input" id="planDo" placeholder="np. „4-7-8 jeden cykl, potem wracam do rozmowy” / „skupiam wzrok na brwiach Anny i słucham, co mówi”..." rows="2"></textarea>
+  </section>
+  <!-- 5: PO SYTUACJI — KALIBRACJA -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po sytuacji — kalibracja</div>
+    <h1 class="card-prompt">Jak bardzo <em>było widać</em>?</h1>
+    <p class="card-detail">Po sytuacji — <strong>sprawdź dane</strong>. Zapytaj kogoś, kto był obecny: „Czy widziałeś, że się czerwieniłem/jąkałem?”. Albo przejrzyj nagranie. Każdy taki pomiar <em>kalibruje</em> twój wewnętrzny termometr.</p>
+    
+    <div class="term-note"><strong>Reguła naukowca</strong>: traktuj każdą sytuację społeczną jak <em>eksperyment</em>. Hipoteza: „będzie widać 9/10”. Pomiar realny: „było widać 2/10”. <strong>Dane &gt; intuicja</strong>. Pierwsze 5 pomiarów osłabia odruch o 30%.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Termometr realny — co <em>faktycznie</em> było widać?</div>
+      <div class="scale-label"><span>Niewidoczne</span><span>Wszyscy widzieli</span></div>
+      <input type="range" min="0" max="10" value="2" class="scale-input" id="realScale" oninput="updateReal(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="realVal">2</span><span> / 10</span></div>
+    </div>
+    
+    <div class="diff-block">
+      <div class="diff-side">
+        <div class="diff-num before" id="diffBefore">—</div>
+        <div class="diff-lbl">Termometr<br>wewnętrzny</div>
+      </div>
+      <div class="diff-arrow">→</div>
+      <div class="diff-side">
+        <div class="diff-num after" id="diffAfter">—</div>
+        <div class="diff-lbl">Faktyczna<br>widoczność</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Skąd masz tę nową informację?</div>
+    <textarea class="thought-input" id="dataSource" placeholder="np. „spytałem brata po spotkaniu — powiedział ”wcale nie było widać„” / „obejrzałem nagranie z prezentacji — głos drżał tylko w pierwszych 30 sekundach”"  rows="3"></textarea>
+    
+    <div class="examples-h">Wniosek na przyszłość</div>
+    <textarea class="thought-input" id="lesson" placeholder="np. „mój termometr myli się o 6 punktów — czuję rumieniec na 8/10, widać go na 2/10. Następnym razem pamiętam tę proporcję”..." rows="3"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Twój wewnętrzny termometr jest <strong>chronicznie zawyżony</strong>. Każdy pomiar realnej widoczności (od kogoś, z nagrania) <em>rekalibruje go</em>. Po 10 takich pomiarach — odruch zaczyna się zmieniać.</div>
+    </div>
+    
+    <div class="src">Hofmann i Otto (2008) · Porges (2011) · Clark i Wells (1995) · Mauss i in. (2004) · Mulkens i in. (1999)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('planDo'); if (el) el.value = ''; }
+    { const el = document.getElementById('dataSource'); if (el) el.value = ''; }
+    { const el = document.getElementById('lesson'); if (el) el.value = ''; }
+    { const el = document.getElementById('internalScale'); if (el) el.value = 7; }
+    { const el = document.getElementById('externalScale'); if (el) el.value = 3; }
+    { const el = document.getElementById('realScale'); if (el) el.value = 2; }
+    document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('picked'));
+    document.querySelectorAll('.move-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) {
+    document.getElementById('diffBefore').textContent = document.getElementById('internalScale').value + '/10';
+    document.getElementById('diffAfter').textContent = document.getElementById('realScale').value + '/10';
+  }
+}
+
+function pickSymptom(el) {
+  document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function pickMove(el) {
+  document.querySelectorAll('.move-card').forEach(c => c.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function updateInternal(v) { document.getElementById('internalVal').textContent = v; }
+function updateExternal(v) { document.getElementById('externalVal').textContent = v; }
+function updateReal(v) {
+  document.getElementById('realVal').textContent = v;
+  document.getElementById('diffBefore').textContent = document.getElementById('internalScale').value + '/10';
+  document.getElementById('diffAfter').textContent = v + '/10';
+}
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel1 = '.move-card';
+  var KEY = "sos-fizjologia-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c1: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.move-card')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

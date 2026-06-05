@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Limited reparenting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.need-grid { display: grid; gap: 8px; margin: 12px 0; }
+.need-card { background: rgba(184,197,168,0.12); border: 1px solid var(--sage); border-left: 3px solid var(--sage-deep); border-radius: 0 10px 10px 0; padding: 11px 13px; }
+.need-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.need-name { font-weight: 600; color: var(--ink); display: block; margin-bottom: 4px; font-size: 14px; }
+.need-text { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 6px; }
+.need-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 12.5px; color: var(--ink); padding: 6px 10px; background: rgba(184,197,168,0.16); border-radius: 6px; }
+
+.balans-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.balans-cell { padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.5; }
+.balans-cell.bad { background: rgba(201,165,114,0.14); border: 1px solid var(--warm); }
+.balans-cell.good { background: rgba(184,197,168,0.20); border: 1px solid var(--sage-deep); }
+.balans-tag { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.balans-cell.bad .balans-tag { color: var(--warm); }
+.balans-cell.good .balans-tag { color: var(--sage-deep); }
+.balans-cell strong { color: var(--ink); }
+
+@media (max-width: 380px) {
+  .balans-row { grid-template-columns: 1fr; }
+}
+
+.granica-row { background: rgba(201,165,114,0.10); border: 1px solid var(--warm); border-left-width: 3px; border-radius: 8px; padding: 11px 13px; margin: 8px 0; font-size: 12.5px; line-height: 1.55; }
+.granica-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 6px; }
+.granica-row strong { color: var(--ink); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Limited reparenting</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie — dla terapeuty</div>
+    <h1 class="card-prompt">Limited reparenting — <em>korektywna</em> relacja terapeutyczna</h1>
+    <p class="card-detail">To narzędzie jest przeznaczone dla klinicystów. Limited reparenting (Young i wsp., 2003) jest centralnym elementem relacji terapeutycznej w terapii schematów. Terapeuta częściowo zaspokaja niezaspokojone potrzeby emocjonalne klienta — w granicach relacji terapeutycznej. W kontekście motywacji: klient ze schematami Failure / Dependence / Defectiveness nie próbuje, bo nigdy nie doświadczył <em>bezpiecznej bazy</em> (Bowlby, 1988), z której mógłby eksplorować. Limited reparenting tworzy tę bazę: terapeuta jest stabilny, przewidywalny, wspierający, zachęcający — i jednocześnie <em>wymaga</em> aktywności klienta (nie robi za niego). Farrell i wsp. (2009, Journal of Behavior Therapy and Experimental Psychiatry, RCT): grupowa terapia schematów z limited reparenting istotnie skuteczniejsza niż TAU dla BPD; remisja u 94% pacjentów po ośmiu miesiącach. Lockwood i Perris (2012) opracowali model „healthy parenting needs" — pięciu fundamentalnych potrzeb emocjonalnych, których adaptacyjne zaspokajanie w terapii koryguje wczesne deficyty. Young (2003) podkreśla: limited reparenting to <em>nie</em> bycie rodzicem — to adaptacyjne zaspokajanie potrzeb w granicach etyki terapeutycznej i kontraktu.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary limited reparenting</div>
+      <div class="element-row">
+        <span class="element-icon">🏠</span>
+        <span class="element-text"><strong>Bezpieczna baza</strong> — terapia ma być przewidywalnym, stabilnym miejscem, w którym klient może eksperymentować z nowym zachowaniem bez ryzyka odrzucenia. Bez tej bazy zmiana jest niemożliwa (Bowlby).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚖️</span>
+        <span class="element-text"><strong>Wiara + wymaganie</strong> — równowaga między walidacją emocji a oczekiwaniem aktywności. Sama wiara bez wymagań utrwala bierność; same wymagania bez wiary utrwalają Failure.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌱</span>
+        <span class="element-text"><strong>Internalizacja Healthy Adult</strong> — cel długoterminowy: klient internalizuje głos terapeuty jako własny Healthy Adult. „Co powiedziałbym Ci, gdybyś był tu — teraz powiedz to sobie."</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚧</span>
+        <span class="element-text"><strong>Granice profesjonalne</strong> — limited reparenting nie oznacza dostępności 24/7, relacji osobistej ani łamania granic etycznych. Oznacza adaptacyjne zaspokajanie potrzeb <em>w ramach</em> sesji i kontraktu.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Pacjent z bezradnością potrzebuje doświadczenia, że ktoś w niego wierzy <em>i</em> jednocześnie od niego wymaga. Sama wiara wzmacnia bierność. Same wymagania wzmacniają porażkę. Limited reparenting to ich równowaga."
+      <span class="frame-quote-attr">— synteza Young i wsp. (2003), Lockwood i Perris (2012)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: limited reparenting to <em>postawa</em>, nie technika. Każda interakcja w sesji jest okazją do modelowania Healthy Adult. Sposób, w jaki przyjmujesz spóźnienie klienta, reagujesz na jego rezygnację, wyrażasz uznanie dla małego sukcesu — buduje wewnętrzny model dorosłego, którego klient internalizuje. Mikrointerakcje ważą więcej niż wielkie interpretacje.</div>
+
+    <div class="term-note"><strong>📌 Reguła autentyczności</strong>: limited reparenting nie znaczy „granie roli ciepłego rodzica". Jeśli terapeuta gra, klient to wyczuwa, i mechanizm zawodzi. Klucz: <em>autentyczna</em> troska połączona z <em>jasnymi</em> granicami. Możesz być sobą, a jednocześnie świadomie modelować postawę, której klient nie miał w dzieciństwie.</div>
+
+    <div class="src">Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner's Guide) · Lockwood i Perris (2012, International Journal of Cognitive Therapy) · Farrell i wsp. (2009, Journal of Behavior Therapy and Experimental Psychiatry, RCT) · Arntz i Jacob (2013, Schema Therapy in Practice) · Bowlby (1988, A Secure Base) · Louis i wsp. (2018, Cognitive Therapy and Research, healthy parenting needs)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Pięć podstawowych potrzeb</div>
+    <h1 class="card-prompt">Lockwood i Perris (2012) — <em>pięć</em> potrzeb dziecka</h1>
+    <p class="card-detail">Pięć podstawowych potrzeb emocjonalnych, których nie zaspokojenie w dzieciństwie tworzy schematy. W limited reparenting terapeuta świadomie reaguje na te potrzeby w sposób korektywny — w granicach relacji terapeutycznej. Każda potrzeba ma swój charakterystyczny sposób adresowania w mowie i w postawie.</p>
+
+    <div class="need-grid">
+      <div class="need-card">
+        <div class="need-h">🛡️ 1. Bezpieczna więź</div>
+        <span class="need-name">Bezpieczeństwo + akceptacja + przewidywalność</span>
+        <div class="need-text">Klient z deficytem: schematy Abandonment / Mistrust / Emotional Deprivation. Potrzeba: stabilna obecność, przewidywalna struktura, niewzruszona akceptacja.</div>
+        <div class="need-quote">„Możesz tu próbować i się mylić — nic złego się nie stanie. Jestem tu w przyszłą środę o 14:00, jak zawsze."</div>
+      </div>
+
+      <div class="need-card">
+        <div class="need-h">🦋 2. Autonomia, kompetencja, tożsamość</div>
+        <span class="need-name">Wiara w zdolność klienta + szacunek dla decyzji</span>
+        <div class="need-text">Klient z deficytem: schematy Dependence / Failure / Vulnerability. Potrzeba: ktoś, kto wierzy w jego/jej zdolności i nie robi za niego/za nią.</div>
+        <div class="need-quote">„Wierzę, że potrafisz — i zarazem jestem tu, gdybyś potrzebował/a wsparcia. Co Ty myślisz, że jest najlepszym następnym krokiem?"</div>
+      </div>
+
+      <div class="need-card">
+        <div class="need-h">🗣️ 3. Wolność wyrażania potrzeb i emocji</div>
+        <span class="need-name">Akceptacja wszystkich emocji + zachęta do wyrażania</span>
+        <div class="need-text">Klient z deficytem: schematy Emotional Inhibition / Subjugation / Self-Sacrifice. Potrzeba: przyzwolenie na całe spektrum emocji, w tym „trudne" (złość, sprzeciw).</div>
+        <div class="need-quote">„Możesz powiedzieć, że nie chcesz. Możesz powiedzieć, że jesteś zły/a na mnie. Twoje emocje są ważne — wszystkie."</div>
+      </div>
+
+      <div class="need-card">
+        <div class="need-h">🎭 4. Spontaniczność i zabawa</div>
+        <span class="need-name">Brak presji perfekcji + przestrzeń na kreatywność</span>
+        <div class="need-text">Klient z deficytem: schematy Unrelenting Standards / Punitiveness. Potrzeba: bycie akceptowanym za wysiłek, nie za wynik; przestrzeń na próbowanie bez kary za błąd.</div>
+        <div class="need-quote">„Nie musisz robić tego idealnie — wystarczy, że spróbujesz. Pomyłka jest częścią uczenia, nie dowodem porażki."</div>
+      </div>
+
+      <div class="need-card">
+        <div class="need-h">📐 5. Realistyczne granice i samodyscyplina</div>
+        <span class="need-name">Jasne granice + uczenie radzenia z frustracją</span>
+        <div class="need-text">Klient z deficytem: schematy Entitlement / Insufficient Self-Control. Potrzeba: doświadczenie konsekwencji + uczenie się tolerancji frustracji.</div>
+        <div class="need-quote">„Rozumiem, że jest trudno — i wierzę, że możesz zrobić ten jeden krok. Komfort nie jest możliwy zawsze, ale Ty potrafisz znieść dyskomfort."</div>
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="potrzebaKlienta" placeholder="KLIENT — pomyśl o konkretnym kliencie, który jest bierny lub zatrzymany. Której z pięciu potrzeb najbardziej brakowało mu w dzieciństwie? Po czym to widać dziś? np. „Klient X — brakowało wiary w jego kompetencje. Mama wszystko za niego robiła. Dziś jako dorosły czeka na instrukcje""  rows="4"></textarea>
+
+    <div class="term-note"><strong>📊 Reguła diagnozy potrzeby</strong>: w pierwszych sesjach obserwuj, jaka <em>jakość</em> braku przejawia się w relacji z Tobą. Klient szuka u Ciebie tego, czego nie miał. Niepokój o Twoją obecność — niedosyt bezpiecznej więzi. Czekanie na Twoje instrukcje — niedosyt autonomii. Tłumienie złości — niedosyt wolności wyrażania. Każdy klient ma 1—2 dominujące deficyty.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Równowaga: wiara + wymaganie</div>
+    <h1 class="card-prompt">Skraje, w które łatwo wpaść — i ich koszt</h1>
+    <p class="card-detail">Limited reparenting jest sztuką równowagi. Skraj „nadmierna wiara bez wymagań" wzmacnia schemat Dependence — klient czeka, by ktoś zrobił. Skraj „same wymagania bez wiary" wzmacnia schemat Failure — klient nie próbuje, by uniknąć potwierdzenia, że nie potrafi. Trzecia droga to równoległe komunikowanie obu: <em>wierzę w Ciebie i wymagam Twojego ruchu</em>.</p>
+
+    <div class="balans-row">
+      <div class="balans-cell bad">
+        <span class="balans-tag">❌ Same wiara, brak wymagań</span>
+        <strong>„Rozumiem, że to bardzo trudne. Nie spiesz się, daj sobie tyle czasu, ile potrzeba."</strong> Wzmacnia bierność. Klient interpretuje: terapeuta nie wierzy, że potrafię.
+      </div>
+      <div class="balans-cell bad">
+        <span class="balans-tag">❌ Same wymagania, brak wiary</span>
+        <strong>„Musisz w końcu zacząć działać. Tak nie da się dalej."</strong> Wzmacnia schemat Failure. Klient interpretuje: terapeuta jest sfrustrowany, jak rodzic.
+      </div>
+    </div>
+
+    <div class="balans-row">
+      <div class="balans-cell good">
+        <span class="balans-tag">✅ Trzecia droga</span>
+        <strong>„Widzę, że jest Ci trudno — i wierzę, że potrafisz zrobić jeden krok. Jaki <em>najmniejszy</em> ruch jest dziś w Twoim zasięgu?"</strong> Walidacja + zaufanie + zachęta + oczekiwanie konkretu.
+      </div>
+      <div class="balans-cell good">
+        <span class="balans-tag">✅ Po porażce</span>
+        <strong>„To, że tym razem nie poszło, nie znaczy, że nie potrafisz. Co się sprawdziło, a co nie? Co zmieniłbyś następnym razem?"</strong> Brak osądu + ramowanie jako uczenie + powrót do procesu.
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="mojaSklonnosc" placeholder="MOJA SKŁONNOŚĆ — w którą stronę osobiście częściej skłaniasz się jako terapeuta? Bądź uczciwy/a wobec siebie. np. „Skłaniam się ku 'samej wierze' — boję się być wymagającą jak surowy ojciec, więc unikam oczekiwań""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="kosztSklonnosci" placeholder="KOSZT — co tracisz Ty i co traci klient w tej skłonności? np. „Tracę: wpływ terapeutyczny, klient stagnuje. Klient traci: doświadczenie, że ktoś w niego wierzy konkretnie""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="trzeciDrogaSos" placeholder="TRZECIA DROGA — sformułuj zdanie, które łączy wiarę i wymaganie, dla konkretnego klienta. np. „Dla klienta X: Słyszę, że dziś trudno Ci nawet wyobrazić zacząć. I jestem pewna, że jeden mały ruch — dziś — jest w Twoim zasięgu. Co to mogłoby być?""  rows="5"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła autentyczności wymagania</strong>: terapeuta, który <em>nie wierzy</em>, że klient potrafi, nie potrafi też wymagać autentycznie. Wymaganie jest formą uznania kompetencji. Jeśli sam/a nie wierzysz, że klient potrafi — to sygnał do superwizji, nie do milczenia. Bez wewnętrznej wiary nie zbudujesz wymagania; bez wymagania nie zaktywujesz Healthy Adult klienta.</div>
+
+    <div class="term-note"><strong>📌 Reguła walidacji + frustracji</strong>: Linehan (1993, DBT) — pełna terapia łączy walidację <em>i</em> oczekiwanie zmiany. Walidacja: „Twoje doświadczenie jest sensowne, biorąc pod uwagę Twoją historię". Wymaganie: „I jednocześnie wierzę, że możesz zachować się inaczej". Spójnik „I", nie „ale". Jednoczesność.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Granice i autoopieka terapeuty</div>
+    <h1 class="card-prompt">Limited reparenting wymaga <em>granic</em> — Twoich i kontraktu</h1>
+    <p class="card-detail">Limited reparenting w schema therapy działa tylko wtedy, gdy ma jasne granice. Bez granic terapeuta wypala się, klient buduje patologiczną zależność (wzmacniając schemat Dependence zamiast korektywać go), a etyczna integralność relacji eroduje. Granice są częścią modelu Healthy Adult — pokazujesz klientowi, że dorosły potrafi mieć granice <em>z troską</em>, nie z odrzucenia.</p>
+
+    <div class="granica-row">
+      <div class="granica-h">⏰ Czasowe</div>
+      <strong>Sesja zaczyna się i kończy o czasie</strong>. Telefony / maile poza sesjami: zdefiniowane w kontrakcie (np. tylko w sytuacjach kryzysowych, do 24h opóźnienia odpowiedzi). Spotkania w nagłych przypadkach: regulowane procedurą.
+    </div>
+
+    <div class="granica-row">
+      <div class="granica-h">🌐 Relacyjne</div>
+      <strong>Brak relacji osobistej poza terapią</strong>. Brak wspólnych aktywności, brak social media, brak pomocy w „życiowych" sprawach poza zakresem terapii. To nie chłód — to ochrona ramy terapeutycznej.
+    </div>
+
+    <div class="granica-row">
+      <div class="granica-h">📋 Treściowe</div>
+      <strong>Self-disclosure ograniczony i celowy</strong>. Dzielisz się czasem fragmentem własnego doświadczenia, jeśli służy klientowi (modelowanie Healthy Adult). Nie dzielisz się problemami osobistymi w sposób, który odwraca uwagę z klienta.
+    </div>
+
+    <div class="granica-row">
+      <div class="granica-h">💰 Kontraktowe</div>
+      <strong>Płatność, częstotliwość, wakacje, urlopy</strong> — jasno ustalone, przewidywalne. Konsekwentne stosowanie kontraktu jest częścią limited reparenting: klient uczy się, że dorosły potrafi mieć struktury <em>z miłością</em>.
+    </div>
+
+    <textarea class="thought-input" id="moaGranica" placeholder="GRANICA, która Ci się rozluźnia z tym klientem. np. „Z X wydłużam sesje o 10—15 minut, gdy on przynosi 'jeszcze jedną ważną rzecz'""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="kosztRozluznienia" placeholder="KOSZT rozluźnienia — co tracisz Ty, co traci klient? np. „Wypalam się po dniu z X. Klient nie uczy się, że ja też mam granice — wzmacnia się jego schemat Entitlement""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="reinstrukcja" placeholder="REINSTRUKCJA — jak przywrócisz granicę z troską? Sformułuj zdanie. np. „Słyszę, że to jest dla Ciebie ważne. I nasza sesja kończy się o 15:00. Wracamy do tej myśli na początku przyszłej sesji""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="superwizjaPlan" placeholder="SUPERWIZJA — jeśli z konkretnym klientem stale rozluźniasz granice, to znak do superwizji. Kiedy ją zaplanujesz? np. „Czwartek 17:00 — superwizja indywidualna z A. Pytanie: dlaczego tracę granice z X?""  rows="3"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła „granica jako część troski"</strong>: klient z deficytem realistycznych granic (schemat Entitlement, ale też Dependence) <em>potrzebuje</em>, żeby terapeuta miał granice. Granica jest lekcją: dorosły może powiedzieć „nie", a relacja przetrwa. Bez tej lekcji limited reparenting wzmacnia infantylne wzorce zamiast je korygować.</div>
+
+    <div class="term-note"><strong>📌 Reguła autoopieki terapeuty</strong>: limited reparenting jest emocjonalnie wymagający. Terapeuta z deficytem własnej Healthy Adult będzie wpadać w nadkompensację (ratownictwo) lub w wycofanie (zimny dystans). Własna terapia, regularna superwizja, grupa Balinta lub peer-support są częścią profesjonalnego rozwoju, nie luksusem.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja równowagi</div>
+    <h1 class="card-prompt">Sprawdź <em>swoją</em> równowagę limited reparenting</h1>
+    <p class="card-detail">Po przejściu przez pięć potrzeb, równowagę wiary i wymagania, granice i autoopiekę — gdzie jesteś teraz w skali własnej praktyki limited reparenting? Cel nie jest 10. Cel: świadomość własnej skłonności i konkretne mikrointerwencje na następną sesję.</p>
+
+    <div class="scale">
+      <div class="scale-title">Równowaga LR PRZED ćwiczeniem (wiara + wymaganie)</div>
+      <div class="scale-bounds"><span>0 — daleka skrajność</span><span>10 — pełna równowaga</span></div>
+      <input type="range" class="scale-input" id="rownowagaPrzed" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>Wartość</span><span id="rownowagaPrzedVal">4</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Równowaga LR PO ćwiczeniu</div>
+      <div class="scale-bounds"><span>0 — daleka skrajność</span><span>10 — pełna równowaga</span></div>
+      <input type="range" class="scale-input" id="rownowagaPo" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wartość</span><span id="rownowagaPoVal">6</span></div>
+    </div>
+
+    <div id="lrDiff"></div>
+
+    <textarea class="thought-input" id="trzyMikro" placeholder="TRZY MIKROINTERWENCJE na następną sesję z tym klientem. (1) jak zwalidujesz emocje? (2) jak wyrazisz zaufanie do kompetencji? (3) o co konkretnie poprosisz? np. „1. 'Słyszę, że rezygnacja jest silna'. 2. 'Wierzę, że masz zasoby, których jeszcze nie wykorzystałeś'. 3. 'Jaki jeden krok jest dziś w Twoim zasięgu?'""  rows="6"></textarea>
+
+    <textarea class="thought-input" id="rytualSuperw" placeholder="RYTUAŁ — jak będziesz monitorować własną równowagę LR? np. „Po każdej sesji z klientami z głębokimi schematami: 5 min refleksji — gdzie byłem na spektrum wiara—wymaganie? Co zmienić następnym razem?""  rows="4"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: limited reparenting to umiejętność rozwijająca się przez lata praktyki i własnej terapii. Pierwsze próby świadomego stosowania mogą wydawać się sztuczne — z czasem stają się naturalne. Wskaźnik dojrzałości: zauważasz, że klient <em>internalizuje</em> Twój głos (mówi do siebie tonem, którego od Ciebie się nauczył), a Ty pomimo emocjonalnej intensywności pracy nie wypalasz się. Trwała praktyka LR wymaga regularnej superwizji.
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: opanowanie limited reparenting zwykle trwa 3—5 lat regularnej praktyki ze superwizją. Pierwsze efekty u klientów — internalizacja Healthy Adult — widoczne są po 6—12 miesiącach. Pełna korekta wczesnych deficytów emocjonalnych: 2—3 lata terapii indywidualnej lub grupowej w schema therapy.</div>
+
+    <div class="term-note"><strong>📊 Reguła własnej terapii</strong>: terapeuta z aktywnymi własnymi schematami Defectiveness lub Failure będzie wpadać w nadkompensację (przesadnie ciepły, ratunkowy). Z aktywnym schematem Unrelenting Standards — w surowość. Własna terapia uświadamiająca te wzorce jest nie tylko etycznym wymaganiem, ale praktycznym warunkiem skutecznego LR.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Limited reparenting to <strong>postawa</strong>, nie technika. Pięć potrzeb (Lockwood i Perris): bezpieczna więź, autonomia, wolność wyrażania, spontaniczność, realistyczne granice. <em>Wiara + wymaganie</em> — równolegle, spójnik „I". Granice są częścią troski. Autoopieka terapeuty (terapia własna, superwizja) jest warunkiem profesjonalizmu, nie luksusem.</div>
+    </div>
+
+    <div class="src">Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner's Guide) · Lockwood i Perris (2012, International Journal of Cognitive Therapy) · Farrell i wsp. (2009, Journal of Behavior Therapy and Experimental Psychiatry, RCT) · Arntz i Jacob (2013, Schema Therapy in Practice) · Bowlby (1988, A Secure Base) · Linehan (1993, Cognitive-Behavioral Treatment of Borderline Personality Disorder)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateLrVals() {
+  ['rownowagaPrzed','rownowagaPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderLrDiff();
+}
+
+function renderLrDiff() {
+  const a = document.getElementById('rownowagaPrzed');
+  const b = document.getElementById('rownowagaPo');
+  const d = document.getElementById('lrDiff');
+  if (!a || !b || !d) return;
+  const delta = parseInt(b.value) - parseInt(a.value);
+  const sign = delta > 0 ? '+' : '';
+  const cls = delta < 0 ? ' neg' : '';
+  d.innerHTML = '<div class="diff-list"><div class="diff-row"><strong>Równowaga LR (wiara + wymaganie)</strong><span class="diff-delta' + cls + '">' + a.value + ' → ' + b.value + ' (' + sign + delta + ')</span></div></div>';
+}
+
+function onStepChange(step) {
+  if (step === 5) updateLrVals();
+}
+
+function onReset() {
+  const d = document.getElementById('lrDiff');
+  if (d) d.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_st_limited_rep — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_st_limited_rep";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updateLrVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

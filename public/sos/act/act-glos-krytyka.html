@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Głos krytyka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --critic: #6a5550; --critic-deep: #3a2e2a;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(106,85,80,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--critic); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--critic); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--critic); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--critic); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--critic); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(106,85,80,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--critic); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--critic); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — shadow grey === */
+.frame-card { 
+  background: linear-gradient(180deg, #3a3530 0%, #1f1d1a 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ DEFUZJA OD KRYTYKA"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "🎭"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.10; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.critic-traits {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.critic-trait {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 9px 12px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.critic-trait-l { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--warm); font-weight: 600; min-width: 60px; }
+.critic-trait-r { font-size: 12.5px; color: rgba(244,241,234,0.85); line-height: 1.4; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--critic); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === PROTO TECHNIQUES === */
+.proto-list { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 12px; }
+.proto-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--critic);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.proto-card:hover { background: rgba(255,255,255,0.75); }
+.proto-card.chosen { background: rgba(106,85,80,0.10); border-left-color: var(--critic-deep); }
+.proto-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.proto-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--critic); line-height: 1; }
+.proto-name { font-size: 13px; font-weight: 700; flex: 1; }
+.proto-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 6px; }
+.proto-howto strong { color: var(--ink); font-weight: 700; }
+.proto-mech {
+  font-size: 11px; color: var(--ink-mute);
+  font-style: italic;
+  padding: 6px 10px;
+  background: rgba(106,85,80,0.06);
+  border-radius: 6px;
+}
+.proto-mech::before { content: "🧠 "; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--critic);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--critic); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--critic); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(106,85,80,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--critic); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--critic); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Głos krytyka</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Krytyk to <em>postać</em>, nie ty</h1>
+    <p class="card-detail">Wewnętrzny krytyk to głos w głowie, który nieustannie ocenia i porównuje. <strong>ACT</strong> (terapia akceptacji i zaangażowania) nie próbuje go uciszyć — zmienia <em>twoją relację z nim</em>. Przestajesz być w fuzji z nim — zaczynasz go widzieć jako <strong>jedną z wielu postaci</strong> w swoim umyśle.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cechy krytyka — co go zdradza</div>
+      
+      <div class="critic-traits">
+        <div class="critic-trait">
+          <span class="critic-trait-l">brzmienie</span>
+          <span class="critic-trait-r">ostry, sarkastyczny, zimny, rozczarowany</span>
+        </div>
+        <div class="critic-trait">
+          <span class="critic-trait-l">timing</span>
+          <span class="critic-trait-r">porażka, porównanie, nowa sytuacja, sukces</span>
+        </div>
+        <div class="critic-trait">
+          <span class="critic-trait-l">treści</span>
+          <span class="critic-trait-r">„nie dasz rady", „inni są lepsi", „nie zasługujesz"</span>
+        </div>
+        <div class="critic-trait">
+          <span class="critic-trait-l">źródło</span>
+          <span class="critic-trait-r">często głos rodzica/nauczyciela/rówieśnika</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Twój krytyk nie jest <em>tobą</em>. To zinternalizowany głos — ślad cudzych słów. Możesz go słyszeć <em>nie będąc nim</em>."
+      <span class="frame-quote-attr">— Russ Harris (2009)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w starym modelu była walka („jestem do bani — nie, nie jestem"). Każda dyskusja umacnia krytyka — bo musisz traktować go poważnie. ACT proponuje co innego: <em>zauważ, nazwij, przepuść</em>. Krytyk dalej mówi — ale ty nie musisz mu wierzyć ani z nim walczyć.</div>
+    
+    <div class="src">Harris (2009, ACT Made Simple) · Hayes (2005, Get Out of Your Mind)</div>
+  </section>
+
+  <!-- 2: DIAGNOSIS -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Poznaj swojego krytyka</div>
+    <h1 class="card-prompt">Daj mu <em>imię</em></h1>
+    <p class="card-detail">Pierwszy krok defuzji: <strong>imię i twarz</strong>. Imię tworzy dystans. Słuchasz „Profesora", a nie „prawdy". Słuchasz „Sędziego", a nie „rzeczywistości". Im konkretniejsze imię, tym łatwiej go zauważyć — i przejść dalej.</p>
+    
+    <div class="examples-h">Imię mojego krytyka (zabawne lub charakterystyczne)</div>
+    <textarea class="thought-input" id="criticName" placeholder='np. „Sędzia", „Profesor", „Pani Doskonałość", „Mama Krytyk", „Stary Karol", „Pan Perfekcja"...' rows="2"></textarea>
+    
+    <div class="examples-h">3 ulubione teksty mojego krytyka</div>
+    <textarea class="thought-input" id="criticLines" placeholder='np. 1) „Znowu to samo, leniu" 2) „Inni już dawno by skończyli" 3) „Nie zasługujesz na ten sukces"...' rows="3"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak często słyszę krytyka w skali tygodnia?</div>
+      <div class="scale-label"><span>0 — nigdy</span><span>10 — non-stop</span></div>
+      <input type="range" min="0" max="10" value="6" class="scale-input" id="freq" oninput="updateFreq()">
+      <div class="scale-readout"><span id="freqVal">6</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="freqVerdict">
+      Częstotliwość <span class="num">6/10</span> — <strong>krytyk regularny</strong>. Aktywny w wielu sytuacjach. Defuzja codzienna pomoże osłabić jego dominację.
+    </div>
+    
+    <div class="examples-h">Czyj głos przypomina krytyk? (kogo zinternalizowałem/am)</div>
+    <textarea class="thought-input" id="criticEcho" placeholder='np. „Brzmi jak ojciec gdy byłem dzieckiem" / „Jak nauczycielka z liceum która mnie poniżała" / „Jak wymagająca babcia"...' rows="3"></textarea>
+  </section>
+
+  <!-- 3: PROTOCOL — 5 TECHNIQUES -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Techniki defuzji</div>
+    <h1 class="card-prompt">5 sposobów <em>przejścia obok</em></h1>
+    <p class="card-detail">Wybierz 1-2 techniki, które do ciebie pasują. <strong>Stuknij, żeby zaznaczyć</strong>. Różne techniki działają u różnych osób — eksperymentuj. Nie ma „najlepszej". Jest <em>najskuteczniejszej dla ciebie dziś</em>.</p>
+    
+    <div class="proto-list">
+      <div class="proto-card" onclick="toggleTech(this)">
+        <div class="proto-h-row">
+          <span class="proto-num">1</span>
+          <span class="proto-name">Powitanie</span>
+        </div>
+        <div class="proto-howto"><strong>„O, to ty, Sędzio. Słucham."</strong> Po prostu zauważasz krytyka, witasz po imieniu. Nie ignorujesz, nie walczysz. Witasz jak znajomego natręta.</div>
+        <div class="proto-mech">Nazywanie → defuzja: nazwany głos staje się postacią, nie prawdą</div>
+      </div>
+      
+      <div class="proto-card" onclick="toggleTech(this)">
+        <div class="proto-h-row">
+          <span class="proto-num">2</span>
+          <span class="proto-name">Podziękowanie</span>
+        </div>
+        <div class="proto-howto"><strong>„Dziękuję za opinię, Sędzio."</strong> Brzmi prowokująco — i o to chodzi. Krytyk próbuje cię zranić; ty odpowiadasz uprzejmością. Zabiera mu to siłę.</div>
+        <div class="proto-mech">Złamanie schematu — odpowiedź wymyka się zwykłej dynamice walki/ucieczki</div>
+      </div>
+      
+      <div class="proto-card" onclick="toggleTech(this)">
+        <div class="proto-h-row">
+          <span class="proto-num">3</span>
+          <span class="proto-name">Śmieszny głos</span>
+        </div>
+        <div class="proto-howto"><strong>Powtórz krytykę głosem Myszki Miki</strong>, robota, dziecka. „Niee daszzz radyy" robotem. Zdanie traci wagę, gdy słychać je piskliwe. Brzmi głupio — bo jest głupie.</div>
+        <div class="proto-mech">Klasyczna technika ACT (Hayes) — destrukcja autorytetu treści werbalnej</div>
+      </div>
+      
+      <div class="proto-card" onclick="toggleTech(this)">
+        <div class="proto-h-row">
+          <span class="proto-num">4</span>
+          <span class="proto-name">Pytanie o użyteczność</span>
+        </div>
+        <div class="proto-howto"><strong>„Czy ta krytyka mi pomaga, czy mnie blokuje?"</strong> Krytyk obiecuje, że pomaga (motywuje, chroni). Sprawdź doświadczeniem. Jeśli przez 10 lat <em>nie pomogła</em> — to nie pomaga.</div>
+        <div class="proto-mech">Test funkcjonalności — kryterium ACT: nie czy myśl jest „prawdziwa", ale czy „działa"</div>
+      </div>
+      
+      <div class="proto-card" onclick="toggleTech(this)">
+        <div class="proto-h-row">
+          <span class="proto-num">5</span>
+          <span class="proto-name">Uznanie intencji</span>
+        </div>
+        <div class="proto-howto"><strong>„Wiem, że próbujesz mnie chronić, Sędzio. Doceniam. Ale poradzę sobie sam/a."</strong> Większość krytyków powstała jako tarcza w dzieciństwie. Uznajesz intencję — i bierzesz odpowiedzialność na siebie.</div>
+        <div class="proto-mech">Współczujące przeformułowanie — łączy ACT z samowspółczuciem (Neff, Gilbert)</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Która technika mi się najbardziej podoba i dlaczego?</div>
+    <textarea class="thought-input" id="favTech" placeholder='np. „Śmieszny głos — bo gdy słyszę krytykę głosem Donalda, nie da się jej traktować poważnie. Działa od razu."' rows="3"></textarea>
+  </section>
+
+  <!-- 4: PRACTICE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Trening defuzji</div>
+    <h1 class="card-prompt">Sytuacja <em>z dziś</em></h1>
+    <p class="card-detail">Wybierz <strong>jedną sytuację z dziś lub ostatnich dni</strong>, w której krytyk był głośny. Przejdź ją z wybraną techniką. Cel: <em>poczuć dystans</em> — nawet 10%-ową różnicę.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój trening defuzji</div>
+      
+      <div class="commit-prompt-label">Sytuacja, w której krytyk był aktywny</div>
+      <textarea class="thought-input" id="situation" placeholder='np. „Wczoraj rano przed prezentacją. Krytyk powtarzał: »wszyscy zauważą, że nie znasz tematu«."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Wybrana technika defuzji</div>
+      <textarea class="thought-input" id="chosenTech" placeholder='np. „Powitanie — »Cześć, Sędzio. Słyszę cię.«"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co się zmieniło, gdy zastosowałem/am technikę?</div>
+      <textarea class="thought-input" id="effect" placeholder='np. „Krytyk dalej mówił, ale brzmiał jak głos w tle, nie polecenie. Mogłem otworzyć slajdy mimo niego."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Krytyk wycofał się, czy nadal mówił? (oba w porządku)</div>
+      <textarea class="thought-input" id="criticState" placeholder='np. „Mówił dalej, ale ciszej. Przed defuzją 8/10, po defuzji 4/10."' rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Pułapka</strong>: jeśli oczekujesz, że <em>krytyk zniknie</em> — defuzja „nie działa". Cel jest inny: krytyk dalej mówi, ale <strong>nie sterujesz nim swoim życiem</strong>. To nie cisza — to wybór, którego głosu słuchać.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">List do krytyka</div>
+    <h1 class="card-prompt">Postaw <em>swoje warunki</em></h1>
+    <p class="card-detail">Napisz <strong>krótki list do krytyka</strong> — co chcesz mu powiedzieć teraz, gdy widzisz go jako postać a nie prawdę. To zamknięcie etapu fuzji. Możesz go zachować, przeczytać raz w tygodniu.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">List do mojego krytyka</div>
+      
+      <div class="commit-prompt-label">Drogi/Droga [imię krytyka]…</div>
+      <textarea class="thought-input" id="letter" placeholder='np. „Drogi Sędzio. Wiem, że próbowałeś mnie chronić przed odrzuceniem przez te wszystkie lata. Doceniam intencję. Ale twoja metoda mnie niszczy. Od dziś będę cię słyszeć — bez posłuszeństwa. Możesz dalej mówić. Ja podejmuję decyzje."' rows="6" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Mój sygnał krytyka (po czym poznam, że to on)</div>
+      <textarea class="thought-input" id="cue" placeholder='np. „Karteczka »Cześć, Sędzio« na monitorze. Krótka pauza i powtórzenie imienia w głowie."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Mój plan na tydzień (1 mała sytuacja dziennie)</div>
+      <textarea class="thought-input" id="weekPlan" placeholder='np. „Codziennie po pracy 5 min: jedna sytuacja, w której krytyk się odezwał. Nazwę go i podziękuję. W weekend napisanie nowego listu."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Codzienna higiena</div>
+    <div class="term-note">
+      <strong>Codziennie</strong> — 1× zauważenie krytyka i nazwanie go po imieniu<br>
+      <strong>Co tydzień</strong> — przegląd: kiedy krytyk był najgłośniejszy, jaka technika zadziałała<br>
+      <strong>Co miesiąc</strong> — odczytanie listu na nowo, zaktualizowanie<br>
+      <strong>W kryzysie</strong> — pytanie: <em>czy słyszę Sędziego, czy mówi prawdę?</em>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body">Cel defuzji to <em>nie wyłączenie krytyka</em>. Cel to <strong>zmiana relacji z nim</strong>. Krytyk z reżysera staje się komentatorem. Komentarz może być nieprzyjemny, ale <strong>nie steruje twoim życiem</strong>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateFreq();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.proto-card.chosen').forEach(b => b.classList.remove('chosen'));
+    ['criticName','criticLines','criticEcho','favTech','situation','chosenTech','effect','criticState','letter','cue','weekPlan'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('freq').value = 6;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleTech(el) { el.classList.toggle('chosen'); }
+
+function updateFreq() {
+  const v = parseInt(document.getElementById('freq').value);
+  document.getElementById('freqVal').textContent = v;
+  
+  const verdict = document.getElementById('freqVerdict');
+  if (v >= 9) {
+    verdict.innerHTML = `Częstotliwość <span class="num">${v}/10</span> — <strong>krytyk dominujący</strong>. Niemal stały głos w tle. Defuzja musi być <em>nawykowa</em> — wbudowana w codzienność. Pomyśl o terapii równolegle.`;
+  } else if (v >= 7) {
+    verdict.innerHTML = `Częstotliwość <span class="num">${v}/10</span> — <strong>krytyk silny</strong>. Aktywny w większości sytuacji. Codzienna defuzja konieczna. Wyjątkowo dobry moment do treningu.`;
+  } else if (v >= 4) {
+    verdict.innerHTML = `Częstotliwość <span class="num">${v}/10</span> — <strong>krytyk regularny</strong>. Aktywny w wielu sytuacjach. Defuzja codzienna pomoże osłabić jego dominację.`;
+  } else if (v >= 2) {
+    verdict.innerHTML = `Częstotliwość <span class="num">${v}/10</span> — <strong>krytyk okazjonalny</strong>. Pojawia się przy konkretnych wyzwalaczach. Naucz się ich rozpoznawać — defuzja w pakiecie z timing.`;
+  } else {
+    verdict.innerHTML = `Częstotliwość <span class="num">${v}/10</span> — <strong>krytyk rzadki</strong>. Albo masz dobrze przepracowaną relację z nim, albo go <em>nie zauważasz</em>. Sprawdź drugą opcję — czasem cisza to fuzja, nie wolność.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_glos_krytyka";
+  var clickSel0 = '.proto-card';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("chosen")) {
+          rows0[i].classList.add("chosen");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("chosen")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.proto-card')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

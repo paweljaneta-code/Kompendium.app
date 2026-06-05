@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Eksperyment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === HYP-CARD (krok 2) === */
+.hyp-card { background: linear-gradient(135deg, rgba(122,146,112,0.08), rgba(216,225,205,0.4)); border: 1.5px solid var(--sage-deep); border-radius: 14px; padding: 16px 18px; margin: 8px 0 12px; }
+.hyp-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.hyp-rule { padding: 10px 12px; background: rgba(255,255,255,0.5); border-radius: 8px; border-left: 3px solid var(--sage-deep); margin-bottom: 6px; font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+.hyp-rule:last-child { margin-bottom: 0; }
+.hyp-rule strong { color: var(--ink); }
+
+/* === TRAP-LIST (krok 3) === */
+.trap-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.trap-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.trap-item:hover, .trap-item:active { background: rgba(201,122,82,0.06); }
+.trap-item.checked { background: rgba(201,122,82,0.12); border-color: var(--warm); border-left: 3px solid var(--warm); }
+.trap-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.trap-item.checked .trap-tick { background: var(--warm); border-color: var(--warm); }
+.trap-item.checked .trap-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.trap-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.trap-text strong { color: var(--ink); font-weight: 700; }
+.trap-mech { display: block; font-size: 11px; color: var(--ink-mute); margin-top: 3px; font-style: italic; }
+
+/* === FACTS-CARD (krok 4) === */
+.facts-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.facts-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.facts-row { display: flex; gap: 12px; padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; align-items: flex-start; }
+.facts-row:last-child { margin-bottom: 0; }
+.facts-num { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--warm); flex-shrink: 0; min-width: 22px; line-height: 1.4; }
+.facts-text { font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); flex: 1; }
+.facts-text strong { color: var(--bg); }
+
+/* === DIFF === */
+.diff-block { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 14px; background: rgba(122,146,112,0.06); border-radius: 12px; margin: 8px 0 10px; }
+.diff-side { text-align: center; flex: 1; }
+.diff-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.diff-num.warm { color: var(--warm); }
+.diff-num.sage { color: var(--sage-deep); }
+.diff-lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; font-weight: 600; }
+.diff-arrow { font-size: 22px; color: var(--ink-mute); }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Eksperyment</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Eksperyment <em>behawioralny</em></h1>
+    <p class="card-detail"><strong>Eksperymenty behawioralne</strong> (behavioural experiments, Bennett-Levy i in. 2004, Oxford Guide) — najsilniejsza metoda zmiany przekonań w terapii poznawczej. <em>Słowem nie zmienisz mózgu</em>; zmieniają go <strong>doświadczenia sprzeczne z hipotezą</strong>. Eksperyment behawioralny zamienia twoje katastroficzne przewidywanie w <strong>falsyfikowalną hipotezę</strong>, planuje sytuację w realnym świecie, mierzy wynik, porównuje z prognozą. To <em>generyczne narzędzie</em> — zastosowalne do każdego przekonania SAD: „pomyślą, że jestem nudny”, „nie wytrzymam tej rozmowy”, „odsuną się ode mnie po drobnym błędzie”. Padesky i Mooney (1990) udokumentowali: <em>jeden dobrze zaprojektowany eksperyment</em> obniża pewność przekonania o 30–50%.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy eksperymentu</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Hipoteza</strong> = przekonanie przekute w falsyfikowalną prognozę („zauważą i odsuną się”)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🪤</span>
+          <span class="element-text"><strong>Zabezpieczenia</strong> = co świadomie porzucasz w trakcie (zachowania zabezpieczające)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🧪</span>
+          <span class="element-text"><strong>Wykonanie</strong> = realna sytuacja, czysta ekspozycja, bez modyfikacji</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📊</span>
+          <span class="element-text"><strong>Dane</strong> = obserwowalne fakty vs prognoza, pewność przed/po</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Nic tak nie zmienia <em>przekonań</em>, jak doświadczenie sprzeczne z nimi. Eksperyment to <em>maszyna dostarczania</em> takich doświadczeń.”
+        <span class="frame-quote-attr">— James Bennett-Levy i in. (2004)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: eksperyment <em>nie</em> jest „terapią pozytywnego myślenia”. Jest <strong>kontrolowanym testem</strong> — z możliwością obalenia twojej hipotezy. Jeśli chciałbyś, żeby zawsze pasował do oczekiwań „że wszystko będzie OK”, to <em>nie eksperyment</em> — to życzeniowość. Eksperyment dostarcza <strong>twardych danych</strong>.</div>
+    
+    <div class="src">Bennett-Levy i in. (2004, Oxford Guide) · Clark i Wells (1995) · Salkovskis (1996) · Padesky i Mooney (1990, Cognitive Theory)</div>
+  </section>
+  <!-- 2: HIPOTEZA FALSYFIKOWALNA -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Hipoteza falsyfikowalna</div>
+    <h1 class="card-prompt">Przekuj <em>strach</em> w hipotezę</h1>
+    <p class="card-detail">Zacznij od <strong>katastroficznej prognozy</strong> — co najgorszego się stanie? Potem <em>uściślij</em> ją do <strong>obserwowalnej hipotezy</strong>: konkretny sygnał, który by ją potwierdził. <em>„Coś się stanie”</em> nie da się sprawdzić; <em>„rozmówca odejdzie po 2 minutach”</em> — sprawdzalne.</p>
+    
+    <div class="term-note"><strong>Reguła Bennett-Levy</strong>: hipoteza musi być <em>brzmiąca jak prognoza naukowca</em>. Jeśli twoja hipoteza brzmi <em>„nie wiem co się stanie ale na pewno coś złego”</em> — to <strong>nie hipoteza</strong>. To stan emocjonalny. Uściślij do <em>jednego konkretnego, obserwowalnego zdarzenia</em>.</div>
+    
+    <div class="examples-h">Twoja katastroficzna prognoza (jak czujesz teraz)</div>
+    <textarea class="thought-input" id="vagueInput" placeholder="np. „Wszyscy mnie ocenią negatywnie podczas prezentacji” / „Anna mnie odrzuci, gdy zaproponuję spotkanie”..." rows="3"></textarea>
+    
+    <div class="examples-h">Najczęstsze prognozy SAD — stuknij, jeśli pasuje</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useExample(this)">Wszyscy mnie ocenią negatywnie</div>
+      <div class="example-chip" onclick="useExample(this)">Odsuną się ode mnie</div>
+      <div class="example-chip" onclick="useExample(this)">Pomyślą, że jestem niekompetentny</div>
+      <div class="example-chip" onclick="useExample(this)">Odrzucą moją propozycję</div>
+      <div class="example-chip" onclick="useExample(this)">Zignorują mnie</div>
+      <div class="example-chip" onclick="useExample(this)">Wyśmieją mnie</div>
+    </div>
+    
+    <div class="hyp-card" style="margin-top:14px">
+      <div class="hyp-h">3 reguły dobrej hipotezy</div>
+      <div class="hyp-rule"><strong>1. Konkret zamiast abstrakcji</strong>: <em>„Anna spojrzy na zegarek 2+ razy w 10 minut”</em>, nie <em>„Anna się znudzi”</em></div>
+      <div class="hyp-rule"><strong>2. Obserwowalne, nie domysłowe</strong>: <em>„odpowiedź na maila zajmie więcej niż 2 dni”</em>, nie <em>„pomyślą, że jestem dziwny”</em></div>
+      <div class="hyp-rule"><strong>3. Falsyfikowalne</strong>: hipoteza musi mieć <em>jasny scenariusz obalenia</em>. Co stanie się, jeśli okaże się NIEPRAWDZIWA?</div>
+    </div>
+    
+    <div class="examples-h">Twoja przekuta hipoteza — konkretna i sprawdzalna</div>
+    <textarea class="thought-input" id="hypInput" placeholder="np. „Gdy zaproponuję Annie kawę, odpisze mi po więcej niż 24 godzinach LUB odmówi bez podania alternatywnego terminu”..." rows="3"></textarea>
+    
+    <div class="examples-h" style="margin-top:14px">Pewność hipotezy — przed eksperymentem</div>
+    <div class="scale-card">
+      <div class="scale-h">Jak bardzo wierzysz, że tak się stanie?</div>
+      <div class="scale-label"><span>Mało</span><span>Pewnie</span></div>
+      <input type="range" min="0" max="100" value="80" class="scale-input" id="confBefore" oninput="updateBef(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="confBeforeVal">80</span><span> %</span></div>
+    </div>
+  </section>
+  <!-- 3: ZABEZPIECZENIA DO PORZUCENIA -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Zabezpieczenia do porzucenia</div>
+    <h1 class="card-prompt">Co <em>porzucasz</em> w trakcie?</h1>
+    <p class="card-detail"><strong>Czysta ekspozycja</strong> wymaga <em>porzucenia zachowań zabezpieczających</em>. Każdy ratunkowy ruch (chowanie, telefon „awaryjny”, przygotowane skrypty) <strong>zafałszowuje wynik</strong> eksperymentu. Zaznacz, co <em>świadomie</em> porzucasz w trakcie tej sytuacji.</p>
+    
+    <div class="term-note"><strong>Reguła czystego eksperymentu</strong>: <em>im więcej zachowań zabezpieczających, tym mniej wartościowy wynik</em>. Eksperyment z 5 zabezpieczeniami testuje <em>„czy z 5 zabezpieczeniami przeżyję”</em>. Eksperyment bez zabezpieczeń testuje <em>„czy ja przeżyję”</em>. Druga wersja jest leczeniem — pierwsza utrwala lęk.</div>
+    
+    <div class="trap-list">
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Skrypty w głowie</strong> — przygotowane zdania, kontrolujące wypowiedzi
+          <span class="trap-mech">Eksperyment wymaga <em>spontaniczności</em> — bez skryptów dane są ważniejsze</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Towarzysz "ratunkowy"</strong> — partner, przyjaciel jako zabezpieczenie
+          <span class="trap-mech">„Bezpieczeństwo dzięki” zniekształca dane — testujesz wtedy „czy z towarzyszem”, nie „samodzielnie”</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Substancja</strong> — alkohol, lek przed sytuacją
+          <span class="trap-mech">Każde znaczące „wsparcie” przesuwa wynik eksperymentu — testujesz wzmacniacz, nie siebie</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Uwaga skierowana na siebie</strong> — monitorowanie siebie zamiast otoczenia
+          <span class="trap-mech">Skupienie na sobie deformuje pamięć eksperymentu — pamiętasz objawy, nie rzeczywistą reakcję ludzi</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Telefon "awaryjny"</strong> — chowanie się w ekran, wymówki ucieczki
+          <span class="trap-mech">Gotowość ucieczki = brak pełnej obecności = eksperyment nie testuje sytuacji</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Wczesne wyjście</strong> — opuszczenie sytuacji przed jej naturalnym końcem
+          <span class="trap-mech">Eksperyment wymaga <em>pełnej ekspozycji</em> — wcześniejsze wyjście niszczy dane</span>
+        </div>
+      </div>
+      <div class="trap-item" onclick="toggleTrap(this)">
+        <div class="trap-tick"></div>
+        <div class="trap-text">
+          <strong>Modyfikacja sytuacji</strong> — wybór bezpiecznego rozmówcy / scenariusza
+          <span class="trap-mech">Jeśli wybierasz „łatwiejszą” wersję, testujesz inną hipotezę niż początkowa</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Konkret: które porzucam w tym eksperymencie?</div>
+    <textarea class="thought-input" id="dropInput" placeholder="np. „Idę bez Anny (towarzysz). Bez kieliszka wina przedtem (substancja). Bez przygotowanych zdań (skrypt). Telefon w plecaku, nie w ręce. Zostaję minimum 60 min”..." rows="3"></textarea>
+  </section>
+  <!-- 4: PO WYKONANIU — FAKTY -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Po wykonaniu — fakty</div>
+    <h1 class="card-prompt">Co <em>naprawdę</em> się stało?</h1>
+    <p class="card-detail">Zapisz dane <strong>od razu po sytuacji</strong> — najpóźniej w 30 minut. Pamięć w SAD <em>zniekształca się</em> w pierwszych godzinach po ekspozycji (przetwarzanie po sytuacji). Im świeższe fakty, tym wiarygodniejsze.</p>
+    
+    <div class="term-note"><strong>Pułapka SAD</strong>: po sytuacji uruchamia się <em>ruminacja po sytuacji</em> — mózg dorabia interpretacje, dodaje deficyty, dopasowuje pamięć do oczekiwań. <strong>Zapisz fakty natychmiast</strong>. Po 24 godzinach pamięć już jest zniekształcona. Notatka z dnia eksperymentu = twoja jedyna <em>wiarygodna baza danych</em>.</div>
+    
+    <div class="facts-card">
+      <div class="facts-h">3 pytania o fakty — bez interpretacji</div>
+      <div class="facts-row">
+        <span class="facts-num">A.</span>
+        <span class="facts-text"><strong>Co konkretnie zrobili / powiedzieli ludzie?</strong> — pamiętasz słowa, gesty, ruchy. Bez „pewnie pomyśleli, że…”.</span>
+      </div>
+      <div class="facts-row">
+        <span class="facts-num">B.</span>
+        <span class="facts-text"><strong>Czy obserwowalny sygnał z kroku 2 wystąpił?</strong> — TAK / NIE / CZĘŚCIOWO. Bez „chyba” — z konkretem.</span>
+      </div>
+      <div class="facts-row">
+        <span class="facts-num">C.</span>
+        <span class="facts-text"><strong>Co stało się PO sytuacji?</strong> — kontaktowali się dalej? Zaprosili kolejny raz? Czy „obrazili się” trwale?</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoje fakty (zaraz po sytuacji)</div>
+    <textarea class="thought-input" id="factsInput" placeholder="np. „Anna odpisała po 4 godzinach (nie po 24+). Powiedziała tak, zaproponowała czwartek. Nie odmówiła. Hipoteza: NIE potwierdzona”..." rows="4"></textarea>
+    
+    <div class="examples-h">Co cię zaskoczyło? Jakie informacje były nowe?</div>
+    <textarea class="thought-input" id="surpriseInput" placeholder="np. „Zaskoczyło mnie, że Anna sama dopowiedziała: ”czekałam na to„. Nie zauważyłem wcześniej, że mogła być chętna jak ja”..." rows="3"></textarea>
+    
+    <div class="examples-h">Czy dane potwierdzają hipotezę z kroku 2?</div>
+    <textarea class="thought-input" id="verdictInput" placeholder="np. „Hipoteza: ”Anna odpisze po 24+ godz lub odmówi„. Wynik: odpisała po 4 godz, zgodziła się. ⇒ Hipoteza OBALONA”..." rows="3"></textarea>
+  </section>
+  <!-- 5: WYNIK EKSPERYMENTU -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Wynik eksperymentu</div>
+    <h1 class="card-prompt">Pewność <em>teraz</em>?</h1>
+    <p class="card-detail">Sprawdź <strong>spadek pewności</strong> w pierwotnym przekonaniu. Jeden eksperyment z czystym wynikiem zazwyczaj obniża pewność o <em>30-50%</em> (Padesky&Mooney 1990). Po <strong>5-10 eksperymentach</strong> na różnych przekonaniach SAD słabnie systemowo.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: eksperymenty układają się w <strong>tabeli</strong>. Notuj każdy: data, hipoteza, pewność przed, fakty, pewność po. Po 3 miesiącach widzisz <em>wzór</em>: „mój mózg systematycznie zawyża prawdopodobieństwo katastrofy”. Ten wzór jest leczeniem — nie przekonanie po przekonaniu.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Pewność hipotezy z kroku 2 — TERAZ, po faktach</div>
+      <div class="scale-label"><span>Mało</span><span>Pewnie</span></div>
+      <input type="range" min="0" max="100" value="30" class="scale-input" id="confAfter" oninput="updateAft(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="confAfterVal">30</span><span> %</span></div>
+    </div>
+    
+    <div class="diff-block">
+      <div class="diff-side">
+        <div class="diff-num warm" id="diffBefore">—</div>
+        <div class="diff-lbl">Przed</div>
+      </div>
+      <div class="diff-arrow">→</div>
+      <div class="diff-side">
+        <div class="diff-num sage" id="diffAfter">—</div>
+        <div class="diff-lbl">Po</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Zaktualizowane przekonanie — co teraz wiesz?</div>
+    <textarea class="thought-input" id="updatedBelief" placeholder="np. „Anna nie odrzuciła mnie. Wręcz przeciwnie — czekała. Moje przekonanie ”ludzie mnie odrzucają„ nie wytrzymuje testu danych. Następne propozycje będę składać szybciej”..." rows="4"></textarea>
+    
+    <div class="examples-h">Następny eksperyment — jakie przekonanie testujesz dalej?</div>
+    <input type="text" class="thought-input" id="nextExp" placeholder="np. „Następny tydzień: zaproszę Marka na lunch w pracy. Hipoteza: ”Marek odmówi i poczuje się zażenowany„”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Eksperymenty behawioralne to <strong>najskuteczniejsza metoda</strong> rekalibracji przekonań SAD (meta-analizy: Hofmann i Smits 2008). <em>Jeden eksperyment na tydzień przez 3 miesiące</em> = 12 testów = 12 obalonych przekonań = <strong>realna zmiana strukturalna</strong>. To serce pracy terapeutycznej z SAD — wszystko inne to wsparcie tego procesu.</div>
+    </div>
+    
+    <div class="src">Bennett-Levy i in. (2004) · Clark i Wells (1995) · Salkovskis (1996) · Padesky i Mooney (1990) · Hofmann i Smits (2008, meta-analiza)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('vagueInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('hypInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('dropInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('factsInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('surpriseInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('verdictInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('updatedBelief'); if (el) el.value = ''; }
+    { const el = document.getElementById('nextExp'); if (el) el.value = ''; }
+    { const el = document.getElementById('confBefore'); if (el) el.value = 80; }
+    { const el = document.getElementById('confAfter'); if (el) el.value = 30; }
+    document.querySelectorAll('.trap-item').forEach(b => b.classList.remove('checked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) {
+    document.getElementById('diffBefore').textContent = document.getElementById('confBefore').value + '%';
+    document.getElementById('diffAfter').textContent = document.getElementById('confAfter').value + '%';
+  }
+}
+
+function useExample(el) {
+  const t = document.getElementById('vagueInput');
+  if (t.value.trim()) t.value += '\n';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function toggleTrap(el) { el.classList.toggle('checked'); }
+
+function updateBef(v) { document.getElementById('confBeforeVal').textContent = v; }
+function updateAft(v) {
+  document.getElementById('confAfterVal').textContent = v;
+  document.getElementById('diffBefore').textContent = document.getElementById('confBefore').value + '%';
+  document.getElementById('diffAfter').textContent = v + '%';
+}
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.trap-item';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-eksperymenty-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.trap-item, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

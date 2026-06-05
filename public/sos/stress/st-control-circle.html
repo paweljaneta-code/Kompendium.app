@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Krąg wpływu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.path-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.path-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.path-card.picked .path-desc { color: rgba(244,241,234,0.85); }
+.path-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.path-card.picked .path-h { color: var(--bg); }
+.path-desc { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); }
+.proto-row:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); font-size: 16px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.proto-text strong { color: var(--bg); font-weight: 600; }
+.proto-text em { color: var(--sage); font-style: italic; }
+
+.stress-row { display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: rgba(184,197,168,0.10); border-radius: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.stress-input { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--sage); padding: 6px 10px; border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--ink); }
+.stress-buttons { display: flex; gap: 4px; flex-shrink: 0; }
+.cat-btn { padding: 5px 10px; font-size: 11px; font-family: inherit; border: 1px solid var(--sage); background: var(--bg); color: var(--ink); border-radius: 5px; cursor: pointer; transition: all 0.15s; font-weight: 600; }
+.cat-btn:hover { background: rgba(184,197,168,0.20); }
+.cat-btn.picked-K { background: #4a7a4a; color: var(--bg); border-color: #4a7a4a; }
+.cat-btn.picked-W { background: #c89c4a; color: var(--bg); border-color: #c89c4a; }
+.cat-btn.picked-T { background: #b06060; color: var(--bg); border-color: #b06060; }
+
+.energy-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+.energy-cell { padding: 12px 10px; border-radius: 8px; text-align: center; }
+.energy-cell.k { background: rgba(74,122,74,0.20); border: 1px solid #4a7a4a; }
+.energy-cell.w { background: rgba(200,156,74,0.20); border: 1px solid #c89c4a; }
+.energy-cell.t { background: rgba(176,96,96,0.20); border: 1px solid #b06060; }
+.energy-num { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; line-height: 1; }
+.energy-cell.k .energy-num { color: #2a5a2a; }
+.energy-cell.w .energy-num { color: #8a6a1a; }
+.energy-cell.t .energy-num { color: #803838; }
+.energy-lab { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; margin-top: 4px; color: var(--ink); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Krąg wpływu</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- KROK 1 -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Trzy <em>kręgi</em> uwagi</h1>
+    <p class="card-detail">Stephen Covey (1989, <em>The 7 Habits of Highly Effective People</em>) opisał trzy koncentryczne kręgi: <strong>krąg kontroli</strong> (co tylko ode mnie zależy), <strong>krąg wpływu</strong> (na co wpływam choć częściowo) i <strong>krąg troski</strong> (co mnie martwi, ale jest poza zasięgiem). Idea jest starsza — Epiktet (Encheiridion, I w. n.e.): „Niektóre rzeczy są w naszej mocy, inne nie”. Reinhold Niebuhr (1943): „Daj mi siłę zmienić to, co mogę; spokój przyjąć, czego nie mogę; mądrość odróżnić jedno od drugiego”.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Trzy kręgi — koncentryczna mapa stresorów</div>
+      <div class="element-row">
+        <span class="element-icon">🟢</span>
+        <span class="element-text"><strong>Krąg kontroli</strong> — moje myśli, moje wybory, moje słowa, mój wysiłek, mój czas wolny. Pełna decyzyjność.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🟡</span>
+        <span class="element-text"><strong>Krąg wpływu</strong> — moje relacje, komunikacja, decyzje zawodowe, zdrowie, wartości. Częściowa decyzyjność, zależna też od innych.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔴</span>
+        <span class="element-text"><strong>Krąg troski</strong> — gospodarka, polityka, pogoda, cudze opinie, przeszłość, decyzje innych ludzi. Zerowa decyzyjność.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Osoba reaktywna inwestuje energię w krąg troski. Skutek: krąg wpływu się <em>kurczy</em>. Osoba proaktywna inwestuje energię w krąg wpływu. Skutek: krąg wpływu <em>rośnie</em>.”
+      <span class="frame-quote-attr">— Stephen Covey (1989), <em>7 Habits of Highly Effective People</em></span>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: bez różnicowania traktujesz każdy stresor tak samo, co rozprasza energię. Mózg w stresie chronicznym <em>nie odróżnia</em> automatycznie tego, na co masz wpływ, od tego, na co go nie masz. Ruminacja o pogodzie zużywa tę samą glukozę, co planowanie realnego kroku — ale tylko jedna z tych operacji daje efekt.</div>
+
+    <div class="term-note"><strong>Empiryczne potwierdzenie</strong>: Folkman i in. (1986, <em>Journal of Personality and Social Psychology</em>) — radzenie sobie zorientowane na problem (problem-focused) działa, gdy stresor jest <em>kontrolowalny</em>. Radzenie zorientowane na emocje (emotion-focused, akceptacja) działa, gdy stresor jest <em>niekontrolowalny</em>. Dopasowanie strategii do kontrolowalności silnie predykuje wynik radzenia sobie.</div>
+
+    <div class="src">Covey (1989, <em>7 Habits</em>) · Niebuhr (1943, <em>Serenity Prayer</em>) · Epiktet (Encheiridion) · Folkman i in. (1986, <em>JPSP</em>) · Hayes, Strosahl, Wilson (2012, ACT, akceptacja niekontrolowalnego)</div>
+  </section>
+
+  <!-- KROK 2 — Lista stresorów -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Lista twoich stresorów</div>
+    <h1 class="card-prompt">Co cię <em>teraz</em> uwiera?</h1>
+    <p class="card-detail">Wypisz konkretne sytuacje, sprawy lub osoby, które obciążają cię w tym tygodniu. Im konkretniej, tym lepiej — <em>nie</em> „praca”, tylko „termin oddania raportu w piątek”. Nie „rodzina”, tylko „ojciec źle reagujący na moje decyzje”. Cel: 5–10 pozycji.</p>
+
+    <textarea class="thought-input" id="stressorList" placeholder="np.&#10;1. Termin raportu rocznego w piątek&#10;2. Konflikt z bratem o sprawy spadkowe&#10;3. Wzrost stóp procentowych — kredyt&#10;4. Choroba dziecka w szkole&#10;5. Krytyczna recenzja od klienta&#10;6. Bałagan w mieszkaniu&#10;7. Rosnące rachunki za prąd" rows="9"></textarea>
+
+    <div class="term-note"><strong>Reguła wypisywania</strong>: wszystko, co przychodzi do głowy, nawet drobne sprawy. To, co małe, też ma swój udział w obciążeniu poznawczym. Lista wystarczająco długa, żeby uchwycić rzeczywisty <em>ciężar</em> tygodnia. Gdy lista jest pełna, pamiętaj: większość ludzi w stresie chronicznym <em>nigdy</em> nie wypisała swoich stresorów na papier — robisz coś, co rzadkie.</div>
+
+    <div class="term-note"><strong>Dlaczego pisemnie</strong>: zapis na zewnątrz odciąża pamięć roboczą. Pennebaker (1997, przegląd <em>expressive writing</em>) — sam akt nazwania i zapisania stresora redukuje fizjologiczną reakcję na niego. Lista to nie tylko punkt wyjścia do kategoryzacji — to już interwencja sama w sobie.</div>
+  </section>
+
+  <!-- KROK 3 — Kategoryzacja -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Kategoryzacja: K / W / T</div>
+    <h1 class="card-prompt">Każdy stresor — <em>do którego</em> kręgu?</h1>
+    <p class="card-detail">Teraz najtrudniejsza część. Dla każdego stresora z poprzedniej listy wpisz krótką nazwę i wybierz kategorię: <strong>K</strong> (krąg kontroli — pełna decyzyjność), <strong>W</strong> (krąg wpływu — częściowa decyzyjność), <strong>T</strong> (krąg troski — zerowa decyzyjność). Bez ściemy. Większość ludzi przypisuje rzeczy do W, choć faktycznie są w T.</p>
+
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s1" placeholder="Nazwa stresora 1 (np. Termin raportu)">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'1','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'1','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'1','T')">🔴 T</button>
+      </div>
+    </div>
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s2" placeholder="Nazwa stresora 2">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'2','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'2','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'2','T')">🔴 T</button>
+      </div>
+    </div>
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s3" placeholder="Nazwa stresora 3">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'3','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'3','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'3','T')">🔴 T</button>
+      </div>
+    </div>
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s4" placeholder="Nazwa stresora 4">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'4','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'4','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'4','T')">🔴 T</button>
+      </div>
+    </div>
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s5" placeholder="Nazwa stresora 5">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'5','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'5','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'5','T')">🔴 T</button>
+      </div>
+    </div>
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s6" placeholder="Nazwa stresora 6">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'6','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'6','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'6','T')">🔴 T</button>
+      </div>
+    </div>
+    <div class="stress-row">
+      <input type="text" class="stress-input" id="s7" placeholder="Nazwa stresora 7">
+      <div class="stress-buttons">
+        <button class="cat-btn" onclick="pickCat(this,'7','K')">🟢 K</button>
+        <button class="cat-btn" onclick="pickCat(this,'7','W')">🟡 W</button>
+        <button class="cat-btn" onclick="pickCat(this,'7','T')">🔴 T</button>
+      </div>
+    </div>
+
+    <div class="energy-summary" id="energySummary">
+      <div class="energy-cell k"><div class="energy-num" id="cntK">0</div><div class="energy-lab">Kontrola</div></div>
+      <div class="energy-cell w"><div class="energy-num" id="cntW">0</div><div class="energy-lab">Wpływ</div></div>
+      <div class="energy-cell t"><div class="energy-num" id="cntT">0</div><div class="energy-lab">Troska</div></div>
+    </div>
+
+    <div class="term-note"><strong>Test rzetelności</strong>: jeśli wszystko trafia do T — nie jesteś bezsilny/a, tylko za szeroko zdefiniowałeś/aś stresory. „Wzrost stóp” to T, ale „mój budżet domowy w nowych warunkach” to W. Doprecyzuj sformułowanie. Jeśli wszystko trafia do K — niedoceniasz roli innych. Sprawdź, kto naprawdę decyduje.</div>
+  </section>
+
+  <!-- KROK 4 — Plan działania -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Plan działania dla każdego kręgu</div>
+    <h1 class="card-prompt">Co <em>robić</em> z każdą kategorią?</h1>
+    <p class="card-detail">Trzy kategorie wymagają trzech różnych strategii. Mieszanie ich to typowy błąd: próba kontroli niekontrolowalnego (bezsilność) i akceptacja kontrolowalnego (bierność).</p>
+
+    <div class="proto-card">
+      <div class="proto-h">Trzy strategie — po jednej dla każdego kręgu</div>
+      <div class="proto-row">
+        <span class="proto-num">🟢</span>
+        <span class="proto-text"><strong>Krąg kontroli — DZIAŁANIE</strong>. Tu nie dyskutuj, tylko zrób. Najmniejsze możliwe konkretne działanie w ciągu 24 godzin. Bez planowania, bez przygotowywania — start.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">🟡</span>
+        <span class="proto-text"><strong>Krąg wpływu — STRATEGIA</strong>. Tu pomyśl, kto jest częścią równania. Co możesz <em>powiedzieć</em>, <em>zaproponować</em>, <em>zapytać</em>? Plan z rozmową, propozycją, prośbą — nie samodzielnym rozwiązaniem.</span>
+      </div>
+      <div class="proto-row">
+        <span class="proto-num">🔴</span>
+        <span class="proto-text"><strong>Krąg troski — AKCEPTACJA</strong>. Tu nie planuj, nie strateguj, nie ruminuj. Akt akceptacji to zauważenie + nazwanie + odpuszczenie. „Tak jest. To poza moim zasięgiem. Nie poświęcam temu więcej energii”. Praktycznie: 30 sek przy oddechu.</span>
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Wybierz jeden stresor z kręgu kontroli (K)</strong> z poprzedniego kroku. Konkretne działanie, które wykonasz w ciągu 24 godzin:</p>
+    <textarea class="thought-input" id="actionK" placeholder="np. „Bałagan w mieszkaniu (K). Konkret: dziś wieczorem 20 minut tylko na łazience. Nie więcej, nie mniej. Stoper, telefon poza zasięgiem.”" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Wybierz jeden stresor z kręgu wpływu (W)</strong>. Z kim, o czym i kiedy będziesz rozmawiać?</p>
+    <textarea class="thought-input" id="actionW" placeholder="np. „Konflikt z bratem o spadek (W). Jutro telefon, otwarcie zdaniem: 'chcę usłyszeć, jak ty to widzisz, zanim zaproponuję rozwiązanie'. Bez dążenia do wygranej. 20 minut.”" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Wybierz jeden stresor z kręgu troski (T)</strong>. Sformułowanie aktu akceptacji:</p>
+    <textarea class="thought-input" id="actionT" placeholder="np. „Wzrost stóp procentowych (T). Akt: 'Tak jest. Bank centralny decyduje, nie ja. Mogę dostosować budżet (W), ale samego wzrostu nie zatrzymam. Odpuszczam ten ciężar'. Powtórzyć przy oddechu rano.”" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:14px">Trzy <strong>krótkie zdania</strong> do powtarzania w razie ruminacji nad sprawami z kręgu T (zaznacz, co brzmi wiarygodnie):</p>
+    <div class="example-chips">
+      <div class="example-chip" id="m1" onclick="this.classList.toggle('picked')">„Tak jest. Nie ja decyduję”</div>
+      <div class="example-chip" id="m2" onclick="this.classList.toggle('picked')">„Odpuszczam to, czego nie zmienię”</div>
+      <div class="example-chip" id="m3" onclick="this.classList.toggle('picked')">„Energia tylko do kręgu wpływu”</div>
+      <div class="example-chip" id="m4" onclick="this.classList.toggle('picked')">„To nie wymaga mojej zgody”</div>
+      <div class="example-chip" id="m5" onclick="this.classList.toggle('picked')">„Mogę nie wiedzieć i nadal działać”</div>
+      <div class="example-chip" id="m6" onclick="this.classList.toggle('picked')">„Mam ograniczone zasoby — wybieram, gdzie idą”</div>
+    </div>
+
+    <div class="term-note"><strong>Pułapka</strong>: większość ludzi miesza strategie. Próbuje <em>akceptować</em> sprawy z kręgu kontroli („no co zrobię, taki bałagan”) i <em>kontrolować</em> sprawy z kręgu troski („muszę się dowiedzieć, co zarząd zdecyduje”). To źródło chronicznego stresu. Reguła: K → działanie, W → strategia, T → akceptacja. Nigdy odwrotnie.</div>
+  </section>
+
+  <!-- KROK 5 — Pomiar i przesunięcie energii -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Pomiar po pracy</div>
+    <h1 class="card-prompt">Gdzie poszła <em>twoja energia</em>?</h1>
+    <p class="card-detail">Realny pomiar nie jest deklaracją wartości, tylko obserwacją tygodniową. Po 7 dniach od pierwszej kategoryzacji wróć i odpowiedz: jaki procent twojej energii poznawczej (myśli, ruminacji, rozmów, działań) szedł do każdego z trzech kręgów? Suma 100%.</p>
+
+    <div class="scale">
+      <div class="scale-title">% energii w kręgu KONTROLI (cel: 30–40%)</div>
+      <div class="scale-bounds"><span>0%</span><span>100%</span></div>
+      <input type="range" class="scale-input" id="energyK" min="0" max="100" step="5" value="30" data-default="30" oninput="updateEnergyTotal()">
+      <div class="scale-readout"><span>Twój wynik</span><span id="energyKVal">30%</span></div>
+    </div>
+
+    <div class="scale" style="margin-top:14px">
+      <div class="scale-title">% energii w kręgu WPŁYWU (cel: 40–50%)</div>
+      <div class="scale-bounds"><span>0%</span><span>100%</span></div>
+      <input type="range" class="scale-input" id="energyW" min="0" max="100" step="5" value="30" data-default="30" oninput="updateEnergyTotal()">
+      <div class="scale-readout"><span>Twój wynik</span><span id="energyWVal">30%</span></div>
+    </div>
+
+    <div class="scale" style="margin-top:14px">
+      <div class="scale-title">% energii w kręgu TROSKI (cel: poniżej 20%)</div>
+      <div class="scale-bounds"><span>0%</span><span>100%</span></div>
+      <input type="range" class="scale-input" id="energyT" min="0" max="100" step="5" value="40" data-default="40" oninput="updateEnergyTotal()">
+      <div class="scale-readout"><span>Twój wynik</span><span id="energyTVal">40%</span></div>
+    </div>
+
+    <div class="diff-list" id="energyTotal" style="margin-top:14px"></div>
+
+    <p class="card-detail" style="margin-top:14px">Co jeden konkretnie planujesz zrobić, żeby przesunąć 10% energii z kręgu troski do kręgu wpływu?</p>
+    <textarea class="thought-input" id="shiftPlan" placeholder="np. „Codziennie po przebudzeniu — zamiast 15 minut przeglądania wiadomości (T), 15 minut planowania jednej rozmowy z klientem albo bratem (W). Ten sam czas, inny krąg.”" rows="3"></textarea>
+
+    <div class="final-msg">
+      Reaktywna osoba żyje w kręgu troski i traci wpływ. Proaktywna osoba żyje w kręgu wpływu i go rozszerza. Zmiana nie jest filozoficzna — jest mierzalna procentem energii. Cel realistyczny: za 4 tygodnie 60% twojej energii w K + W, mniej niż 20% w T.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: pierwsze pomiary bywają nieprecyzyjne — mózg w stresie chronicznym przeszacowuje czas spędzony na działaniu i niedoszacowuje czas spędzony na ruminacji. Po 2–3 tygodniach codziennego pomiaru obraz robi się rzetelny. Niezależne potwierdzenie: zapytaj kogoś bliskiego, jaki procent twoich rozmów dotyczy spraw, na które masz wpływ, a jaki spraw poza twoim zasięgiem.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Trzy kręgi: <strong>kontrola</strong>, <strong>wpływ</strong>, <strong>troska</strong>. Trzy strategie: <em>działanie</em>, <em>strategia</em>, <em>akceptacja</em>. Nigdy odwrotnie. Energia → tam, gdzie ma efekt. Cel za 4 tygodnie: 60%+ w K+W, mniej niż 20% w T. Codzienna 5-minutowa kategoryzacja głównego stresora dnia.</div>
+    </div>
+
+    <div class="src">Covey (1989, <em>7 Habits of Highly Effective People</em>) · Niebuhr (1943, <em>Serenity Prayer</em>) · Epiktet (Encheiridion, I w. n.e.) · Folkman i in. (1986, <em>JPSP</em>, dopasowanie strategii) · Hayes, Strosahl, Wilson (2012, ACT, akceptacja) · Pennebaker (1997, <em>expressive writing</em>)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickCat(btn, idx, cat) {
+  var row = btn.closest('.stress-row');
+  if (!row) return;
+  row.querySelectorAll('.cat-btn').forEach(function(b){
+    b.classList.remove('picked-K','picked-W','picked-T');
+  });
+  btn.classList.add('picked-' + cat);
+  recountCats();
+  if (typeof save === 'function') save();
+}
+function recountCats() {
+  var cnts = {K:0, W:0, T:0};
+  document.querySelectorAll('.stress-row').forEach(function(row){
+    var picked = row.querySelector('.cat-btn.picked-K, .cat-btn.picked-W, .cat-btn.picked-T');
+    if (picked) {
+      if (picked.classList.contains('picked-K')) cnts.K++;
+      else if (picked.classList.contains('picked-W')) cnts.W++;
+      else if (picked.classList.contains('picked-T')) cnts.T++;
+    }
+  });
+  document.getElementById('cntK').textContent = cnts.K;
+  document.getElementById('cntW').textContent = cnts.W;
+  document.getElementById('cntT').textContent = cnts.T;
+}
+function updateEnergyTotal() {
+  var k = parseInt(document.getElementById('energyK').value, 10);
+  var w = parseInt(document.getElementById('energyW').value, 10);
+  var t = parseInt(document.getElementById('energyT').value, 10);
+  document.getElementById('energyKVal').textContent = k + '%';
+  document.getElementById('energyWVal').textContent = w + '%';
+  document.getElementById('energyTVal').textContent = t + '%';
+  var sum = k + w + t;
+  var list = document.getElementById('energyTotal');
+  if (!list) return;
+  var status = (sum === 100) ? '✓ poprawnie' : ((sum < 100) ? '↑ dodaj ' + (100-sum) + '%' : '↓ obniż ' + (sum-100) + '%');
+  list.innerHTML = '<div class="diff-row"><strong>Suma</strong><span>' + sum + '% / 100%</span></div>' +
+                   '<div class="diff-row"><strong>Status</strong><span class="diff-delta">' + status + '</span></div>' +
+                   '<div class="diff-row"><strong>K + W</strong><span class="diff-delta">' + (k+w) + '%</span></div>';
+  if (typeof save === 'function') save();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_st_control_circle — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_st_control_circle";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+recountCats(); updateEnergyTotal();
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

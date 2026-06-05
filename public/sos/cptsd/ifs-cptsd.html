@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · IFS — system rodziny wewnętrznej</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.part-card { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; transition: all 0.2s; }
+.part-card.exiles { background: rgba(180,80,60,0.10); border-color: rgba(180,80,60,0.45); }
+.part-card.managers { background: rgba(120,150,180,0.12); border-color: rgba(120,150,180,0.45); }
+.part-card.firefighters { background: rgba(168,138,90,0.14); border-color: rgba(168,138,90,0.45); }
+.part-h { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.part-card.exiles .part-h { color: rgba(140,60,50,1); }
+.part-card.managers .part-h { color: rgba(60,90,130,1); }
+.part-card.firefighters .part-h { color: rgba(122,79,30,1); }
+.part-meta { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+.part-body { font-size: 13px; color: var(--ink); line-height: 1.55; }
+.part-body strong { font-weight: 700; }
+
+.c-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.c-pill { background: rgba(184,197,168,0.25); color: var(--ink); border: 1px solid var(--sage); border-radius: 14px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.c-pill:hover, .c-pill.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.c-pill .c-letter { font-weight: 800; margin-right: 4px; }
+
+.dialog-card { background: rgba(184,197,168,0.10); border-left: 4px solid var(--sage-deep); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
+.dialog-h { font-size: 11px; font-weight: 700; color: var(--sage-deep); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+.dialog-q { font-size: 13px; color: var(--ink); line-height: 1.55; font-style: italic; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>IFS — system rodziny wewnętrznej</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ====== KROK 1 — WPROWADZENIE ====== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">„Jestem <em>wieloma</em>, nie jedną rzeczą”</h1>
+    <p class="card-detail">Internal Family Systems (Schwartz, 1995, 2021) traktuje umysł jako wieloczęściowy system: Self (rdzenne, spokojne centrum) plus części — strażnicy (managers), gasiciele (firefighters) i wygnańcy (exiles). W C-PTSD system jest zorganizowany wokół traumy: exiles trzymają ból, managers chronią przed jego aktywacją, firefighters reagują w kryzysie. Praca: nie eliminacja, lecz wewnętrzny dialog z compassion. SAMHSA (2015) uznała IFS za interwencję opartą na dowodach. Hodgdon i in. (2022, RCT pilotażowy, N=22): IFS skuteczne w C-PTSD — d ≈ 1,2 dla objawów PTSD.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery rzeczy o IFS w C-PTSD</div>
+      <div class="element-row">
+        <span class="element-icon">🌟</span>
+        <span class="element-text"><strong>Self istnieje zawsze</strong> — Schwartz (2021): rdzenne Self (8C: spokojne, ciekawe, jasne, współczujące, odważne, pewne, twórcze, połączone) jest obecne u każdego — nawet w ciężkiej traumie. Self nie jest „częścią” — jest centrum. W C-PTSD Self jest zasłonięte przez protectorów, ale nigdy uszkodzone.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛡️</span>
+        <span class="element-text"><strong>Managers — chronią z góry</strong> — Schwartz (1995): perfekcjonizm, kontrola, wewnętrzny krytyk, planowanie z wyprzedzeniem. Managers są proaktywni — ich zadanie: nie dopuścić, by exile (zraniona część) został aktywowany. „Jeśli będę idealny/a — nikt mnie nie skrzywdzi.”</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔥</span>
+        <span class="element-text"><strong>Firefighters — gaszą w kryzysie</strong> — Schwartz (2021): używki, samouszkodzenia, dysocjacja, binge eating, kompulsywne zachowania. Firefighters są reaktywni — uruchamiają się, gdy exile mimo wszystko zaczyna „uciekać”. Ich zadanie: zatopić ból za wszelką cenę. Nie są wrogiem — są strażą pożarną w pożarze.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💔</span>
+        <span class="element-text"><strong>Exiles — zranione dzieci wewnątrz</strong> — Schwartz (1995, 2021): części niosące ból, wstyd, strach z traumy. „Zamknięte” głęboko, bo ich cierpienie wydawało się nie do zniesienia. Praca IFS: bezpieczne dotarcie do exiles przez Self (nie przez umysł, nie przez wolę), z pozwoleniem managerów — i unburdening (uwolnienie ciężaru).</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Nie ma złych części. Są części, które grają role, które nie pasują już do dorosłego życia.”
+      <span class="frame-quote-attr">— parafraza Richarda Schwartza (2021)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: w C-PTSD najczęstszy odruch to walka z częściami („pozbędę się tego krytyka”, „zmuszę się do nieuciekania”). IFS odwraca to: nie eliminujesz części — poznajesz je, słuchasz ich strachu, rozumiesz historię. Dopiero wtedy potrafią zwolnić rolę. Zasada: <em>słuchaj, a nie zwalczaj</em>.</div>
+
+    <div class="src">Schwartz (1995, Internal Family Systems Therapy); Schwartz (2021, No Bad Parts); SAMHSA (2015, NREPP); Anderson i in. (2017, pilot RCT PTSD weteranów); Hodgdon i in. (2022, RCT C-PTSD); Sweezy &amp; Ziskind (2017, Innovations and Elaborations in IFS Therapy)</div>
+  </section>
+
+  <!-- ====== KROK 2 — ROZPOZNANIE 8C ====== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Self — 8C</div>
+    <h1 class="card-prompt">Czy <em>kiedykolwiek</em> czułeś/aś?</h1>
+    <p class="card-detail">Schwartz (2021): Self ma osiem cech (8C). Jeśli kiedykolwiek doświadczyłeś/aś którejś z nich — nawet przez chwilę, nawet w marginalnym kontekście — to dowód, że Self istnieje w Tobie. Stuknij te, które rozpoznajesz w sobie. Im więcej, tym bardziej zauważalny dostęp do Self.</p>
+
+    <div class="c-row">
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>alm — spokój</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>urious — ciekawość</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>lear — jasność</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>ompassionate — współczucie</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>ourageous — odwaga</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>onfident — pewność</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>reative — twórczość</div>
+      <div class="c-pill" onclick="this.classList.toggle('picked')"><span class="c-letter">C</span>onnected — połączenie</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Konkretne wspomnienie</strong> — kiedy ostatnio doświadczyłeś/aś którejś z tych cech? Nawet drobny moment. „Wczoraj byłem/am ciekaw/a, gdy znajomy opowiadał o pszczelarstwie.” Konkret, nie deklaracja.</p>
+    <textarea class="thought-input" id="ifsSelf" placeholder="np. „Trzy dni temu, gdy córka rysowała — siedziałem obok i czułem ciepło, ciszę. Nie myślałem o problemach. Byłem obecny. To było „connected” i „calm” jednocześnie. Trwało może 20 minut.”" rows="4"></textarea>
+
+    <div class="term-note"><strong>📐 Reguła ledwo dostrzegalnego momentu</strong>: Schwartz (2021) — Self pojawia się często w drobnych chwilach, łatwych do przegapienia. Spojrzenie na drzewo i moment, w którym nie myślisz o niczym. Smiech z czyjegoś żartu, gdy nie kontrolujesz reakcji. Te chwile są dowodem — że Self istnieje, działa, czeka.</div>
+
+    <div class="term-note"><strong>🌱 Reguła dostępu</strong>: Self nie jest „osiągalne przez wolę”. Jest osiągalne przez <em>nieprzeszkadzanie</em>. Praca IFS polega na proszeniu protectorów, by „cofnęli się o krok” — i wtedy Self pojawia się samo. Nie wymuszasz, nie konstruujesz — pozwalasz.</div>
+  </section>
+
+  <!-- ====== KROK 3 — TRZY GŁÓWNE TYPY CZĘŚCI ====== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Mapa części</div>
+    <h1 class="card-prompt">Trzy typy <em>w jednym domu</em></h1>
+    <p class="card-detail">W C-PTSD system jest zorganizowany wokół ochrony przed bólem traumy. Niżej trzy typy części z konkretnymi przykładami. Pomyśl, kogo masz w sobie.</p>
+
+    <div class="part-card managers">
+      <div class="part-h">🛡️ Managers — straż proaktywna</div>
+      <div class="part-meta">Cel: nie dopuścić, by exile został aktywowany</div>
+      <div class="part-body">Perfekcjonista („wszystko musi być idealne”), Krytyk wewnętrzny („jesteś do niczego, postaraj się”), Planista („muszę wszystko przewidzieć”), Pleaser („zadowolę wszystkich, to mnie nie zaatakują”), Hipersensytyw („wyczuję każde napięcie w innym, zanim wybuchnie”), Zamknięty („nie pokażę słabości, nikt nie zobaczy”). <strong>Każdy z nich kiedyś chronił</strong> — w domu, gdzie krytyka była częsta, „bycie idealnym” mogło naprawdę zmniejszyć ryzyko.</div>
+    </div>
+
+    <div class="part-card firefighters">
+      <div class="part-h">🔥 Firefighters — straż reaktywna</div>
+      <div class="part-meta">Cel: zgasić ból w kryzysie, gdy manager nie wystarcza</div>
+      <div class="part-body">Alkohol, narkotyki, jedzenie kompulsywne, samouszkodzenia, dysocjacja, kompulsywny ekran, seks bez zaangażowania, agresja słowna, ucieczka. Te części <strong>nie są wrogiem</strong> — robią to, co potrafią, gdy ból staje się nie do zniesienia. „Wolę zalać alkoholem, niż czuć”. Praca polega nie na zwalczaniu firefightera, ale na uwolnieniu exile, którego on chroni.</div>
+    </div>
+
+    <div class="part-card exiles">
+      <div class="part-h">💔 Exiles — wygnani</div>
+      <div class="part-meta">Cel: być zauważonymi, usłyszanymi, uwolnionymi z ciężaru</div>
+      <div class="part-body">Trzyletnie ja, które usłyszało „lepiej, żebyś się nie urodził/a”. Siedmioletnie ja, które płakało samo w łóżku. Dwunastoletnie ja, które poznało wstyd. Te części trzymają ból, wstyd, strach. Są „wygnane” — bo ich cierpienie było zbyt duże, żeby pozostać świadome. <strong>Są one uzbrojone w prawdę</strong> o tym, co się stało. Nie są przeszłością — są obecne, każdego dnia, pod powierzchnią.</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Twoja mapa</strong> — wymień trzy konkretne części, które rozpoznajesz w sobie. Po jednej z każdej kategorii. Nazwij je po imieniu (np. „Inspektor”, „Wycofana”, „Mała Aśka”).</p>
+    <textarea class="thought-input" id="ifsMap" placeholder="np. „Manager: »Inspektor« — sprawdza dwa razy każdy mail, perfekcjonista. Firefighter: »Ekranowy« — przy każdym napięciu sięga po telefon i scrolluje. Exile: »Mała Aśka« — pięcioletnia, którą zostawiono samą w pokoju za karę.”" rows="4"></textarea>
+
+    <div class="term-note"><strong>📐 Reguła „każda część miała sens”</strong>: Schwartz (1995, 2021) — żadna część nie jest patologiczna sama w sobie. W kontekście, w którym powstała, każda była adaptacyjną odpowiedzią. Inspektor chronił przed gniewem rodzica. Ekranowy gasi ból, którego nie ma jak inaczej znieść. Praca: zrozumieć rolę, nie eliminować część.</div>
+
+    <div class="term-note"><strong>🌱 Reguła „nie ja jestem nim”</strong>: kluczowa zmiana w IFS — przejście od „jestem perfekcjonistą” do „mam część, która jest perfekcjonistyczna”. Zaimkowo: „on/ona” o części, nie „ja”. To rozdziela Self od części. Self może spojrzeć na perfekcjonistę z compassion. „Ja-jako-część” spojrzeć z compassion nie umie — bo jest częścią.</div>
+  </section>
+
+  <!-- ====== KROK 4 — DIALOG Z CZĘŚCIĄ ====== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Pierwszy dialog</div>
+    <h1 class="card-prompt">Sześć pytań do <em>jednej części</em></h1>
+    <p class="card-detail">IFS uczy konkretnego sposobu rozmowy z częścią. Wybierz <strong>jedną część</strong> — najlepiej managera (są łatwiej dostępni niż exiles). Odpowiedz na pytania niżej z pozycji Self — spokojnie, ciekawie, bez oceny. Nie szukaj „prawdy obiektywnej” — szukaj tego, co część <em>powie Ci sama</em>.</p>
+
+    <p class="card-detail" style="margin-top:8px;"><strong>Wybrana część</strong> — nazwij imieniem:</p>
+    <textarea class="thought-input" id="ifsName" placeholder="np. „Inspektor” lub „Krytyk wewnętrzny”" rows="1"></textarea>
+
+    <div class="dialog-card">
+      <div class="dialog-h">Pytanie 1</div>
+      <div class="dialog-q">„Co czujesz w ciele, gdy zauważasz tę część?”</div>
+    </div>
+    <textarea class="thought-input" id="ifsq1" placeholder="np. „Napięcie w szczęce, ciężar w klatce piersiowej, lekka panika w żołądku.”" rows="2"></textarea>
+
+    <div class="dialog-card" style="margin-top:8px;">
+      <div class="dialog-h">Pytanie 2</div>
+      <div class="dialog-q">„Czy chcesz mnie poznać?” — sprawdzasz, czy część jest gotowa do kontaktu.</div>
+    </div>
+    <textarea class="thought-input" id="ifsq2" placeholder="np. „Tak, ale podejrzliwie — »tylko jeśli nie będziesz mnie zwalczać«.”" rows="2"></textarea>
+
+    <div class="dialog-card" style="margin-top:8px;">
+      <div class="dialog-h">Pytanie 3</div>
+      <div class="dialog-q">„Co robisz dla mnie?” — pytasz część o jej rolę.</div>
+    </div>
+    <textarea class="thought-input" id="ifsq3" placeholder="np. „Pilnuję, żebyś nikomu nie dał/a powodu do krytyki — bo wtedy będzie ból.”" rows="2"></textarea>
+
+    <div class="dialog-card" style="margin-top:8px;">
+      <div class="dialog-h">Pytanie 4</div>
+      <div class="dialog-q">„Czego się boisz, gdybyś przestała robić swoją rolę?” — pytasz o lęk pod rolą.</div>
+    </div>
+    <textarea class="thought-input" id="ifsq4" placeholder="np. „Boję się, że jeśli nie będę cię pilnować, ktoś cię zniszczy. Tak, jak wtedy.”" rows="2"></textarea>
+
+    <div class="dialog-card" style="margin-top:8px;">
+      <div class="dialog-h">Pytanie 5</div>
+      <div class="dialog-q">„Ile masz lat?” — części często mają wiek z momentu, w którym powstały.</div>
+    </div>
+    <textarea class="thought-input" id="ifsq5" placeholder="np. „Czternaście. Powstała wtedy, gdy nauczyciel mnie publicznie ośmieszył.”" rows="2"></textarea>
+
+    <div class="dialog-card" style="margin-top:8px;">
+      <div class="dialog-h">Pytanie 6</div>
+      <div class="dialog-q">„Co byś chciała, żebym dla Ciebie zrobił/a?” — pytasz o potrzebę.</div>
+    </div>
+    <textarea class="thought-input" id="ifsq6" placeholder="np. „Żebyś zauważył/a, jak bardzo jestem zmęczona. I że już niekoniecznie muszę cię chronić tak ostro.”" rows="2"></textarea>
+
+    <div class="term-note"><strong>📜 Reguła „nie wymuszaj odpowiedzi”</strong>: Schwartz (2021) — jeśli na któreś pytanie nie ma odpowiedzi, część nie jest jeszcze gotowa. To w porządku. Wracasz innym razem. IFS jest pracą lat, nie tygodni. Każde poznanie części jest postępem.</div>
+
+    <div class="term-note"><strong>🌱 Reguła „nie zbliżaj się do exile bez pozwolenia”</strong>: managers chronią exiles z dobrego powodu. Próba ominięcia managera i bezpośredniego dotarcia do exile często wywołuje firefightera (kryzys, samouszkodzenie). Najpierw poznajesz managera, dopiero potem — z jego pozwoleniem — dotykasz exile.</div>
+  </section>
+
+  <!-- ====== KROK 5 — INTEGRACJA ====== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Plan integracji</div>
+    <h1 class="card-prompt">IFS — <em>codzienne</em>, nie raz na sesję</h1>
+    <p class="card-detail">IFS może wejść w codzienność jako sposób bycia ze sobą — nie tylko technika sesyjna. Niżej cztero­tygodniowy plan praktyki domowej, którą można robić obok terapii (lub przed jej rozpoczęciem).</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Plan czterotygodniowy</div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 1 — mapa</strong>. Codziennie wieczorem 5 minut: zauważ, jakie części były dziś aktywne. Nazwij je. Zapisz krótko: „dziś dominował Inspektor, w nocy włączyła się Wycofana”. Nie analizuj — kataloguj.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 2 — manager</strong>. Wybierz jednego managera. Codziennie po jednej rozmowie z nim (3–5 minut, sześć pytań z kroku 4). Część zacznie się otwierać, gdy zauważy, że nie próbujesz jej eliminować.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 3 — pożar</strong>. Gdy przyjdzie firefighter (sięgasz po ekran/jedzenie/alkohol), pauza. Pytanie: „Kogo chronisz w tej chwili?” Próba zauważenia exile pod firefighterem. Nie wymuszasz zmiany — obserwujesz.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📅</span>
+        <span class="element-text"><strong>Tydzień 4 — Self</strong>. Codziennie minimum 5 minut „bycia w Self”: spacer bez celu, rysowanie, taniec, kontakt z naturą, słuchanie muzyki. Bez agendy. To jest praktyka „odsłaniania Self”, nie konstruowania go.</span>
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Twój pierwszy konkretny krok</strong> — kiedy i jak:</p>
+    <textarea class="thought-input" id="ifsPlan" placeholder="np. „Dzisiaj wieczorem 22:00, 5 minut: lista trzech części, które dziś rozpoznaję. Zaczynam od managera »Inspektor«. Codziennie do końca tygodnia, ten sam czas, ten sam sposób.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>⚠️ Granica</strong>: jeśli rozpoznajesz w sobie strukturalną dysocjację (przełączanie się między częściami z amnezją, obecność „postaci wewnętrznych” z własnymi imionami i historiami) — IFS jest możliwe, ale wymaga terapeuty z dodatkowym treningiem w dysocjacyjnych zaburzeniach (OSDD, DID), zgodnie z wytycznymi ISSTD. Sama karta nie wystarczy.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">IFS = <strong>Self + części</strong>. Schwartz (1995, 2021): Self istnieje zawsze (8C — calm, curious, clear, compassionate, courageous, confident, creative, connected). Trzy typy części: managers (proaktywni: kontrola, perfekcjonizm, krytyk), firefighters (reaktywni: używki, dysocjacja, samouszkodzenia), exiles (wygnani: zranione dzieci wewnętrzne). Praca: <em>słuchaj, a nie zwalczaj</em>. Sześć pytań do każdej części. Manager → exile, nigdy odwrotnie. Hodgdon 2022: skuteczne w C-PTSD, d ≈ 1,2.</div>
+    </div>
+
+    <div class="src">Schwartz (1995, IFS); Schwartz (2021, No Bad Parts); Schwartz &amp; Sweezy (2020, IFS Therapy 2nd ed); Anderson, Sweezy &amp; Schwartz (2017); Hodgdon i in. (2022, RCT C-PTSD); SAMHSA (2015, NREPP); ISSTD (2011, 2017, dla dysocjacji)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ifs_cptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ifs_cptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

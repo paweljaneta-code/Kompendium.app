@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Diagnoza różnicowa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.diag-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.diag-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.diag-icon { font-size: 22px; line-height: 1; }
+.diag-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.diag-icd { font-size: 11.5px; color: var(--sage-deep); font-style: italic; }
+.diag-key {
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-soft);
+  background: rgba(184,197,168,0.18); padding: 6px 10px; border-radius: 6px;
+  border-left: 2px solid var(--sage); margin-bottom: 6px;
+}
+.diag-key strong { color: var(--ink); font-weight: 600; }
+.diag-test {
+  font-size: 12px; line-height: 1.45; color: var(--sage-deep);
+  background: rgba(244,241,234,0.5); padding: 6px 10px; border-radius: 6px;
+  font-style: italic;
+}
+
+.compare-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.compare-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.compare-row {
+  display: grid; grid-template-columns: 110px 1fr 1fr; gap: 10px;
+  align-items: flex-start; padding: 8px 0;
+  border-bottom: 1px dashed rgba(184,197,168,0.25);
+  font-size: 12px; line-height: 1.4;
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-asp { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); }
+.compare-text { color: rgba(244,241,234,0.92); }
+.compare-text strong { color: var(--bg); }
+
+.warn-clinical {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Diagnoza różnicowa</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Siedem kategorii, które <em>mimikują</em> CSBD/PPU</h1>
+    <p class="card-detail">Rory Reid (UCLA, 2012, 2014), Stephen Walton i in. (2017) i Beáta Bőthe i in. (2020) udokumentowali, że <strong>kilka różnych zaburzeń</strong> może mimikować obraz CSBD/PPU. Diagnoza CSBD bez świadomego różnicowania = <em>częsty błąd kliniczny</em>. Każda z mimikujących kategorii ma <em>inne mechanizmy</em>, <em>inne leczenie</em>, <em>inne rokowanie</em>. Świadomość różnicowania chroni przed: (a) niewłaściwą terapią; (b) pomijaniem rzeczywistego źródła problemu; (c) patologizowaniem normy (wysokie libido).</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady diagnozy różnicowej</div>
+      <div class="element-row"><span class="element-icon">🔬</span><span class="element-text"><strong>Zawsze przed CSBD/PPU diagnozą</strong> — szereg zaburzeń mimikuje obraz. Nie pomijaj tego kroku.</span></div>
+      <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Różne mechanizmy, różne leczenie</strong> — OCD seksualne wymaga ERP (NIE klasycznego RP); mania — stabilizacja afektu; ADHD — leczenie często redukuje PPU.</span></div>
+      <div class="element-row"><span class="element-icon">⚖️</span><span class="element-text"><strong>Komorbidność ≠ różnicowanie</strong> — CSBD/PPU może <em>współwystępować</em> z innymi zaburzeniami. Komorbidność to inna sprawa niż różnicowanie.</span></div>
+      <div class="element-row"><span class="element-icon">✅</span><span class="element-text"><strong>Wysokie libido = wariant normy</strong> — nie diagnozuj patologii, gdy nie ma cierpienia + impairment + utraty kontroli.</span></div>
+    </div>
+
+    <div class="frame-quote">„Klinicysta, który diagnozuje CSBD bez różnicowania, może leczyć OCD jak uzależnienie behawioralne — i czasem przez wiele lat nie pomóc pacjentowi w sposób, w jaki ten naprawdę potrzebuje."
+      <span class="frame-quote-attr">— parafraza po Rorym Reidzie i in., „Toward a typology of compulsive sexual behavior" (2014)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ten Karta wsparcia jest <em>narzędziem różnicującym</em> — pomaga ocenić, czy twój obraz <em>najlepiej</em> pasuje do CSBD/PPU, czy do innej kategorii. <strong>Nie jest narzędziem diagnostycznym</strong> — diagnozę formalnie stawia psychiatra lub psycholog kliniczny w obszarze seksuologii. Wynik pomaga zadać konkretne pytania na konsultacji.</div>
+
+    <div class="src">Reid i in. (2012, „Report of findings in a DSM-5 field trial", JSM); Reid i in. (2014, „Toward a typology of compulsive sexual behavior"); Walton i in. (2017, „Differential diagnosis in hypersexuality"); Bőthe i in. (2020, „ADHD and PPU"); Kraus i in. (2018, ICD-11); APA differential diagnosis guidelines; Polish Sexuological Society — wytyczne diagnostyczne.</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — siedem kategorii</div>
+    <h1 class="card-prompt">Sprawdź <em>każdą kategorię</em></h1>
+    <p class="card-detail">Sprawdź siedem kategorii, które mogą mimikować CSBD/PPU. Cel: zidentyfikować, czy któraś <em>lepiej</em> opisuje obraz lub <em>współwystępuje</em>.</p>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">🔁</span><span class="diag-name">1. OCD z treścią seksualną</span><span class="diag-icd">(ICD-11 6B20)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> intruzje <em>ego-dystoniczne</em>, pobudzenie <em>lękowe</em> (NIE seksualne), rytuały kompulsywne, brak przyjemności.</div>
+      <div class="diag-test">Test: "Czy myśli wywołują lęk lub obrzydzenie? Czy działania są dla <em>uspokojenia lęku</em>, nie dla przyjemności?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="ocd1" onclick="this.classList.toggle('picked')">Intruzje ego-dystoniczne</button>
+        <button type="button" class="example-chip" id="ocd2" onclick="this.classList.toggle('picked')">Pobudzenie lękowe</button>
+        <button type="button" class="example-chip" id="ocd3" onclick="this.classList.toggle('picked')">Rytuały sprawdzania</button>
+        <button type="button" class="example-chip" id="ocd4" onclick="this.classList.toggle('picked')">Brak przyjemności</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">⚡</span><span class="diag-name">2. Mania / hipomania</span><span class="diag-icd">(ICD-11 6A60—62)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> hiperseksualność <em>czasowa</em>, z podwyższonym nastrojem, redukowanym snem, grandiozalnymi ideami.</div>
+      <div class="diag-test">Test: "Czy hiperseksualność jest tylko w okresach euforii i niedospania? Czy stała niezależnie od nastroju?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="man1" onclick="this.classList.toggle('picked')">Czasowe epizody</button>
+        <button type="button" class="example-chip" id="man2" onclick="this.classList.toggle('picked')">Podwyższony nastrój</button>
+        <button type="button" class="example-chip" id="man3" onclick="this.classList.toggle('picked')">Redukowany sen</button>
+        <button type="button" class="example-chip" id="man4" onclick="this.classList.toggle('picked')">Grandiozalne pomysły</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">🎭</span><span class="diag-name">3. Parafilia</span><span class="diag-icd">(ICD-11 6D3)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> utrwalone wzorce <em>specyficznego</em> pobudzenia, niezmienne od adolescencji. NIE o utracie kontroli, lecz o <em>treści</em> pobudzenia.</div>
+      <div class="diag-test">Test: "Czy preferencja stabilna od adolescencji? Czy bez specyficznego bodźca <em>nie czujesz</em> pobudzenia? Czy występuje też w realnych kontaktach?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="par1" onclick="this.classList.toggle('picked')">Stabilna od adolescencji</button>
+        <button type="button" class="example-chip" id="par2" onclick="this.classList.toggle('picked')">Konieczność specyficznego bodźca</button>
+        <button type="button" class="example-chip" id="par3" onclick="this.classList.toggle('picked')">Też w realnych kontaktach</button>
+        <button type="button" class="example-chip" id="par4" onclick="this.classList.toggle('picked')">Niezmienna mimo lat</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">⚡</span><span class="diag-name">4. ADHD — impulsywność</span><span class="diag-icd">(ICD-11 6A05)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> ADHD często <em>współwystępuje</em> z PPU (Bőthe 2020: 25—40%). Nie jest alternatywą — często <em>jest mechanizmem</em>. Leczenie ADHD często redukuje PPU.</div>
+      <div class="diag-test">Test: "Czy poza PPU masz objawy ADHD: trudność z koncentracją, impulsywność? Czy ADHD diagnozowane w dzieciństwie?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="adhd1" onclick="this.classList.toggle('picked')">Diagnoza ADHD w dzieciństwie</button>
+        <button type="button" class="example-chip" id="adhd2" onclick="this.classList.toggle('picked')">Trudność z koncentracją</button>
+        <button type="button" class="example-chip" id="adhd3" onclick="this.classList.toggle('picked')">Impulsywność transdiagnostyczna</button>
+        <button type="button" class="example-chip" id="adhd4" onclick="this.classList.toggle('picked')">Trudność z odraczaniem gratyfikacji</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">💔</span><span class="diag-name">5. PTSD / trauma seksualna</span><span class="diag-icd">(ICD-11 6B40, 6B41)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> PPU jako <em>kompensacja</em>, <em>dysocjacja</em>, <em>re-inscenizacja</em>. Często związane z wczesną traumą seksualną/relacyjną.</div>
+      <div class="diag-test">Test: "Czy historia traumy? Czy PPU pojawiła się po znaczącym wydarzeniu? Czy treści mają związek z historią?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="ptsd1" onclick="this.classList.toggle('picked')">Trauma seksualna w historii</button>
+        <button type="button" class="example-chip" id="ptsd2" onclick="this.classList.toggle('picked')">PPU jako dysocjacja</button>
+        <button type="button" class="example-chip" id="ptsd3" onclick="this.classList.toggle('picked')">Hiperarousal / intruzje</button>
+        <button type="button" class="example-chip" id="ptsd4" onclick="this.classList.toggle('picked')">Treści związane z historią</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">🎯</span><span class="diag-name">6. BPD — zaburzenie osobowości</span><span class="diag-icd">(ICD-11 6D10)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> impulsywność seksualna jako <em>jedno z kryteriów</em> BPD (impulsywność w ≥2 obszarach). Burzliwe relacje, niestabilna tożsamość.</div>
+      <div class="diag-test">Test: "Czy obok impulsywności seksualnej masz: niestabilne relacje, lęk porzucenia, niestabilny obraz siebie?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="bpd1" onclick="this.classList.toggle('picked')">Niestabilne relacje, lęk porzucenia</button>
+        <button type="button" class="example-chip" id="bpd2" onclick="this.classList.toggle('picked')">Niestabilny obraz siebie</button>
+        <button type="button" class="example-chip" id="bpd3" onclick="this.classList.toggle('picked')">Impulsywność w ≥2 obszarach</button>
+        <button type="button" class="example-chip" id="bpd4" onclick="this.classList.toggle('picked')">Samouszkodzenia / próby</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">✅</span><span class="diag-name">7. Wysokie libido — wariant normy</span><span class="diag-icd">(brak diagnozy)</span></div>
+      <div class="diag-key"><strong>Klucz:</strong> wysoka częstotliwość + <em>satysfakcja</em> + <em>brak utraty kontroli</em> + <em>brak konkretnych szkód</em> = wariant normy, NIE diagnoza.</div>
+      <div class="diag-test">Test: "Czy <em>czerpiesz przyjemność</em>? Czy <em>kontrolujesz</em> kiedy chcesz? Czy <em>brak konkretnych szkód</em>?"</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="hl1" onclick="this.classList.toggle('picked')">Czerpię przyjemność</button>
+        <button type="button" class="example-chip" id="hl2" onclick="this.classList.toggle('picked')">Kontroluję — mogę odstawić</button>
+        <button type="button" class="example-chip" id="hl3" onclick="this.classList.toggle('picked')">Brak konkretnych szkód</button>
+        <button type="button" class="example-chip" id="hl4" onclick="this.classList.toggle('picked')">Cierpienie z norm społecznych</button>
+      </div>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Komorbidność ≠ różnicowanie</div>
+      <div class="warn-body"><strong>Komorbidność</strong> to <em>współwystępowanie</em> dwóch zaburzeń (np. CSBD + ADHD) — leczenie obu równolegle. <strong>Różnicowanie</strong> to wybór, <em>która</em> kategoria lepiej opisuje obraz (CSBD vs OCD seksualne — nie razem). Specjalista pomaga rozróżnić.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła obrazu</strong>: typowy obraz CSBD: niska satysfakcja, eskalacja, nieudane próby, konkretne szkody. Typowy obraz wysokiego libido: satysfakcja, kontrola, brak szkód. Typowy obraz OCD: lęk, ego-dystoniczność, rytuały zamiast przyjemności. Każda kategoria ma <em>charakterystyczny</em> obraz.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — porównanie kluczowych różnic</div>
+    <h1 class="card-prompt">Porównanie <em>kluczowych różnic</em></h1>
+    <p class="card-detail">Tabele porównawcze ułatwiają różnicowanie. Sprawdź, do której kategorii twój obraz <em>najlepiej</em> pasuje.</p>
+
+    <div class="compare-card">
+      <div class="compare-h">CSBD vs OCD seksualne</div>
+      <div class="compare-row">
+        <span class="compare-asp">Treść myśli</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Pragnienie / fantazja</span>
+        <span class="compare-text"><strong>OCD:</strong><br>Niechciane intruzje</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Pobudzenie</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Seksualne</span>
+        <span class="compare-text"><strong>OCD:</strong><br>Lękowe</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Cel aktu</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Gratyfikacja (krótka)</span>
+        <span class="compare-text"><strong>OCD:</strong><br>Uspokojenie lęku</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Leczenie</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>RP, CBT, ACT</span>
+        <span class="compare-text"><strong>OCD:</strong><br>ERP (Exposure)</span>
+      </div>
+    </div>
+
+    <div class="compare-card">
+      <div class="compare-h">CSBD vs Mania</div>
+      <div class="compare-row">
+        <span class="compare-asp">Czas</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Stałe ≥6 mies.</span>
+        <span class="compare-text"><strong>Mania:</strong><br>Epizodyczne</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Nastrój</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Często niski</span>
+        <span class="compare-text"><strong>Mania:</strong><br>Podwyższony</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Sen</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Normalna potrzeba</span>
+        <span class="compare-text"><strong>Mania:</strong><br>Mniej snu</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Leczenie</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Terapia behawioralna</span>
+        <span class="compare-text"><strong>Mania:</strong><br>Stabilizacja afektu</span>
+      </div>
+    </div>
+
+    <div class="compare-card">
+      <div class="compare-h">CSBD vs Wysokie libido (norma)</div>
+      <div class="compare-row">
+        <span class="compare-asp">Satysfakcja</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Niska/żadna</span>
+        <span class="compare-text"><strong>Norma:</strong><br>Tak, czerpie</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Kontrola</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Utracona</span>
+        <span class="compare-text"><strong>Norma:</strong><br>Zachowana</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Szkody</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Konkretne</span>
+        <span class="compare-text"><strong>Norma:</strong><br>Brak</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-asp">Cierpienie</span>
+        <span class="compare-text"><strong>CSBD:</strong><br>Wewnętrzne + funkcjonalne</span>
+        <span class="compare-text"><strong>Norma:</strong><br>Tylko z norm</span>
+      </div>
+    </div>
+
+    <div class="examples-h">Twoja kategoria — która najlepiej pasuje?</div>
+    <button type="button" class="rel-btn" id="dC" onclick="pickDiag('C')">
+      <span class="rel-name">📍 CSBD/PPU — najlepiej pasuje</span>
+      <span class="rel-desc">Brak satysfakcji, utrata kontroli, konkretne szkody, ≥6 mies.</span>
+    </button>
+    <button type="button" class="rel-btn" id="dO" onclick="pickDiag('O')">
+      <span class="rel-name">📍 OCD seksualne — bardziej pasuje</span>
+      <span class="rel-desc">Niechciane intruzje, lęk, rytuały. Wymaga ERP, nie RP.</span>
+    </button>
+    <button type="button" class="rel-btn" id="dM" onclick="pickDiag('M')">
+      <span class="rel-name">📍 Mania — bardziej pasuje</span>
+      <span class="rel-desc">Epizodycznie, z podwyższonym nastrojem. Wymaga psychiatry.</span>
+    </button>
+    <button type="button" class="rel-btn" id="dA" onclick="pickDiag('A')">
+      <span class="rel-name">📍 ADHD — komorbidność lub główne</span>
+      <span class="rel-desc">Impulsywność transdiagnostyczna. Leczenie ADHD często pomaga.</span>
+    </button>
+    <button type="button" class="rel-btn" id="dN" onclick="pickDiag('N')">
+      <span class="rel-name">📍 Wysokie libido (norma)</span>
+      <span class="rel-desc">Satysfakcja, kontrola, brak szkód. Nie diagnoza.</span>
+    </button>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Często mieszane obrazy</div>
+      <div class="warn-body">Większość pacjentów <em>nie</em> ma "czystego" obrazu. Częste kombinacje: CSBD + ADHD (25—40%), CSBD + depresja/lęk (40—50%), CSBD + trauma seksualna, CSBD + MI. Specjalista pomaga rozróżnić: główna kategoria + komorbidności.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła "albo/lub" vs "i"</strong>: niektóre kategorie się <em>wykluczają</em> (CSBD vs OCD seksualne — różne mechanizmy). Inne <em>współwystępują</em> (CSBD + ADHD). Specjalista oceni, które dotyczą ciebie.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — implikacje terapeutyczne</div>
+    <h1 class="card-prompt">Każda kategoria — <em>inne leczenie</em></h1>
+    <p class="card-detail">Świadomość różnicowania ma <strong>konkretne implikacje</strong>. Inna kategoria = inne narzędzia. Świadomość kierunku pomaga wybrać terapię.</p>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">🔁</span><span class="diag-name">Jeśli OCD seksualne</span></div>
+      <div class="diag-key">Wymaga <strong>ERP (Exposure and Response Prevention)</strong>, nie klasycznego RP. Klasyczne RP <em>nie działa</em> dla OCD i może <em>pogorszyć</em>.</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="iO1" onclick="this.classList.toggle('picked')">Terapeuta CBT z doświadczeniem w OCD</button>
+        <button type="button" class="example-chip" id="iO2" onclick="this.classList.toggle('picked')">ERP (Exposure Response Prevention)</button>
+        <button type="button" class="example-chip" id="iO3" onclick="this.classList.toggle('picked')">SSRI (sertralina, fluoksetyna)</button>
+        <button type="button" class="example-chip" id="iO4" onclick="this.classList.toggle('picked')">Inference-based therapy (alternatywa)</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">⚡</span><span class="diag-name">Jeśli mania / hipomania</span></div>
+      <div class="diag-key">Wymaga <strong>psychiatrycznej oceny</strong> bipolar disorder. Terapia PPU bez stabilizacji afektu = niewystarczające.</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="iM1" onclick="this.classList.toggle('picked')">Pilna konsultacja psychiatryczna</button>
+        <button type="button" class="example-chip" id="iM2" onclick="this.classList.toggle('picked')">Stabilizatory afektu</button>
+        <button type="button" class="example-chip" id="iM3" onclick="this.classList.toggle('picked')">Monitoring nastroju (MDQ)</button>
+        <button type="button" class="example-chip" id="iM4" onclick="this.classList.toggle('picked')">Psychoedukacja bipolar</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">⚡</span><span class="diag-name">Jeśli ADHD</span></div>
+      <div class="diag-key">Leczenie ADHD <em>często redukuje</em> PPU (Bőthe 2020). Mechanizm: stymulanty zwiększają tonus dopaminowy → mniejsza potrzeba "ekstra" stymulacji.</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="iA1" onclick="this.classList.toggle('picked')">Diagnoza ADHD u psychiatry</button>
+        <button type="button" class="example-chip" id="iA2" onclick="this.classList.toggle('picked')">Stymulanty / atomoksetyna</button>
+        <button type="button" class="example-chip" id="iA3" onclick="this.classList.toggle('picked')">Terapia ADHD (CBT-ADHD)</button>
+        <button type="button" class="example-chip" id="iA4" onclick="this.classList.toggle('picked')">Plus terapia PPU (CBT/ACT)</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">💔</span><span class="diag-name">Jeśli PTSD / trauma</span></div>
+      <div class="diag-key">Wymaga <strong>terapii traumy</strong> jako głównego frontu. PPU często zniknie po przepracowaniu traumy.</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="iP1" onclick="this.classList.toggle('picked')">EMDR (Shapiro)</button>
+        <button type="button" class="example-chip" id="iP2" onclick="this.classList.toggle('picked')">Somatic Experiencing</button>
+        <button type="button" class="example-chip" id="iP3" onclick="this.classList.toggle('picked')">CBT-traumy (CPT, PE)</button>
+        <button type="button" class="example-chip" id="iP4" onclick="this.classList.toggle('picked')">Konsultacja psychiatryczna</button>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-h"><span class="diag-icon">✅</span><span class="diag-name">Jeśli wysokie libido (norma)</span></div>
+      <div class="diag-key">NIE wymaga klasycznej terapii uzależnień. Edukacja seksuologiczna, akceptacja wariantu. <em>Nie patologizuj normy</em>.</div>
+      <div class="example-chips" style="margin-top:8px;">
+        <button type="button" class="example-chip" id="iN1" onclick="this.classList.toggle('picked')">Edukacja seksuologiczna</button>
+        <button type="button" class="example-chip" id="iN2" onclick="this.classList.toggle('picked')">Sex therapy par (jeśli partner)</button>
+        <button type="button" class="example-chip" id="iN3" onclick="this.classList.toggle('picked')">Akceptacja wariantu</button>
+        <button type="button" class="example-chip" id="iN4" onclick="this.classList.toggle('picked')">NIE klasyczne RP</button>
+      </div>
+    </div>
+
+    <div class="examples-h">Twój plan różnicowania</div>
+    <textarea class="thought-input" id="myDiff" placeholder='Konkretnie. np. „Po analizie:
+
+GŁÓWNA KATEGORIA: CSBD/PPU
+- Wszystkie 7 kryteriów ICD-11 spełnione
+- 8 lat trwania
+- Konkretne szkody (relacja, finanse)
+
+KOMORBIDNOŚCI:
+- ADHD (diagnozowane w dzieciństwie) — możliwa
+- Lęk umiarkowany (sytuacyjny)
+- Trauma — rozstanie rodziców 12 r.ż.
+
+WYKLUCZENIA POTWIERDZONE:
+- NIE OCD seksualne (czerpię przyjemność)
+- NIE mania (stałe, bez podwyższonego nastroju)
+- NIE parafilia (preferencje stabilne klasyczne)
+
+PLAN TERAPII:
+1. Konsultacja seksuologa — potwierdzenie CSBD
+2. Konsultacja psychiatry — re-evaluacja ADHD
+3. Terapia CBT/ACT-PPU
+4. Grupa wsparcia SAA”' rows="14"></textarea>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Specjalista różnicuje, nie ty</div>
+      <div class="warn-body">Ten Karta strukturyzuje ocenę, ale różnicowanie kliniczne wymaga: <strong>kompleksowego wywiadu</strong>, <strong>kwestionariuszy</strong> (PPCS, MDQ, ASRS, OCI-R, PCL-5), <strong>czasu obserwacji</strong>, <strong>współpracy z psychiatrą</strong>. Samodzielne różnicowanie jest niewystarczające.</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: świadomość różnicowania <em>natychmiast</em> zmienia kierunek. Próba leczenia OCD jak CSBD = nieskuteczność. Próba leczenia ADHD jak PPU = pomijanie głównego mechanizmu. Świadomość + dopasowane narzędzia = skuteczność.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>różnicowanie się klaruje</em>?</h1>
+    <p class="card-detail">Wróć tu po konsultacji ze specjalistą (lub po kilku tygodniach pracy z różnicowaniem). Praca jest <em>kognitywna</em> głównie — efekty po kilku tygodniach + konsultacji.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy rozumiesz 7 kategorii różnicujących?</span><span></span></div>
+      <input type="range" class="scale-input" id="postCat" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postCatval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy znasz swoją główną kategorię?</span><span></span></div>
+      <input type="range" class="scale-input" id="postOwn" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postOwnval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy odbyłeś/aś konsultację różnicującą?</span><span></span></div>
+      <input type="range" class="scale-input" id="postCons" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = nie</span><span id="postConsval">3</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy plan terapii jest dopasowany do kategorii?</span><span></span></div>
+      <input type="range" class="scale-input" id="postFit" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postFitval">5</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: skuteczne różnicowanie = <em>rozumienie 7 kategorii</em> ≥7 + <em>znajomość własnej</em> ≥7 + <em>konsultacja</em> ≥7 + <em>plan dopasowany</em> ≥7. Najczęstsza luka: <em>brak konsultacji specjalisty</em>.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Diagnoza różnicowa CSBD/PPU jest <em>kluczowa</em> przed wyborem terapii. Siedem kategorii mimikujących obraz: (1) <strong>OCD seksualne</strong> — intruzje ego-dystoniczne, lęk; ERP nie RP; (2) <strong>Mania/hipomania</strong> — epizodyczne, podwyższony nastrój; psychiatria; (3) <strong>Parafilia</strong> — stabilne specyficzne wzorce; (4) <strong>ADHD</strong> — komorbidność częsta (25—40%); leczenie ADHD często redukuje PPU; (5) <strong>PTSD/trauma</strong> — PPU jako kompensacja; terapia traumy główna; (6) <strong>BPD</strong> — impulsywność transdiagnostyczna; DBT; (7) <strong>Wysokie libido</strong> — wariant normy, NIE diagnoza. <strong>Komorbidność ≠ różnicowanie</strong>: niektóre kategorie się wykluczają (CSBD vs OCD), inne współwystępują (CSBD + ADHD). <strong>Specjalista pomaga</strong> ocenić: główna kategoria + komorbidności + plan leczenia. Świadomość kategorii + dopasowane narzędzia = skuteczność.</div>
+    </div>
+
+    <div class="src">Reid i in. (2012, 2014); Walton i in. (2017); Bőthe i in. (2020, ADHD &amp; PPU); Kraus i in. (2018, ICD-11); ICD-11 (2019); kwestionariusze: PPCS-18, CPUI-9, MDQ, ASRS, OCI-R, PCL-5; APA differential diagnosis guidelines; Polish Sexuological Society — wytyczne diagnostyczne.</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['postCat','postOwn','postCons','postFit'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedDiag = null;
+function pickDiag(code) {
+  window.pickedDiag = code;
+  ['dC','dO','dM','dA','dN'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('d' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var c = parseInt(document.getElementById('postCat').value, 10);
+  var o = parseInt(document.getElementById('postOwn').value, 10);
+  var co = parseInt(document.getElementById('postCons').value, 10);
+  var f = parseInt(document.getElementById('postFit').value, 10);
+
+  var rows = [];
+  var cW = c <= 3 ? 'nie' : (c <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Rozumienie 7 kategorii</strong><span class="diff-delta">' + c + '/10 — ' + cW + '</span></div>');
+  var oW = o <= 3 ? 'nie' : (o <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Znajomość własnej</strong><span class="diff-delta">' + o + '/10 — ' + oW + '</span></div>');
+  var coW = co <= 3 ? 'nie' : (co <= 6 ? 'planowana' : 'odbyta');
+  rows.push('<div class="diff-row"><strong>Konsultacja</strong><span class="diff-delta">' + co + '/10 — ' + coW + '</span></div>');
+  var fW = f <= 3 ? 'nie' : (f <= 6 ? 'częściowo' : 'dopasowany');
+  rows.push('<div class="diff-row"><strong>Plan dopasowany</strong><span class="diff-delta">' + f + '/10 — ' + fW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (c >= 7 && o >= 7 && co >= 7 && f >= 7) {
+      msg = '<strong>Różnicowanie działa.</strong> Rozumiesz 7 kategorii, znasz swoją główną, konsultacja odbyta, plan dopasowany. <em>Realizuj plan z terapeutą</em>.';
+    } else if (c >= 6 && o >= 5) {
+      msg = '<strong>Pierwsze ruchy.</strong> Wzmocnij <em>konsultację specjalisty</em>. Bez niej różnicowanie pozostaje samodzielne — niewystarczające klinicznie.';
+    } else if (co <= 3) {
+      msg = '<strong>Brak konsultacji — krytyczne.</strong> Samodzielne różnicowanie jest niewystarczające. <em>W tym tygodniu</em>: znajdź specjalistę z doświadczeniem w PPU/CSBD; umów konsultację różnicującą.';
+    } else if (f <= 3) {
+      msg = '<strong>Plan nie dopasowany do kategorii.</strong> Najczęściej: osoba z CSBD próbuje ERP (właściwego dla OCD), albo osoba z OCD próbuje RP. Konsultacja: czy obecne narzędzia odpowiadają mechanizmowi?';
+    } else if (o <= 3) {
+      msg = '<strong>Brak znajomości głównej kategorii.</strong> Bez niej trudno dopasować plan. Przejdź krok 2 i 3 ponownie z terapeutą — ustalcie razem.';
+    } else if (c <= 3) {
+      msg = '<strong>Słabe rozumienie 7 kategorii.</strong> Przeczytaj krok 2 ponownie. Każda z kategorii ma <em>charakterystyczny</em> obraz i test różnicowy. Świadomość różnic chroni przed nadmierną patologizacją lub niedoszacowaniem.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Praca z różnicowaniem to praca strukturyzująca — pomaga w rozmowie ze specjalistą.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['ocd1','ocd2','ocd3','ocd4','man1','man2','man3','man4','par1','par2','par3','par4','adhd1','adhd2','adhd3','adhd4','ptsd1','ptsd2','ptsd3','ptsd4','bpd1','bpd2','bpd3','bpd4','hl1','hl2','hl3','hl4','iO1','iO2','iO3','iO4','iM1','iM2','iM3','iM4','iA1','iA2','iA3','iA4','iP1','iP2','iP3','iP4','iN1','iN2','iN3','iN4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['dC','dO','dM','dA','dN'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedDiag = null;
+}
+
+['postCat','postOwn','postCons','postFit'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_differential — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_differential";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['C','O','M','A','N'].forEach(function(code){
+    var el = document.getElementById('d' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedDiag = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Feedback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.sbi-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 12px 0; }
+.sbi-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 11px 13px; }
+.sbi-letter { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; color: var(--sage-deep); display: inline-block; margin-right: 8px; vertical-align: -2px; }
+.sbi-name { font-weight: 600; font-size: 13.5px; color: var(--ink); display: inline; }
+.sbi-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin-top: 4px; }
+.sbi-ex { font-size: 12px; color: var(--ink); font-style: italic; margin-top: 5px; padding-left: 10px; border-left: 2px solid var(--sage); }
+.compare-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13px; line-height: 1.55; }
+.compare-bad { color: var(--ink-soft); margin-bottom: 6px; }
+.compare-bad strong { color: #b85a3a; }
+.compare-good { color: var(--ink); }
+.compare-good strong { color: var(--sage-deep); }
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-rule { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: flex-start; }
+.proto-rule:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); flex-shrink: 0; min-width: 18px; }
+.proto-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.proto-text strong { color: var(--bg); font-weight: 600; }
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+@media(max-width:480px){ .role-grid { grid-template-columns: 1fr; } }
+.role-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 11px 13px; cursor: pointer; transition: all 0.2s; text-align: left; font-family: inherit; }
+.role-card:hover, .role-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.role-card.picked .role-name, .role-card.picked .role-desc { color: var(--bg); }
+.role-name { font-weight: 600; font-size: 13.5px; color: var(--ink); margin-bottom: 4px; }
+.role-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+.final-summary { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; margin: 12px 0; border: 1px solid var(--sage); font-size: 13.5px; line-height: 1.6; color: var(--ink); }
+.final-summary strong { color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Feedback</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — Wprowadzenie ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Feedback — <em>prezent</em>, nie ocena</h1>
+    <p class="card-detail">Feedback to dawanie i przyjmowanie informacji zwrotnej, która ma pomóc drugiej osobie się rozwinąć. Większość ludzi nie umie ani dawać, ani przyjmować — bo zostali źle nauczeni. Stara „kanapka" (pochwała-krytyka-pochwała) została zdyskredytowana: odbiorca uczy się, że pochwała to zwiastun krytyki. Lepszy model — SBI (Situation-Behavior-Impact, Centrum Twórczego Przywództwa) plus rozdzielenie zachowania od osoby. Stone i Heen (2014) w „Thanks for the Feedback" pokazali, że największą barierą feedbacku <em>nie</em> jest nadawca — jest odbiorca i jego trzy mechanizmy obronne (prawda, relacja, tożsamość).</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Trzy zasady dobrego feedbacku</div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Konkret zamiast etykiety.</strong> „Wczoraj przerwałeś mi 3 razy" — nie „jesteś nieuważny". Etykieta zamyka rozmowę, konkret ją otwiera.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⏱️</span>
+        <span class="element-text"><strong>Świeżość.</strong> Feedback w ciągu 24–48 godzin od zdarzenia. Po tygodniu druga osoba nie pamięta kontekstu — zostaje tylko ocena.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💡</span>
+        <span class="element-text"><strong>Intencja widoczna.</strong> „Mówię to, bo zależy mi na tobie/na tym projekcie" — przed treścią. Bez tego feedback brzmi jak atak.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚫</span>
+        <span class="element-text"><strong>Bez „zawsze" i „nigdy".</strong> Te słowa są niemal zawsze nieprawdziwe i zwykle prowokują obronę. Wystarcza konkretna sytuacja.</span>
+      </div>
+    </div>
+    
+    <div class="frame-quote">„Feedback jest prezentem zapakowanym w niewygodny papier. Nie każdy prezent jest trafiony — ale odrzucanie wszystkich pozbawia cię rozwoju."
+      <span class="frame-quote-attr">— parafraza Douglas Stone, Sheila Heen (2014), Thanks for the Feedback</span>
+    </div>
+    
+    <div class="term-note"><strong>🔑 Klucz</strong>: feedback to nie ocena charakteru — to obserwacja zachowania w kontekście. Rozdzielenie tych dwóch jest kluczowe. „Spóźniłeś się 3 razy w tym tygodniu" (zachowanie) ≠ „jesteś nieodpowiedzialny" (charakter). Pierwsze otwiera rozmowę, drugie zamyka.</div>
+    
+    <div class="term-note"><strong>📌 Częsty mit</strong>: „Feedback negatywny zawsze rani". Kluger i DeNisi (1996) w meta-analizie 607 badań pokazali, że <em>jakość</em> feedbacku decyduje, nie jego znak. Konkretny, behawioralny, z jasną intencją — pomaga w 60–70% przypadków. Ogólny i osobowy — szkodzi.</div>
+    
+    <div class="src">Stone, Heen (2014), Thanks for the Feedback · Centrum Twórczego Przywództwa, model SBI · Kluger, DeNisi (1996), meta-analiza · Heen (2014), HBR, krytyka kanapki · Linehan (2015), DBT</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja rola</div>
+    <h1 class="card-prompt">Z którą stroną <em>masz problem</em>?</h1>
+    <p class="card-detail">Większość ludzi ma trudność albo z dawaniem, albo z przyjmowaniem feedbacku — rzadko z obojgiem na tym samym poziomie. Wybierz tę, która jest dla ciebie trudniejsza.</p>
+    
+    <div class="role-grid">
+      <button class="role-card" id="rol1" onclick="this.classList.toggle('picked')">
+        <div class="role-name">📤 Dawanie — unikam</div>
+        <div class="role-desc">Wolę nie mówić, niż zranić. Druga osoba nie wie, co robi źle. Frustracja narasta po mojej stronie. Konflikt wybucha później, większy.</div>
+      </button>
+      <button class="role-card" id="rol2" onclick="this.classList.toggle('picked')">
+        <div class="role-name">🔥 Dawanie — agresywnie</div>
+        <div class="role-desc">Mówię, ale w gniewie, z etykietami („zawsze", „nigdy"). Druga osoba wchodzi w obronę, niczego nie zmienia.</div>
+      </button>
+      <button class="role-card" id="rol3" onclick="this.classList.toggle('picked')">
+        <div class="role-name">🛡️ Przyjmowanie — bronię się</div>
+        <div class="role-desc">Słyszę feedback i od razu wyjaśniam, dlaczego było tak, jak było. Druga osoba się wycofuje. Następnym razem nie powie nic.</div>
+      </button>
+      <button class="role-card" id="rol4" onclick="this.classList.toggle('picked')">
+        <div class="role-name">😰 Przyjmowanie — zapadam się</div>
+        <div class="role-desc">Każdy feedback odbieram jako atak na siebie jako osobę. Czuję wstyd, ruminuję, odsuwam się od osoby, która go dała.</div>
+      </button>
+    </div>
+    
+    <textarea class="thought-input" id="fbRol" placeholder="Opisz konkretną sytuację — kiedy ostatnio feedback (twój lub od ciebie) poszedł źle? np. „Tydzień temu współpracowniczka spóźniła się na trzeci meeting. Zamiast powiedzieć od razu, powiedziałam dopiero wczoraj — po piątym razie. Wybuchła. Czuję się winna, ale gniew narastał za długo."" rows="3"></textarea>
+    
+    <div class="term-note"><strong>Reguła samowiedzy</strong>: Stone i Heen (2014) opisali trzy „triggery" odrzucania feedbacku: <em>truth trigger</em> („to nie jest prawda"), <em>relationship trigger</em> („nie ufam tej osobie"), <em>identity trigger</em> („to mówi, że jestem zła osoba"). Świadomość, który trigger się aktywuje, pozwala go pominąć i usłyszeć treść.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Model SBI</div>
+    <h1 class="card-prompt">Trzy kroki <em>SBI</em></h1>
+    <p class="card-detail">Model SBI (Situation-Behavior-Impact / Sytuacja-Zachowanie-Wpływ) opracowało Centrum Twórczego Przywództwa (CCL). Trzy proste kroki, które niemal eliminują obronę odbiorcy. Dlaczego: feedback ogranicza się do faktów + ich wpływu, bez ocen charakteru.</p>
+    
+    <div class="sbi-grid">
+      <div class="sbi-card">
+        <span class="sbi-letter">S</span><span class="sbi-name">Sytuacja</span>
+        <div class="sbi-desc">Konkretne miejsce i czas, by druga osoba pamiętała, o co chodzi. Nie „ostatnio" — <em>kiedy dokładnie</em>.</div>
+        <div class="sbi-ex">„Wczoraj na meetingu o 14:00, kiedy omawialiśmy budżet..."</div>
+      </div>
+      <div class="sbi-card">
+        <span class="sbi-letter">B</span><span class="sbi-name">Zachowanie (Behavior)</span>
+        <div class="sbi-desc">To, co realnie się stało — obserwowalne, nieinterpretowane. Bez „zawsze", „nigdy", bez etykiet o charakterze.</div>
+        <div class="sbi-ex">„...przerwałaś mi trzy razy w ciągu pięciu minut."</div>
+      </div>
+      <div class="sbi-card">
+        <span class="sbi-letter">I</span><span class="sbi-name">Wpływ (Impact)</span>
+        <div class="sbi-desc">To, co to zachowanie wywołało — w tobie, w zespole, w rezultacie. Twoja perspektywa, nie obwinianie.</div>
+        <div class="sbi-ex">„...czułem, że moje argumenty nie liczą się i przestałem dzielić się resztą myśli."</div>
+      </div>
+    </div>
+    
+    <div class="proto-card">
+      <div class="proto-h">SBI + dodatki, które wzmacniają</div>
+      <div class="proto-rule">
+        <span class="proto-num">+</span>
+        <span class="proto-text"><strong>Intencja na początku.</strong> „Zależy mi, żebyśmy dobrze pracowali — dlatego chcę powiedzieć..."</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">+</span>
+        <span class="proto-text"><strong>Pytanie po SBI.</strong> „Jak ty to widzisz?" — otwiera rozmowę zamiast zamykać werdyktem.</span>
+      </div>
+      <div class="proto-rule">
+        <span class="proto-num">+</span>
+        <span class="proto-text"><strong>Konkretna prośba.</strong> „Chciałbym, żebyś następnym razem dała mi skończyć myśl — a potem twój komentarz."</span>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz SBI</strong>: trzymanie się trzech elementów eliminuje 80% naturalnej obrony. Bez „jesteś", bez „zawsze", bez interpretacji intencji. Tylko fakty + ich konsekwencje. Druga osoba może się zgodzić lub nie — ale nie czuje się atakowana jako osoba.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka</div>
+    <h1 class="card-prompt">Trzy <em>przekształcenia</em></h1>
+    <p class="card-detail">Najczęstsze błędy w feedbacku — i ich poprawione wersje. Wzór do skopiowania w najbliższej rozmowie.</p>
+    
+    <div class="compare-card">
+      <div class="compare-bad">❌ <strong>Etykieta charakteru</strong>: „Jesteś nieodpowiedzialny."</div>
+      <div class="compare-good">✅ <strong>SBI</strong>: „W tym tygodniu spóźniłeś się na trzy spotkania. Zauważyłem, że to wywołuje w zespole napięcie. Co się dzieje?"</div>
+    </div>
+    
+    <div class="compare-card">
+      <div class="compare-bad">❌ <strong>Kanapka</strong>: „Świetnie pracujesz. Ale ostatnio jakoś gorzej. W sumie dobrze się starasz."</div>
+      <div class="compare-good">✅ <strong>SBI + intencja</strong>: „Zależy mi na naszej współpracy. Wczoraj na meetingu twoja prezentacja była dla mnie nieczytelna — czułem, że gubię wątek. Co według ciebie poszło?"</div>
+    </div>
+    
+    <div class="compare-card">
+      <div class="compare-bad">❌ <strong>Reakcja obronna</strong> (przy odbiorze): „No tak, ale wiesz, jak to było — nie mogłam inaczej, bo..."</div>
+      <div class="compare-good">✅ <strong>Słuchanie + pytanie</strong>: „Dziękuję, że mi to mówisz. Czy możesz dać konkretny przykład, żebym lepiej zrozumiała? Przemyślę i wrócę z odpowiedzią."</div>
+    </div>
+    
+    <textarea class="thought-input" id="fbPractice" placeholder="Wybierz feedback, który masz dać (lub przyjąć) w najbliższych dniach. Sformułuj go w SBI lub zaplanuj reakcję bez obrony. np. „Synowi powiem: »wczoraj wieczorem, gdy poprosiłam o pomoc w kuchni, odpowiedziałeś »za chwilę« i nie przyszedłeś. Czułam się zignorowana. Możemy się umówić, jak komunikujesz, że nie chcesz pomóc?«"" rows="4"></textarea>
+    
+    <div class="term-note"><strong>Mechanizm zmiany odbioru</strong>: gdy słyszysz feedback, zwykle aktywuje się reakcja zagrożenia (3 oddechy pomagają). Świadome opóźnienie reakcji o 24 godziny — zwane „rule of 24" — pozwala oddzielić emocjonalną reakcję od merytorycznej oceny. Po 24 godzinach widzisz wyraźniej, co z feedbacku jest wartościowe.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po rozmowie</div>
+    <h1 class="card-prompt">Co się <em>zmieniło</em></h1>
+    <p class="card-detail">Po świadomej próbie SBI lub reakcji bez obrony porównaj. Najsilniejszą informacją zwrotną jest to, czy rozmowa skończyła się ustaleniem — czy konfliktem.</p>
+    
+    <div class="scale">
+      <div class="scale-title">Obrona drugiej strony (0/10) — przy zwykłym feedbacku</div>
+      <div class="scale-bounds"><span>(0 — pełna otwartość)</span><span>(10 — silna obrona)</span></div>
+      <input type="range" class="scale-input" id="fbDefBefore" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>Poziom</span><span id="fbDefBeforeVal">7</span></div>
+    </div>
+    
+    <div class="scale">
+      <div class="scale-title">Obrona drugiej strony (0/10) — przy SBI</div>
+      <div class="scale-bounds"><span>(0 — pełna otwartość)</span><span>(10 — silna obrona)</span></div>
+      <input type="range" class="scale-input" id="fbDefAfter" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Poziom</span><span id="fbDefAfterVal">3</span></div>
+    </div>
+    
+    <textarea class="thought-input" id="fbReflect" placeholder="Co zauważyłaś/eś? Czy rozmowa skończyła się ustaleniem? Czy druga osoba zaakceptowała perspektywę? np. „Synowi powiedziałam SBI bez etykiet. Wysłuchał. Powiedział, że nie wiedział, że to mnie zaboleło. Umówiliśmy się, że jak chce coś odłożyć, mówi konkretną godzinę. Pierwsza taka rozmowa bez kłótni."" rows="4"></textarea>
+    
+    <div class="final-summary" id="fbSummary">
+      Wypełnij oba suwaki — zobaczysz tutaj <strong>różnicę poziomu obrony</strong> przy modelu SBI vs zwykły feedback.
+    </div>
+    
+    <div class="term-note"><strong>Reguła kalibracji</strong>: SBI zwykle obniża obronę o 3–5 punktów już za pierwszym razem. Jeśli obrona nie spada — sprawdź, czy nie pojawiły się słowa „zawsze/nigdy", interpretacje motywów („bo ci nie zależy"), albo etykiety charakteru. SBI musi pozostać w faktach + ich wpływie.</div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body"><strong>Feedback to konkret + wpływ + prośba — nie ocena charakteru.</strong> <em>SBI: Sytuacja, Zachowanie, Wpływ. Bez „zawsze", bez „nigdy", bez etykiet.</em> Przy odbiorze: 3 oddechy, słuchanie do końca, „dziękuję", rozważ później. Reguła 24 godzin oddziela emocję od oceny.</div>
+    </div>
+    
+    <div class="src">Stone, Heen (2014), Thanks for the Feedback · Centrum Twórczego Przywództwa, model SBI · Kluger, DeNisi (1996), meta-analiza feedbacku · Heen (2014), HBR · Linehan (2015), DBT — przyjmowanie krytyki</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateScaleReadout(id) {
+  var el = document.getElementById(id);
+  var out = document.getElementById(id + 'Val');
+  if (el && out) out.textContent = el.value;
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.type === 'range') {
+    updateScaleReadout(e.target.id);
+    updateSummary();
+  }
+});
+
+function updateSummary() {
+  var before = parseInt(document.getElementById('fbDefBefore').value, 10);
+  var after = parseInt(document.getElementById('fbDefAfter').value, 10);
+  var diff = before - after;
+  var msg;
+  if (diff >= 4) msg = 'Spadek obrony o <strong>' + diff + ' punktów</strong>. SBI zadziałało — feedback został usłyszany jako informacja, nie atak. Powtórz w innych rozmowach.';
+  else if (diff >= 2) msg = 'Spadek obrony o <strong>' + diff + ' pkt</strong>. Pierwsze próby SBI zwykle dają taki efekt. Z czasem różnica narasta — zwłaszcza gdy odbiorca też zna model.';
+  else if (diff >= 0) msg = 'Niewielka zmiana. Sprawdź, czy nie pojawiły się słowa „zawsze/nigdy" albo interpretacje motywów. SBI musi zostać w faktach + ich wpływie.';
+  else msg = 'Wzrost obrony — możliwe, że ton był osądzający mimo struktury SBI. Wróć do treści: czy nie zabrzmiała jak werdykt? Intencja na początku („zależy mi") zwykle to naprawia.';
+  document.getElementById('fbSummary').innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) {
+    setTimeout(updateSummary, 50);
+    setTimeout(function(){ ['fbDefBefore','fbDefAfter'].forEach(updateScaleReadout); }, 50);
+  }
+}
+
+function onReset() {
+  document.getElementById('fbSummary').innerHTML = 'Wypełnij oba suwaki — zobaczysz tutaj <strong>różnicę poziomu obrony</strong> przy modelu SBI vs zwykły feedback.';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ip_feedback — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ip_feedback";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['fbDefBefore','fbDefAfter'].forEach(updateScaleReadout);
+}, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

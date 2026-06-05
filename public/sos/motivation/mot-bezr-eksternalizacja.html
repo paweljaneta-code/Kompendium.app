@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Eksternalizacja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.exter-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.exter-cell { padding: 11px 13px; border-radius: 10px; font-size: 13px; line-height: 1.55; }
+.exter-cell.before { background: rgba(201,165,114,0.14); border: 1px solid var(--warm); }
+.exter-cell.after { background: rgba(184,197,168,0.20); border: 1px solid var(--sage-deep); }
+.exter-tag { display: block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.exter-cell.before .exter-tag { color: var(--warm); }
+.exter-cell.after .exter-tag { color: var(--sage-deep); }
+.exter-cell strong { color: var(--ink); font-weight: 600; }
+.exter-cell em { font-style: italic; }
+
+.q-list { margin: 10px 0; }
+.q-item { padding: 8px 0 8px 14px; border-left: 2px solid var(--sage); margin: 4px 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); font-family: 'Fraunces', serif; font-style: italic; }
+.q-item strong { color: var(--ink); font-style: normal; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+
+.letter-box { background: rgba(184,197,168,0.16); border: 1px dashed var(--sage); border-radius: 10px; padding: 12px 14px; margin: 10px 0; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
+.letter-box strong { color: var(--ink); font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+@media (max-width: 380px) {
+  .exter-pair { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Eksternalizacja</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Eksternalizacja — <em>oddzielenie</em> problemu od osoby</h1>
+    <p class="card-detail">Eksternalizacja (White i Epston, 1990, terapia narracyjna) polega na oddzieleniu problemu od osoby przez zmianę języka. „Jestem bezradny/a" zamienia się w „Bezradność mnie odwiedza". To nie jest gra słowna — to fundamentalna zmiana <em>relacji</em> z doświadczeniem. Gdy bezradność jest częścią tożsamości, zmiana oznacza zmianę siebie (trudne, przerażające). Gdy bezradność jest oddzielnym bytem, zmiana oznacza radzenie sobie z tym bytem (wykonalne). Freedman i Combs (1996) opisali to jako „otwieranie przestrzeni" między osobą a problemem — w tej przestrzeni pojawia się sprawczość. Vromans i Schweitzer (2011) w przeglądzie systematycznym terapii narracyjnej wykazali zmniejszenie objawów depresji i lęku po 8—12 sesjach z eksternalizacją jako kluczową techniką. White (2007) podsumował: „osoba nie jest problemem — problem jest problemem".</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary eksternalizacji (White i Epston, 1990)</div>
+      <div class="element-row">
+        <span class="element-icon">🪞</span>
+        <span class="element-text"><strong>Oddzielenie tożsamości</strong> — problem nie jest tym, kim jesteś. Problem jest <em>czymś</em>, co Ci się przydarza, czego doświadczasz, co możesz nazwać i opisać.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📝</span>
+        <span class="election-text"><strong>Nazwa własna</strong> — nadanie problemowi imienia tworzy dystans. „Bezradność", „Mur", „Mgła", „Głos-rezygnacji" — własna nazwa ma większą moc niż termin teoretyczny.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔍</span>
+        <span class="element-text"><strong>Unique outcomes</strong> — momenty, w których problem nie wygrał. Każdy wyjątek od reguły bezradności jest dowodem, że obwód kontroli istnieje, choćby krótko.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📜</span>
+        <span class="element-text"><strong>Nowa narracja</strong> — zamiast „taki/taka po prostu jestem", nowa historia: „mam relację z Bezradnością, która się zmienia". Tożsamość pozostaje sprawcza.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Osoba nie jest problemem. Problem jest problemem. Relacja osoby z problemem jest tym, nad czym pracujemy."
+      <span class="frame-quote-attr">— White i Epston (1990, Narrative Means to Therapeutic Ends)</span>
+    </div>
+
+    <div class="exter-pair">
+      <div class="exter-cell before">
+        <span class="exter-tag">❌ Zlana tożsamość</span>
+        <strong>„Jestem bezradna."</strong> Tożsamość = problem. Zmiana wydaje się zmianą siebie. Brak dystansu, brak sprawczości.
+      </div>
+      <div class="exter-cell after">
+        <span class="exter-tag">✅ Eksternalizacja</span>
+        <strong>„Bezradność mnie odwiedza."</strong> <em>Ja</em> i <em>Bezradność</em> to dwie różne rzeczy. Pojawia się przestrzeń — i sprawczość.
+      </div>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: eksternalizacja nie jest „zabawą w słowa". To głęboka interwencja. Osoba mówiąca „jestem bezradna" czuje się <em>uwięziona w sobie</em>. Osoba mówiąca „Bezradność mnie odwiedza" zyskuje dystans i sprawczość. A dystans to pierwszy krok do zmiany.</div>
+
+    <div class="src">White i Epston (1990, Narrative Means to Therapeutic Ends) · White (2007, Maps of Narrative Practice) · Freedman i Combs (1996, Narrative Therapy: The Social Construction of Preferred Realities) · Morgan (2000, What is Narrative Therapy?) · Vromans i Schweitzer (2011, Australian and New Zealand Journal of Family Therapy, przegląd)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Nazwij Bezradność</div>
+    <h1 class="card-prompt">Daj <em>imię</em> temu, co Ci towarzyszy</h1>
+    <p class="card-detail">Pierwszy ruch eksternalizacji to nazwa. Nie używaj terminu klinicznego — wybierz słowo, obraz, metaforę, która oddaje, jak <em>czujesz</em> ten stan. Może to być rzeczownik, może osoba, może ciężar. Nazwa, którą wybierasz, mówi już dużo o relacji z problemem — i staje się punktem odniesienia w dalszej pracy.</p>
+
+    <div class="examples-h">Przykłady nazw — różnych odbieran</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="nA" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Mur</button>
+      <button type="button" class="example-chip" id="nB" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Mgła</button>
+      <button type="button" class="example-chip" id="nC" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Ciężar</button>
+      <button type="button" class="example-chip" id="nD" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Głos-rezygnacji</button>
+      <button type="button" class="example-chip" id="nE" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Bagno</button>
+      <button type="button" class="example-chip" id="nF" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Klatka</button>
+      <button type="button" class="example-chip" id="nG" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Mróz</button>
+      <button type="button" class="example-chip" id="nH" onclick="this.classList.toggle('picked');if(typeof save==='function')save();">Trampolina-z-dziurą</button>
+    </div>
+
+    <textarea class="thought-input" id="wlasnaNazwa" placeholder="Twoja własna nazwa Bezradności — zostaw przestrzeń na coś własnego. np. „Mokry koc, który mnie przykrywa" / „Niewidzialna ręka, która trzyma mnie w łóżku""  rows="3"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Zlanie z Bezradnością PRZED — „to JA, taka po prostu jestem"</div>
+      <div class="scale-bounds"><span>0 — to coś osobnego</span><span>10 — to ja</span></div>
+      <input type="range" class="scale-input" id="zlanieRPzed" min="0" max="10" step="1" value="8" data-default="8">
+      <div class="scale-readout"><span>Wartość</span><span id="zlanieRPzedVal">8</span></div>
+    </div>
+
+    <div class="term-note"><strong>📊 Reguła własnego słowa</strong>: nazwa kliniczna („depresja", „bezradność") jest neutralna i abstrakcyjna; własna nazwa („Mokry koc", „Mur") niesie obraz, który mózg koduje silniej. Im bardziej własna jest nazwa, tym mocniejsza eksternalizacja — i tym łatwiej później rozmawiać o relacji z tym czymś.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Pytania eksternalizujące</div>
+    <h1 class="card-prompt">Zbuduj <em>portret</em> Bezradności</h1>
+    <p class="card-detail">White (2007) opisał technikę pytań eksternalizujących — pozwalają zobaczyć Bezradność jako <em>byt</em>, ze swoim głosem, taktyką, wpływem. To dystans, który pozwala potem negocjować. Odpowiadaj jak o znajomym, którego znasz dobrze — bo Bezradność towarzyszy Ci od dawna.</p>
+
+    <div class="q-list">
+      <div class="q-item">Co <strong>[Twoja nazwa]</strong> Ci mówi, gdy się pojawia?</div>
+    </div>
+    <textarea class="thought-input" id="qMowi" placeholder="np. „Mur mówi: nie ma sensu próbować, każdy normalny człowiek już dawno by sobie poradził""  rows="3"></textarea>
+
+    <div class="q-list">
+      <div class="q-item">Jak <strong>[Twoja nazwa]</strong> wpływa na Twoje ciało, myśli, relacje?</div>
+    </div>
+    <textarea class="thought-input" id="qWplyw" placeholder="np. „Ciało: ciężkie ramiona, sen za długi. Myśli: wszystko mi się kojarzy z porażką. Relacje: nie odpisuję na wiadomości""  rows="4"></textarea>
+
+    <div class="q-list">
+      <div class="q-item">Czego <strong>[Twoja nazwa]</strong> od Ciebie chce?</div>
+    </div>
+    <textarea class="thought-input" id="qChce" placeholder="np. „Chce, żebym została w łóżku, nie próbowała, nie dawała sobie szansy na rozczarowanie""  rows="3"></textarea>
+
+    <div class="q-list">
+      <div class="q-item">Kiedy <strong>[Twoja nazwa]</strong> jest najsilniejsza? A kiedy słabsza?</div>
+    </div>
+    <textarea class="thought-input" id="qKiedy" placeholder="np. „Najsilniejsza: niedziela wieczór, samotne wieczory, po nieudanej rozmowie. Słabsza: rano przy kawie, po spacerze, w towarzystwie siostry""  rows="4"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła traktowania jak postaci</strong>: pisz o swojej Bezradności tak, jakby była postacią — z głosem, planem, słabymi punktami. Im pełniejszy portret, tym łatwiej ją rozpoznać następnym razem, gdy się pojawi. Rozpoznanie jest pierwszym krokiem do nieautomatycznej reakcji.</div>
+
+    <div class="term-note"><strong>📌 Reguła dwóch stron</strong>: Bezradność <em>kiedyś</em> Cię chroniła — przed rozczarowaniem, przed wyczerpaniem, przed niemożliwym wymaganiem. Nie traktuj jej jak wroga, lecz jak gościa, który zbyt długo zajmuje Twój dom. To zmienia ton rozmowy z walki na negocjację.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Unique outcomes + list</div>
+    <h1 class="card-prompt">Znajdź <em>wyjątki</em> i napisz list do Bezradności</h1>
+    <p class="card-detail">Unique outcomes (White, 2007) to momenty, w których Bezradność nie wygrała — pomimo że próbowała. Każdy taki moment to dowód, że masz wpływ, choćby krótki, choćby drobny. Po wyjątkach piszesz list do Bezradności — sformalizowane przepowiedzenie nowej relacji.</p>
+
+    <textarea class="thought-input" id="wyjatekKiedy" placeholder="WYJĄTEK 1 — kiedy ostatnio Bezradność próbowała Cię przekonać, ale MIMO TO coś zrobiłeś/aś? np. „Wczoraj rano myślałam: nie ma sensu wstawać. Wstałam i poszłam na 10-minutowy spacer""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="wyjatekJak" placeholder="JAK Ci się to udało? Co Ci pomogło? np. „Pamiętałam, że spacer zwykle pomaga. Po prostu założyłam buty bez myślenia""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="wyjatekSwiadczy" placeholder="CO TO MÓWI o Tobie — że potrafisz odmówić Bezradności? np. „Że mam w sobie coś, co wybiera ruch nad bezruchem, nawet gdy słabe. Że potrafię zaufać doświadczeniu, nie tylko myślom""  rows="4"></textarea>
+
+    <div class="letter-box">
+      <strong>Droga [Bezradności]</strong>,<br>
+      Rozumiem, że kiedyś mnie chroniłaś — przed rozczarowaniem, przed wyczerpaniem, przed niemożliwym wymaganiem.<br><br>
+      Ale teraz kosztujesz mnie zbyt wiele. Zamierzam...
+    </div>
+
+    <textarea class="thought-input" id="listDo" placeholder="LIST DO BEZRADNOŚCI — własnymi słowami. np. „Droga Mgło, dziękuję, że kiedyś chroniłaś mnie przed wymaganiami, którym nie mogłam podołać. Teraz jednak chcę widzieć więcej niż mglistą zasłonę. Zamierzam zacząć krótkie spacery rano, niezależnie od pogody""  rows="6"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła „nie wojna, lecz negocjacja"</strong>: list nie jest manifestem walki („pokonam Cię, znikniesz!"). Bezradność rzadko znika — częściej zmienia rolę, schodzi z pierwszego planu, traci moc nad codziennością. List jest zaproszeniem do nowej relacji, nie wypowiedzeniem dotychczasowej.</div>
+
+    <div class="term-note"><strong>📌 Reguła wielu wyjątków</strong>: jeden unique outcome to anegdota; dziesięć — to nowa narracja. Po pierwszym znalezieniu spróbuj znaleźć cztery kolejne — z ostatnich tygodni, miesięcy, roku. Każdy wyjątek dokłada się do nowej historii o sobie, w której nie jesteś tylko ofiarą Bezradności.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja dystansu</div>
+    <h1 class="card-prompt">Sprawdź <em>dystans</em> od Bezradności</h1>
+    <p class="card-detail">Po nazwaniu, opisaniu, znalezieniu wyjątków i napisaniu listu — gdzie jesteś teraz na skali dystansu? Cel: spadek zlania (z kroku 2) o 1—3 punkty znaczy, że eksternalizacja zaczyna działać. Dystans nie znika z Bezradnością — buduje przestrzeń, w której pojawia się wybór.</p>
+
+    <div class="scale">
+      <div class="scale-title">Dystans PO ćwiczeniu — „Bezradność i ja jesteśmy osobno"</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełny dystans</span></div>
+      <input type="range" class="scale-input" id="dystansPo" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wartość</span><span id="dystansPoVal">6</span></div>
+    </div>
+
+    <div id="eksterDiff"></div>
+
+    <textarea class="thought-input" id="rytualEkster" placeholder="RYTUAŁ — kiedy będziesz wracać do listu i wyjątków? np. „Niedziela wieczór, 10 minut: dopisać jeden nowy wyjątek z tygodnia + przeczytać list""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="zdanieAutorskie" placeholder="JEDNO ZDANIE — krótka wersja nowej narracji, którą możesz powtórzyć, gdy Bezradność wróci. np. „Mgła wraca — i wraca też to, że potrafię mimo niej zrobić jeden krok""  rows="3"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: eksternalizacja działa przez powtarzanie. Wracaj do listu raz w tygodniu — czytaj, dopisuj wyjątki, aktualizuj stosunek do Bezradności. Po 4—8 tygodniach pojawia się różnica: Bezradność wciąż się zjawia, ale automatyczna reakcja „taka po prostu jestem" zostaje wyparta przez „Bezradność znów odwiedza, ale ja zostaję sprawczym/sprawczą".
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: pierwszy kontakt z eksternalizacją bywa dziwny — używanie nazwy własnej dla problemu początkowo brzmi sztucznie. Po 2—3 powrotach do języka („Mgła znów się pojawiła") staje się naturalny. Po 6—8 tygodniach to język wewnętrzny, który automatycznie tworzy dystans.</div>
+
+    <div class="term-note"><strong>📊 Reguła unique outcomes z czasem</strong>: po miesiącu prowadzenia listy wyjątków sprawdź, ile masz pozycji. Większość osób zaskakuje samą siebie — dziesięć i więcej momentów, w których Bezradność nie wygrała. Lista staje się dowodem rzeczowym przeciwko narracji „taka po prostu jestem".</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body"><strong>Osoba nie jest problemem — problem jest problemem.</strong> Bezradność nazywasz, opisujesz, znajdujesz wyjątki, piszesz list. <em>Dystans</em> tworzy przestrzeń, w której pojawia się sprawczość. To nie zabawa w słowa — to fundamentalna zmiana relacji z doświadczeniem.</div>
+    </div>
+
+    <div class="src">White i Epston (1990, Narrative Means to Therapeutic Ends) · White (2007, Maps of Narrative Practice) · Freedman i Combs (1996, Narrative Therapy) · Morgan (2000, What is Narrative Therapy?) · Vromans i Schweitzer (2011, Australian and New Zealand Journal of Family Therapy)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateEksterVals() {
+  ['zlanieRPzed','dystansPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderEksterDiff();
+}
+
+function renderEksterDiff() {
+  const a = document.getElementById('zlanieRPzed');
+  const b = document.getElementById('dystansPo');
+  const d = document.getElementById('eksterDiff');
+  if (!a || !b || !d) return;
+  const before = parseInt(a.value);
+  const after = parseInt(b.value);
+  // wzrost dystansu = pozytyw; przeciwstawiamy: zlanie (im niższe, tym lepsze)
+  // dystans (im wyższy, tym lepszy)
+  const sum = (10 - before) + after; // suma „zdrowych" wartości
+  d.innerHTML = '<div class="diff-list"><div class="diff-row"><strong>Dystans od Bezradności</strong><span class="diff-delta">zlanie ' + before + '/10, dystans ' + after + '/10</span></div></div>';
+}
+
+function onStepChange(step) {
+  if (step === 5) updateEksterVals();
+}
+
+function onReset() {
+  const d = document.getElementById('eksterDiff');
+  if (d) d.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_bezr_eksternalizacja — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_bezr_eksternalizacja";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updateEksterVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

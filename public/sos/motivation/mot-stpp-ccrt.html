@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wzorzec relacyjny CCRT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.ccrt-grid { display: grid; gap: 8px; margin: 12px 0; }
+.ccrt-card { padding: 12px 14px; border-radius: 12px; }
+.ccrt-w { background: rgba(184,197,168,0.18); border: 2px solid var(--sage-deep); }
+.ccrt-ro { background: rgba(201,165,114,0.14); border: 1px solid var(--warm); }
+.ccrt-rs { background: rgba(184,197,168,0.10); border: 1px solid var(--sage); border-left: 3px solid var(--sage); }
+.ccrt-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+.ccrt-w .ccrt-h { color: var(--sage-deep); }
+.ccrt-ro .ccrt-h { color: var(--warm); }
+.ccrt-rs .ccrt-h { color: var(--sage-deep); }
+.ccrt-name { font-weight: 600; font-size: 14px; color: var(--ink); display: block; margin-bottom: 4px; }
+.ccrt-text { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.ccrt-text strong { color: var(--ink); }
+.ccrt-text em { font-style: italic; }
+
+.story-box { background: rgba(184,197,168,0.10); border-radius: 10px; padding: 11px 13px; margin: 10px 0; font-size: 13px; line-height: 1.55; }
+.story-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.story-text strong { color: var(--ink); font-weight: 600; }
+
+.formula-box { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.formula-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.formula-text { font-size: 13.5px; line-height: 1.6; color: rgba(244,241,234,0.92); font-family: 'Fraunces', serif; font-style: italic; }
+.formula-text strong { color: var(--bg); font-weight: 600; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wzorzec relacyjny CCRT</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">CCRT — <em>niewidzialna mapa</em> Twoich relacji</h1>
+    <p class="card-detail">CCRT (Core Conflictual Relationship Theme; Luborsky, 1984) to powtarzający się wzorzec relacyjny składający się z trzech elementów: (1) <em>Życzenie</em> (Wish, W) — czego chcesz od innych lub od siebie; (2) <em>Reakcja innych</em> (Response from Other, RO) — jak <em>spodziewasz się</em>, że inni zareagują; (3) <em>Reakcja własna</em> (Response of Self, RS) — jak <em>Ty</em> reagujesz na spodziewaną reakcję innych. W kontekście motywacji: brak motywacji to często <em>Reakcja Własna</em> na <em>oczekiwaną</em> krytykę / odrzucenie / ignorowanie — „nie próbuję, bo i tak zostanę skrytykowany/a" (powtórzenie wzorca z dzieciństwa). Luborsky (1984): CCRT powtarza się w wielu relacjach — z rodzicami, partnerem, przyjaciółmi i z terapeutą (przeniesienie). Identyfikacja CCRT pozwala zrozumieć „logikę" bierności i przerwać automatyczne powtarzanie. Crits-Christoph i Luborsky (1998, Psychotherapy Research) wykazali, że formalne CCRT-LU (CCRT-Luborsky) ma wysoką trafność i powtarzalność: ten sam wzorzec wyłania się z 5—10 narracji relacyjnych klienta, niezależnie od tematu. Alexander i French (1946) wprowadzili pojęcie korektywnego doświadczenia emocjonalnego — w terapii klient otrzymuje <em>nową</em> Reakcję od Innego (terapeuty), która przerywa automatyczność CCRT.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary CCRT</div>
+      <div class="element-row">
+        <span class="element-icon">💭</span>
+        <span class="element-text"><strong>Życzenie (W)</strong> — autentyczna potrzeba: chcę uznania, autonomii, bliskości, akceptacji, pomocy. Życzenie nie jest „wadą"; jest podstawową siłą napędową w relacjach.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>Reakcja innych (RO)</strong> — <em>oczekiwana</em>, nie zawsze rzeczywista: krytykują, ignorują, kontrolują, odrzucają. Oczekiwanie ukształtowane przez wczesne doświadczenia uogólnia się na nowe relacje.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🐢</span>
+        <span class="element-text"><strong>Reakcja własna (RS)</strong> — automatyczna odpowiedź: wycofuję się, rezygnuję, staję się bierny/a, dostosowuję, atakuję. Tu siedzi blokada motywacji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔄</span>
+        <span class="element-text"><strong>Powtórzenie</strong> — CCRT pojawia się w różnych relacjach: z rodzicem, partnerem, szefem, terapeutą. Powtórzenie jest dowodem, że to <em>wzorzec</em>, nie reakcja na konkretną sytuację.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„CCRT to niewidzialna mapa relacji klienta — powtarzana setki razy, tak automatyczna, że nie jest widoczna. Gdy mapa zostaje nazwana, klient ma wybór: znowu robić to samo, czy tym razem inaczej."
+      <span class="frame-quote-attr">— Luborsky (1984, Principles of Psychoanalytic Psychotherapy)</span>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-h">📐 Formuła CCRT</div>
+      <div class="formula-text">„Pragnę <strong>[ŻYCZENIE]</strong>, ale spodziewam się, że inni <strong>[REAKCJA INNYCH]</strong>, więc <strong>[REAKCJA WŁASNA]</strong>."</div>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: bierność rzadko jest „lenistwem". W ujęciu CCRT bierność jest <em>Reakcją Własną</em> na oczekiwaną Reakcję Innych — logiczną odpowiedzią na nieświadome przewidywanie odrzucenia / krytyki. Przerwanie wzorca wymaga albo świadomego rozpoznania, albo <em>nowego</em> doświadczenia, w którym Reakcja Innego jest inna od oczekiwanej.</div>
+
+    <div class="term-note"><strong>📌 Reguła wielu relacji</strong>: CCRT identyfikuje się przez analizę 3—5 narracji z różnych relacji. Im więcej różnych kontekstów (rodzic, partner, szef, przyjaciel) ujawnia ten sam wzorzec, tym wyraźniejszy CCRT. Powtórzenie w wielu relacjach to <em>diagnostyczny</em> dowód wzorca.</div>
+
+    <div class="src">Luborsky (1984, Principles of Psychoanalytic Psychotherapy) · Luborsky i Crits-Christoph (1990, 1998, Understanding Transference) · Alexander i French (1946, Psychoanalytic Therapy, corrective emotional experience) · Crits-Christoph i wsp. (1988, Psychotherapy Research, CCRT-LU) · Levenson (2017, Time-Limited Dynamic Psychotherapy)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Trzy narracje relacyjne</div>
+    <h1 class="card-prompt">Opisz <em>trzy</em> sytuacje z różnych relacji</h1>
+    <p class="card-detail">Wybierz trzy konkretne sytuacje z różnych relacji — z rodzicem, partnerem, szefem, przyjacielem. Sytuacje, w których czułeś/aś, że coś nie idzie po Twojej myśli. Dla każdej zapisz krótko: czego chciałeś/aś, jak ta osoba zareagowała, co Ty wtedy zrobiłeś/aś. Po trzech narracjach pojawi się wzorzec.</p>
+
+    <div class="story-box">
+      <div class="story-h">Przykład — narracja</div>
+      <div class="story-text"><strong>Sytuacja</strong>: 3 lata temu poprosiłam męża o wsparcie w wyjeździe na konferencję. <strong>Czego chciałam</strong>: uznania, pomocy z dziećmi. <strong>Jak zareagował</strong>: westchnął, powiedział „znowu zostawiasz mnie z dziećmi". <strong>Co zrobiłam</strong>: zrezygnowałam z wyjazdu, „nie warto walczyć".</div>
+    </div>
+
+    <textarea class="thought-input" id="narracja1" placeholder="NARRACJA 1 — z relacji rodzicielskiej (wychowawca/opiekun) lub aktualnej z rodzicem. Konkret: czego chciałeś/aś, jak osoba zareagowała, co Ty wtedy zrobiłeś/aś. np. „Mama nie chwaliła moich osiągnięć w szkole. Chciałam uznania. Zauważała tylko oceny niższe niż 5. Przestałam jej pokazywać dziennik""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="narracja2" placeholder="NARRACJA 2 — z relacji bliskiej (partner / przyjaciel). np. „Pół roku temu poprosiłam partnera o pomoc w ważnej decyzji o pracy. Chciałam wsparcia. Powiedział: 'rób, jak chcesz'. Poczułam, że nie obchodzi go. Zrezygnowałam z propozycji pracy""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="narracja3" placeholder="NARRACJA 3 — z relacji zawodowej / publicznej. np. „W marcu poprosiłam szefa o feedback nt. mojego projektu. Chciałam uznania pracy. Odpowiedział krótko mailem: 'OK'. Poczułam, że to lekceważenie. Przestałam dzielić się pomysłami""  rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Świadomość wzorca relacyjnego PRZED — „rozumiem swój powtarzający się układ"</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="swiadomCcrtPrzed" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Wartość</span><span id="swiadomCcrtPrzedVal">3</span></div>
+    </div>
+
+    <div class="term-note"><strong>📊 Reguła „bez interpretacji"</strong>: w narracjach pisz <em>fakty</em> — co osoba zrobiła, co powiedziała, jak Ty zareagowałeś/aś. Nie pisz „celowo mnie skrzywdził" (to interpretacja). Pisz „nie odpowiedział na moją prośbę, wyszedł z pokoju" (fakt). Wzorzec wyłania się z faktów, nie z interpretacji.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Identyfikacja CCRT</div>
+    <h1 class="card-prompt">Zobacz <em>powtarzający</em> się wzorzec</h1>
+    <p class="card-detail">Przeczytaj swoje trzy narracje. Szukaj <em>powtarzania</em>: jakie życzenie wraca w każdej? Jaka oczekiwana / rzeczywista reakcja innych powtarza się? Jaka Twoja reakcja jest stała? Wzorzec zwykle ujawnia się natychmiast — to, co powtarza się w trzech sytuacjach, jest CCRT.</p>
+
+    <div class="ccrt-grid">
+      <div class="ccrt-card ccrt-w">
+        <div class="ccrt-h">💭 W — Życzenie</div>
+        <span class="ccrt-name">Czego chcę od innych?</span>
+        <div class="ccrt-text">Typowe: <strong>uznania</strong> („zauważ moją wartość"), <strong>autonomii</strong> („pozwól mi decydować"), <strong>bliskości</strong> („bądź obecny/a emocjonalnie"), <strong>opieki</strong> („pomóż mi"), <strong>akceptacji</strong> („pokochaj mnie taką, jaka jestem").</div>
+      </div>
+      <div class="ccrt-card ccrt-ro">
+        <div class="ccrt-h">⚡ RO — Reakcja innych</div>
+        <span class="ccrt-name">Co spodziewam się dostać?</span>
+        <div class="ccrt-text">Typowe: <strong>krytyka</strong>, <strong>ignorowanie</strong>, <strong>kontrola</strong>, <strong>odrzucenie</strong>, <strong>wykorzystanie</strong>, <strong>opuszczenie</strong>. Często ten sam temat, co reakcja kluczowych opiekunów w dzieciństwie.</div>
+      </div>
+      <div class="ccrt-card ccrt-rs">
+        <div class="ccrt-h">🐢 RS — Reakcja własna</div>
+        <span class="ccrt-name">Co ja wtedy robię?</span>
+        <div class="ccrt-text">Typowe: <strong>wycofanie</strong>, <strong>rezygnacja</strong>, <strong>bierność</strong>, <strong>dostosowanie</strong>, <strong>atak/krytyka</strong>, <strong>przesadne staranie</strong>. <em>Tu siedzi blokada motywacji</em>.</div>
+      </div>
+    </div>
+
+    <textarea class="thought-input" id="moaW" placeholder="MOJE ŻYCZENIE — co powtarza się w trzech narracjach? Jednym zdaniem, w pierwszej osobie. np. „Pragnę uznania mojej pracy / wartości""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="moaRO" placeholder="REAKCJA INNYCH — co spodziewam się dostać? np. „Spodziewam się, że inni zignorują albo skrytykują""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="moaRS" placeholder="MOJA REAKCJA — co ja wtedy robię? np. „Wycofuję się, rezygnuję, przestaję się dzielić""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="formula" placeholder="MOJA FORMUŁA CCRT — wpisz w formule. „Pragnę [...], ale spodziewam się, że inni [...], więc [...]." np. „Pragnę uznania mojej pracy, ale spodziewam się, że inni zignorują albo skrytykują, więc wycofuję się i przestaję się dzielić""  rows="4"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła „spodziewam się ≠ rzeczywiście dostaję"</strong>: kluczowe rozróżnienie. Reakcja Innych w CCRT to <em>oczekiwana</em> reakcja, nie zawsze rzeczywista. Często klient antycypuje krytykę i wycofuje się, zanim druga strona w ogóle zareaguje. Wycofanie potwierdza wzorzec — bo druga strona, nie dostając życzenia, nie ma okazji odpowiedzieć inaczej. CCRT samopodtrzymuje się.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Pochodzenie + alternatywna RS</div>
+    <h1 class="card-prompt">Skąd pochodzi wzorzec — i <em>jaka inna</em> Reakcja Własna jest możliwa?</h1>
+    <p class="card-detail">CCRT zwykle ma swoje pierwsze źródło w relacjach z opiekunami w dzieciństwie. Tam Reakcja Innych była <em>rzeczywista</em>, nie tylko oczekiwana — krytyka rodzica, ignorowanie potrzeby, kontrola. Dziecko wypracowało Reakcję Własną, która chroniła. W dorosłości Reakcja Innych jest często <em>inna</em>, ale automatyczne wycofanie nie pozwala tego sprawdzić. Świadome rozpoznanie pochodzenia + wybór alternatywnej Reakcji Własnej przerywa wzorzec.</p>
+
+    <textarea class="thought-input" id="pochodzenie" placeholder="POCHODZENIE — kto pierwszy reagował tak, jak Reakcja Innych w Twoim CCRT? Jakie miałeś/aś wtedy lat? np. „Mama. 7—10 lat. Gdy pokazywałam pracę, mówiła: 'no co, każdy by tak umiał'""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="czemuRS" placeholder="DLACZEGO ta Reakcja Własna była dziecięcym ratunkiem? Czego chroniła? np. „Wycofanie chroniło przed kolejnym ośmieszeniem. Jeśli nie pokazywałam, nie miała czego krytykować. Bezpieczniej""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="dorosli" properties="placeholder" placeholder="W DOROSŁYM ŻYCIU — czy Reakcja Innych jest <em>nadal</em> taka sama, czy się różni? Konkretnie. np. „Partner i szef NIE krytykują jak mama. Partner mówi 'rób, jak chcesz' (ignorowanie?) ale to często szacunek dla mojej autonomii. Szef 'OK' to nie krytyka — to zajętość""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="alternatywnaRS" placeholder="ALTERNATYWNA REAKCJA WŁASNA — co mogłabym/mógłbym zrobić zamiast wycofania? Konkret. np. „Zamiast wycofania: zapytać 'Co konkretnie myślisz o tym pomyśle?' — zamiast antycypować odpowiedź. Albo: 'Potrzebuję 5 min Twojej uwagi i konkretnej oceny'""  rows="5"></textarea>
+
+    <textarea class="thought-input" id="ryzyko" placeholder="RYZYKO — co najgorszego stanie się, jeśli wybiorę alternatywną RS? Czy to ryzyko jest większe niż dziecięce ryzyko krytyki mamy? np. „Najgorsze: partner powie 'nie mam teraz czasu'. To jest informacja, nie odrzucenie. Ryzyko mniejsze niż pamiętana krzywda dziecka""  rows="4"></textarea>
+
+    <div class="term-note"><strong>🔑 Reguła „dorosły kontekst, nie dziecięcy"</strong>: dziecko nie miało wyboru — Reakcja Innych była rzeczywiście krytyczna lub ignorująca. Dorosły ma wybór relacji i ma kompetencje sprawdzania, nie zakładania. Test rzeczywistości — sprawdzenie, jak <em>rzeczywiście</em> druga strona zareaguje, zamiast antycypować — jest formą korektywnego doświadczenia.</div>
+
+    <div class="term-note"><strong>📌 Reguła powiązania z motywacją</strong>: jeśli Twoja RS to wycofanie, brak motywacji w pracy / relacji / projekcie nie jest „lenistwem" — jest logiczną konsekwencją oczekiwania, że nie zostanie doceniony. Praca z CCRT to <em>nie</em> motywowanie siebie do wysiłku — to przerwanie automatyzmu wzorca przez świadome rozpoznanie i wybór alternatywy.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja świadomości</div>
+    <h1 class="card-prompt">Sprawdź <em>świadomość</em> wzorca po pracy</h1>
+    <p class="card-detail">Po zebraniu narracji, identyfikacji CCRT, rozpoznaniu pochodzenia i sformułowaniu alternatywnej Reakcji Własnej — gdzie jesteś teraz w skali świadomości wzorca? Cel: świadomość jest pierwszym krokiem. Wzorzec rozpoznawany w momencie traci automatyzm; alternatywne RS testowane w bezpiecznych relacjach (terapia, zaufana osoba) buduje nowe doświadczenie.</p>
+
+    <div class="scale">
+      <div class="scale-title">Świadomość wzorca relacyjnego PO ćwiczeniu</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="swiadomCcrtPo" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Wartość</span><span id="swiadomCcrtPoVal">6</span></div>
+    </div>
+
+    <div id="ccrtDiff"></div>
+
+    <textarea class="thought-input" id="eksperyment7" placeholder="EKSPERYMENT na ten tydzień — jedna sytuacja, w której świadomie wybierzesz alternatywną RS. Niewielka, bezpieczna. np. „Środa, prośba do partnera o pomoc z dziećmi w sobotę. Świadomie: nie wycofam się przy pierwszej oznace zmęczenia. Sprawdzę, co naprawdę powie""  rows="4"></textarea>
+
+    <textarea class="thought-input" id="rytualCcrt" placeholder="RYTUAŁ — kiedy będziesz wracać do CCRT? np. „Co tydzień, niedziela 19:00, 10 min: kiedy w tym tygodniu aktywował się wzorzec? Czy udało się wybrać alternatywę choć raz?""  rows="3"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: praca z CCRT jest długoterminowa. Pierwsze 4—6 tygodni: trening rozpoznania wzorca w retrospektywie. Tygodnie 7—12: rozpoznanie w momencie aktywacji, próby alternatywnej RS w bezpiecznych relacjach. Po 6—12 miesiącach pracy (najlepiej z terapeutą STPP) wzorzec staje się świadomym wyborem, nie automatyzmem. Pełna zmiana CCRT — przerzucenie ku „pragnę X, sprawdzam, co inni rzeczywiście oferują, działam adekwatnie" — jest pracą wieloletnią. Korektywne doświadczenie emocjonalne (Alexander, 1946) w terapii STPP, w której terapeuta odpowiada inaczej niż wczesny opiekun, jest centralnym mechanizmem zmiany.
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: świadomość wzorca po pierwszym ćwiczeniu zwykle wzrasta o 3—4 punkty — bo wzorzec, który wcześniej był „naturalny", teraz ma nazwę. Trwała zmiana automatyzmu wymaga 6—12 miesięcy świadomej praktyki, najlepiej w terapii. Każda nowa relacja, w której świadomie wybierasz alternatywną RS, jest mikroaktem korekty.</div>
+
+    <div class="term-note"><strong>📊 Reguła „przeniesienie w terapii"</strong>: CCRT pojawia się też w relacji z terapeutą — to przeniesienie. Klient antycypuje od terapeuty tę samą reakcję, której doświadczał wcześniej (krytyka, ignorowanie). Terapia STPP wykorzystuje to: gdy terapeuta odpowiada <em>inaczej</em> niż oczekiwana RO, klient otrzymuje korektywne doświadczenie. Nie naprawia historię — daje nową.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">CCRT to <strong>niewidzialna mapa</strong> Twoich relacji. Trzy elementy: <em>Życzenie (W) — Reakcja Innych (RO) — Reakcja Własna (RS)</em>. Bierność jest często RS na oczekiwaną krytykę. <em>Spodziewam się ≠ dostaję</em> — sprawdzanie zamiast antycypowania przerywa automatyzm. Korektywne doświadczenie emocjonalne (terapeuta, zaufana osoba) buduje nową historię.</div>
+    </div>
+
+    <div class="src">Luborsky (1984, Principles of Psychoanalytic Psychotherapy) · Luborsky i Crits-Christoph (1990, 1998, Understanding Transference) · Alexander i French (1946, Psychoanalytic Therapy) · Crits-Christoph i wsp. (1988, Psychotherapy Research) · Levenson (2017, Time-Limited Dynamic Psychotherapy) · Abbass (2015, Reaching Through Resistance)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateCcrtVals() {
+  ['swiadomCcrtPrzed','swiadomCcrtPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderCcrtDiff();
+}
+
+function renderCcrtDiff() {
+  const a = document.getElementById('swiadomCcrtPrzed');
+  const b = document.getElementById('swiadomCcrtPo');
+  const d = document.getElementById('ccrtDiff');
+  if (!a || !b || !d) return;
+  const delta = parseInt(b.value) - parseInt(a.value);
+  const sign = delta > 0 ? '+' : '';
+  const cls = delta < 0 ? ' neg' : '';
+  d.innerHTML = '<div class="diff-list"><div class="diff-row"><strong>Świadomość wzorca relacyjnego</strong><span class="diff-delta' + cls + '">' + a.value + ' → ' + b.value + ' (' + sign + delta + ')</span></div></div>';
+}
+
+function onStepChange(step) {
+  if (step === 5) updateCcrtVals();
+}
+
+function onReset() {
+  const d = document.getElementById('ccrtDiff');
+  if (d) d.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_stpp_ccrt — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_stpp_ccrt";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updateCcrtVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

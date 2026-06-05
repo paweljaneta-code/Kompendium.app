@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Rewiktymizacja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.mech-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+.mech-card:hover, .mech-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.mech-card.picked .mech-name, .mech-card.picked .mech-desc, .mech-card.picked .mech-tag { color: var(--bg) !important; }
+.mech-card.picked .mech-desc { color: rgba(244,241,234,0.9) !important; }
+.mech-tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage-deep); background: var(--bg); padding: 2px 8px; border-radius: 10px; margin-bottom: 6px; }
+.mech-name { font-size: 13px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 4px; }
+.mech-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.5; display: block; }
+
+.flag-row { background: rgba(184,197,168,0.12); border: 1px solid var(--sage); border-radius: 8px; padding: 9px 11px; margin-bottom: 5px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px; }
+.flag-row:hover, .flag-row.picked { background: rgba(168, 70, 70, 0.85); border-color: rgba(168, 70, 70, 0.85); }
+.flag-row .fr-mark { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--sage-deep); flex-shrink: 0; background: var(--bg); transition: all 0.2s; position: relative; }
+.flag-row.picked .fr-mark { background: var(--bg); border-color: var(--bg); }
+.flag-row.picked .fr-mark::after { content: '✓'; position: absolute; left: 1px; top: -4px; color: rgba(168, 70, 70, 1); font-weight: 800; font-size: 15px; }
+.flag-row.picked .fr-text { color: var(--bg) !important; }
+.fr-text { font-size: 13px; color: var(--ink); flex: 1; line-height: 1.4; }
+
+.kryzys-card { background: rgba(168, 70, 70, 0.10); border: 2px solid rgba(168, 70, 70, 0.55); border-radius: 10px; padding: 14px; margin: 12px 0; }
+.kryzys-h { font-size: 13px; font-weight: 700; color: rgba(168, 70, 70, 1); margin-bottom: 8px; letter-spacing: 0.04em; }
+.kryzys-line { font-size: 14px; color: var(--ink); line-height: 1.7; margin-bottom: 4px; }
+.kryzys-line strong { font-family: 'DM Mono', 'Roboto Mono', monospace; color: rgba(168, 70, 70, 1); font-size: 15px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Rewiktymizacja</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ====== KROK 1 — WPROWADZENIE ====== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Trauma się <em>powtarza</em> — i to nie jest Twoja wina</h1>
+    <p class="card-detail">Osoby z historią traumy dziecięcej mają statystycznie 2–3× wyższe ryzyko doświadczenia kolejnej wiktymizacji w dorosłości — przemocy seksualnej, fizycznej lub psychicznej (Classen, Palesh, Aggarwal 2005, meta-analiza). To nie jest „przyciąganie złych ludzi”, „magnes na toksyczność” ani „typ”. To mechanizm — biologiczny, relacyjny, schematyczny — i jest możliwy do przerwania.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery fakty o rewiktymizacji (Classen 2005; Walker 1979)</div>
+      <div class="element-row">
+        <span class="element-icon">📊</span>
+        <span class="element-text"><strong>Ryzyko 2–3×</strong> — meta-analiza 16 badań (Classen i in. 2005). Dotyczy zwłaszcza kobiet z historią przemocy seksualnej w dzieciństwie, ale obejmuje wszystkie typy wczesnej traumy interpersonalnej.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>To biologia, nie wybór</strong> — Porges (2011) opisuje osłabioną <em>neurocepcję</em>: układ nerwowy nieprawidłowo odczytuje sygnały bezpieczeństwa i zagrożenia po latach życia w dysregulacji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💔</span>
+        <span class="element-text"><strong>Trauma bonding</strong> — Walker (1979): cykl przemocy z fazami napięcia, wybuchu, „miodowego miesiąca”. <em>Intermittent reinforcement</em> tworzy najsilniejsze przywiązanie behawioralne (Skinner).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚫</span>
+        <span class="element-text"><strong>Wstyd społeczny pogarsza</strong> — komentarze typu „masz typ”, „jak mogłaś znowu” izolują i utrudniają wyjście. Stygmatyzacja zwiększa ryzyko, nie zmniejsza.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Rewiktymizacja nie jest pechowymi wyborami. Jest przewidywalnym, biologicznie ugruntowanym mechanizmem — i właśnie dlatego jest możliwa do przerwania, kiedy zostanie zrozumiana.”
+      <span class="frame-quote-attr">— Catherine Classen i in. (2005, parafraza)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: jeśli rozpoznajesz u siebie powtarzający się wzorzec toksycznych relacji — to <em>nie</em> dowód, że jesteś „uszkodzony/a”. To dowód, że Twój układ nerwowy nauczył się w dzieciństwie czegoś, czego nie powinien był się uczyć. Można nauczyć się od nowa — ale wymaga to świadomej pracy, nie samych dobrych intencji.</div>
+
+    <div class="src">Classen, Palesh, Aggarwal (2005, meta-analiza); Walker (1979, cycle of violence); Porges (2011, neurocepcja); Bowlby (1969, Internal Working Models); Russell (1986, pierwsza dokumentacja); Cloitre i in. (1997)</div>
+  </section>
+
+  <!-- ====== KROK 2 — MECHANIZMY ====== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Pięć mechanizmów</div>
+    <h1 class="card-prompt">Co <em>napędza</em> ten wzorzec?</h1>
+    <p class="card-detail">Zaznacz mechanizmy, które rozpoznajesz u siebie. To nie test ani diagnoza — to mapa, która pomaga zobaczyć, nad czym konkretnie pracować w terapii.</p>
+
+    <div class="mech-card" id="mecA" onclick="this.classList.toggle('picked')">
+      <span class="mech-tag">Bowlby 1969</span>
+      <span class="mech-name">🧬 Zniekształcone modele relacyjne (IWM)</span>
+      <span class="mech-desc">„Przemoc = norma”, „miłość = ból”, „bliskość = zagrożenie”. Internal Working Models powstają w dzieciństwie i przez lata działają jak niewidoczny szablon: to, co dla bezpiecznie przywiązanej osoby jest red flagą, dla Ciebie jest „zwykłą relacją”.</span>
+    </div>
+
+    <div class="mech-card" id="mecB" onclick="this.classList.toggle('picked')">
+      <span class="mech-tag">Porges 2011</span>
+      <span class="mech-name">🌫️ Numbing — wyciszone wykrywanie zagrożeń</span>
+      <span class="mech-desc">Chroniczna trauma uczy ciało odcinać sygnały dyskomfortu. „Czuję, że coś jest nie tak — ale nie wiem, czy to nienormalne, bo zawsze tak czuję.” Neurocepcja (Porges) — automatyczna ocena bezpieczeństwo/zagrożenie — działa wadliwie. Alarm wewnętrzny się nie włącza.</span>
+    </div>
+
+    <div class="mech-card" id="mecC" onclick="this.classList.toggle('picked')">
+      <span class="mech-tag">Young 2003</span>
+      <span class="mech-name">😞 Schemat „zasługuję” / defektywności</span>
+      <span class="mech-desc">„Na więcej nie zasługuję”, „nikt normalny mnie nie zechce”, „muszę się starać, żeby ktoś został”. Zinternalizowany wstyd działa jak filtr: odrzuca zdrowych partnerów (bo „za dobrzy”) i przyciąga tych, którzy potwierdzają samoocenę dnem.</span>
+    </div>
+
+    <div class="mech-card" id="mecD" onclick="this.classList.toggle('picked')">
+      <span class="mech-tag">Linehan 1993</span>
+      <span class="mech-name">🌪️ Dysregulacja emocji + instant intimacy</span>
+      <span class="mech-desc">Impulsywność w tworzeniu relacji („kocham po dwóch tygodniach”), trudność z kończeniem toksycznych relacji, wahania nastroju w relacji. Ciężko jest zatrzymać się i ocenić — wszystko dzieje się za szybko.</span>
+    </div>
+
+    <div class="mech-card" id="mecE" onclick="this.classList.toggle('picked')">
+      <span class="mech-tag">Walker 1979</span>
+      <span class="mech-name">💔 Trauma bonding (intermittent reinforcement)</span>
+      <span class="mech-desc">Partner czuły → przemocowy → czuły → przemocowy. Skinner pokazał, że nieregularna nagroda tworzy silniejsze przywiązanie niż stała. Mózg „czeka na powrót dobrego” — i przywiązuje się tym mocniej, im bardziej cykliczne są zachowania.</span>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła</strong>: te pięć mechanizmów <em>nakłada się</em>. Klientka po przemocy domowej często ma jednocześnie wszystkie pięć — IWM mówi „to normalne”, numbing tłumi alarm, schemat „zasługuję” utrudnia wyjście, dysregulacja przyspiesza wejście, trauma bonding zamyka koło. Praca terapeutyczna adresuje każdy z nich osobno (schema, STAIR, somatyczne, edukacja, sieć).</div>
+  </section>
+
+  <!-- ====== KROK 3 — RED FLAGS ====== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Red flags</div>
+    <h1 class="card-prompt">Konkretne <em>sygnały ostrzegawcze</em></h1>
+    <p class="card-detail">Zaznacz zachowania, które rozpoznajesz w obecnej lub przeszłej relacji. Trzy lub więcej zaznaczone = poważny sygnał, żeby porozmawiać z terapeutą lub zaufaną osobą o swojej sytuacji.</p>
+
+    <div class="flag-row" id="rfA" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Kontroluje, co robisz, z kim się spotykasz, jak wydajesz pieniądze.</span>
+    </div>
+
+    <div class="flag-row" id="rfB" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Izoluje od bliskich — sugeruje, że rodzina i znajomi „źle na Ciebie wpływają”.</span>
+    </div>
+
+    <div class="flag-row" id="rfC" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Zastrasza, podnosi głos, niszczy przedmioty, grozi (sobie albo Tobie).</span>
+    </div>
+
+    <div class="flag-row" id="rfD" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Poniża, wyśmiewa, mówi, że bez niego/niej sobie nie poradzisz.</span>
+    </div>
+
+    <div class="flag-row" id="rfE" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Gaslighting — przekonuje, że pamiętasz źle, że przesadzasz, że to Ty jesteś problemem.</span>
+    </div>
+
+    <div class="flag-row" id="rfF" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Love bombing na początku — szybka eskalacja intymności, „pokrewne dusze”, „nigdy nikogo tak nie kochałem/am”.</span>
+    </div>
+
+    <div class="flag-row" id="rfG" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Zazdrość prezentowana jako „dowód miłości” — sprawdzanie telefonu, śledzenie, wymaganie wyłączności kontaktów.</span>
+    </div>
+
+    <div class="flag-row" id="rfH" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Cykl: napięcie → wybuch → „miodowy miesiąc” → znowu napięcie.</span>
+    </div>
+
+    <div class="flag-row" id="rfI" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Po incydentach przemocy — przeprasza, obiecuje zmianę, daje prezenty, ale wzorzec wraca.</span>
+    </div>
+
+    <div class="flag-row" id="rfJ" onclick="this.classList.toggle('picked')">
+      <span class="fr-mark"></span>
+      <span class="fr-text">Naruszenia fizyczne — od „przypadkowego” chwytania po popychanie, uderzenia, wymuszenia seksualne.</span>
+    </div>
+
+    <div class="term-note"><strong>💡 Klucz interpretacji</strong>: nawet pojedynczy red flag z punktów 3, 5, 9 lub 10 to sygnał wystarczający. Reszta — kumulatywnie. Wzorzec, nie pojedyncze zdarzenie. Walker (2009) — kiedy te zachowania współwystępują, prawdopodobieństwo eskalacji w czasie wynosi ok. 70%. Nie czeka się, aż „samo się ułoży”.</div>
+  </section>
+
+  <!-- ====== KROK 4 — TWOJE PRAWA + REFLEKSJA ====== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Twoje prawa</div>
+    <h1 class="card-prompt">Co <em>Ci się należy</em> w każdej relacji?</h1>
+    <p class="card-detail">Lista praw bazowych — niezależnie od historii, błędów, „trudnego charakteru”. Jeśli partner systematycznie narusza którekolwiek z nich, to nie jest „trudna relacja” — to jest przemoc.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Prawa bazowe (Walker, Briere)</div>
+      <div class="element-row">
+        <span class="element-icon">🛡️</span>
+        <span class="element-text"><strong>Bezpieczeństwo fizyczne</strong> — bez popychania, uderzeń, gróźb, niszczenia rzeczy. Bez „nieumyślnego” chwytania, blokowania drzwi, niszczenia telefonu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💬</span>
+        <span class="element-text"><strong>Szacunek</strong> — bez poniżania, wyzwisk, wyśmiewania publicznie i prywatnie. Bez gaslightingu („nie pamiętasz”, „przesadzasz”).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚪</span>
+        <span class="element-text"><strong>Autonomia i kontakty</strong> — prawo do własnych przyjaciół, rodziny, pracy, hobby, własnych pieniędzy, własnego telefonu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛑</span>
+        <span class="element-text"><strong>Prawo do „nie”</strong> — w seksie, w decyzjach codziennych, w zobowiązaniach finansowych. „Nie” bez kary i bez negocjacji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚶</span>
+        <span class="element-text"><strong>Prawo do odejścia</strong> — bez zastraszania, „upolowania”, gróźb suicydalnych ze strony partnera. Bez „zniszczę cię w sądzie / przed dziećmi”.</span>
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px;"><strong>Refleksja własna</strong> — która z tych granic jest najczęściej naruszana w Twoim życiu (teraz lub historycznie)?</p>
+    <textarea class="thought-input" id="granica" placeholder="np. „Najczęściej autonomia — przez lata zgadzałam/em się na rezygnację z kontaktów z rodziną i przyjaciółmi.”" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:6px;"><strong>Co Cię trzyma</strong> w sytuacji, której nie chcesz? (To pytanie bez oceny — odpowiedź pomaga Ci i terapeucie zobaczyć, gdzie pracować.)</p>
+    <textarea class="thought-input" id="trzyma" placeholder="np. „Strach finansowy. Wstyd przed rodziną. Przekonanie, że sam/a tego chciał-am/em. Lęk przed reakcją partnera.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>⚙️ Mechanizm trzymania</strong>: Briere, Scott (2015) wskazują pięć typowych „kotwic” utrzymujących osobę w toksycznej relacji: zależność finansowa, dzieci, izolacja społeczna, schemat defektywności („sam/a tego chciał-am/em”), strach przed eskalacją po odejściu. Każda z tych kotwic jest <em>realna</em> — nie jest słabością. Każda wymaga osobnego planu. Plan bezpieczeństwa robi się z osobą zaufaną, nie samodzielnie.</div>
+  </section>
+
+  <!-- ====== KROK 5 — TERAPIA + KRYZYS ====== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Praca i wsparcie</div>
+    <h1 class="card-prompt">Jak <em>przerwać</em> wzorzec?</h1>
+    <p class="card-detail">Rewiktymizacja jest mechanizmem — i właśnie dlatego można nad nią pracować. Niżej: praca terapeutyczna w trzech warstwach + zasoby kryzysowe na teraz.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Trzy warstwy pracy terapeutycznej</div>
+      <div class="element-row">
+        <span class="element-icon">🪞</span>
+        <span class="element-text"><strong>Schema Therapy</strong> (Young 2003) — praca ze schematami defektywności, porzucenia, podporządkowania. Te schematy „przyciągają” do toksycznych relacji; ich modyfikacja zmienia filtr partnerów.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌿</span>
+        <span class="element-text"><strong>STAIR</strong> (Cloitre 2002) — Skills Training in Affective and Interpersonal Regulation. Konkretne umiejętności: rozpoznawanie własnych emocji, asertywność, kończenie szkodliwych interakcji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🤝</span>
+        <span class="element-text"><strong>Sieć społeczna</strong> — terapia grupowa C-PTSD jest wyjątkowo skuteczna w rewiktymizacji. Grupa pokazuje, że wzorzec jest <em>mechanizmem</em>, nie cechą osobistą — i daje korektywne doświadczenia relacyjne.</span>
+      </div>
+    </div>
+
+    <div class="kryzys-card">
+      <div class="kryzys-h">⚠️ Jeśli jesteś teraz w sytuacji przemocy:</div>
+      <div class="kryzys-line">Niebieska Linia — <strong>800 120 002</strong> (24/7, bezpłatnie, anonimowo).</div>
+      <div class="kryzys-line">Centrum Praw Kobiet — <strong>800 107 777</strong> (pn–pt 10–16).</div>
+      <div class="kryzys-line">Telefon Zaufania dla Dzieci i Młodzieży — <strong>116 111</strong>.</div>
+      <div class="kryzys-line">W bezpośrednim zagrożeniu — <strong>112</strong> lub <strong>997</strong>.</div>
+    </div>
+
+    <div class="term-note"><strong>📐 Plan ochronny</strong> — gdy decydujesz się odejść, nie robisz tego samodzielnie. Plan ułożony z osobą zaufaną lub specjalistą Niebieskiej Linii zawiera: bezpieczne miejsce (rodzina, przyjaciel, schronisko), dokumenty (dowód, akt urodzenia dziecka, dokumenty finansowe — kopia u zaufanej osoby), niewielkie środki finansowe ukryte, plan komunikacyjny, dane prawnika lub punktu pomocy. Najbardziej niebezpieczny moment relacji przemocowej to moment odejścia — Walker (2009): tu rośnie ryzyko eskalacji.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Rewiktymizacja = <strong>mechanizm, nie wybór</strong>. Mechanizm: zniekształcone IWM + numbing + schemat „zasługuję” + dysregulacja + trauma bonding. Rozpoznanie wzorca to pierwszy krok. Praca: schema, STAIR, sieć, plan ochronny. Wstyd nie chroni — chroni zrozumienie, terapia i zaufana osoba obok.</div>
+    </div>
+
+    <div class="src">Classen, Palesh, Aggarwal (2005, meta-analiza); Walker (1979, 2009, cycle of violence); Porges (2011); Bowlby (1969, IWM); Young (2003, Schema Therapy); Cloitre (2002, STAIR); Briere, Scott (2015); Coid i in. (2001); Russell (1986)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_rewiktymizacja_cptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_rewiktymizacja_cptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

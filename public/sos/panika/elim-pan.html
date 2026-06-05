@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Eliminacja zabezpieczeń</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.detect-card { padding: 12px 14px; background: rgba(255,255,255,0.5); border: 1px solid var(--sage); border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+.detect-card:hover, .detect-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.detect-card .dc-q { font-weight: 700; font-size: 13.5px; color: var(--ink); margin-bottom: 4px; }
+.detect-card .dc-ex { font-size: 12px; color: var(--ink-mute); line-height: 1.4; font-style: italic; }
+.detect-card.picked .dc-q, .detect-card.picked .dc-ex { color: var(--bg) !important; }
+.detect-card.picked .dc-ex { color: rgba(244,241,234,0.85) !important; }
+
+.illusion-card { padding: 14px 16px; background: rgba(28,38,32,0.95); color: var(--bg); border-radius: 12px; margin: 10px 0 14px; }
+.illusion-card .ic-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+.illusion-card .ic-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--bg); line-height: 1.5; margin-bottom: 8px; padding-left: 10px; border-left: 2px solid var(--warm); }
+.illusion-card .ic-test { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.5; }
+.illusion-card .ic-test strong { color: var(--bg); font-weight: 600; }
+
+.weekly-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 14px; }
+.wg-cell { padding: 10px 12px; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 8px; }
+.wg-cell .wg-h { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 700; color: var(--sage-deep); margin-bottom: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+.wg-cell .wg-task { font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); margin-bottom: 6px; }
+.wg-cell input[type="text"] { width: 100%; padding: 6px 8px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(255,255,255,0.7); font-family: inherit; font-size: 12px; color: var(--ink); }
+.wg-cell input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.diag-q { padding: 12px 14px; margin-bottom: 6px; background: rgba(184,197,168,0.18); border-radius: 10px; border-left: 3px solid var(--sage-deep); }
+.diag-q .dq-q { font-size: 13px; color: var(--ink); font-weight: 600; margin-bottom: 4px; line-height: 1.45; }
+.diag-q .dq-q em { color: var(--warm); font-style: italic; }
+.diag-q .dq-foot { font-size: 11.5px; color: var(--ink-soft); line-height: 1.4; font-style: italic; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Eliminacja zabezpieczeń</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Zachowania zabezpieczające — <em>fałszywe alibi</em></h1>
+  <p class="card-detail">Zachowania zabezpieczające (safety behaviours) to działania w obawie przed katastrofą — krótkoterminowa ulga, długoterminowo utrzymanie lęku. Koncepcję wprowadził Salkovskis (1991), obserwując, że pacjenci „wykonujący ekspozycję" nie poprawiali się, jeśli stosowali subtelne zabezpieczenia. Salkovskis i in. (1999) pokazali to w randomizowanym badaniu — terapia poznawczo-behawioralna (CBT — Cognitive Behavioural Therapy) <em>z</em> zabezpieczeniami daje połowiczny efekt.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery prawdy o zachowaniach zabezpieczających</div>
+    <div class="element-row">
+      <span class="element-icon">💊</span>
+      <span class="element-text"><strong>Krótka ulga, długie utrzymanie</strong> — ulga jest natychmiastowa, koszt jest długoterminowy.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👻</span>
+      <span class="element-text"><strong>Często niewidoczne</strong> — pacjent nie zgłasza ich spontanicznie. Trzeba je <em>wyśledzić</em>.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Fałszywe alibi</strong> — „przeżyłem dzięki lekowi" zamiast „przeżyłbym też bez".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🚪</span>
+      <span class="element-text"><strong>Brama do uczenia się</strong> — bez ich usunięcia ekspozycja jest połowiczna, a terapia stoi w miejscu.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Atrybucja przeżycia do zabezpieczenia blokuje aktualizację przekonania. Mózg ma »wyjaśnienie« — i nie musi rewidować strachu".
+    <span class="frame-quote-attr">— Salkovskis (1991, „The importance of behaviour in the maintenance of anxiety and panic")</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: zachowanie staje się zabezpieczające przez <em>intencję</em>, nie przez czynność. Picie wody dla nawodnienia — neutralne. Picie wody „żebym nie udusił się w panice" — zabezpieczenie. Sprawdź <em>cel</em>, nie działanie. Ta sama czynność może być w jednym kontekście zdrowa, w innym — patogenna.</div>
+
+  <div class="src">Salkovskis (1991, „The importance of behaviour in the maintenance of anxiety and panic", Behavioural Psychotherapy); Salkovskis i in. (1999); Wells (1997); Telch i in. (2004); Clark (1999); NICE (2011) CG113.</div>
+</section>
+
+<!-- ============== KROK 2 — Wykrywanie ukrytych ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Wykrywanie</div>
+  <h1 class="card-prompt">Pytania <em>diagnostyczne</em> dla niewidocznych SB</h1>
+  <p class="card-detail">Pacjenci typowo zgłaszają 1–2 zabezpieczenia (lek, telefon), choć używają 5–10. Reszta jest niewidoczna — działa odruchowo. Salkovskis (1991) wskazał, że trzeba je <em>aktywnie</em> wyłapywać. Sześć pytań diagnostycznych — odpowiedz na każde.</p>
+
+  <div class="diag-q">
+    <div class="dq-q">1. Co <em>masz przy sobie</em> wychodząc z domu?</div>
+    <div class="dq-foot">Lek, telefon, butelka wody, słuchawki, woreczek z tabletkami glukozy, naładowany powerbank?</div>
+  </div>
+  <div class="diag-q">
+    <div class="dq-q">2. <em>Gdzie siadasz</em> w kinie, restauracji, autobusie?</div>
+    <div class="dq-foot">Przy wyjściu? Z dostępem do drzwi? Z widokiem na okno?</div>
+  </div>
+  <div class="diag-q">
+    <div class="dq-q">3. Czy <em>sprawdzasz</em> coś w trakcie sytuacji?</div>
+    <div class="dq-foot">Tętno, oddech, telefon (czy jest sygnał), gdzie jest najbliższa apteka, godzina?</div>
+  </div>
+  <div class="diag-q">
+    <div class="dq-q">4. Czy <em>kogoś informujesz</em> o swoich planach?</div>
+    <div class="dq-foot">„Idę do sklepu, jeśli za 30 min nie wrócę, zadzwoń"? SMS przed wyjściem? Lokalizacja udostępniana?</div>
+  </div>
+  <div class="diag-q">
+    <div class="dq-q">5. Czego <em>unikasz</em>, żeby „nie sprowokować"?</div>
+    <div class="dq-foot">Kawa, alkohol, intensywny wysiłek, sauna, sceny grozy w filmach, ostre potrawy?</div>
+  </div>
+  <div class="diag-q">
+    <div class="dq-q">6. Co <em>robisz w trakcie</em> sytuacji, by „nie myśleć"?</div>
+    <div class="dq-foot">Słuchawki, telefon, scrollowanie, modlitwy, liczenie, fokus na zadaniu?</div>
+  </div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Twoja lista wykrytych SB</strong> — wszystko, co przyszło Ci do głowy:</p>
+  <textarea class="thought-input" id="myList" placeholder="np. „1. ksanaks w kieszeni; 2. siedzenie przy drzwiach w kinie; 3. sprawdzanie tętna co 10 min; 4. SMS do męża przed sklepem; 5. unikanie kawy po 12:00; 6. słuchawki w autobusie""></textarea>
+
+  <div class="term-note"><strong>📌 Wskazówka</strong>: Salkovskis (1991) — pytaj <em>nie</em> „jak poszło?", <em>tylko</em> <em>„co dokładnie zrobiłeś?"</em>, <em>„co miałeś przy sobie?"</em>, <em>„gdzie siedziałeś?"</em>. Pierwsza forma daje gładką narrację, druga odsłania ukryte zabezpieczenia.</div>
+</section>
+
+<!-- ============== KROK 3 — Iluzja ochrony ============== -->
+<section class="card" data-z="3" data-step="3">
+  <div class="card-eyebrow">🧭 Iluzja ochrony</div>
+  <h1 class="card-prompt">„Miałem lek <em>i</em> nie dostałem ataku"</h1>
+  <p class="card-detail">Najczęstsza atrybucja: pacjent przypisuje brak katastrofy zabezpieczeniu, mimo że w 99% sytuacji katastrofa i tak by się nie wydarzyła. Iluzja jest mocna, bo wzmacnia ją każde „bezpieczne" zakończenie. Test danych zwykle ją obala.</p>
+
+  <div class="illusion-card">
+    <div class="ic-h">Typowa iluzja</div>
+    <div class="ic-quote">„Lek w torebce <strong>działa profilaktycznie</strong>. Gdy go mam — nie dostaję ataku. Gdy nie mam — boję się".</div>
+    <div class="ic-test"><strong>Test danych:</strong> przez 2 tygodnie odnotowuj sytuacje. <strong>Z lekiem:</strong> ile sytuacji, ile ataków? <strong>Bez leku:</strong> ile sytuacji, ile ataków? Procent zwykle <em>identyczny</em>. Lek niczego nie chroni — chroni przekonanie o lekach.</div>
+  </div>
+
+  <div class="illusion-card">
+    <div class="ic-h">Druga typowa iluzja</div>
+    <div class="ic-quote">„Telefon w ręku <strong>uratuje mnie</strong>, gdyby coś się stało".</div>
+    <div class="ic-test"><strong>Test logiczny:</strong> ile razy w ostatnim roku zadzwoniłeś z autobusu na 112? Ile razy <em>realnie</em> potrzebowałeś interwencji medycznej z autobusu? Zwykle 0. Telefon <em>nie</em> uratuje, bo nie ma czego ratować.</div>
+  </div>
+
+  <div class="illusion-card">
+    <div class="ic-h">Trzecia typowa iluzja</div>
+    <div class="ic-quote">„Bez męża/żony <strong>sparaliżowałbym się</strong> w sklepie".</div>
+    <div class="ic-test"><strong>Test eksperymentalny:</strong> wejdź sam w 3 sytuacje z hierarchii. Ile razy się sparaliżowałeś? Najczęściej 0. Bliska osoba uspokaja, ale nie jest <em>warunkiem</em> przeżycia.</div>
+  </div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Twoja iluzja</strong> — które zabezpieczenie ma najsilniejszy „magiczny" status?</p>
+  <textarea class="thought-input" id="myIllusion" placeholder="np. „Wierzę, że bez ksanaksu w kieszeni nie wytrzymam pełnego dnia w pracy. Bez leku spodziewam się dwóch ataków dziennie""></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm iluzji</strong>: zabezpieczenia działają na zasadzie <em>fałszywej koniunkcji</em>. Pacjent obserwuje: „mam lek + nie ma ataku", interpretuje: „lek powoduje brak ataku". Brakuje grupy kontrolnej („bez leku, też nie ma ataku"). Test 2-tygodniowy dostarcza tej grupy.</div>
+</section>
+
+<!-- ============== KROK 4 — Hierarchia eliminacji ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan eliminacji</div>
+  <h1 class="card-prompt">Tydzień po tygodniu — <em>jedno na raz</em></h1>
+  <p class="card-detail">Salkovskis i in. (1999): jedno zabezpieczenie naraz, od najłatwiejszego. Próba usunięcia kilku jednocześnie zwykle kończy się porażką i cofnięciem. Plan na pierwsze 4 tygodnie:</p>
+
+  <div class="weekly-grid">
+    <div class="wg-cell">
+      <div class="wg-h">Tydzień 1 — najłatwiejsze</div>
+      <div class="wg-task">SUDS przy myśli o porzuceniu ~30–40. Coś, czego „prawie" nie używasz.</div>
+      <input type="text" id="wk1" placeholder="np. „Sprawdzanie objawów w internecie"">
+    </div>
+    <div class="wg-cell">
+      <div class="wg-h">Tydzień 2 — łatwo-średnie</div>
+      <div class="wg-task">SUDS ~40–50. Coś codziennego, ale niekrytycznego.</div>
+      <input type="text" id="wk2" placeholder="np. „Telefon w torbie, nie w dłoni"">
+    </div>
+    <div class="wg-cell">
+      <div class="wg-h">Tydzień 3 — średnie</div>
+      <div class="wg-task">SUDS ~50–65. Wymaga już realnej odwagi.</div>
+      <input type="text" id="wk3" placeholder="np. „Siadanie w środku rzędu w kinie"">
+    </div>
+    <div class="wg-cell">
+      <div class="wg-h">Tydzień 4 — średnio-trudne</div>
+      <div class="wg-task">SUDS ~60–75. Większa zmiana stylu.</div>
+      <input type="text" id="wk4" placeholder="np. „Jedna kawa dziennie, obserwacja kołatania"">
+    </div>
+  </div>
+
+  <p class="card-detail" style="margin-top:6px"><strong>Najtrudniejsze (poza tym tygodniem)</strong> — zwykle leki doraźne, towarzysz. Ostatnie w hierarchii. Wymaga przygotowania:</p>
+  <textarea class="thought-input" id="myHardest" placeholder="np. „Wyjście z domu bez ksanaxu w torebce — najpierw obniżenie częstości zażywania, potem odstawienie z torebki, w konsultacji z lekarzem""></textarea>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Pytania kontrolne po sesji</strong> — zaznacz, które będziesz sobie zadawać (nie pytania „jak poszło", tylko diagnostyczne):</p>
+  <div class="example-chips">
+    <button class="example-chip" id="q1" onclick="togQ('q1')">Co dokładnie miałem przy sobie?</button>
+    <button class="example-chip" id="q2" onclick="togQ('q2')">Gdzie siedziałem / stałem?</button>
+    <button class="example-chip" id="q3" onclick="togQ('q3')">Co sprawdzałem w trakcie?</button>
+    <button class="example-chip" id="q4" onclick="togQ('q4')">Czy zastąpiłem zabezpieczenie innym?</button>
+    <button class="example-chip" id="q5" onclick="togQ('q5')">Czy używałem dystrakcji?</button>
+    <button class="example-chip" id="q6" onclick="togQ('q6')">Co było moją prognozą? Co się realnie stało?</button>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka zamiany</strong>: pacjent „udaje" porzucenie SB, ale zastępuje innym. Odstawił ksanaks, wziął wodę z cukrem. Odstawił telefon, przeniósł smycz na rękę. Każda zamiana to forma zachowania zabezpieczającego. Cel: <em>brak</em> zabezpieczenia, nie inne zabezpieczenie.</div>
+</section>
+
+<!-- ============== KROK 5 — Przegląd po 4 tygodniach ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po 4 tygodniach</div>
+  <h1 class="card-prompt">Przegląd <em>liczbowy</em> i wniosek</h1>
+  <p class="card-detail">Po 4 tygodniach systematycznej eliminacji przejrzyj zapisy. Trzy miary pokazują, czy proces działa: liczba używanych SB, częstość ataków, ogólny lęk antycypacyjny.</p>
+
+  <div class="examples-h">Twoje obserwacje po 4 tygodniach</div>
+  <div class="example-chips">
+    <button class="example-chip" id="o1" onclick="togO('o1')">Liczba używanych SB spadła o ≥30%</button>
+    <button class="example-chip" id="o2" onclick="togO('o2')">Częstość ataków NIE wzrosła (jak się obawiałem)</button>
+    <button class="example-chip" id="o3" onclick="togO('o3')">Lęk antycypacyjny obniżył się</button>
+    <button class="example-chip" id="o4" onclick="togO('o4')">Pojawiły się subtelne zamiany — wyłapuję je</button>
+    <button class="example-chip" id="o5" onclick="togO('o5')">Pytania diagnostyczne stały się rutyną</button>
+    <button class="example-chip" id="o6" onclick="togO('o6')">Mam dane podważające iluzję ochrony</button>
+  </div>
+
+  <p class="card-detail" style="margin-top:8px"><strong>Twój wniosek po 4 tygodniach</strong>:</p>
+  <textarea class="thought-input" id="conclusion" placeholder="np. „Odstawiłem 4 z 8 zabezpieczeń. Częstość ataków bez zmian — czyli zabezpieczenia niczego nie chroniły. Najtrudniejsze (lek doraźny) zostawiam na fazę utrwalenia""></textarea>
+
+  <div class="scale">
+    <div class="scale-label"><span>Pewność, że zabezpieczenia nie są <em>warunkiem</em> przeżycia</span></div>
+    <input type="range" min="0" max="100" value="70" class="scale-input" id="convE" data-default="70" oninput="document.getElementById('convER').textContent=this.value+'%'">
+    <div class="scale-readout"><span>0%</span><span id="convER">70%</span><span>100%</span></div>
+  </div>
+
+  <div class="final-msg">Eliminacja zachowań zabezpieczających to <strong>proces ciągły</strong>, nie jednorazowy. Trwa przez całą terapię i często przez pierwszy rok po niej. Subtelne zabezpieczenia wracają spontanicznie — pytania diagnostyczne („co dokładnie miałem przy sobie?") stają się stałym narzędziem, nawet po terapii.</div>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: jeśli po 4 tygodniach nie widać redukcji liczby SB, sprawdź: (1) czy zabezpieczenia ukryte zostały zidentyfikowane (pytania diagnostyczne), (2) czy nie nastąpiła zamiana jednego na drugie, (3) czy hierarchia zaczyna się od najłatwiejszego (a nie od leku doraźnego). Jeden z tych trzech warunków zwykle jest naruszony.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Zachowanie zabezpieczające to <strong>fałszywe alibi</strong> — daje katastroficznemu przekonaniu „wyjaśnienie" („przeżyłem dzięki lekowi"), więc mózg nie musi go aktualizować. Bez alibi przekonanie <em>musi</em> zostać zrewidowane. Eliminacja: jedno na raz, hierarchicznie, bez zamiany, z pytaniami diagnostycznymi.</div>
+  </div>
+
+  <div class="src">Salkovskis (1991, „The importance of behaviour in the maintenance of anxiety and panic", Behavioural Psychotherapy); Salkovskis i in. (1999, Behaviour Research and Therapy); Wells (1997, „Cognitive Therapy of Anxiety Disorders"); Clark (1999); Telch i in. (2004); Craske i Barlow (2007, MAP-4); NICE (2011) CG113.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function togQ(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+function togO(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('picked');
+}
+
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(el => el.classList.remove('picked'));
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_elim_pan — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_elim_pan";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

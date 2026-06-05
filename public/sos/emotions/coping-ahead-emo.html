@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Cope Ahead</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.step-card { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); border-radius: 8px; padding: 11px 14px; margin: 7px 0; cursor: pointer; transition: all 0.2s; font-size: 13px; line-height: 1.55; }
+.step-card:hover, .step-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.step-card .sc-h { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); margin-bottom: 4px; font-size: 14px; }
+.step-card:hover .sc-h, .step-card.picked .sc-h { color: var(--bg); }
+.step-card .sc-num { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--sage-deep); color: var(--bg); font-weight: 600; font-size: 12px; margin-right: 8px; }
+.step-card.picked .sc-num { background: var(--bg); color: var(--sage-deep); }
+.skill-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.skill-chip { background: rgba(184,197,168,0.16); border: 1px solid var(--sage); color: var(--ink); padding: 5px 10px; border-radius: 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.skill-chip:hover, .skill-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.viz-box { background: linear-gradient(135deg, rgba(184,197,168,0.22), rgba(124,156,118,0.12)); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 13px; line-height: 1.55; }
+.viz-box .vb-h { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); margin-bottom: 4px; font-size: 14px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Cope Ahead</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Przygotuj się <em>zanim sytuacja przyjdzie</em></h1>
+  <p class="card-detail">Cope Ahead — umiejętność z DBT (Linehan 2014, 2015, <em>DBT Skills Training Manual</em>) — to mentalne planowanie i przećwiczenie radzenia z trudną emocjonalnie sytuacją <em>zanim ona zaistnieje</em>. Łączy elementy CBT (problem solving), psychologii sportu (mental rehearsal — wizualizacja motoryczna i emocjonalna) i mindfulness. Mózg traktuje wizualizację częściowo jak rzeczywiste doświadczenie (Driskell, Copper & Moran 1994, meta-analiza — mentalna praktyka daje ok. 60% efektu fizycznej praktyki).</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Pięć kroków cope ahead (Linehan 2015)</div>
+    <div class="element-row">
+      <span class="element-icon">📅</span>
+      <span class="element-text"><strong>1. Zidentyfikuj sytuację</strong> — konkretną, przyszłą, emocjonalnie trudną. Spotkanie z teściową, prezentacja, rozmowa o pieniądzach, powrót do domu po terapii. Im bliższa i bardziej konkretna, tym lepiej.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>2. Zidentyfikuj emocje i impulsy</strong>, które się pojawią. Lęk, złość, wstyd. Impulsy: ucieczka, atak, milczenie, sięgnięcie po telefon, alkohol. Bez tej diagnozy plan jest abstrakcyjny.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🛠️</span>
+      <span class="element-text"><strong>3. Wybierz konkretne umiejętności (skills)</strong>, które zastosujesz. Z listy DBT lub innych: oddech, walidacja, NVC, distress tolerance, mindfulness. Każdej trudnej emocji przypisz narzędzie.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎬</span>
+      <span class="element-text"><strong>4. Zwizualizuj — pełna scena</strong> z włączonymi umiejętnościami. Co się dzieje, jak się czujesz, jak reagujesz, co mówisz, co robi ciało. Pełna sensoryka — wizualnie, audytywnie, somatycznie.</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Mózg, który już raz przećwiczył sytuację mentalnie, w realnej sytuacji ma dostęp do gotowego planu — a nie tylko do paniki."
+    <span class="frame-quote-attr">— Marsha Linehan (2015, DBT Skills Training Manual)</span>
+  </div>
+  
+  <div class="term-note"><strong>🔑 Klucz</strong>: cope ahead jest <em>profilaktyką poznawczo-emocjonalną</em>, nie magią. Nie zapobiega trudnościom — przygotowuje na nie. Sportowcy używają wizualizacji od dekad (Holmes & Collins 2001, PETTLEP model: physical, environment, task, timing, learning, emotion, perspective). DBT zaadaptowało to dla regulacji emocji — najsilniej działa, gdy łączysz <em>plan poznawczy + wyobraźnię sensoryczną</em>.</div>
+  
+  <div class="term-note"><strong>📐 Implementation intentions</strong> (Gollwitzer 1999) — szczegółowe plany w formacie <em>„jeśli zauważę X, zrobię Y"</em> mają około 2—3 razy większą szansę realizacji niż ogólne intencje („będę spokojny/a"). Cope ahead jest praktycznym zastosowaniem tej zasady — z dodatkową warstwą wizualizacji somatyczno-emocjonalnej. Najsilniejsze, gdy plan jest tak konkretny, że nie wymaga decyzji w sytuacji.</div>
+  
+  <div class="src">Linehan (2014, 2015), <em>DBT Skills Training Manual</em>, wyd. 2 · Driskell, Copper & Moran (1994), meta-analiza mental practice · Gollwitzer (1999), implementation intentions · Holmes & Collins (2001), PETTLEP model · Neacsiu, Bohus & Linehan (2014), DBT skills</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Identyfikacja sytuacji</div>
+  <h1 class="card-prompt">Co <em>nadchodzi</em>?</h1>
+  <p class="card-detail">Wybierz konkretną sytuację z najbliższych 24—72 godzin (lub dłużej, jeśli masz miesiąc na przygotowanie). Im bliższa, tym mocniejszy efekt; ale też wymagana większa szczegółowość.</p>
+  
+  <textarea class="thought-input" id="sytA" placeholder="Sytuacja: kiedy, gdzie, kto, w jakich warunkach. np. „W niedzielę o 14:00 obiad u rodziców. Będzie mama, tata, brat z żoną. Mama prawdopodobnie zacznie temat naszego ślubu i pieniędzy."" rows="4"></textarea>
+  
+  <textarea class="thought-input" id="celA" placeholder="Jaki jest twój cel w tej sytuacji? np. „Wytrzymać 3 godziny bez wybuchu, bez wycofania, bez pijaństwa. Zachować podmiotowość, ale nie eskalować."" rows="3"></textarea>
+  
+  <div class="scale">
+    <div class="scale-title">Lęk antycypacyjny przed sytuacją (start)</div>
+    <div class="scale-bounds"><span>(0 — żaden)</span><span>(10 — bardzo silny)</span></div>
+    <input type="range" class="scale-input" id="lekA" min="0" max="10" step="1" value="7" data-default="7">
+    <div class="scale-readout"><span>Skala</span><span id="lekAval">7</span></div>
+  </div>
+  
+  <div class="term-note"><strong>📌 Reguła specyficzności</strong>: ogólne sytuacje („spotkania rodzinne") nie pozwalają na konkretny plan. Wybierz <em>jedną konkretną sytuację</em> — najlepiej taką, której datę i miejsce już znasz. „Niedzielny obiad u rodziców 17 listopada o 14:00" działa lepiej niż „spotkania rodzinne ogólnie".</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Mapa emocji + skili</div>
+  <h1 class="card-prompt">Co się <em>pojawi</em>? Co <em>zastosujesz</em>?</h1>
+  <p class="card-detail">Dwa pytania razem. Najpierw zidentyfikuj emocje i impulsy. Potem przypisz każdej konkretne narzędzia.</p>
+  
+  <div class="step-card" id="sA" onclick="pickSkill('A')">
+    <div class="sc-h"><span class="sc-num">1</span>Mapa emocji</div>
+    <div>Co najprawdopodobniej poczujesz? (Lęk, złość, wstyd, smutek, mieszanka.) Jakie impulsy mogą się pojawić? (Atak, ucieczka, milczenie, łzy, sięgnięcie po telefon/alkohol.)</div>
+  </div>
+  
+  <textarea class="thought-input" id="emoMapaA" placeholder="np. „W połowie obiadu prawdopodobnie złość — gdy mama zaczyna temat pieniędzy. Potem wstyd i poczucie bezsilności. Impuls: atak słowny w stronę mamy lub wycofanie do kuchni z butelką."" rows="4"></textarea>
+  
+  <div class="step-card" id="sB" onclick="pickSkill('B')">
+    <div class="sc-h"><span class="sc-num">2</span>Wybór umiejętności</div>
+    <div>Dla każdej trudnej emocji/impulsu wybierz konkretne narzędzie. Z DBT, ACT, CBT — to, co umiesz.</div>
+  </div>
+  
+  <div class="skill-row">
+    <button class="skill-chip" id="sC1" onclick="pickSkill('C1')">🌬️ Oddech 4-7-8</button>
+    <button class="skill-chip" id="sC2" onclick="pickSkill('C2')">🌊 Urge surfing</button>
+    <button class="skill-chip" id="sC3" onclick="pickSkill('C3')">🤲 Self-compassion</button>
+    <button class="skill-chip" id="sC4" onclick="pickSkill('C4')">🗣️ NVC</button>
+    <button class="skill-chip" id="sC5" onclick="pickSkill('C5')">🎯 Reappraisal</button>
+    <button class="skill-chip" id="sC6" onclick="pickSkill('C6')">🌅 Akceptacja</button>
+    <button class="skill-chip" id="sC7" onclick="pickSkill('C7')">📏 Granice</button>
+    <button class="skill-chip" id="sC8" onclick="pickSkill('C8')">🚪 Strategiczne wyjście</button>
+    <button class="skill-chip" id="sC9" onclick="pickSkill('C9')">⏰ Ustalony limit czasu</button>
+  </div>
+  
+  <textarea class="thought-input" id="planA" placeholder="Twój plan: dla jakiej emocji jaka umiejętność? np. „Gdy poczuję ucisk w klatce (wczesny sygnał złości) — 3 oddechy 4-7-8 pod stołem. Gdy mama zacznie temat pieniędzy — reappraisal („to jej lęk, nie atak na mnie") + krótka NVC odpowiedź. Gdy poczuję, że wybuch jest blisko — strategiczne wyjście do toalety na 5 min."" rows="5"></textarea>
+  
+  <div class="step-card" id="sD" onclick="pickSkill('D')">
+    <div class="sc-h"><span class="sc-num">3</span>Plan B i ścieżka wyjścia</div>
+    <div>Co jeśli plan A nie zadziała? Konkretny plan B + jasna ścieżka wyjścia (kiedy i jak opuścić sytuację bez eskalacji).</div>
+  </div>
+  
+  <textarea class="thought-input" id="planBA" placeholder="np. „Plan B: jeśli oddech nie wystarczy, wychodzę na 10 min na świeże powietrze (tłumaczę: »muszę zadzwonić do koleżanki«). Wyjście: jeśli atak jest niepowstrzymany, mówię »muszę już iść« — bez tłumaczenia, bez kłótni — i wychodzę."" rows="4"></textarea>
+  
+  <div class="term-note"><strong>🔑 Reguła „jeśli X, to Y"</strong>: plan ma format <em>warunek → akcja</em>. „Jeśli usłyszę temat ślubu — biorę głęboki oddech i mówię neutralnie »tak, słyszałam, mamo«". Konkretny wyzwalacz + konkretna akcja = automatyzacja po 4—8 powtórzeniach. Ogólne intencje („będę spokojna") nie aktywują w sytuacji.</div>
+  
+  <div class="term-note"><strong>💡 Wskazówka</strong>: nie planuj „idealnie". Plan ma być wykonalny — nie heroiczny. „Wytrzymam 30 minut bez wybuchu" jest lepsze niż „cały obiad będę uśmiechnięta i kochająca". Realistyczny plan z planem B daje większą szansę na sukces niż ambitny plan bez wyjścia awaryjnego.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Wizualizacja</div>
+  <h1 class="card-prompt">Przećwicz <em>w wyobraźni</em></h1>
+  <p class="card-detail">Mentalna repetycja jest najsilniejszym składnikiem cope ahead. Daj sobie 5—10 minut na pełną wizualizację. Najlepiej zamknij oczy.</p>
+  
+  <div class="viz-box">
+    <div class="vb-h">📋 Pełna sekwencja wizualizacji (5—10 min)</div>
+    <strong>1. Sceneria</strong>: zobacz sytuację możliwie wyraźnie. Gdzie? Kiedy? Kto? Jakie zapachy, dźwięki, światło? Co masz na sobie? Pełna sensoryka.<br><br>
+    <strong>2. Wyzwalacz</strong>: zobacz konkretny moment, gdy sytuacja staje się trudna. Mama mówi: <em>„kiedy planujecie ślub?"</em>. Gęstość powietrza się zmienia. Czas zwalnia.<br><br>
+    <strong>3. Reakcja ciała</strong>: poczuj, jak ciało reaguje. Klatka. Ramiona. Dłonie. Tętno. Reaguje tak, jak naprawdę zareaguje.<br><br>
+    <strong>4. Aktywacja umiejętności</strong>: zobacz siebie, jak <em>świadomie wybierasz</em> wyćwiczoną reakcję. Bierzesz oddech. Mówisz spokojnie: „tak, słyszę cię. Pomyślimy." Zauważasz, że mama kontynuuje — i Ty kontynuujesz plan.<br><br>
+    <strong>5. Pozytywne zakończenie</strong>: zobacz koniec sytuacji. Wyszedłeś/aś / przeszłaś przez to. Co czujesz? Co Ci dało doświadczenie? Marlatt: <em>obraz zwycięstwa</em> jest motorem motywacji.
+  </div>
+  
+  <textarea class="thought-input" id="vizA" placeholder="Co zauważyłeś/aś w wizualizacji? Co najsilniejszego momentu? Co najtrudniejszego?" rows="4"></textarea>
+  
+  <div class="viz-box">
+    <div class="vb-h">🔄 Powtórzenie 2—3 razy</div>
+    Driskell, Copper & Moran (1994): mentalna repetycja daje optimum przy 3—5 powtórzeniach. Pierwsza wizualizacja zwykle ma niedopowiedzenia, druga koryguje, trzecia konsoliduje. Po trzech zwykle plan czuje się „jak coś, co już raz robiłeś/aś".
+  </div>
+  
+  <textarea class="thought-input" id="korektyA" placeholder="Co skorygowałeś/aś po pierwszej wizualizacji? Co dodałeś/aś, co zmieniłeś/aś?" rows="3"></textarea>
+  
+  <div class="term-note"><strong>📌 Reguła pełnej sensoryki</strong>: PETTLEP (Holmes & Collins 2001) — najsilniejsze efekty wizualizacji wymagają <em>siedmiu</em> wymiarów: physical (postawa ciała w trakcie wizualizacji odpowiada sytuacji), environment (otoczenie), task (zadanie), timing (czas trwania), learning (poziom umiejętności), emotion (emocje), perspective (pierwsza vs trzecia osoba). Pełna sensoryka = pełen efekt.</div>
+  
+  <div class="term-note"><strong>💡 Wskazówka co do perspektywy</strong>: dla emocji trudnych, <em>pierwsza osoba</em> (jakbyś naprawdę był/a w sytuacji) działa silniej niż trzecia (oglądasz siebie z boku). Pierwsza osoba aktywuje empatię własną i ciało; trzecia daje dystans. Dla treningu skili — pierwsza. Dla traumy — czasem trzecia, by uniknąć nadmiernej aktywacji.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po wizualizacji — pomiar</div>
+  <h1 class="card-prompt">Jak <em>pewnie czujesz się</em> z planem?</h1>
+  <p class="card-detail">Sprawdź dwa wymiary: lęk antycypacyjny (czy spadł po przygotowaniu) oraz pewność co do planu. Pewność jest kluczowym predyktorem realizacji.</p>
+  
+  <div class="scale">
+    <div class="scale-title">Lęk antycypacyjny — teraz</div>
+    <div class="scale-bounds"><span>(0 — żaden)</span><span>(10 — bardzo silny)</span></div>
+    <input type="range" class="scale-input" id="lekP" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>Skala</span><span id="lekPval">4</span></div>
+  </div>
+  
+  <div class="scale">
+    <div class="scale-title">Pewność co do planu (mogę go zrealizować)</div>
+    <div class="scale-bounds"><span>(0 — żadna)</span><span>(10 — pełna)</span></div>
+    <input type="range" class="scale-input" id="pewP" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Skala</span><span id="pewPval">6</span></div>
+  </div>
+  
+  <div class="final-msg" id="finalMsg">
+    Ustaw suwaki, by zobaczyć analizę.
+  </div>
+  
+  <div class="term-note"><strong>📌 Reguła praktyki</strong>: cope ahead działa najsilniej, gdy jest praktykowany regularnie — nie tylko przed wielkimi sytuacjami. 1× tygodniowo dla typowych trudnych sytuacji (poniedziałkowe zebrania, wieczory, weekendy z rodziną) buduje gotowy zestaw planów. Linehan: regularna praktyka cope ahead jest jednym z silniejszych predyktorów spadku epizodów dysregulacji w DBT.</div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>Cope ahead — 5 kroków</strong>: 1. zidentyfikuj sytuację · 2. zmapuj emocje + impulsy · 3. wybierz umiejętności · 4. zwizualizuj pełną scenę · 5. zaplanuj plan B + wyjście. Format „jeśli X, to Y". Wizualizacja 3—5× z pełną sensoryką (PETTLEP). <em>Realistyczny plan z wyjściem &gt; ambitny plan idealny</em>.</div>
+  </div>
+  
+  <div class="src">Linehan (2014, 2015), <em>DBT Skills Training Manual</em>, wyd. 2 · Driskell, Copper & Moran (1994), <em>Does mental practice enhance performance?</em>, JAP · Gollwitzer (1999), implementation intentions, American Psychologist · Holmes & Collins (2001), PETTLEP · Neacsiu i in. (2014), DBT</div>
+</section>
+
+<script>
+['lekA','lekP','pewP'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => {
+    const out = document.getElementById(id + 'val');
+    if (out) out.textContent = el.value;
+  });
+});
+</script>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickSkill(letter) {
+  const el = document.getElementById('s' + letter);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_coping_ahead_emo — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_coping_ahead_emo";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+function onStepChange(step) {
+  if (step === 5) {
+    const before = parseInt(document.getElementById('lekA').value) || 7;
+    const after = parseInt(document.getElementById('lekP').value) || 4;
+    const pewP = parseInt(document.getElementById('pewP').value) || 5;
+    const delta = before - after;
+    const msg = document.getElementById('finalMsg');
+    if (msg) {
+      let pKom = '';
+      if (pewP >= 7) pKom = 'Wysoka pewność (' + pewP + '/10) — masz konkretny plan + mentalną repetycję. W realnej sytuacji dostępność planu znacznie się zwiększa (Driskell, Copper & Moran 1994 — meta-analiza mental practice).';
+      else if (pewP >= 4) pKom = 'Średnia pewność (' + pewP + '/10) — kolejne 2—3 cykle wizualizacji wzmocnią plan. Sport psychology (Holmes & Collins 2001): mentalna praktyka 3—5 razy daje optimum.';
+      else pKom = 'Niska pewność (' + pewP + '/10) — sprawdź, czy plan jest wystarczająco konkretny. Ogólne intencje („będę spokojny") nie działają tak dobrze jak szczegółowe („gdy poczuję X w klatce, biorę 3 oddechy 4-7-8").';
+      let text;
+      if (delta >= 3) text = '<strong>Spadek lęku przed sytuacją o ' + delta + '.</strong> Plan + wizualizacja działają — Linehan: cope ahead transformuje lęk antycypacyjny w gotowość. ' + pKom;
+      else if (delta >= 1) text = '<strong>Spadek o ' + delta + '.</strong> Łagodny opad. ' + pKom;
+      else if (delta === 0) text = '<strong>Bez zmiany w lęku antycypacyjnym.</strong> To OK — czasem plan obniża lęk w sytuacji, nie przed nią. Sprawdź, czy plan jest jak najbardziej szczegółowy. ' + pKom;
+      else text = '<strong>Wzrost lęku o ' + Math.abs(delta) + '.</strong> Czasem szczegółowa wizualizacja chwilowo zwiększa lęk — to znak, że plan dotyka realnych wyzwań. Powtórz wizualizację 2—3 razy — lęk opadnie. ' + pKom;
+      msg.innerHTML = text;
+    }
+  }
+}
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

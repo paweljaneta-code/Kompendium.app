@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · redukcja sprawdzania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.proto-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 8px 8px 0; padding: 12px 14px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.04em; margin-bottom: 8px; text-transform: uppercase; }
+.proto-rule { display: flex; gap: 10px; padding: 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 22px; }
+.proto-content { flex: 1; }
+.proto-content strong { color: var(--ink); font-weight: 600; }
+
+.tldr-mini { background: rgba(201,165,114,0.16); border-left: 3px solid var(--warm); padding: 9px 12px; border-radius: 0 6px 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.tldr-mini strong { color: var(--ink); font-weight: 600; }
+
+.day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
+.day-cell { background: rgba(184,197,168,0.16); padding: 8px 10px; border-radius: 6px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+.day-cell strong { color: var(--ink); font-weight: 600; display: block; font-size: 11.5px; margin-bottom: 2px; color: var(--sage-deep); text-transform: uppercase; letter-spacing: 0.06em; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>redukcja sprawdzania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Sprawdzanie wyglądu — <em>kompulsja, nie informacja</em></h1>
+    <p class="card-detail">Sprawdzanie wyglądu w dysmorfofobii (BDD — <em>Body Dysmorphic Disorder</em>) działa jak kompulsja w OCD: chwilowa ulga + długoterminowe wzmocnienie obsesji. Veale (2004) i Phillips (2005) udokumentowali, że osoby z ciężkim BDD spędzają 3–8 godzin dziennie tylko na sprawdzaniu — w lustrze, w aparacie, w odbiciach okien, dotykając „defektu". Każde sprawdzenie obniża niepewność na sekundy i podnosi ją na minuty potem. <strong>Cel</strong>: redukcja do 0–2 sprawdzeń dziennie (utility-based — np. higiena), nie modyfikacja częstotliwości.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Dlaczego sprawdzanie nie działa (Wilhelm i in., 2013)</div>
+      <div class="element-row">
+        <span class="element-icon">🔁</span>
+        <span class="element-text"><strong>Krótkoterminowa ulga</strong> — sprawdzenie obniża lęk o 30–50%, ale na 5–15 minut. Potem niepewność wraca silniejsza, bo pamięć obrazu zaczyna dryfować.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🪞</span>
+        <span class="element-text"><strong>Selektywna uwaga</strong> — patrzysz na „defekt", nie na całość. Mózg uczy się: „defekt jest centralny", co wzmacnia zaabsorbowanie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📈</span>
+        <span class="element-text"><strong>Efekt domina</strong> — sprawdzenie 1× rzadko wystarcza. Każde generuje pytanie „a może z innego kąta?", „a może w innym świetle?". Sesja ciągnie się 30–60 min.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Nauka odwrotna</strong> — mózg uczy się: „muszę sprawdzić, żeby było OK". Sama gotowość do sprawdzania wzmacnia obsesję.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Eliminacja sprawdzania, nie redukcja częstotliwości, jest celem terapii BDD. Pacjent, który sprawdza dziesięć razy dziennie zamiast pięćdziesięciu, dalej trenuje mózg, że temat jest istotny i wymaga monitorowania."
+      <span class="frame-quote-attr">— Wilhelm, Phillips i Steketee (2013, <em>CBT for BDD</em>, Guilford)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: sprawdzanie w BDD <em>nie dostarcza wiarygodnej informacji o wyglądzie</em> — dostarcza tymczasowego komfortu. Każde sprawdzenie jest jak picie wody słonej: chwilowo gasi pragnienie, długoterminowo nasila.</div>
+
+    <div class="src">Veale (2004, <em>Body Image</em>) · Phillips (2005, <em>The Broken Mirror</em>) · Wilhelm i in. (2013, <em>CBT for BDD</em>, Guilford) · Veale i Neziroglu (2010, <em>Body Dysmorphic Disorder: A Treatment Manual</em>)</div>
+  </section>
+
+  
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Baseline — ile sprawdzasz</div>
+    <h1 class="card-prompt">Mapuj <em>swoje sprawdzanie</em></h1>
+    <p class="card-detail">Bez liczby ERP nie zadziała. Przez jeden dzień policz każde sprawdzenie. Liczy się każde — nawet 2-sekundowe zerknięcie w odbicie ekranu telefonu.</p>
+
+    <textarea class="thought-input" id="kontekst" placeholder="GDZIE I KIEDY sprawdzasz? np. „Lustro w łazience rano i wieczorem, w pracy w toalecie 3–5×, lustro samochodowe co przesiadkę, aparat selfie w autobusie, dotykanie skóry przy biurku."" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-label"><span>Łącznie sprawdzeń dziennie (oszacuj)</span><span><strong id="iloscOut">30</strong>×</span></div>
+      <input type="range" class="scale-input" id="iloscIn" min="0" max="200" step="5" value="30" data-default="30">
+      <div class="scale-label"><span>0</span><span>200+</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Łączny czas dziennie</span><span><strong id="czasOut">2</strong> godz.</span></div>
+      <input type="range" class="scale-input" id="czasIn" min="0" max="8" step="0.5" value="2" data-default="2">
+      <div class="scale-label"><span>0</span><span>8+</span></div>
+    </div>
+
+    <div class="examples-h">Najczęstsze formy sprawdzania (zaznacz):</div>
+    <div class="example-chips">
+      <button class="example-chip" id="s-lustro" onclick="this.classList.toggle('picked');saveSelection()">Lustra w domu</button>
+      <button class="example-chip" id="s-publ" onclick="this.classList.toggle('picked');saveSelection()">Lustra publiczne (toalety, sklepy)</button>
+      <button class="example-chip" id="s-aparat" onclick="this.classList.toggle('picked');saveSelection()">Aparat / selfie</button>
+      <button class="example-chip" id="s-okno" onclick="this.classList.toggle('picked');saveSelection()">Odbicia w oknach / ekranach</button>
+      <button class="example-chip" id="s-dotyk" onclick="this.classList.toggle('picked');saveSelection()">Dotykanie „defektu"</button>
+      <button class="example-chip" id="s-mierz" onclick="this.classList.toggle('picked');saveSelection()">Mierzenie / ważenie</button>
+      <button class="example-chip" id="s-zdj-stare" onclick="this.classList.toggle('picked');saveSelection()">Porównywanie ze starymi zdjęciami</button>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła pomiaru</strong>: typowe niedoszacowanie wynosi 30–50%. Jeśli masz wrażenie „sprawdzam może 10 razy", w rzeczywistości to często 30–50. Zapisuj na liście, dodawaj kreskę przy każdym, choćby przelotnym sprawdzeniu.</div>
+  </section>
+
+  
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Plan 3-tygodniowy</div>
+    <h1 class="card-prompt">Stopniowa <em>redukcja</em> do 0–2/dzień</h1>
+    <p class="card-detail">Eliminacja od zera bywa zbyt drastyczna. Wilhelm (2013) opisuje 3-tygodniowy plan: -50% w tygodniu 1, -75% w tygodniu 2, -90% i utrzymanie 0–2 sprawdzeń utility-based w tygodniu 3.</p>
+
+    <div class="proto-card">
+      <div class="proto-h">Plan redukcji (start od baseline policzonego w kroku 2):</div>
+      <div class="proto-rule"><span class="proto-num">1.</span><span class="proto-content"><strong>Tydzień 1: -50%</strong> — jeśli sprawdzasz 30×/dzień, cel: maks. 15. Lustra dodatkowe zakryte. Aparat tylko zaplanowane zdjęcia. Lęk wzrasta — to oczekiwane.</span></div>
+      <div class="proto-rule"><span class="proto-num">2.</span><span class="proto-content"><strong>Tydzień 2: -75%</strong> — cel: maks. 7–8 sprawdzeń. Dodaj zasadę „odraczania": gdy chcesz sprawdzić, czekaj 10 min. Często chęć mija.</span></div>
+      <div class="proto-rule"><span class="proto-num">3.</span><span class="proto-content"><strong>Tydzień 3: -90% + utility-based</strong> — cel: 0–2 dziennie, tylko z konkretnym powodem (umyć zęby, ułożyć włosy do pracy). Nie kontemplować wyglądu.</span></div>
+      <div class="proto-rule"><span class="proto-num">4.</span><span class="proto-content"><strong>Tydzień 4+: utrzymanie</strong> — kontynuuj 0–2 dziennie. Po 2–3 miesiącach mózg „odzwyczaja się" od potrzeby sprawdzania.</span></div>
+    </div>
+
+    <div class="examples-h">Wybierz strategię uzupełniającą:</div>
+    <div class="example-chips">
+      <button class="example-chip" id="str-zakr" onclick="pickStr(this)">Zakryć dodatkowe lustra papierem</button>
+      <button class="example-chip" id="str-foto" onclick="pickStr(this)">Schować aparat / wyłączyć selfie</button>
+      <button class="example-chip" id="str-czas" onclick="pickStr(this)">Limit czasowy (max 30 sek/sprawdzenie)</button>
+      <button class="example-chip" id="str-odra" onclick="pickStr(this)">Odraczanie 10 minut</button>
+      <button class="example-chip" id="str-blisc" onclick="pickStr(this)">Bliscy nie odpowiadają na pytania</button>
+    </div>
+
+    <div class="term-note"><strong>🔑 Reguła wyboru</strong>: <em>twardo, ale stopniowo</em>. -50% w tygodniu 1 jest ambitne, ale wykonalne. Pełna eliminacja od dnia pierwszego rzadko działa — pacjent wraca do baseline po 3–4 dniach. Stopniowanie chroni przed nawrotem.</div>
+  </section>
+
+  
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Dziennik 7 dni</div>
+    <h1 class="card-prompt">Zapis każdego <em>chciałem/am, nie sprawdziłem/am</em></h1>
+    <p class="card-detail">W pierwszym tygodniu prowadź prosty dziennik — 4 kolumny dla każdego dnia: ile razy chciałem/am sprawdzić, ile razy się powstrzymałem/am, lęk PRZED powstrzymaniem (0–10), lęk PO 30 minutach.</p>
+
+    <div class="day-grid">
+      <div class="day-cell"><strong>Dzień 1</strong>Lęk najwyżej (8–9/10). Notuj wszystko.</div>
+      <div class="day-cell"><strong>Dzień 2</strong>Lęk dalej wysoki. Trzymaj się planu.</div>
+      <div class="day-cell"><strong>Dzień 3</strong>Pierwsze chwile odpuszczenia.</div>
+      <div class="day-cell"><strong>Dzień 4</strong>Lęk zaczyna spadać (~6/10).</div>
+      <div class="day-cell"><strong>Dzień 5</strong>Mózg uczy się: „nie sprawdziłem i żyję".</div>
+      <div class="day-cell"><strong>Dzień 6</strong>Lęk niżej (4–5/10).</div>
+      <div class="day-cell"><strong>Dzień 7</strong>Bilans — odzyskany czas.</div>
+      <div class="day-cell"><strong>Dzień 14</strong>Cel: stabilne 0–2 sprawdzenia.</div>
+    </div>
+
+    <textarea class="thought-input" id="dzien1" placeholder="DZIEŃ 1 — chciałem/am sprawdzić ___×, powstrzymałem/am się ___×, lęk PRZED ___/10, lęk PO 30 min ___/10. Co zauważyłem/am?" rows="3"></textarea>
+
+    <textarea class="thought-input" id="dzien7" placeholder="DZIEŃ 7 — chciałem/am sprawdzić ___×, powstrzymałem/am się ___×, lęk PRZED ___/10, lęk PO 30 min ___/10. Co odzyskałem/am?" rows="3"></textarea>
+
+    <div class="tldr-mini"><strong>📍 Sygnały, że plan działa</strong>: lęk PRZED powstrzymaniem spada w ciągu tygodnia z 8 na 5/10 · lęk PO 30 min jest typowo o 2–3 punkty niższy · pojawia się myśl „nie sprawdzałem/am godziny i nic się nie stało" · wracają inne aktywności (czytanie, rozmowa, jedzenie bez rozpraszania).</div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm wykonania</strong>: dziennik <em>uwidacznia krzywą habituacji</em>. Bez zapisu pacjent nie zauważa spadku — mózg pamięta tylko „lęk, lęk, lęk". Z liczbami widać: dzień 1 = 8/10, dzień 5 = 5/10, dzień 7 = 4/10. To dowód, że pętla się rozluźnia.</div>
+  </section>
+
+  
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po 14 dniach</div>
+    <h1 class="card-prompt">Bilans — co <em>realnie</em> się zmieniło</h1>
+    <p class="card-detail">Wróć po 14 dniach. Trzy wskaźniki: ile sprawdzeń dziennie, ile godzin odzyskanych, jak silne przekonanie „muszę sprawdzać".</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Sprawdzenia dziennie PO 14 dniach</span><span><strong id="aIloscOut">5</strong>×</span></div>
+      <input type="range" class="scale-input" id="aIloscIn" min="0" max="200" step="1" value="5" data-default="5">
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Siła przekonania „muszę sprawdzać"</span><span><strong id="przOut">5</strong>/10</span></div>
+      <input type="range" class="scale-input" id="przIn" min="0" max="10" value="5" data-default="5">
+    </div>
+
+    <textarea class="thought-input" id="bilans" placeholder="BILANS — z czego najbardziej dumny/a? Co najtrudniejsze? Co dalej? np. „Zszedłem/am z 30× na 4× dziennie. Najtrudniejsze były dni 1–3. Odzyskałem/am ~2 godz. dziennie. Dalej eliminuję dopytywanie."" rows="4"></textarea>
+
+    <div class="diff-list" id="diffOut"></div>
+
+    <div class="final-msg" id="finalMsg">
+      Sprawdzanie zmniejszone o 80% to <strong>realna zmiana neurobiologiczna</strong>, nie tylko zachowaniowa. Mózg po 2 tygodniach uczy się, że „nie sprawdzam i nic się nie dzieje" — co osłabia obsesję strukturalnie. Następne miesiące to utrwalanie + eliminacja kolejnych rytuałów (kamuflaż, dopytywanie).
+    </div>
+
+    <div class="term-note"><strong>⚙️ Reguła kalibracji</strong>: <em>0–2 sprawdzenia dziennie utrzymane przez 3 miesiące</em> = trwała zmiana. Wilhelm i in. (2013): pełen protokół CBT-BDD osiąga ten poziom u 65–75% pacjentów po 22 sesjach. Powrót do baseline po przerwie wymaga ponownego cyklu redukcji.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Sprawdzanie wyglądu jest <strong>kompulsją, nie informacją</strong>. Cel: 0–2 razy dziennie utility-based, nie modyfikacja częstotliwości. Plan: -50% w tyg. 1, -75% w tyg. 2, -90% w tyg. 3. Dziennik z lękiem PRZED i PO. Każdy zatrzymany impuls uczy mózg, że <em>bez sprawdzenia też daję radę</em>.</div>
+    </div>
+
+    <div class="src">Veale (2004, <em>Body Image</em>) · Phillips (2005, <em>The Broken Mirror</em>) · Wilhelm i in. (2013, <em>CBT for BDD</em>, Guilford) · Veale i Neziroglu (2010, <em>Body Dysmorphic Disorder: A Treatment Manual</em>) · Harrison i in. (2016, <em>Clinical Psychology Review</em>)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function saveSelection() {
+  if (typeof save === 'function') save();
+}
+
+function pickStr(btn) {
+  btn.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function bindScale(inId, outId) {
+  const inp = document.getElementById(inId);
+  const out = document.getElementById(outId);
+  if (inp && out) {
+    inp.addEventListener('input', () => { out.textContent = inp.value; });
+    out.textContent = inp.value;
+  }
+}
+bindScale('iloscIn','iloscOut');
+bindScale('czasIn','czasOut');
+bindScale('aIloscIn','aIloscOut');
+bindScale('przIn','przOut');
+
+function updateDiff() {
+  const bI = parseInt(document.getElementById('iloscIn').value, 10);
+  const aI = parseInt(document.getElementById('aIloscIn').value, 10);
+  const dI = aI - bI;
+  const out = document.getElementById('diffOut');
+  if (!out) return;
+  const pct = bI > 0 ? Math.round((1 - aI / bI) * 100) : 0;
+  out.innerHTML = '<div class="diff-row"><span><strong>Sprawdzenia / dzień</strong>: ' + bI + ' → ' + aI + '</span><span class="diff-delta' + (dI <= 0 ? '' : ' neg') + '">' + (dI > 0 ? '+' : '') + dI + '</span></div>'
+    + '<div class="diff-row"><span><strong>Redukcja</strong></span><span class="diff-delta">−' + pct + '%</span></div>';
+}
+['iloscIn','aIloscIn'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateDiff);
+});
+updateDiff();
+
+function onStepChange(step) {
+  if (step === 5) updateDiff();
+}
+
+function onReset() {
+  document.querySelectorAll('.example-chip.picked').forEach(el => el.classList.remove('picked'));
+  updateDiff();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bdd_be_checking_reduction — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bdd_be_checking_reduction";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

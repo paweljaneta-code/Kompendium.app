@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Czy mam SAD?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+.crit-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.crit-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.crit-item:hover, .crit-item:active { background: rgba(122,146,112,0.06); }
+.crit-item.checked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-left: 3px solid var(--sage-deep); }
+.crit-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.crit-item.checked .crit-tick { background: var(--sage-deep); border-color: var(--sage-deep); }
+.crit-item.checked .crit-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.crit-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.crit-text strong { color: var(--ink); font-weight: 700; }
+.crit-letter { display: inline-block; padding: 1px 6px; background: rgba(122,146,112,0.15); color: var(--sage-deep); font-size: 10px; font-weight: 700; border-radius: 4px; margin-right: 6px; letter-spacing: 0.04em; }
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === DECISION-CARD === */
+.decision-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.decision-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.decision-row { padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.decision-row strong { color: var(--bg); }
+
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Czy mam SAD?</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Czym jest <em>SAD</em>?</h1>
+    <p class="card-detail"><strong>Fobia społeczna</strong> (social anxiety disorder, SAD) — według DSM-5 (APA 2013) i NICE CG159 (2013): <em>przewlekły, znaczący lęk</em> przed jedną lub więcej sytuacjami społecznymi, w których osoba jest narażona na <strong>możliwą ocenę innych</strong>. Lęk dotyczy <em>negatywnej oceny</em>: bycia zażenowanym, upokorzonym, odrzuconym. SAD <strong>nie jest</strong> nieśmiałością — nieśmiałość mija z czasem, SAD utrzymuje się latami. <em>9-12% populacji</em> spełnia kryteria w ciągu życia (Stein i in. 2017, meta-analiza). To narzędzie pomaga ocenić, czy <strong>twój lęk pasuje do obrazu klinicznego</strong>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery cechy SAD wg DSM-5</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🎯</span>
+          <span class="element-text"><strong>Specyficzny przedmiot</strong> = lęk przed oceną w sytuacjach społecznych (nie ogólny lęk)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">⏱</span>
+          <span class="element-text"><strong>Przewlekłość</strong> = utrzymujący się ≥ 6 miesięcy</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📉</span>
+          <span class="element-text"><strong>Upośledzenie funkcji</strong> = znacząco wpływa na pracę, edukację, relacje</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔁</span>
+          <span class="element-text"><strong>Konsekwencja</strong> = unika sytuacji LUB znosi je z silnym lękiem</span>
+        </div>
+      </div>
+      <div class="frame-quote">„SAD to <em>nie</em> wstyd, <em>nie</em> nieśmiałość, <em>nie</em> słaby charakter. To <em>zaburzenie kliniczne</em> z udokumentowaną neurobiologią i sprawdzonym leczeniem.”
+        <span class="frame-quote-attr">— DSM-5 (APA 2013) i NICE CG159 (2013)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: SAD bywa mylony z 1) <em>nieśmiałością</em> (która nie powoduje upośledzenia funkcji), 2) <em>introwersją</em> (która jest cechą osobowości, nie zaburzeniem), 3) <em>zaburzeniem panicznym</em> (gdzie lęk pojawia się bez specyficznego bodźca). Diagnoza wymaga <strong>specyficznego przedmiotu lęku</strong> (sytuacja społeczna z możliwą oceną).</div>
+    
+    <div class="src">APA DSM-5 (2013) · NICE CG159 (2013) · Stein i in. (2017, meta-analiza częstości) · Hofmann i Otto (2008)</div>
+  </section>
+  <!-- 2: KRYTERIA DSM-5 -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Kryteria DSM-5</div>
+    <h1 class="card-prompt">Sprawdź <em>kryteria diagnostyczne</em></h1>
+    <p class="card-detail">Dokładne kryteria DSM-5 (APA 2013) — <strong>kryteria A-J</strong>. Zaznacz to, co rozpoznajesz <em>u siebie</em>. Diagnoza wymaga spełnienia <strong>wszystkich 6</strong> głównych kryteriów (A, B, C, D, E, F).</p>
+    
+    <div class="term-note"><strong>Reguła</strong>: zaznaczone wszystkie A-G = <em>możliwy SAD</em>. Pełna diagnoza wymaga jednak <strong>oceny klinicznej</strong> (kryteria H-J wykluczają inne zaburzenia). To <em>orientacyjna mapa</em>, nie diagnoza.</div>
+    
+    <div class="crit-list">
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">A</span>
+          <strong>Lęk w sytuacjach społecznych z możliwą oceną</strong> — interakcje, wystąpienia, wykonywanie zadań przy obserwujących
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Jedna lub więcej sytuacji typu: rozmowy, jedzenie przy innych, prezentacje</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">B</span>
+          <strong>Strach przed negatywną oceną</strong> — boję się zachować się w sposób kompromitujący lub upokarzający, doprowadzając do odrzucenia
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Konkretnie: ujawnienie objawów lęku zostanie ocenione negatywnie</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">C</span>
+          <strong>Sytuacje wywołują niemal zawsze lęk</strong> — nie tylko czasem, ale konsekwentnie
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">U dzieci może to być płacz, krzyk, wycofanie, mutyzm</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">D</span>
+          <strong>Unikanie LUB znoszenie z intensywnym lękiem</strong>
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Albo unikam, albo wytrzymuję — ale za cenę silnego dyskomfortu</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">E</span>
+          <strong>Lęk nieproporcjonalny</strong> do realnego zagrożenia
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Z kontekstu i kultury: większość ludzi nie reaguje tak silnie</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">F</span>
+          <strong>Trwa ≥ 6 miesięcy</strong>
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Przewlekłość odróżnia SAD od zaburzenia adaptacyjnego lub przejściowych reakcji</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">G</span>
+          <strong>Znaczące upośledzenie funkcjonowania</strong>
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Praca, edukacja, relacje, codzienne zadania (zakupy, lekarz, urząd)</span>
+        </div>
+      </div>
+      <div class="crit-item" onclick="toggleCrit(this)">
+        <div class="crit-tick"></div>
+        <div class="crit-text">
+          <span class="crit-letter">H-J</span>
+          <strong>Wykluczenia</strong> — to nie jest skutek substancji, choroby somatycznej, ani lepiej tłumaczone przez inne zaburzenie
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Wymaga oceny klinicznej (psycholog/psychiatra)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- 3: INTENSYWNOŚĆ I WPŁYW -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Intensywność i wpływ</div>
+    <h1 class="card-prompt">Jak <em>silnie</em> SAD ogranicza twoje życie?</h1>
+    <p class="card-detail">Kryterium G (upośledzenie funkcjonowania) jest <strong>kluczowe</strong> dla rozróżnienia: nieśmiałość vs SAD. Nieśmiałość jest, ale <em>nie blokuje</em>. SAD <strong>blokuje</strong>.</p>
+    
+    <div class="term-note"><strong>Reguła wpływu</strong>: jeśli <em>średnia 3 wymiarów &gt; 5/10</em> — kryterium G jest spełnione. Jeśli &lt; 3 — to bardziej nieśmiałość niż SAD. Punkty pomiędzy = strefa szara, wymaga oceny klinicznej. Konkretne <em>straty</em> z ostatniego roku (zawód, relacje) są twardym wskaźnikiem.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Wpływ na pracę / edukację</div>
+      <div class="scale-label"><span>0 — bez wpływu</span><span>10 — uniemożliwia</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="impactWork" oninput="updateW(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="impactWorkVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Wpływ na relacje (przyjaźnie, rodzina, randki)</div>
+      <div class="scale-label"><span>0 — bez wpływu</span><span>10 — uniemożliwia</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="impactRel" oninput="updateR(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="impactRelVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Wpływ na codzienność (zakupy, lekarz, urząd)</div>
+      <div class="scale-label"><span>0 — bez wpływu</span><span>10 — uniemożliwia</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="impactDay" oninput="updateD(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="impactDayVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Konkrety — co konkretnie SAD zabrał ci w ostatnim roku?</div>
+    <textarea class="thought-input" id="lossInput" placeholder="np. „Awans, którego nie zaproponowałem (bałem się prezentacji). Związek, którego nie zacząłem (nie wysłałem pierwszej wiadomości). Wizyta u dentysty, którą odkładałem 8 miesięcy”"..." rows="4"></textarea>
+  </section>
+  <!-- 4: CZAS TRWANIA -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Czas trwania</div>
+    <h1 class="card-prompt"><em>Od kiedy</em> tak masz?</h1>
+    <p class="card-detail">Kryterium F: lęk utrzymuje się <strong>minimum 6 miesięcy</strong>. Krótszy okres może oznaczać <em>zaburzenie adaptacyjne</em> (reakcję na stresor) lub przejściową fazę po zmianach życiowych. SAD typowo <strong>zaczyna się w adolescencji</strong> (mediana 13 lat — Stein 2017) i utrzymuje się latami bez interwencji.</p>
+    
+    <div class="term-note"><strong>Wskazówka różnicowa</strong>: SAD <em>uogólniony</em> (kryterium specyficzne) zaczyna się typowo w wieku 11-15 lat, narasta do 20-25, plateau. Późny początek (po 30) jest rzadki — wówczas wymaga starannego sprawdzenia, czy nie chodzi o <em>zaburzenie adaptacyjne</em>, depresja z wycofaniem społecznym, lub odpowiedź na konkretne stresory.</div>
+    
+    <div class="examples-h">Od kiedy zauważasz lęk społeczny w obecnej formie?</div>
+    <textarea class="thought-input" id="onsetInput" placeholder="np. „Pamiętam pierwsze epizody w 7. klasie szkoły podstawowej (12-13 lat). Nasilenie w liceum. Od studiów stałe utrzymywanie się”..." rows="3"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Lata trwania w obecnej intensywności</div>
+      <div class="scale-label"><span>&lt;6 miesięcy</span><span>20+ lat</span></div>
+      <input type="range" min="0" max="20" value="5" class="scale-input" id="duration" oninput="updateDur(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="durationVal">5</span><span> lat</span></div>
+    </div>
+    
+    <div class="examples-h">Czy były okresy znacznie lepsze (bez lub z minimalnym lękiem)?</div>
+    <textarea class="thought-input" id="periodInput" placeholder="np. „Nie pamiętam okresu bez lęku w sytuacjach społecznych”" / „Tak, między 25 a 28 rokiem życia było lepiej — w stałym związku, znajomym środowisku”..." rows="3"></textarea>
+    
+    <div class="examples-h">Czy lęk pojawił się po konkretnej sytuacji (trauma, upokorzenie)?</div>
+    <textarea class="thought-input" id="triggerInput" placeholder="np. „Tak, po klasie 7 — głośno wyśmianie podczas występu”" / „Nie, narastało stopniowo bez konkretnego początku”..." rows="3"></textarea>
+  </section>
+  <!-- 5: DECYZJA CO DALEJ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Decyzja co dalej</div>
+    <h1 class="card-prompt">Co <em>z tym zrobić</em>?</h1>
+    <p class="card-detail">Po pełnym mapowaniu — <strong>decyzja</strong>. NICE CG159 rekomenduje <em>leczenie stopniowane</em> — dopasowanie interwencji do nasilenia. Pomiar i kryteria pomagają wybrać poziom 1-4.</p>
+    
+    <div class="term-note"><strong>Reguła pomocy</strong>: <em>nie czekaj</em>, aż „samo przejdzie”. Beard i in. (2010): bez leczenia, SAD utrzymuje się średnio 23 lata. Z CBT — znacząca poprawa w 3-6 miesięcy. <strong>Skierowanie do specjalisty</strong> = pierwszy konkretny krok terapeutyczny. To <em>nie</em> oznacza, że jesteś „chory” — to oznacza, że <em>masz dostęp do leczenia</em>.</div>
+    
+    <div class="decision-card">
+      <div class="decision-h">Leczenie stopniowane wg NICE CG159</div>
+      <div class="decision-row"><strong>Poziom 1 (łagodny)</strong>: psychoedukacja + samopomoc (książki, aplikacje, kompendium). Bez profesjonalnej pomocy. <em>Czas: 4-12 tygodni</em>.</div>
+      <div class="decision-row"><strong>Poziom 2 (umiarkowany)</strong>: <em>samopomoc kierowana</em> + krótka terapia poznawczo-behawioralna (8-10 sesji). Lekarz pierwszego kontaktu może skierować.</div>
+      <div class="decision-row"><strong>Poziom 3 (umiarkowany-ciężki)</strong>: <em>Pełna terapia CBT</em> (terapia poznawcza Clarka — CT, lub grupowa CBT Heimberga — CBGT) — 12-16 sesji. Plus rozważenie SSRI (Selective Serotonin Reuptake Inhibitors — sertralina, paroksetyna, escitalopram).</div>
+      <div class="decision-row"><strong>Poziom 4 (ciężki + komorbidność)</strong>: zespół specjalistyczny — psychiatra + psychoterapeuta. Często przy depresji, agorafobii, uzależnieniach współistniejących.</div>
+    </div>
+    
+    <div class="examples-h">Twój wybór — który poziom?</div>
+    <textarea class="thought-input" id="levelChoice" placeholder="np. „Na podstawie pomiarów: średnia wpływu 6/10, lęk od 15 lat, większość kryteriów A-G. Wybieram poziom 3 — pełna terapia CBT. Plus konsultacja psychiatryczna w razie potrzeby SSRI”"..." rows="4"></textarea>
+    
+    <div class="examples-h">Konkretne kroki w najbliższych 2 tygodniach</div>
+    <textarea class="thought-input" id="actionInput" placeholder="np. „1. Lekarz pierwszego kontaktu — skierowanie do psychologa
+2. Psycholog: 3 propozycje (znajomi polecają)
+3. Pierwsza sesja umówiona w ciągu 14 dni
+4. W międzyczasie: czytam Clarka i Wellsa, robię ćwiczenia z kompendium”..." rows="5"></textarea>
+    
+    <div class="examples-h">Jeśli niski poziom — kontynuujesz samodzielnie. Jeśli wyższy — kogo kontaktujesz?</div>
+    <input type="text" class="thought-input" id="contact" placeholder="np. „Lekarz rodzinny dr Nowak — wtorek o 15:00”"" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">SAD jest <strong>leczalny</strong>. CBT (Clark, Heimberg) ma <em>najsilniejsze dowody</em>: 70-80% osób osiąga znaczącą poprawę po 12-16 sesjach (Mayo-Wilson i in. 2014, meta-analiza). SSRI (Selective Serotonin Reuptake Inhibitors) dodają 20-30% efektu w ciężkich przypadkach. <em>Bez leczenia</em> — SAD nie znika sam (Beard i in. 2010). Decyzja o pomocy <strong>jest leczeniem</strong>.</div>
+    </div>
+    
+    <div class="src">APA DSM-5 (2013) · NICE CG159 (2013) · Stein i in. (2017) · Mayo-Wilson i in. (2014, meta-analiza) · Beard i in. (2010, naturalistyczny przebieg)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('lossInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('onsetInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('periodInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('triggerInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('levelChoice'); if (el) el.value = ''; }
+    { const el = document.getElementById('actionInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('contact'); if (el) el.value = ''; }
+    { const el = document.getElementById('impactWork'); if (el) el.value = 5; }
+    { const el = document.getElementById('impactRel'); if (el) el.value = 5; }
+    { const el = document.getElementById('impactDay'); if (el) el.value = 5; }
+    { const el = document.getElementById('duration'); if (el) el.value = 5; }
+    document.querySelectorAll('.crit-item').forEach(b => b.classList.remove('checked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {}
+function toggleCrit(el) { el.classList.toggle('checked'); }
+function updateW(v) { document.getElementById('impactWorkVal').textContent = v; }
+function updateR(v) { document.getElementById('impactRelVal').textContent = v; }
+function updateD(v) { document.getElementById('impactDayVal').textContent = v; }
+function updateDur(v) { document.getElementById('durationVal').textContent = v; }
+
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.crit-item';
+  var KEY = "sos-model-clark-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.crit-item')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

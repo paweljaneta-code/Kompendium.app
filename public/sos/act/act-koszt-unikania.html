@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Koszt unikania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — paradox === */
+.frame-card { 
+  background: linear-gradient(180deg, #2a3530 0%, #1c2620 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ PARADOKS UNIKANIA"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "⏳"; position: absolute; bottom: 10px; right: 18px;
+  font-size: 60px; opacity: 0.07; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; position: relative; z-index: 1; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === AVOIDANCE CHIPS === */
+.av-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 4px 0 10px;
+}
+.av-chip {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.av-chip:hover { background: var(--warm-soft); }
+.av-chip.active { background: rgba(201,122,82,0.15); color: var(--ink); border-color: var(--warm); border-left: 3px solid var(--warm); padding-left: 10px; }
+.av-chip strong { font-style: normal; font-weight: 700; }
+
+/* === BALANCE TABLE === */
+.balance-card {
+  background: rgba(255,255,255,0.7);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.balance-h {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-mute); font-weight: 700; margin-bottom: 8px;
+}
+.balance-row {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-bottom: 8px;
+}
+.balance-label {
+  font-size: 11px; letter-spacing: 0.05em;
+  font-weight: 700; color: var(--ink);
+}
+.balance-label.warm { color: var(--warm); }
+.balance-label.sage { color: var(--sage-deep); }
+.balance-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink);
+  resize: none;
+  min-height: 38px;
+}
+.balance-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+
+/* === QUANTIFY CARD === */
+.quant-card {
+  background: linear-gradient(135deg, rgba(201,122,82,0.08), rgba(122,146,112,0.06));
+  border: 2px solid var(--warm);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 4px 0 12px;
+}
+.quant-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 700; margin-bottom: 10px; }
+.quant-grid { display: flex; flex-direction: column; gap: 8px; }
+.quant-row {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.quant-label { font-size: 11px; letter-spacing: 0.05em; font-weight: 700; color: var(--ink); }
+.quant-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.85);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink);
+  resize: none;
+  min-height: 36px;
+}
+.quant-input:focus { outline: 2px solid var(--warm); outline-offset: -1px; background: white; }
+
+/* === DECISION CARD === */
+.decision-list { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 12px; }
+.decision-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.decision-block:hover { background: var(--sage-soft); }
+.decision-block.active { background: rgba(122,146,112,0.18); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 11px; }
+.decision-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.decision-icon { font-size: 16px; }
+.decision-name { font-size: 13px; font-weight: 700; flex: 1; }
+.decision-desc { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; }
+
+/* === REGRET TYPES === */
+.regret-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.regret-block {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.regret-block.dest { border-left: 4px solid var(--warm); background: rgba(201,122,82,0.05); }
+.regret-block.gen { border-left: 4px solid var(--sage-deep); background: rgba(122,146,112,0.08); }
+.regret-h { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+.regret-block.dest .regret-h { color: var(--warm); }
+.regret-block.gen .regret-h { color: var(--sage-deep); }
+.regret-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 12px; line-height: 1.4; color: var(--ink-soft); }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Koszt unikania</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: PARADOX SHORT vs LONG -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Krótko <em>działa</em>, długo <em>kosztuje</em></h1>
+    <p class="card-detail"><strong>Cost of Avoidance</strong> (Hayes 2005; Luoma, Hayes, Walser 2007) — ćwiczenie bilansujące w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). Co <em>zyskujesz</em> przez unikanie trudnych emocji <strong>krótkofalowo</strong>, kontra co <em>tracisz</em> <strong>długofalowo</strong> w wartościach. Jedno z najtrudniejszych emocjonalnie ćwiczeń ACT — wywołuje żal, ale taki, który <em>uruchamia zmianę</em>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Mechanizm krótko- kontra długofalowy</div>
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">Krótkofalowo (zysk)</div>
+          <div class="frame-text">Unikanie <strong>działa</strong> — lęk spada w 5 minut. To <em>negatywne wzmocnienie</em> (redukcja nieprzyjemnego stanu).</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">Długofalowo (koszt)</div>
+          <div class="frame-text">Życie się <strong>kurczy</strong>. Każde unikanie zwęża pole działania. Lata = niewidzialna kumulacja kosztów.</div>
+        </div>
+      </div>
+      <div class="frame-quote">„Ludzie mieszają horyzonty: »unikanie jest lepsze, bo czuję się lepiej teraz«. Bilans odsłania koszt, który był niewidoczny."
+      <span class="frame-quote-attr">— Steven Hayes (2005)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Dane empiryczne</strong>: Luoma i wsp. (2007) — osoby, które przeliczają koszty, 2× częściej działają wartościowo w ciągu miesiąca. Hayes i wsp. (2006, Psychological Bulletin): <em>unikanie doświadczeniowe</em> koreluje z każdym zaburzeniem z DSM. Holt-Lunstad (2010): samotność (forma unikania bliskości) = czynnik ryzyka śmiertelności porównywalny z paleniem 15 papierosów dziennie.</div>
+    
+    <div class="src">Hayes (2005) · Luoma, Hayes, Walser (2007, Learning ACT) · Hayes i wsp. (2006)</div>
+  </section>
+
+  <!-- 2: AREAS OF AVOIDANCE -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Obszary unikania</div>
+    <h1 class="card-prompt">Co <em>regularnie omijasz</em>?</h1>
+    <p class="card-detail">Wybierz obszary, w których unikasz konfrontacji z trudnymi emocjami. Każdy ma <em>krótkofalowy zysk</em> (mniej dyskomfortu) i <strong>długofalowy koszt</strong> (życie się kurczy). Klikaj wszystkie, które rezonują.</p>
+    
+    <div class="av-grid">
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Relacje</strong> — trudne rozmowy odsuwane</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Zdrowie</strong> — wizyty u lekarza, badania</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Kariera</strong> — awans, zmiana pracy</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Kreatywność</strong> — projekty „kiedyś"</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Intymność</strong> — emocjonalne otwarcie</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Odpowiedzialność</strong> — podatki, długi</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Granice</strong> — mówienie „nie"</div>
+      <div class="av-chip" onclick="toggleAv(this)"><strong>Emocje</strong> — żałoba, gniew</div>
+    </div>
+    
+    <div class="examples-h">Albo własne obszary unikania</div>
+    <textarea class="thought-input" id="customAv" placeholder="np. „nie aplikuję na studia magisterskie, choć marzę od 5 lat" / „nie dzwonię do siostry po kłótni" / „nie chodzę na pogrzeby"..." rows="2"></textarea>
+    
+    <div class="examples-h">Wybierz JEDEN obszar do głębszej analizy w następnym kroku</div>
+    <textarea class="thought-input" id="oneArea" placeholder="np. „odsuwam rozmowę z partnerem o problemach finansowych — od pół roku"..." rows="2"></textarea>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: nie wybieraj największego unikania. Wybierz <em>średnie</em> — takie, które jest realne do skonfrontowania w najbliższym czasie. Największe unikania (poważna choroba, śmierć rodzica) potrzebują pracy z terapeutą.</div>
+  </section>
+
+  <!-- 3: 4-COLUMN BALANCE -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Bilans</div>
+    <h1 class="card-prompt">Cztery <em>kolumny</em></h1>
+    <p class="card-detail">Dla wybranego obszaru wypełnij <strong>4 elementy bilansu</strong>. Krótko: co konkretnie unikam, co zyskuję dziś (uczciwie), co tracę długoterminowo, jaką wartość naruszam.</p>
+    
+    <div class="balance-card">
+      <div class="balance-h">Bilans unikania — 4 elementy</div>
+      
+      <div class="balance-row">
+        <span class="balance-label">1. CO konkretnie unikam</span>
+        <textarea class="balance-input" id="b1" placeholder="np. „odsuwam rozmowę z partnerem o naszych długach"..."></textarea>
+      </div>
+      
+      <div class="balance-row">
+        <span class="balance-label warm">2. ZYSK krótkoterminowy (uczciwie — co mi to daje)</span>
+        <textarea class="balance-input" id="b2" placeholder="np. „nie czuję wstydu, nie ryzykuję jego złości, mogę udawać, że nie ma problemu, weekend bez napięcia"..."></textarea>
+      </div>
+      
+      <div class="balance-row">
+        <span class="balance-label sage">3. KOSZT długoterminowy (co przez to tracę)</span>
+        <textarea class="balance-input" id="b3" placeholder="np. „budujemy fałszywą bliskość, dług rośnie z odsetkami, jeśli się rozejdziemy — będę miała poczucie, że mogłam zapobiec"..."></textarea>
+      </div>
+      
+      <div class="balance-row">
+        <span class="balance-label sage">4. WARTOŚĆ, którą naruszam przez unikanie</span>
+        <textarea class="balance-input" id="b4" placeholder="np. „uczciwość w związku, partnerstwo, odwaga, branie odpowiedzialności"..."></textarea>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: pole 2 (zysk) musi być <em>uczciwe</em>. Ludzie często zaprzeczają — „nic nie zyskuję na unikaniu". Nieprawda. Każde unikanie ma <strong>realny zysk emocjonalny</strong>, inaczej by go nie było. Świadomość zysku ułatwia pracę — bo wiesz, czego się boisz, gdy przestaniesz unikać.</div>
+  </section>
+
+  <!-- 4: QUANTIFICATION + PROJECTION -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Kwantyfikacja</div>
+    <h1 class="card-prompt">Ile <em>lat</em>?</h1>
+    <p class="card-detail">Konfrontacja z czasem. Większość osób <strong>nie zdaje sobie sprawy</strong>, jak długo coś unika. Odpowiedź daje siłę motywacyjną — albo <em>uświadamia</em>, że unikanie weszło w nawyk i obroniło status quo.</p>
+    
+    <div class="quant-card">
+      <div class="quant-h">Skala czasowa</div>
+      <div class="quant-grid">
+        <div class="quant-row">
+          <span class="quant-label">Od kiedy unikam tego konkretnego obszaru?</span>
+          <textarea class="quant-input" id="q1" placeholder="np. „od 3 lat" / „od 8 lat — od śmierci taty" / „od zawsze"..."></textarea>
+        </div>
+        
+        <div class="quant-row">
+          <span class="quant-label">Ile godzin tygodniowo zajmuje mi <em>samo unikanie</em> (przygotowywanie się, planowanie, odwoływanie, zamartwianie się)?</span>
+          <textarea class="quant-input" id="q2" placeholder="np. „około 5h tygodniowo: zamartwiam się 30 min dziennie, przekładam wizytę co tydzień"..."></textarea>
+        </div>
+        
+        <div class="quant-row">
+          <span class="quant-label">Co konkretnie straciłem/am DOTYCHCZAS przez to unikanie? (Nie godzin — doświadczeń)</span>
+          <textarea class="quant-input" id="q3" placeholder="np. „2 lata bliskości w związku, możliwą zmianę pracy w 2022, kontakt z bratem od 5 lat"..."></textarea>
+        </div>
+        
+        <div class="quant-row">
+          <span class="quant-label">Co jeśli będę unikał/a kolejne 10 LAT? Czego będę żałować na łożu śmierci?</span>
+          <textarea class="quant-input" id="q4" placeholder="np. „że nigdy nie napisałem książki" / „że dzieci dorosły, a ja byłem nieobecny" / „że nie odbyłem rozmowy z mamą przed jej śmiercią"..."></textarea>
+        </div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Pytanie projekcyjne</strong>: „<em>czego będę żałować na łożu śmierci</em>" — najsilniejsze emocjonalnie. Aktywuje korę przedczołową w sposób, w jaki kalkulacja kosztów nie aktywuje. Ćwiczenie wymaga <strong>tego pytania</strong> — nie omijaj go, mimo dyskomfortu.</div>
+  </section>
+
+  <!-- 5: DECISION + REGRET TYPE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Decyzja</div>
+    <h1 class="card-prompt">Co <em>wybierasz</em>?</h1>
+    <p class="card-detail">Po bilansie i projekcji — moment wyboru. Trzy uczciwe opcje. Każda jest <strong>świadoma</strong>, każda jest dorosła. Ważne, żeby <em>wybrać</em>, a nie tylko biernie kontynuować unikanie.</p>
+    
+    <div class="day-h">Mój wybór</div>
+    
+    <div class="decision-list">
+      <div class="decision-block" onclick="selectDecision(this)">
+        <div class="decision-h">
+          <span class="decision-icon">🎯</span>
+          <span class="decision-name">Jeden krok w tym tygodniu</span>
+        </div>
+        <div class="decision-desc">Mały, konkretny ruch w stronę tego, czego unikam. Telefon, mail, rozmowa, decyzja.</div>
+      </div>
+      
+      <div class="decision-block" onclick="selectDecision(this)">
+        <div class="decision-h">
+          <span class="decision-icon">📅</span>
+          <span class="decision-name">Świadome unikanie z deadline'em</span>
+        </div>
+        <div class="decision-desc">Decyduję unikać, ale daję sobie konkretny termin (do końca miesiąca) — wtedy wracam do tego.</div>
+      </div>
+      
+      <div class="decision-block" onclick="selectDecision(this)">
+        <div class="decision-h">
+          <span class="decision-icon">🤝</span>
+          <span class="decision-name">Praca z terapeutą / mentorem</span>
+        </div>
+        <div class="decision-desc">Obszar wymaga wsparcia. Decyduję poszukać pomocy, zamiast walczyć w pojedynkę.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Konkret wybranej decyzji (kiedy, gdzie, jak)</div>
+    <textarea class="thought-input" id="concrete" placeholder="np. „w niedzielę wieczorem powiem partnerowi: »musimy porozmawiać o budżecie. Boję się tej rozmowy, ale chcę ją odbyć«"..." rows="3"></textarea>
+    
+    <div class="day-h">Żal generatywny kontra destruktywny</div>
+    <div class="regret-row">
+      <div class="regret-block dest">
+        <div class="regret-h">⊗ Destruktywny</div>
+        <div class="regret-text">„Jestem do niczego, zmarnowałem życie, za późno. Na nic nie zasługuję."</div>
+      </div>
+      <div class="regret-block gen">
+        <div class="regret-h">✓ Generatywny</div>
+        <div class="regret-text">„Żyłem inaczej. Żałuję — ale teraz wiem. Zaczynam dziś, mając tę świadomość."</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: jeśli ćwiczenie zostawia cię w żalu <em>destruktywnym</em> („jestem do niczego") — to znak, że potrzebujesz wsparcia (terapeuta, bliska osoba). <strong>Nie zostawaj sam/a w destruktywnym żalu</strong>. Generatywny żal otwiera działanie. Destruktywny — paraliżuje. Oba są normalne, ale wymagają różnego wsparcia.</div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Hayesa</div>
+      <div class="repeat-body">Unikanie działa na <strong>krótki dystans</strong>. Wartościowe życie — na <strong>długi</strong>. <em>Świadomość kosztu unikania nie jest po to, żeby się obwiniać</em>. Jest po to, żeby <em>móc wybrać</em>. Bilans odsłania to, co było niewidoczne. Reszta jest twoja.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.av-chip.active, .decision-block.active').forEach(b => b.classList.remove('active'));
+    ['customAv','oneArea','b1','b2','b3','b4','q1','q2','q3','q4','concrete'].forEach(id => document.getElementById(id).value = '');
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleAv(el) { el.classList.toggle('active'); }
+
+function selectDecision(el) {
+  document.querySelectorAll('.decision-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_koszt_unikania";
+  var clickSel0 = '.av-chip, .decision-block';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.av-chip, .decision-block')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Regeneracja — paliwo, nie nagroda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.path-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.path-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.path-card.picked .path-desc { color: rgba(244,241,234,0.85); }
+.path-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.path-card.picked .path-h { color: var(--bg); }
+.path-desc { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; }
+.path-meta { font-size: 11px; color: var(--sage-deep); margin-top: 6px; font-weight: 600; letter-spacing: 0.06em; }
+.path-card.picked .path-meta { color: var(--sage); }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); }
+.proto-row:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); font-size: 16px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.proto-text strong { color: var(--bg); font-weight: 600; }
+.proto-text em { color: var(--sage); font-style: italic; }
+
+.diag-box { padding: 12px 14px; border-radius: 10px; margin: 12px 0; background: rgba(184,197,168,0.14); border-left: 3px solid var(--sage-deep); display: none; }
+.diag-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.diag-body { font-size: 12.5px; line-height: 1.55; color: var(--ink-mute); }
+
+.elem-card { background: rgba(184,197,168,0.10); padding: 10px 14px; border-radius: 10px; border-left: 3px solid var(--sage-deep); margin-bottom: 8px; }
+.elem-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.elem-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-mute); }
+
+.layer-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 12px 0; }
+.layer-card { padding: 12px 14px; border-radius: 10px; border-left: 3px solid var(--sage-deep); background: rgba(184,197,168,0.10); }
+.layer-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: 0.04em; }
+.layer-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-mute); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Regeneracja — paliwo, nie nagroda</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- KROK 1 -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Regeneracja jest <em>warunkiem koniecznym</em>, nie nagrodą</h1>
+    <p class="card-detail">Hobfoll (1989, „Conservation of Resources”) opisał stres jako utratę zasobów. McEwen (2008, allostatic load): chroniczne aktywacje HPA bez czasu na powrót do baseline kumulują się jako uszkodzenia narządów. Sonnentag (2003, 2018): regeneracja po pracy nie jest „bonusem”, lecz mechanizmem utrzymującym zdrowie poznawcze i somatyczne. Bez planu regeneracji żadna technika redukcji stresu nie działa długoterminowo — bo organizm nie ma kiedy odbudować zasobów.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary regeneracji</div>
+      <div class="element-row">
+        <span class="element-icon">🛌</span>
+        <span class="element-text"><strong>Sen 7—9h</strong> — Walker (2017): glymphatic clearance, konsolidacja pamięci, regeneracja kory przedczołowej. Niezastępowalne.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🏃</span>
+        <span class="element-text"><strong>Ruch 150 min/tydzień</strong> — Pedersen & Saltin (2015): obniża baseline kortyzolu, zwiększa BDNF, wspiera neurogenezę. Działa jak antydepresant.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⏸️</span>
+        <span class="element-text"><strong>Mikropauzy co 90 min</strong> — Trougakos (2014): przerwy w pracy redukują kumulację zmęczenia poznawczego. Rytm ultradobowy: 90 min koncentracji + 15—20 min przerwy.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌳</span>
+        <span class="element-text"><strong>Czas wolny i natura</strong> — White i in. (2019, Sci Rep): minimum 120 min tygodniowo na łonie natury istotnie poprawia zdrowie subiektywne. Sonnentag: psychologiczne odłączenie od pracy kluczowe.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Allostatic load to nie jednorazowa reakcja na stres, lecz koszt biologiczny przewlekłej adaptacji bez okresów regeneracji. Każda nieprzespana noc, każdy nieprzerwany tydzień, każdy urlop, którego nie wzięłaś, zostaje zapisany w fizjologii.”
+      <span class="frame-quote-attr">— McEwen (2008), Eur J Pharmacol</span>
+    </div>
+
+    <div class="term-note"><strong>Hobfoll (1989, 2002)</strong>: Conservation of Resources. Stres = utrata lub zagrożenie utratą zasobów (czasu, energii, relacji, kompetencji). Spirale strat: utrata zasobu utrudnia ich odbudowę (osoba wycieńczona ma mniej energii, by dbać o sen i ruch). Regeneracja przerywa spiralę.</div>
+
+    <div class="term-note"><strong>Sonnentag & Fritz (2007, J Occup Health Psychol)</strong>: cztery wymiary regeneracji: <em>psychological detachment</em> (odcięcie myślowe od pracy), <em>relaxation</em> (niskie pobudzenie), <em>mastery experiences</em> (poczucie kompetencji w nowym obszarze), <em>control</em> (autonomia w czasie wolnym). Każdy wymiar przewiduje samopoczucie nazajutrz <em>niezależnie</em>.</div>
+
+    <div class="term-note"><strong>McEwen (2008, 2012)</strong>: allostatic load to suma „kosztów” biologicznych chronicznej adaptacji do stresu. Markery: kortyzol, ciśnienie, cholesterol, HbA1c, CRP. Kumulacja prowadzi do chorób układu krążenia, cukrzycy, depresji. Regeneracja redukuje load mierzalnie.</div>
+
+    <div class="term-note"><strong>Walker (2017)</strong>: 7—9h snu nie jest sugestią, lecz biologiczną normą gatunkową. Mit „mnie wystarczy 5h” — w prospektywnych badaniach mniej niż 1% populacji posiada genetyczny krótkośpiochów (DEC2, ADRB1). Pozostali kompensują utratę funkcji bez świadomości.</div>
+
+    <div class="term-note"><strong>White i in. (2019, Scientific Reports, N=20 264)</strong>: 120 min tygodniowo w naturze — próg zdrowotny. Niezależnie od dawki dziennej (np. 2× po 60 min), efekt na zdrowie i samopoczucie znaczący. Mniej niż 120 min — efekt nieznaczący lub zerowy.</div>
+
+    <div class="src">Hobfoll (1989, 2002), Conservation of Resources; Sonnentag & Fritz (2007), J Occup Health Psychol; McEwen (2008), Eur J Pharmacol; Walker (2017), <em>Why We Sleep</em>; Pedersen & Saltin (2015); Trougakos (2014); White i in. (2019), Sci Rep</div>
+  </section>
+
+  <!-- KROK 2 -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Sytuacja</div>
+    <h1 class="card-prompt">Twój profil regeneracji — gdzie luka?</h1>
+    <p class="card-detail">Regeneracja działa warstwowo. Zwykle u osoby przewlekle zestresowanej brakuje nie wszystkich elementów, lecz konkretnych. Zaznacz, ile minut tygodniowo realnie inwestujesz w każdą warstwę:</p>
+
+    <div class="scale">
+      <div class="scale-title">Sen — średnio godziny na dobę</div>
+      <div class="scale-bounds"><span>4 godz.</span><span>10 godz.</span></div>
+      <input type="range" class="scale-input" id="sleep" min="4" max="10" step="0.5" value="6" data-default="6" oninput="document.getElementById('sleepVal').textContent=this.value+' godz.';if(typeof save==='function')save();updateRegenScore();">
+      <div class="scale-readout"><span>Sen</span><span id="sleepVal">6 godz.</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Ruch — minuty tygodniowo</div>
+      <div class="scale-bounds"><span>0 min</span><span>300 min</span></div>
+      <input type="range" class="scale-input" id="move" min="0" max="300" step="15" value="60" data-default="60" oninput="document.getElementById('moveVal').textContent=this.value+' min';if(typeof save==='function')save();updateRegenScore();">
+      <div class="scale-readout"><span>Ruch</span><span id="moveVal">60 min</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Mikropauzy w pracy — ile dziennie?</div>
+      <div class="scale-bounds"><span>0 razy</span><span>10 razy</span></div>
+      <input type="range" class="scale-input" id="breaks" min="0" max="10" step="1" value="2" data-default="2" oninput="document.getElementById('breaksVal').textContent=this.value;if(typeof save==='function')save();updateRegenScore();">
+      <div class="scale-readout"><span>Pauzy</span><span id="breaksVal">2</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Natura — minuty tygodniowo</div>
+      <div class="scale-bounds"><span>0 min</span><span>300 min</span></div>
+      <input type="range" class="scale-input" id="nature" min="0" max="300" step="15" value="30" data-default="30" oninput="document.getElementById('natureVal').textContent=this.value+' min';if(typeof save==='function')save();updateRegenScore();">
+      <div class="scale-readout"><span>Natura</span><span id="natureVal">30 min</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Hobby / „dla siebie” — godziny tygodniowo</div>
+      <div class="scale-bounds"><span>0 godz.</span><span>20 godz.</span></div>
+      <input type="range" class="scale-input" id="hobby" min="0" max="20" step="1" value="2" data-default="2" oninput="document.getElementById('hobbyVal').textContent=this.value+' godz.';if(typeof save==='function')save();updateRegenScore();">
+      <div class="scale-readout"><span>Hobby</span><span id="hobbyVal">2 godz.</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Dni „off” w tygodniu (bez pracy / e-maili)</div>
+      <div class="scale-bounds"><span>0 dni</span><span>2 dni</span></div>
+      <input type="range" class="scale-input" id="off" min="0" max="2" step="1" value="1" data-default="1" oninput="document.getElementById('offVal').textContent=this.value;if(typeof save==='function')save();updateRegenScore();">
+      <div class="scale-readout"><span>Dni off</span><span id="offVal">1</span></div>
+    </div>
+
+    <div class="diag-box" id="regenFb">
+      <div class="diag-h" id="regenH">Twój profil regeneracji</div>
+      <div class="diag-body" id="regenT"></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Co najczęściej blokuje regenerację u ciebie?</p>
+    <div class="example-chips" id="blocks">
+      <div class="example-chip" onclick="this.classList.toggle('picked')">⏰ „Nie mam czasu” — kalendarz przeładowany</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">😣 Poczucie winy przy odpoczynku</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">📱 Stałe podłączenie (e-mail, Slack)</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🎭 „Zasłużyć” odpoczynek wcześniejszą produktywnością</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">👨‍👩‍👧 Obowiązki rodzinne / opiekuńcze</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">💸 Finansowa konieczność dwóch prac</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🏆 Tożsamość = produktywność</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">😪 Kiedy mam czas — nie wiem, jak odpoczywać</div>
+    </div>
+
+    <div class="term-note"><strong>Sonnentag (2018, Annu Rev Org Psychol)</strong>: <em>recovery paradox</em> — osoby najbardziej potrzebujące regeneracji mają najmniejsze zasoby na jej wprowadzenie. Wycieńczenie utrudnia podjęcie aktywności, które z niego wyciągają. Wyjście: małe, strukturalne zmiany — kalendarz zamiast woli.</div>
+  </section>
+
+  <!-- KROK 3 -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór ścieżki</div>
+    <h1 class="card-prompt">Trzy ścieżki budowy planu regeneracji</h1>
+    <p class="card-detail">Wybierz dominującą ścieżkę. Każda odpowiada innemu profilowi blokad.</p>
+
+    <div class="path-card" onclick="pickPath(this,'structure')">
+      <div class="path-h">Ścieżka A · Strukturalne wpisanie regeneracji</div>
+      <div class="path-desc">„Nie mam czasu”, kalendarz pełny, zostaje 0 min na siebie. Priorytet: <em>przed</em> wprowadzaniem nowych aktywności — wpisać regenerację w kalendarz tak samo jak spotkania zawodowe. Bez slotu kalendarzowego nic nie powstanie.</div>
+      <div class="path-meta">DLA PRZECIĄŻONYCH KALENDARZEM</div>
+    </div>
+
+    <div class="path-card" onclick="pickPath(this,'guilt')">
+      <div class="path-h">Ścieżka B · Praca z poczuciem winy przy odpoczynku</div>
+      <div class="path-desc">Czas jest — ale odpoczynek wywołuje niepokój, „powinienem/powinnam coś robić”. Tożsamość zlana z produktywnością. Priorytet: cognitive restructuring, ekspozycja na odpoczynek bez kompensacji, mastery experiences.</div>
+      <div class="path-meta">DLA PRACOHOLIKÓW I PERFEKCJONISTÓW</div>
+    </div>
+
+    <div class="path-card" onclick="pickPath(this,'detach')">
+      <div class="path-h">Ścieżka C · Psychologiczne odłączenie</div>
+      <div class="path-desc">Czas wolny istnieje, ale głowa nadal w pracy — sprawdzasz e-mail w niedzielę, scenariusze służbowe wieczorem, „odpoczywasz” nie odpoczywając. Priorytet: rytuały odłączania, ograniczenia technologiczne, psychological detachment Sonnentag.</div>
+      <div class="path-meta">DLA „PRACUJĄCYCH GŁOWĄ” 24/7</div>
+    </div>
+
+    <div class="diag-box" id="pathFb" style="display:none">
+      <div class="diag-h">Twój priorytet</div>
+      <div class="diag-body" id="pathDetail"></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Strukturalna pułapka warta uwagi:</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Kiedy regeneracja sama nie wystarczy</div>
+      <div class="element-row">
+        <span class="element-icon">🚨</span>
+        <span class="element-text"><strong>Praca toksyczna</strong> — gdy źródłem chronicznego stresu jest nie objętość zadań, lecz szef-mobber, niesprawiedliwy system wynagrodzeń, brak kontroli (Karasek). Regeneracja jest plastrem na ranę, która krwawi codziennie. Wymaga decyzji o zmianie miejsca pracy.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚨</span>
+        <span class="element-text"><strong>Obowiązki opiekuńcze 24/7</strong> — opiekun osoby z chorobą przewlekłą, samotny rodzic małych dzieci. Wymaga zewnętrznego wsparcia (wytchnieniowego, opiekuna), nie tylko technik. „Plan regeneracji” bez realnej pomocy jest okrutny.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚨</span>
+        <span class="element-text"><strong>Bieda</strong> — finansowa konieczność dwóch prac. Mullainathan & Shafir (2013): brak zasobów obciąża funkcje wykonawcze. Wymaga interwencji systemowych (świadczenia, doradztwo finansowe), nie tylko mindfulness.</span>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>Sonnentag (2003, J Appl Psychol)</strong>: <em>psychological detachment</em> — kluczowy mechanizm regeneracji. Bez odłączenia myślowego od pracy w czasie wolnym aktywacja HPA utrzymuje się. Smartfon i Slack uniemożliwiają detachment u około 60% pracowników wiedzy.</div>
+  </section>
+
+  <!-- KROK 4 -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka</div>
+    <h1 class="card-prompt">Trzy protokoły 4-tygodniowe</h1>
+    <p class="card-detail">Wybierz protokół zgodny ze ścieżką. Każdy ma 5 sekwencyjnych kroków — wprowadzaj kolejne dopiero po opanowaniu poprzedniego.</p>
+
+    <div class="proto-card">
+      <div class="proto-h">PROTOKÓŁ A · Strukturalne wpisanie</div>
+      <div class="proto-row"><span class="proto-num">1</span><span class="proto-text"><strong>Audyt kalendarza.</strong> Zaznacz w kalendarzu ostatniego tygodnia <em>realny</em> czas — nie planowany. Dla większości osób to szok: 8h pracy → 11h aktywności pracowych z dojazdami.</span></div>
+      <div class="proto-row"><span class="proto-num">2</span><span class="proto-text"><strong>Zaplanuj sen jak spotkanie.</strong> Kładzenie się i wstawanie — wpis w kalendarz. Bez tego sen jest „resztą”. Z tym staje się zobowiązaniem na równi z pracą.</span></div>
+      <div class="proto-row"><span class="proto-num">3</span><span class="proto-text"><strong>Trzy bloki ruchu w tygodniu.</strong> 50 min każdy (z dojazdem) → suma 150 min. Wpisz konkretne dni i godziny. <em>Bez</em> wpisu nie powstaną — to reguła operacyjna, nie pesymizm.</span></div>
+      <div class="proto-row"><span class="proto-num">4</span><span class="proto-text"><strong>Mikropauzy automatyczne.</strong> Timer Pomodoro 90 min pracy + 15 min przerwa (nie e-mail, nie scrollowanie — woda, krótki spacer, oddech). Aplikacja pilnuje za ciebie.</span></div>
+      <div class="proto-row"><span class="proto-num">5</span><span class="proto-text"><strong>Niedziela off — zasada twarda.</strong> Wpis: „17:00 sob — 8:00 pn: bez e-maila/Slacka”. Auto-responder, telefon w innym pokoju. Pierwsza niedziela trudna, druga łatwiejsza.</span></div>
+    </div>
+
+    <div class="proto-card">
+      <div class="proto-h">PROTOKÓŁ B · Praca z winą</div>
+      <div class="proto-row"><span class="proto-num">1</span><span class="proto-text"><strong>Zauważ schemat.</strong> Co mówi wewnętrzny głos przy próbie odpoczynku? „Powinieneś/powinnaś jeszcze”, „inni nie mają czasu”, „zasłużysz, gdy skończysz”. Sam zapis demaskuje schemat.</span></div>
+      <div class="proto-row"><span class="proto-num">2</span><span class="proto-text"><strong>Cognitive restructuring.</strong> „Odpoczynek to lenistwo” → „Odpoczynek to inwestycja w jutrzejszą skuteczność”. Powtarzane, nie jednorazowe. Klejone do <em>konkretnej</em> sytuacji odpoczywania.</span></div>
+      <div class="proto-row"><span class="proto-num">3</span><span class="proto-text"><strong>Ekspozycja na odpoczynek bez kompensacji.</strong> 30 min nicnierobienia — bez sprzątania, bez czytania mailingów, bez słuchania podcastu „rozwojowego”. Pierwsze próby wywołują niepokój — to oczekiwane, mija po 10—15 min.</span></div>
+      <div class="proto-row"><span class="proto-num">4</span><span class="proto-text"><strong>Mastery experiences.</strong> Sonnentag (2007): regeneruje także aktywność, w której rośniesz w nowym obszarze (gra, język, hobby manualne). <em>Nie</em> bezwład; <em>zaangażowanie poza pracą</em>. Dla pracoholików łatwiejsze niż „leżenie”.</span></div>
+      <div class="proto-row"><span class="proto-num">5</span><span class="proto-text"><strong>Eksperyment behawioralny.</strong> Tydzień konsekwentnej regeneracji vs zwykły tydzień. Pomiar jakości pracy, kreatywności, błędów. Większość osób z winą odkrywa, że regeneracja zwiększa, a nie zmniejsza, efektywność.</span></div>
+    </div>
+
+    <div class="proto-card">
+      <div class="proto-h">PROTOKÓŁ C · Psychologiczne odłączenie</div>
+      <div class="proto-row"><span class="proto-num">1</span><span class="proto-text"><strong>Rytuał zamknięcia dnia.</strong> 5 min na koniec pracy: zapis 3 zadań na jutro, zamknięcie laptopa, zmiana ubrania. Sygnał mózgowi: „pracownik off, człowiek on”.</span></div>
+      <div class="proto-row"><span class="proto-num">2</span><span class="proto-text"><strong>Ograniczenia technologiczne.</strong> Telefon w innym pokoju po 19:00. Slack/e-mail w aplikacji desktopowej (nie na telefonie). Auto-odpowiedź wieczorami: „Odpisuję rano”.</span></div>
+      <div class="proto-row"><span class="proto-num">3</span><span class="proto-text"><strong>Aktywność angażująca uwagę.</strong> Detachment ułatwiają zajęcia wymagające skupienia (sport, gotowanie, gra na instrumencie). „Leżeć i myśleć” sprzyja powrotom myślowym do pracy. Aktywność wypycha pracę z głowy.</span></div>
+      <div class="proto-row"><span class="proto-num">4</span><span class="proto-text"><strong>Worry dump przed snem.</strong> 10 min na piśmie: wszystko, co jutro, co niedokończone, co martwi. Każdej pozycji towarzyszy „pierwszy krok”. Mózg „odkłada” temat, gdy widzi go zapisanego.</span></div>
+      <div class="proto-row"><span class="proto-num">5</span><span class="proto-text"><strong>Urlop bez maila.</strong> Minimum 2 tygodnie ciągłej rocznie. Auto-responder, dane kontaktowe zastępcy, telefon służbowy wyłączony. Bez tego cykl 12-miesięczny nigdy nie zamyka się — kortyzol baseline rośnie z roku na rok.</span></div>
+    </div>
+
+    <div class="elem-card">
+      <div class="elem-h">🎯 Mastery experiences — kontekst</div>
+      <div class="elem-body">Sonnentag i Fritz (2007) wyróżniły mastery jako jeden z czterech wymiarów regeneracji. Aktywność, w której rozwijasz kompetencję poza pracą — uczysz się języka, grasz na instrumencie, doskonalisz technikę gotowania, biegasz dłuższy dystans — regeneruje na <em>innej</em> drodze niż relaksacja. Wzmacnia poczucie sprawstwa, nie wymaga pasywności. Dla pracoholików często łatwiejsza brama wejścia niż leżenie na sofie.</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Twój plan tygodniowy — wpisy konkretne:</p>
+    <textarea class="thought-input" id="weeklyPlan" placeholder="np.&#10;Pn—Pt: pobudka 6:30, sen 22:30—6:30 (zaplanowane jak spotkanie)&#10;Pn/Śr/Pt 18:00—19:00: bieg / siłownia&#10;Codziennie 12:30—13:00: spacer w parku zamiast lunchu przy biurku&#10;So 10:00—12:00: las z partnerką (natura)&#10;Pt 17:00 — niedziela 8:00: bez e-maila i Slacka, telefon w innym pokoju" rows="6"></textarea>
+
+    <div class="term-note"><strong>Próg 4 tygodni</strong>: pierwsza ocena efektu nie wcześniej niż po miesiącu. Tydzień to za mało — organizm potrzebuje czasu na odbudowę zasobów. Po 4 tygodniach: poprawa snu, energii, koncentracji, zwykle też odporności (mniej infekcji w sezonie).</div>
+  </section>
+
+  <!-- KROK 5 -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Pomiar 4-tygodniowy</div>
+    <h1 class="card-prompt">Czy zasoby <em>odbudowują się</em> szybciej niż wyczerpują?</h1>
+    <p class="card-detail">Cel praktyki nie brzmi „regenerować się idealnie”. Cel: przewaga regeneracji nad zużyciem w skali tygodnia. Pomiar po 4 tygodniach.</p>
+
+    <div class="scale">
+      <div class="scale-title">Sen — średnio godziny na dobę (po 4 tyg.)</div>
+      <div class="scale-bounds"><span>4 godz.</span><span>10 godz.</span></div>
+      <input type="range" class="scale-input" id="sleepGoal" min="4" max="10" step="0.5" value="7.5" data-default="7.5" oninput="document.getElementById('sleepGoalVal').textContent=this.value+' godz.';if(typeof save==='function')save();">
+      <div class="scale-readout"><span>Sen — cel</span><span id="sleepGoalVal">7.5 godz.</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Ruch — minuty tygodniowo (po 4 tyg.)</div>
+      <div class="scale-bounds"><span>0 min</span><span>300 min</span></div>
+      <input type="range" class="scale-input" id="moveGoal" min="0" max="300" step="15" value="150" data-default="150" oninput="document.getElementById('moveGoalVal').textContent=this.value+' min';if(typeof save==='function')save();">
+      <div class="scale-readout"><span>Ruch — cel</span><span id="moveGoalVal">150 min</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Subiektywna energia rano (0—10)</div>
+      <div class="scale-bounds"><span>0 — wycieńczenie</span><span>10 — pełnia</span></div>
+      <input type="range" class="scale-input" id="energy" min="0" max="10" step="1" value="7" data-default="7" oninput="document.getElementById('energyVal').textContent=this.value;if(typeof save==='function')save();">
+      <div class="scale-readout"><span>Energia</span><span id="energyVal">7</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Praktyki, które wprowadzasz na 4 tygodnie:</p>
+    <div class="example-chips" id="weekly">
+      <div class="example-chip" onclick="this.classList.toggle('picked')">⏰ Stała pora snu wpisana w kalendarz</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🏃 3× tygodniowo ruch (150 min)</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">⏸️ Pomodoro 90/15 w pracy</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🌳 120 min natura tygodniowo</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">📵 1 dzień off bez e-maila</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🎨 2—3h hobby tygodniowo (mastery)</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🚪 Rytuał zamknięcia dnia 5 min</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">📝 Worry dump 10 min przed snem</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">🛫 Urlop 2 tyg./rok bez kontaktu</div>
+      <div class="example-chip" onclick="this.classList.toggle('picked')">👥 1 dłuższe spotkanie z bliskimi/tydz.</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Twój kontrakt 4-tygodniowy:</p>
+    <textarea class="thought-input" id="contract" placeholder="np. „Tydz. 1—4: sen 22:30—6:30 wpisany jak spotkanie. 3× tyg. bieg 50 min. Codziennie Pomodoro 90/15. Sob/Nd 2h las. Pt 17:00 — Pn 8:00 bez Slacka. 1× tyg. lekcja włoskiego (mastery). Po 4 tyg.: pomiar energii rano + sumy ruchu + dni off.”" rows="6"></textarea>
+
+    <div class="final-msg">
+      Regeneracja nie jest nagrodą za produktywność — jest jej fundamentem. Kierowca, który nie tankuje, nie dojedzie do celu, choćby pedał gazu wciskał najmocniej. Twój układ nerwowy działa tak samo: zasoby trzeba odbudowywać <em>aktywnie</em>, nie pasywnie czekając, „aż będzie czas”. Wpis w kalendarzu jest aktem szacunku do własnej fizjologii. Niedziela bez e-maila nie jest słabością — jest jedyną drogą, by w poniedziałek nie być wraku.
+    </div>
+
+    <div class="term-note"><strong>Pomiar długoterminowy</strong>: po 6 mies. — pełen ponowny audyt. Czy zmienił się kortyzol baseline (badanie laboratoryjne, opcjonalne)? Czy zmniejszyła się liczba dni chorobowych? Czy wzrosła subiektywna jakość pracy? Jeśli mimo regeneracji baseline nie spada — sygnał, że problem jest strukturalny (toksyczna praca, opieka 24/7, finansowy stres) i wymaga decyzji systemowych.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Cztery filary: <strong>sen 7—9h · ruch 150 min · mikropauzy 90/15 · natura 120 min</strong>. Cztery wymiary regeneracji (Sonnentag): <em>detachment · relaxation · mastery · control</em>. Trzy ścieżki: <strong>strukturalne wpisanie · praca z winą · psychologiczne odłączenie</strong>. Bez slotu kalendarzowego nic nie powstaje. Niedziela off — twarda zasada. Urlop 2 tyg. ciągłej rocznie.</div>
+    </div>
+
+    <div class="src">Sonnentag (2003, 2018); Sonnentag & Fritz (2007); Hobfoll (1989, 2002); McEwen (2008); Walker (2017); Pedersen & Saltin (2015); Trougakos (2014); White i in. (2019), Sci Rep; Mullainathan & Shafir (2013), <em>Scarcity</em></div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateRegenScore(){
+  var sleep = parseFloat(document.getElementById('sleep').value);
+  var move = parseInt(document.getElementById('move').value);
+  var breaks = parseInt(document.getElementById('breaks').value);
+  var nature = parseInt(document.getElementById('nature').value);
+  var hobby = parseInt(document.getElementById('hobby').value);
+  var off = parseInt(document.getElementById('off').value);
+
+  var deficits = [];
+  if(sleep < 7) deficits.push('sen');
+  if(move < 150) deficits.push('ruch');
+  if(breaks < 4) deficits.push('mikropauzy');
+  if(nature < 120) deficits.push('natura');
+  if(hobby < 3) deficits.push('hobby');
+  if(off < 1) deficits.push('dni off');
+
+  var box = document.getElementById('regenFb');
+  var h = document.getElementById('regenH');
+  var t = document.getElementById('regenT');
+
+  if(deficits.length === 0){
+    h.textContent = 'Profil regeneracji zdrowy';
+    t.innerHTML = 'Wszystkie filary spełnione. Zadanie: <strong>utrzymanie</strong>. Profilaktyka — nie czekanie, aż jeden z filarów upadnie pod presją sezonowego stresu (zima, deadline, choroba w rodzinie).';
+  } else if(deficits.length <= 2){
+    h.textContent = 'Punktowe luki — pojedyncze filary';
+    t.innerHTML = 'Brakuje konkretnych obszarów: <strong>' + deficits.join(', ') + '</strong>. Punktowa interwencja: nie zaczynaj od wszystkiego naraz. Wybierz jeden filar i pracuj 4 tygodnie. Po stabilizacji dołącz kolejny.';
+  } else if(deficits.length <= 4){
+    h.textContent = 'Wielowarstwowy deficyt regeneracji';
+    t.innerHTML = 'Braki w obszarach: <strong>' + deficits.join(', ') + '</strong>. Allostatic load prawdopodobnie podwyższony. Priorytet: <em>najpierw sen</em> (jeśli &lt;7h), potem ruch i mikropauzy. Inne dołączaj po stabilizacji bazy.';
+  } else {
+    h.textContent = 'Kryzysowy deficyt regeneracji';
+    t.innerHTML = 'Brakuje większości filarów: <strong>' + deficits.join(', ') + '</strong>. Wskazana ocena, czy źródło jest behawioralne (kalendarz, wina, detachment), czy strukturalne (toksyczna praca, opieka 24/7, finansowa konieczność). W tym drugim przypadku same techniki nie wystarczą — potrzebne decyzje systemowe lub zewnętrzne wsparcie.';
+  }
+  box.style.display = 'block';
+}
+
+function pickPath(card, p){
+  document.querySelectorAll('.path-card').forEach(function(c){ c.classList.remove('picked'); });
+  card.classList.add('picked');
+  state.path = p;
+  if(typeof save === 'function') save();
+  var fb = document.getElementById('pathFb');
+  var det = document.getElementById('pathDetail');
+  var map = {
+    structure: 'Twój priorytet: wpisanie regeneracji w kalendarz jak spotkania zawodowego. Bez slotu nic nie powstanie. Kolejność: sen → ruch → mikropauzy → niedziela off.',
+    guilt: 'Twój priorytet: cognitive restructuring „odpoczynek = lenistwo” → „odpoczynek = inwestycja”. Ekspozycja na odpoczynek bez kompensacji. Mastery experiences jako brama wejścia.',
+    detach: 'Twój priorytet: rytuał zamknięcia dnia, ograniczenia technologiczne, aktywność angażująca uwagę poza pracą, urlop 2 tyg. ciągłej rocznie bez e-maila.'
+  };
+  det.textContent = map[p] || '';
+  fb.style.display = 'block';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_st_regeneracja — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_st_regeneracja";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+  if(document.getElementById('sleep')) updateRegenScore();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

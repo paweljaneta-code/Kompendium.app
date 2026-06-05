@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Audyt maskowania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.mask-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; margin-bottom: 8px; }
+.mask-name { flex: 1; font-size: 13.5px; color: var(--ink); line-height: 1.45; }
+.mask-name strong { color: var(--ink); font-weight: 600; }
+.mask-pick { display: flex; gap: 4px; flex-shrink: 0; }
+.mask-btn { padding: 5px 10px; border-radius: 14px; border: 1px solid var(--sage); background: rgba(255,255,255,0.5); color: var(--ink-soft); font-size: 11px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.mask-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); font-weight: 600; }
+.koszt-card { padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 8px 8px 0; margin-bottom: 8px; }
+.koszt-h { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.koszt-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.koszt-body strong { color: var(--ink); font-weight: 600; }
+.bezp-card { padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--sage); background: rgba(184,197,168,0.18); }
+.bezp-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.bezp-card.picked .bezp-desc { color: rgba(244,241,234,0.85); }
+.bezp-name { font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+.bezp-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Audyt maskowania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Maskowanie — <em>koszt</em> ukrytego dopasowania</h1>
+  <p class="card-detail">Maskowanie (camouflaging — Hull i in., 2017) to świadome lub automatyczne <strong>ukrywanie</strong> cech autystycznych i naśladowanie zachowań neurotypowych w sytuacjach społecznych. CAT-Q (Camouflaging Autistic Traits Questionnaire — Hull i in., 2019) wyróżnia trzy wymiary: <strong>kompensacja</strong> (uczę się skryptów i naśladuję), <strong>maskowanie</strong> (tłumię stimy i mimikę autystyczną), <strong>asymilacja</strong> (próbuję się wpasować jako „normalny/a"). Mechanizm jest <em>kosztowny</em>: każda rozmowa wymaga aktywnej pracy poznawczej, której u osób neurotypowych nie ma — i ten koszt kumuluje się w wypaleniu, depresji, lęku.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Trzy wymiary CAT-Q (Hull 2019)</div>
+    <div class="element-row">
+      <span class="element-icon">🎭</span>
+      <span class="element-text"><strong>Kompensacja</strong> — uczę się skryptów i mimiki, ćwiczę gest, kontakt wzrokowy, tempo wypowiedzi. Wymaga ciągłej pracy poznawczej w tle każdej rozmowy.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔇</span>
+      <span class="element-text"><strong>Maskowanie</strong> — tłumię stimy, ograniczam ruch, kontroluję ton głosu, hamuję info-dump na temat fascynacji. Każde tłumienie jest aktywnym wysiłkiem.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🪞</span>
+      <span class="element-text"><strong>Asymilacja</strong> — próbuję wyglądać jak osoba neurotypowa, by „pasować". Najgłębszy poziom — dotyka tożsamości, nie tylko zachowań.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚠️</span>
+      <span class="element-text"><strong>Predyktor cierpienia</strong> — Cassidy i in. (2018): masking koreluje z myślami samobójczymi w grupie autystycznej. Raymaker i in. (2020): główna przyczyna wypalenia autystycznego.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Camouflaging wykonuje się dlatego, że konsekwencje bycia odsłoniętym jako osoba autystyczna w środowisku neurotypowym są realne — i jednocześnie sam akt ukrywania jest jedną z głównych przyczyn pogorszenia zdrowia psychicznego u osób autystycznych."
+    <span class="frame-quote-attr">— Hull i in. (2017, JADD)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: maskowanie to <em>adaptacja</em>, nie wada charakteru. Powstaje, gdy cena bycia widzialnym/ą jest wysoka. Cel narzędzia: nie znieść maskingu globalnie, lecz <strong>zlokalizować bezpieczne przestrzenie</strong>, w których maska może opadać.</div>
+
+  <div class="src">Hull i in. (2017, JADD); Hull i in. (2019, JADD, CAT-Q); Cassidy i in. (2018, Molecular Autism); Raymaker i in. (2020, Autism in Adulthood, autistic burnout); Lai i in. (2017, Autism, female phenotype).</div>
+</section>
+
+<!-- ============== KROK 2 — 🎯 Audyt maskowania ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Audyt — gdzie maskujesz</div>
+  <h1 class="card-prompt">Pięć typowych <em>zachowań maskujących</em></h1>
+  <p class="card-detail">Dla każdego zaznacz: <strong>+</strong> (robię to świadomie, codziennie), <strong>=</strong> (robię to czasami / w niektórych miejscach), <strong>−</strong> (raczej nie maskuję w tym obszarze).</p>
+
+  <div class="mask-row" id="m1">
+    <span class="mask-name"><strong>Kontakt wzrokowy</strong> — wymuszam, kontroluję, liczę sekundy</span>
+    <span class="mask-pick">
+      <button class="mask-btn" id="m1_p" onclick="pickMask('m1','p')">+</button>
+      <button class="mask-btn" id="m1_e" onclick="pickMask('m1','e')">=</button>
+      <button class="mask-btn" id="m1_m" onclick="pickMask('m1','m')">−</button>
+    </span>
+  </div>
+  <div class="mask-row" id="m2">
+    <span class="mask-name"><strong>Pogawędka</strong> — przygotowuję wcześniej tematy, udaję zainteresowanie</span>
+    <span class="mask-pick">
+      <button class="mask-btn" id="m2_p" onclick="pickMask('m2','p')">+</button>
+      <button class="mask-btn" id="m2_e" onclick="pickMask('m2','e')">=</button>
+      <button class="mask-btn" id="m2_m" onclick="pickMask('m2','m')">−</button>
+    </span>
+  </div>
+  <div class="mask-row" id="m3">
+    <span class="mask-name"><strong>Tłumienie stimów</strong> — siedzę nieruchomo, zaciskam dłoń pod stołem zamiast machać</span>
+    <span class="mask-pick">
+      <button class="mask-btn" id="m3_p" onclick="pickMask('m3','p')">+</button>
+      <button class="mask-btn" id="m3_e" onclick="pickMask('m3','e')">=</button>
+      <button class="mask-btn" id="m3_m" onclick="pickMask('m3','m')">−</button>
+    </span>
+  </div>
+  <div class="mask-row" id="m4">
+    <span class="mask-name"><strong>Mimika</strong> — wymuszony uśmiech, kontrolowany ton głosu</span>
+    <span class="mask-pick">
+      <button class="mask-btn" id="m4_p" onclick="pickMask('m4','p')">+</button>
+      <button class="mask-btn" id="m4_e" onclick="pickMask('m4','e')">=</button>
+      <button class="mask-btn" id="m4_m" onclick="pickMask('m4','m')">−</button>
+    </span>
+  </div>
+  <div class="mask-row" id="m5">
+    <span class="mask-name"><strong>Hamowanie info-dumpu</strong> — tłumię chęć opowiedzenia o fascynacji</span>
+    <span class="mask-pick">
+      <button class="mask-btn" id="m5_p" onclick="pickMask('m5','p')">+</button>
+      <button class="mask-btn" id="m5_e" onclick="pickMask('m5','e')">=</button>
+      <button class="mask-btn" id="m5_m" onclick="pickMask('m5','m')">−</button>
+    </span>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Wyczerpanie po typowym dniu maskowania — przed</div>
+    <div class="scale-bounds"><span>0 — w pełni naładowany/a</span><span>10 — wyzerowany/a</span></div>
+    <input type="range" class="scale-input" id="zmePre" min="0" max="10" step="1" value="7" data-default="7">
+    <div class="scale-readout"><span>Wyczerpanie</span><span id="zmePreVal">7</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła audytu</strong>: <em>+</em> w trzech lub więcej obszarach + wyczerpanie ≥7/10 to wczesny obraz <strong>chronicznego maskingu</strong>. To jest sygnał, by zaplanować demaskowanie w jednym konkretnym miejscu — nie globalnie.</div>
+</section>
+
+<!-- ============== KROK 3 — 🧭 Bezpieczna przestrzeń ============== -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór bezpiecznej przestrzeni</div>
+  <h1 class="card-prompt">Gdzie <em>możesz</em> zdjąć maskę?</h1>
+  <p class="card-detail">Demaskowanie zaczyna się od <strong>jednego miejsca i jednego zachowania</strong>. Wybierz przestrzeń, w której koszt bycia odsłoniętym/ą jest dziś najniższy.</p>
+
+  <div class="bezp-card" id="bzA" onclick="pickBezp('A')">
+    <div class="bezp-name">A · Dom — sam/a ze sobą</div>
+    <div class="bezp-desc">Zwykle pierwszy poziom. Maska zsuwa się, gdy zamykam drzwi. Ale uwaga: niektóre osoby maskują nawet wobec siebie (zinternalizowany nadzór).</div>
+  </div>
+  <div class="bezp-card" id="bzB" onclick="pickBezp('B')">
+    <div class="bezp-name">B · Bliska osoba (partner/ka, przyjaciel/ka)</div>
+    <div class="bezp-desc">Kiedy znana osoba akceptuje stimy, info-dump, brak pogawędki. Jeśli takiej osoby nie masz — to zwykle sygnał, by szukać społeczności autystycznej.</div>
+  </div>
+  <div class="bezp-card" id="bzC" onclick="pickBezp('C')">
+    <div class="bezp-name">C · Społeczność autystyczna (peer support)</div>
+    <div class="bezp-desc">Grupa wsparcia (online lub stacjonarna) osób w spektrum. Najbezpieczniejsza przestrzeń demaskowania — bo „domyślne" zachowania są tam zrozumiałe, nie dziwne.</div>
+  </div>
+  <div class="bezp-card" id="bzD" onclick="pickBezp('D')">
+    <div class="bezp-name">D · Terapeuta zorientowany neuroróżnorodnościowo</div>
+    <div class="bezp-desc">Psychoterapeuta szkolony w pracy z dorosłymi w spektrum (NICE NG142). Bezpieczna przestrzeń demaskowania, ale ograniczona w czasie do sesji.</div>
+  </div>
+
+  <div class="term-note"><strong>💡 Wskazówka</strong>: <em>nie zaczynaj od pracy</em>. Demaskowanie w środowisku, w którym kompetencja społeczna jest oceniana, ma wysoką cenę. Cooper i in. (2017): rośnie ryzyko stygmy i konsekwencji zawodowych. Zostaw je na późniejszą fazę.</div>
+</section>
+
+<!-- ============== KROK 4 — ⚙️ Mikro-eksperyment ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Mikro-eksperyment demaskowania</div>
+  <h1 class="card-prompt">Jeden <em>krok</em> w jednym kontekście</h1>
+  <p class="card-detail">Demaskowanie globalne („od jutra przestaję") nie działa — przeciąża system i zwykle kończy się powrotem do maski plus poczuciem porażki. Wybierz <strong>jedno zachowanie</strong> i <strong>jeden kontekst</strong> z kroku 3 — i zaplanuj eksperyment na 7 dni. Mała skala daje szansę zauważyć efekt zanim pojawi się wstyd lub lęk obronny.</p>
+
+  <div class="koszt-card">
+    <div class="koszt-h">1 · Co przestaję udawać (zachowanie)</div>
+    <div class="koszt-body"><textarea class="thought-input" id="dem1" placeholder="np. „Nie wymuszam kontaktu wzrokowego z partnerem/ką w domu — patrzę tam, gdzie chcę"" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+  <div class="koszt-card">
+    <div class="koszt-h">2 · Gdzie i kiedy (kontekst — z kroku 3)</div>
+    <div class="koszt-body"><textarea class="thought-input" id="dem2" placeholder="np. „W salonie, wieczorem, podczas oglądania serialu — przez najbliższe 7 dni"" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+  <div class="koszt-card">
+    <div class="koszt-h">3 · Jak rozpoznam, że działa</div>
+    <div class="koszt-body"><textarea class="thought-input" id="dem3" placeholder="np. „Po wieczornej rozmowie nie czuję się ‚wymięty/a' jak po dniu pracy. Wracam do siebie szybciej."" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+  <div class="koszt-card">
+    <div class="koszt-h">4 · Co zrobię, jeśli pojawi się wstyd lub lęk</div>
+    <div class="koszt-body"><textarea class="thought-input" id="dem4" placeholder="np. „Nazwę go po imieniu: ‚to internalizowany ableizm, nie głos rzeczywistości'. Wracam do eksperymentu."" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+
+  <div class="term-note"><strong>🔑 Mechanizm</strong>: demaskowanie jest <em>ekspozycją behawioralną</em> — tyle że na własną autentyczność, nie na bodziec lękowy. Mechanizm zmiany ten sam: powtórzenie w bezpiecznym kontekście obniża związany ze zachowaniem dystres (Hull i in., 2021, kontrolowane studia jakościowe).</div>
+</section>
+
+<!-- ============== KROK 5 — ✨ Po eksperymencie ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po mikro-eksperymencie</div>
+  <h1 class="card-prompt">Co poczułeś/aś w <em>energii</em>?</h1>
+  <p class="card-detail">Po 7 dniach mikro-eksperymentu z kroku 4 — zmierz to samo wyczerpanie co w kroku 2. Zwykle pierwsza zmiana to nie radość, lecz <strong>ulga w ciele</strong>: mniej bólu głowy, mniej ciężaru w klatce po dniu.</p>
+
+  <div class="scale">
+    <div class="scale-title">Wyczerpanie po typowym dniu — po 7 dniach demaskowania</div>
+    <div class="scale-bounds"><span>0 — naładowany/a</span><span>10 — wyzerowany/a</span></div>
+    <input type="range" class="scale-input" id="zmePost" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wyczerpanie</span><span id="zmePostVal">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Po lewej i prawej stronie suwaka są dwie liczby. Twoja różnica to surowa miara odpowiedzi ciała na zdjęcie jednego elementu maski.</div>
+
+  <textarea class="thought-input" id="kolejny" placeholder="np. „Następnym krokiem będzie pozwolenie sobie na stim podczas oglądania serialu — bez ukrywania rąk pod kocem"" rows="3"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: skutki demaskowania kumulują się przez <em>4–8 tygodni</em>. Pierwsze 7 dni to często ulga + niepokój („czy mogę?"). Następne tygodnie — stopniowa odbudowa kontaktu z autentycznymi rytmami. Cassidy i in. (2020) pokazują, że redukcja maskingu koreluje ze spadkiem wskaźników myśli samobójczych w obserwacji 12-miesięcznej.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Maskowanie jest <strong>adaptacją do otoczenia</strong>, które kosztuje cię energię. Demaskowanie zaczyna się <em>jednym zachowaniem w jednym bezpiecznym kontekście</em> — i powtarza się aż do uzyskania automatyzmu. Cel to nie życie bez maski. Cel to <em>wybór</em>, kiedy ją nosić.</div>
+  </div>
+
+  <div class="src">Hull i in. (2017, 2019, JADD); Hull i in. (2021, badania jakościowe demaskowania); Cassidy i in. (2018, 2020, Molecular Autism); Raymaker i in. (2020, Autism in Adulthood); Cooper i in. (2017, Autism); Lai i in. (2017, Autism, female phenotype); NICE (2021) NG142.</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickMask(rowId, val) {
+  var row = document.getElementById(rowId);
+  if (!row) return;
+  row.querySelectorAll('.mask-btn').forEach(function(b){ b.classList.remove('picked'); });
+  var btn = document.getElementById(rowId + '_' + val);
+  if (btn) btn.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function pickBezp(letter) {
+  ['bzA','bzB','bzC','bzD'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var sel = document.getElementById('bz' + letter);
+  if (sel) sel.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function onStepChange(s) {
+  if (s === 5) {
+    var pre = parseInt(document.getElementById('zmePre').value || '6');
+    var post = parseInt(document.getElementById('zmePost').value || '6');
+    var diff = post - pre;
+    var msg = document.getElementById('finalMsg');
+    if (msg) {
+      var sign = (diff > 0) ? '+' : '';
+      var txt = '<strong>Twój ruch w energii:</strong> ' + sign + diff + ' punktów na skali 0–10.';
+      if (diff <= -2) txt += ' Spadek wyczerpania o 2+ punkty po jednym mikro-eksperymencie demaskowania to <em>znacząca odpowiedź</em> ciała. Zapamiętaj kontekst, w którym to się stało.';
+      else if (diff < 0) txt += ' Mała ulga, ale realna. Powtarzaj demaskowanie codziennie w tym samym kontekście — efekt narasta przez 2–4 tygodnie.';
+      else txt += ' Wyczerpanie z maskingu rzadko cofa się w jeden dzień. Ważniejsze: czy zauważyłeś/aś, gdzie maskowanie zaczyna się automatycznie?';
+      msg.innerHTML = txt;
+    }
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_asd_masking — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_asd_masking";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['zmePre','zmePost'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) {
+    var rd = document.getElementById(id + 'Val');
+    el.addEventListener('input', function(){ if (rd) rd.textContent = el.value; });
+    if (rd) rd.textContent = el.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

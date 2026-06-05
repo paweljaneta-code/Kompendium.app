@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Leczenie stopniowane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --bg-deep: #ebe6da;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --line: #c9c2b0;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+.element-text em { color: var(--sage); font-style: italic; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; display: block; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; z-index: 100; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+/* === GAD-specific shared classes === */
+.proto-card { background: rgba(184,197,168,0.14); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.proto-step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed rgba(122,146,112,0.3); }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 15px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.5; color: var(--ink-soft); flex: 1; }
+.proto-text strong { color: var(--ink); font-weight: 600; }
+.proto-text em { font-style: italic; color: var(--sage-deep); }
+
+.tldr-box { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; line-height: 1.55; color: var(--ink); margin: 0 0 14px; border-left: 3px solid var(--sage-deep); }
+.tldr-box strong { color: var(--sage-deep); font-weight: 700; }
+
+
+.step-card { border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 10px 0; background: #fff; cursor: pointer; transition: all 0.15s; }
+.step-card.picked { background: rgba(184,197,168,0.4); border-color: var(--sage-deep); }
+.step-h { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+.step-num { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; color: var(--sage-deep); line-height: 1; min-width: 30px; }
+.step-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+.step-body { font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+.step-body em { color: var(--ink-soft); }
+.crit-list { background: rgba(184,197,168,0.18); border-radius: 8px; padding: 8px 12px; margin-top: 6px; font-size: 12.5px; }
+.crit-list strong { color: var(--sage-deep); }
+
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Leczenie stopniowane</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1: WPROWADZENIE -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Leczenie <em>stopniowane</em> GAD</h1>
+  
+  <div class="tldr-box"><strong>⚡ W skrócie:</strong> leczenie stopniowane (<em>stepped care</em>; NICE CG113, 2011) — 4 kroki o rosnącej intensywności leczenia GAD. ~50% pacjentów osiąga remisję już na kroku 2 (samopomoc — IAPT). Wyższy krok włącza się <em>tylko</em>, gdy niższy nie zadziałał po 4–6 tygodniach (krok 2) lub 12–16 tygodniach (krok 3). Bez orientacji w stepped care zaczyna się od kroku zbyt zaawansowanego (lub zbyt nieintensywnego).</div>
+  
+  <p class="card-detail">Brytyjski National Institute for Health and Care Excellence (NICE) opracował zestandaryzowaną <strong>kaskadę 4 kroków</strong> dla GAD. Każdy krok ma <em>kryteria wejścia</em>, <em>czas próby</em> i <em>warunki przejścia</em> wyżej. Logika: zacznij od najmniej intensywnego leczenia, które ma szansę zadziałać. Eskaluj, gdy nie działa. <em>Nie</em> przeskakuj kroków bez podstaw — większość pacjentów nie potrzebuje leczenia z kroku 4.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery kroki w skrócie</div>
+    <div class="element-row">
+      <span class="element-icon">1️⃣</span>
+      <span class="element-text"><strong>Identyfikacja, ocena, edukacja, monitorowanie</strong> — wszyscy.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">2️⃣</span>
+      <span class="element-text"><strong>Niska intensywność — psychoedukacja, samopomoc CBT</strong> — gdy GAD bez znaczącego upośledzenia.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">3️⃣</span>
+      <span class="element-text"><strong>Wysoka intensywność — CBT lub farmakoterapia</strong> — gdy upośledzenie umiarkowane lub krok 2 nie zadziałał.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">4️⃣</span>
+      <span class="element-text"><strong>Wyspecjalizowana opieka, wieloprofilowa, oddziały</strong> — ciężki GAD, ryzyko, oporność.</span>
+    </div>
+    <div class="frame-quote">„Stepped care zwiększa skuteczność systemu — większości wystarczy mniej, mniejszości potrzeba więcej."<span class="frame-quote-attr">— David Clark (2011, IAPT — Improving Access to Psychological Therapies)</span></div>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong>: stepped care to <em>ramy systemowe</em>, nie sztywny algorytm. Klinicysta może zdecydować o przeskoku — np. od razu krok 3 przy umiarkowanym upośledzeniu funkcjonowania. Ale <em>domyślne</em> postępowanie idzie krok po kroku.</div>
+  
+  <div class="src">NICE CG113 (2011, GAD: management) · Layard (2015, IAPT — system implementation) · Clark (2011) · Cuijpers i wsp. (2014, metaanaliza CBT GAD) · Bower i Gilbody (2005, stepped care)</div>
+</section>
+
+<!-- KROK 2: KROK 1 i 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Kroki 1–2</div>
+  <h1 class="card-prompt">Identyfikacja → <em>niska intensywność</em></h1>
+  <p class="card-detail">Krok 1 — <strong>wszyscy</strong> z podejrzeniem GAD: ocena GAD-7 i PSWQ, edukacja o naturze GAD i opcjach leczenia, krótkie monitorowanie 2–4 tygodnie. Krok 2 — niska intensywność: bibliotaerapia z protokołem, programy komputerowe, treningi grupowe. Trwa 4–6 tygodni — czas, by ocenić skuteczność.</p>
+  
+  <div class="term-note"><strong>Reguła decyzji</strong>: po kroku 2 sprawdź GAD-7 ponownie. Spadek ≥4 punkty = działa, kontynuuj samopomoc. Brak spadku lub niewielki = idź do kroku 3. <em>Nie</em> czekaj 3 miesięcy — jeśli po 6 tyg. nie ma efektu, mało prawdopodobne, że zadziała później.</p>
+  
+  <div class="step-card">
+    <div class="step-h">
+      <span class="step-num">1</span>
+      <span class="step-title">Identyfikacja, ocena, edukacja, monitorowanie</span>
+    </div>
+    <div class="step-body">
+      <strong>Dla kogo:</strong> wszyscy z objawami sugerującymi GAD.<br>
+      <strong>Co zawiera:</strong> wywiad, GAD-7, PSWQ, screening innych zaburzeń, edukacja o GAD, plan monitorowania 2–4 tyg.<br>
+      <strong>Czas:</strong> 1–2 wizyty + monitorowanie.<br>
+      <strong>Wynik:</strong> potwierdzenie diagnozy + decyzja o kroku 2.
+      <div class="crit-list"><strong>Następny krok 2 gdy:</strong> potwierdzona diagnoza GAD, brak ciężkich powikłań (myśli samobójcze, ciężka depresja, nadużywanie substancji).</div>
+    </div>
+  </div>
+  
+  <div class="step-card">
+    <div class="step-h">
+      <span class="step-num">2</span>
+      <span class="step-title">Niska intensywność: psychoedukacja + samopomoc CBT</span>
+    </div>
+    <div class="step-body">
+      <strong>Dla kogo:</strong> GAD potwierdzony, bez znaczącego upośledzenia funkcjonowania.<br>
+      <strong>Co zawiera:</strong> bibliotaerapia (np. <em>The Worry Cure</em> Leahy), programy komputerowe CBT, grupy psychoedukacyjne 6–12 osób (np. <em>Stress Control</em>, White i wsp.).<br>
+      <strong>Czas:</strong> 4–6 tygodni.<br>
+      <strong>Wynik:</strong> ~50% pacjentów osiąga remisję (dane IAPT).
+      <div class="crit-list"><strong>Następny krok 3 gdy:</strong> brak spadku GAD-7 ≥4 punkty po 6 tyg., utrzymujące się upośledzenie funkcjonowania.</div>
+    </div>
+  </div>
+  
+  <div class="examples-h">Twój krok obecny — który teraz jest najwłaściwszy?</div>
+  <textarea class="thought-input" id="myStep" rows="3" placeholder="np. „Krok 1 — pierwsza wizyta u lekarza rodzinnego, GAD-7 = 14 (umiarkowany). Plan: monitorowanie 4 tygodnie + lektura «Mózg się boi» (DiAngelis). Sprawdzenie po 6 tygodniach"></textarea>
+</section>
+
+<!-- KROK 3: KROK 3 i 4 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Kroki 3–4</div>
+  <h1 class="card-prompt">Wysoka intensywność → <em>opieka specjalistyczna</em></h1>
+  <p class="card-detail">Krok 3 — <strong>wysoka intensywność</strong>: indywidualna CBT (12–15 sesji) lub farmakoterapia (SSRI 1. wyboru, SNRI 2. wyboru). Czas: 12–16 tygodni. Krok 4 — <strong>opieka specjalistyczna</strong>: konsultacja psychiatryczna, terapia łączona, ewentualna hospitalizacja, gdy ryzyko samobójcze lub funkcjonowanie poważnie upośledzone.</p>
+  
+  <div class="term-note"><strong>Reguła wyboru CBT vs farmakoterapia (krok 3)</strong>: skuteczność porównywalna w metaanalizach (Cuijpers, 2014), ale <em>preferencja pacjenta</em> jest ważnym czynnikiem. CBT — efekt długoterminowy lepszy (po odstawieniu leku objawy często wracają). Farmakoterapia — szybszy efekt początkowy. Łączenie — gdy jedna z opcji nie wystarczy.</p>
+  
+  <div class="step-card">
+    <div class="step-h">
+      <span class="step-num">3</span>
+      <span class="step-title">Wysoka intensywność: CBT lub farmakoterapia</span>
+    </div>
+    <div class="step-body">
+      <strong>Dla kogo:</strong> brak odpowiedzi na krok 2 lub od razu — gdy upośledzenie umiarkowane (GAD-7 ≥10).<br>
+      <strong>Co zawiera (opcja A):</strong> indywidualna CBT 12–15 sesji, protokół (Borkovec, Dugas, Wells lub mieszany).<br>
+      <strong>Co zawiera (opcja B):</strong> SSRI (escitalopram, paroksetyna, sertralina); SNRI (duloksetyna, wenlafaksyna) — 2. wybór; pregabalina — 3. wybór, krótkoterminowo.<br>
+      <strong>Czas:</strong> 12–16 tygodni próby.<br>
+      <strong>Wynik:</strong> 50–60% pacjentów osiąga remisję.
+      <div class="crit-list"><strong>Następny krok 4 gdy:</strong> brak odpowiedzi na CBT i farmakoterapię, ciężki GAD, ryzyko samobójcze, znaczące powikłania.</div>
+    </div>
+  </div>
+  
+  <div class="step-card">
+    <div class="step-h">
+      <span class="step-num">4</span>
+      <span class="step-title">Opieka specjalistyczna, wieloprofilowa</span>
+    </div>
+    <div class="step-body">
+      <strong>Dla kogo:</strong> ciężki GAD oporny na leczenie, ryzyko samobójcze, ciężkie powikłania (uzależnienia, ciężka depresja).<br>
+      <strong>Co zawiera:</strong> konsultacja psychiatryczna, terapia łączona (CBT + lek), wsparcie społeczne, ewentualna hospitalizacja dzienna lub stacjonarna.<br>
+      <strong>Czas:</strong> długoterminowo, indywidualnie.<br>
+      <strong>Wynik:</strong> ważne — celem nie zawsze remisja, czasem stabilizacja i poprawa funkcjonowania.
+      <div class="crit-list"><strong>Powrót:</strong> po stabilizacji powrót do kroku 3 dla utrzymania efektu.</div>
+    </div>
+  </div>
+  
+  <div class="examples-h">Jeśli teraz jesteś na kroku 2 i nie działa — co dalej?</div>
+  <textarea class="thought-input" id="next" rows="3" placeholder="np. „Po 6 tyg. samopomocy GAD-7 z 14 spadł do 12 — niewystarczająco. Rozmawiam z lekarzem o kroku 3. Preferencja: CBT (chcę długoterminowy efekt), ewentualnie SSRI dodatkowo, jeśli CBT nie wystarczy po 8 sesjach"></textarea>
+</section>
+
+<!-- KROK 4: WYBÓR Z PACJENTEM -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Decyzja</div>
+  <h1 class="card-prompt">CBT czy <em>lek</em>? Decyzja w kroku 3</h1>
+  <p class="card-detail">Krok 3 ma <strong>dwie równorzędne opcje</strong>. Wybór nie jest „medyczny" — jest <em>klinicznie wspólny</em>. Pacjent powinien znać kompromisy i wybrać zgodnie z własnymi wartościami. Tu masz tabelę porównawczą.</p>
+  
+  <div class="term-note"><strong>Reguła wyboru</strong>: jeśli pacjent <em>nie ma silnej preferencji</em>, NICE rekomenduje CBT jako 1. wybór (efekt długoterminowy lepszy). Jeśli pacjent ma trudność dostępu do CBT lub potrzebuje szybkiego efektu — SSRI 1. wyboru. Łączenie: rozważ, gdy żadna z opcji nie wystarczy w monoterapii.</p>
+  
+  <div class="proto-card">
+    <div class="proto-h">CBT vs farmakoterapia — pięć osi porównania</div>
+    <div class="proto-step">
+      <span class="proto-num">⚡</span>
+      <span class="proto-text"><strong>Szybkość efektu</strong>: SSRI/SNRI — 4–6 tyg.; CBT — 8–12 sesji.</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">🔁</span>
+      <span class="proto-text"><strong>Efekt długoterminowy</strong>: CBT lepszy (po zakończeniu efekt utrzymuje się), farmakoterapia — objawy często wracają po odstawieniu.</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">⚙️</span>
+      <span class="proto-text"><strong>Wymaganie aktywności</strong>: CBT — wysokie (ćwiczenia, zadania domowe); lek — niskie (codzienne przyjmowanie).</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">⚠️</span>
+      <span class="proto-text"><strong>Skutki uboczne</strong>: CBT — zwiększony lęk w ekspozycji, czasochłonna; lek — mdłości, sen, libido (SSRI), uzależnienie (benzodiazepiny — <em>nie</em> zalecane długoterminowo).</span>
+    </div>
+    <div class="proto-step">
+      <span class="proto-num">💰</span>
+      <span class="proto-text"><strong>Dostęp i koszt</strong>: CBT prywatnie 200–300 zł/sesja; NFZ — kolejki 6–12 mies.; SSRI — refundacja, koszt ~30–80 zł/mies.</span>
+    </div>
+  </div>
+  
+  <div class="examples-h">Twoja decyzja — co wybierasz i dlaczego</div>
+  <textarea class="thought-input" id="myDec" rows="4" placeholder="np. „Wybieram CBT mimo wyższego kosztu — chcę długoterminowy efekt i nauczyć się narzędzi. Plan: poszukam terapeuty CBT z certyfikatem PTTPB w mieście, 2 sesje na próbę, decyzja o kontynuacji po 4 sesjach"></textarea>
+</section>
+
+<!-- KROK 5: KALIBRACJA -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Kalibracja</div>
+  <h1 class="card-prompt">Twój <em>plan stopniowany</em></h1>
+  <p class="card-detail">Stepped care zaczynasz od <em>swojego</em> obecnego kroku — nie od 1, jeśli jesteś już dalej. Plan: zidentyfikuj krok obecny, ustal czas próby, ustal kryteria przejścia wyżej. Po każdym kroku <strong>obowiązkowy pomiar</strong> (GAD-7), bez tego nie da się ocenić skuteczności.</p>
+  
+  <div class="term-note"><strong>Reguła kalibracji</strong>: nie eskaluj <em>zbyt szybko</em> (krok 2 musi mieć 4–6 tyg., krok 3 — 12–16 tyg.). Nie eskaluj też <em>zbyt późno</em> (po 4 mies. bez efektu CBT — czas na rozmowę o leku lub krok 4). Sztywne ramy czasowe chronią przed dwoma błędami.</div>
+  
+  <div class="scale">
+    <div class="scale-title">Aktualny krok stepped care — twoja samoocena</div>
+    <div class="scale-bounds"><span>1 — identyfikacja</span><span>4 — wyspecjalizowana</span></div>
+    <input type="range" min="1" max="4" value="2" class="scale-input" id="aktKrok" data-default="2" oninput="document.getElementById('aktKrokVal').textContent=this.value">
+    <div class="scale-readout"><span id="aktKrokVal">2</span><span> / 4</span></div>
+  </div>
+  
+  <div class="examples-h">Twój plan na 8–12 tygodni</div>
+  <textarea class="thought-input" id="planKr" rows="3" placeholder="np. „Tydzień 1–6: krok 2 (samopomoc CBT z książki «Mózg się boi» + GAD-7 co tydzień). Tydzień 6: pomiar GAD-7. Spadek <4 → konsultacja u lekarza, decyzja o kroku 3 (CBT lub SSRI)"></textarea>
+  
+  <div class="examples-h">Plan B — sygnały eskalacji niezależnie od planu</div>
+  <textarea class="thought-input" id="planB" rows="2" placeholder="np. „Sygnały, że nie czekam na koniec próby: myśli samobójcze, znaczne pogorszenie funkcjonowania (nieobecność w pracy >2 tyg.), nadużywanie alkoholu lub leków — wtedy od razu pilna konsultacja"></textarea>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Stepped care (NICE CG113, 2011) chroni przed dwoma błędami: <em>niedostatecznym leczeniem</em> (utknięcie na za niskim kroku) i <em>nadmiernym leczeniem</em> (od razu krok 4 dla łagodnego GAD). Zacznij od <strong>swojego kroku</strong>, daj mu <strong>uczciwy czas</strong> (4–6 tyg. krok 2; 12–16 tyg. krok 3), <strong>mierz</strong> (GAD-7 co 2–4 tyg.), <strong>eskaluj</strong> tylko gdy nie działa. ~50% remisji już na kroku 2.</div>
+  </div>
+  
+  <div class="src">NICE CG113 (2011) · Layard (2015) · Bower i Gilbody (2005) · Cuijpers i wsp. (2014) · Clark (2011, IAPT)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór SAD v580 + uniwersalny picker v585) ===== */
+(function(){
+  var KEY = "sos_stepped_care";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+  window.save = save;
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+updateUI();
+</script>
+</body>
+</html>

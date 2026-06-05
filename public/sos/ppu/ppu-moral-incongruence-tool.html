@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Moralna niespójność</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.values-card { background: rgba(244,241,234,0.5); border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.values-h { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4); margin-bottom: 8px; }
+.values-icon { font-size: 22px; line-height: 1; }
+.values-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.values-q { font-size: 12px; color: var(--ink-mute); font-style: italic; margin-bottom: 6px; }
+.values-input { width: 100%; min-height: 50px; padding: 8px 10px; border: 1px solid var(--sage); border-radius: 8px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 12.5px; line-height: 1.5; color: var(--ink); resize: vertical; }
+.values-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.test-card { background: var(--ink); color: var(--bg); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.test-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.test-q { font-family: 'Fraunces', serif; font-size: 15px; color: var(--bg); font-style: italic; margin-bottom: 10px; line-height: 1.4; }
+.test-row { padding: 4px 0; font-size: 12.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.test-row strong { color: var(--bg); }
+.test-row em { color: var(--sage); font-style: italic; }
+
+.path-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; font-family: inherit; width: 100%; text-align: left; }
+.path-card:hover, .path-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.path-card.picked .path-desc, .path-card.picked .path-when { color: rgba(244,241,234,0.85) !important; }
+.path-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.path-card.picked .path-h { color: var(--bg); }
+.path-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 4px; }
+.path-when { font-size: 11.5px; color: var(--sage-deep); font-style: italic; }
+
+.warn-box { background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm); border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0; }
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Moralna niespójność</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">PPU <em>czy moralna niespójność</em>?</h1>
+    <p class="card-detail">Joshua Grubbs (badacz, autor wpływowych prac z 2019—2020 roku) wprowadził pojęcie <strong>moralnej niespójności</strong> (moral incongruence, MI) w PPU: stan, w którym intensywne cierpienie pojawia się <em>niezależnie od poziomu konsumpcji pornografii</em>. Niektóre osoby z niewielką konsumpcją (raz w tygodniu) mają duże poczucie utraty kontroli; inne z intensywną — niewielkie. Różnicą nie jest zachowanie, tylko <strong>rozjazd między zachowaniem a wartościami</strong> osoby. Praca z MI jest <em>inna</em> niż klasyczne CBT-PPU; wymaga otwartości na obie ścieżki: zmiany zachowania <em>lub</em> rewizji wartości.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">PPU vs MI — różnica diagnostyczna</div>
+      <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>PPU (zaburzenie zachowania)</strong> — <em>obiektywne</em> wskaźniki: utrata kontroli, eskalacja, znaczne czasowe zaangażowanie, konsekwencje funkcjonalne.</span></div>
+      <div class="element-row"><span class="element-icon">⚖️</span><span class="element-text"><strong>MI (rozjazd wartości)</strong> — <em>subiektywne</em> cierpienie wynikające z poczucia "robię coś niezgodnie z tym, kim chcę być" — niezależnie od miary konsumpcji.</span></div>
+      <div class="element-row"><span class="element-icon">🔀</span><span class="element-text"><strong>Współwystępowanie</strong> — wiele osób ma <em>oba</em> aspekty. Klinicznie: wymagają różnych narzędzi. CBT-PPU dla wymiaru behawioralnego; ACT-values dla wymiaru moralnego.</span></div>
+      <div class="element-row"><span class="element-icon">🧭</span><span class="element-text"><strong>Klucz</strong> — przy MI <em>klient sam decyduje</em>, którą ścieżkę wybiera. Klinicysta nie narzuca abstynencji ani nie wyzwala z wartości religijnych. <em>Towarzyszy</em>.</span></div>
+    </div>
+
+    <div class="frame-quote">„Część osób cierpi nie z powodu pornografii, tylko z powodu konfliktu między pornografią a tym, kim chcą być. Klinicysta, który tego nie widzi, leczy nie ten problem."
+      <span class="frame-quote-attr">— parafraza po Joshui Grubbsie i in. („Moral incongruence and pornography use", 2019)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: praca z MI jest szczególnie ważna u osób <em>religijnych</em>, <em>z silną tożsamością moralną</em>, <em>w środowiskach o jasnych normach seksualnych</em>. Bez identyfikacji wymiaru moralnego CBT klasyczne — "ogranicz pornografię" — może działać paradoksalnie: każda redukcja zwiększa wstyd, bo pokazuje, że "powinienem/am już z tym skończyć". Podejście dialogowe daje lepsze efekty.</div>
+
+    <div class="src">Grubbs i in. (2019, „Moral incongruence and pornography use: A critical review and integration", Journal of Sex Research); Grubbs i in. (2020, „Moral incongruence and compulsive pornography use", Archives of Sexual Behavior); Borgogna i in. (2022, „Moral incongruence and pornography use: A clinical review and treatment outcomes"); Hayes, Strosahl &amp; Wilson (2012, ACT — values clarification); Pargament (2013, „APA Handbook of Psychology, Religion, and Spirituality" — dialog religia-terapia).</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoje wartości</div>
+    <h1 class="card-prompt">Zmapuj <em>wartości pogwałcone</em></h1>
+    <p class="card-detail">Pierwszy krok pracy z MI to <strong>jasne nazwanie</strong> wartości, które czujesz jako naruszone przez PPU. Często są <em>niejasne, mieszane, częściowo cudze</em>. Sprawdź swoje terytorium moralne.</p>
+
+    <div class="values-card">
+      <div class="values-h"><span class="values-icon">⚖️</span><span class="values-name">Jakie konkretne wartości czujesz jako naruszone?</span></div>
+      <div class="values-q">Sformułuj 3—5 wartości w swoich słowach. Mogą dotyczyć seksualności, związków, integralności, religii, rodzicielstwa.</div>
+      <textarea class="values-input" id="v1" placeholder='np. „1. Wierność partnerce — fizyczna i emocjonalna. 2. Czystość seksualna jako ideał religijny. 3. Pełne wykorzystanie energii seksualnej w relacji, nie samotnie. 4. Bycie obecnym ojcem — nie zanikającym po nocach. 5. Integralność — być spójny/a w słowie i czynach.”' rows="5"></textarea>
+    </div>
+
+    <div class="values-card">
+      <div class="values-h"><span class="values-icon">👥</span><span class="values-name">Czyje to wartości — pochodzenie</span></div>
+      <div class="values-q">Skąd pochodzą? Twoje własne (autonomiczne)? Rodziny? Religii? Wspólnoty? Partnerki/partnera? Bez oceny — sam fakt pochodzenia jest informacją.</div>
+      <textarea class="values-input" id="v2" placeholder='np. „1. Wierność — częściowo własna, częściowo z relacji z partnerką. 2. Czystość — głównie z wychowania religijnego, internalizowana. 3. Pełne wykorzystanie — własne, ale wzmacniane przez teksty religijne. 4. Bycie ojcem — własne. 5. Integralność — własne.”' rows="5"></textarea>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Intensywność moralnego cierpienia (po epizodach)</span><span></span></div>
+      <input type="range" class="scale-input" id="moralPain" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>0 = brak</span><span id="moralPainval">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Częstotliwość konsumpcji (relatywnie)</span><span></span></div>
+      <input type="range" class="scale-input" id="useFreq" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = rzadko</span><span id="useFreqval">5</span></div>
+    </div>
+
+    <div class="warn-box">
+      <div class="warn-h">⚠️ Profil typowy MI (wg Grubbsa)</div>
+      <div class="warn-body">Osoba z silnym MI często ma: <strong>moralne cierpienie ≥7</strong> + <strong>konsumpcję ≤5</strong> (rozjazd). Wskazuje to, że wymiar moralny dominuje nad wymiarem behawioralnym. Klasyczne CBT-PPU ("redukuj częstotliwość") może wtedy <em>nie działać lub pogarszać</em>. Praca z wartościami jest pierwszorzędna.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła pochodzenia</strong>: <em>nie ma "lepszych" i "gorszych" wartości</em> — własne i internalizowane są równoprawne, jeśli osoba świadomie je wybiera. Problem zaczyna się, gdy wartości są <strong>nieświadomie internalizowane</strong> — przyjęte bez refleksji, generujące cierpienie, ale nie poddane sprawdzeniu. Praca z MI nie polega na "wyzwoleniu" z wartości — polega na <em>świadomej re-decyzji</em>, którą osoba podejmuje sama.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — test różnicowania</div>
+    <h1 class="card-prompt">Zadaj sobie <em>kluczowe pytanie</em></h1>
+    <p class="card-detail">Joshua Grubbs proponuje konkretny test różnicowania, który pomaga zobaczyć, czy twój problem ma głównie wymiar behawioralny (PPU) czy moralny (MI). Pytanie wymaga uczciwej refleksji.</p>
+
+    <div class="test-card">
+      <div class="test-h">Test Grubbsa</div>
+      <div class="test-q">"Gdybym <em>nie miał/a tych wartości</em> — czy nadal czułbym/abym, że tracę kontrolę nad pornografią?"</div>
+      <div class="test-row"><strong>Tak</strong> — nadal czułbym/abym utratę kontroli, eskalację, problemy funkcjonalne. <em>Wymiar behawioralny dominuje</em>. Pracujemy klasycznym CBT-PPU.</div>
+      <div class="test-row"><strong>Nie</strong> — bez tych wartości wszystko byłoby ok; problemem jest <em>rozjazd z wartościami</em>, nie zachowanie samo. <em>Wymiar moralny dominuje</em>. Pracujemy z dialogiem wartości.</div>
+      <div class="test-row"><strong>I tak, i tak</strong> — najczęstsza odpowiedź. <em>Oba wymiary współwystępują</em>. Pracujemy równolegle.</div>
+    </div>
+
+    <div class="examples-h">Twoja odpowiedź na test Grubbsa</div>
+    <textarea class="thought-input" id="grubbsAnswer" placeholder='Odpowiedz uczciwie, bez automatycznej odpowiedzi. np. „Hmm, gdyby nie wartości religijne — myślę, że wciąż widziałbym problemy: nocne sesje, niedospanie, dystans wobec partnerki. To wskazuje, że PPU jest realne, MI dochodzi jako warstwa. Pracuję z obydwoma.”' rows="4"></textarea>
+
+    <div class="examples-h">Trzy ścieżki — wybierz, którą rozważasz dla siebie</div>
+
+    <button type="button" class="path-card" id="pA" onclick="pickPath('A')">
+      <div class="path-h">🅰️ Ścieżka A — Zmiana zachowania w stronę wartości</div>
+      <div class="path-desc">Wartości pozostają jako <em>kompas</em>; pracujesz nad tym, by zachowanie do nich pasowało. Klasyczne narzędzia CBT, ACT, RP. <em>Najczęstsza ścieżka — gdy wartości są autentycznie twoje</em>.</div>
+      <div class="path-when">Wybierz, gdy: wartości są autonomiczne, wewnętrznie spójne, wnoszą sens do życia.</div>
+    </button>
+
+    <button type="button" class="path-card" id="pB" onclick="pickPath('B')">
+      <div class="path-h">🅱️ Ścieżka B — Re-ewaluacja wartości</div>
+      <div class="path-desc">Sprawdzasz, czy te wartości są <em>twoje</em>, czy <em>cudze</em>. Czy są spójne z resztą życia? Czy są krzywdzące? Re-ewaluacja może oznaczać <em>częściową zmianę</em> wartości — nie ich porzucenie, tylko dostosowanie. <em>Wymaga otwartości i czasu</em>.</div>
+      <div class="path-when">Wybierz, gdy: wartości są sztywne, internalizowane bez refleksji, generują nieproporcjonalne cierpienie.</div>
+    </button>
+
+    <button type="button" class="path-card" id="pC" onclick="pickPath('C')">
+      <div class="path-h">🅲 Ścieżka C — Akceptacja napięcia (life-long negotiation)</div>
+      <div class="path-desc">Część osób żyje z <em>trwałym napięciem</em> między zachowaniem a wartościami. Akceptacja: napięcie jest, próbujesz je negocjować w czasie życia, bez pełnego rozwiązania. <em>Nie lepsza ani gorsza ścieżka — czasem najuczciwsza</em>.</div>
+      <div class="path-when">Wybierz, gdy: wartości są fundamentalnie ważne, ale osiągnięcie pełnej spójności jest nierealistyczne; wybierasz pracę nad relacją z napięciem.</div>
+    </button>
+
+    <div class="warn-box">
+      <div class="warn-h">⚠️ Co NIE jest częścią pracy z MI</div>
+      <div class="warn-body">Klinicysta <strong>nie</strong> narzuca abstynencji ("musisz przestać"); <strong>nie</strong> wyzwala z wartości religijnych ("twoja religia robi ci krzywdę"); <strong>nie</strong> ocenia wyboru ścieżki ("ścieżka B jest lepsza"). Praca z MI to <em>towarzyszenie</em> w procesie, w którym <em>klient sam decyduje</em>, jak dalej. To wymaga ze strony klinicysty pokory; ze strony klienta — czasu i otwartości.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła wyboru</strong>: w praktyce większość osób z PPU + MI wybiera <em>ścieżkę A</em> (zmiana zachowania w stronę wartości) jako pierwszą próbę. Po 6—12 miesiącach niektóre osoby przesuwają się ku ścieżce B (jeśli nie da się osiągnąć spójności bez nadmiernego cierpienia) lub ścieżce C (akceptacja napięcia). Wybór nie jest stały — zmienia się z czasem i refleksją.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — dialog wartości</div>
+    <h1 class="card-prompt">Prowadź <em>uczciwy dialog</em> z wartościami</h1>
+    <p class="card-detail">Niezależnie od wybranej ścieżki, podstawą pracy z MI jest <strong>uczciwy dialog</strong> ze swoimi wartościami. Nie chodzi o to, by je porzucić, tylko by <em>wiedzieć, co i dlaczego</em> wybierasz.</p>
+
+    <div class="values-card">
+      <div class="values-h"><span class="values-icon">📜</span><span class="values-name">A. Sprawdź każdą wartość — test wewnętrznej spójności</span></div>
+      <div class="values-q">Dla każdej z 3—5 wartości z kroku 2 zadaj 4 pytania: 1. Skąd ona pochodzi? 2. Czy jest spójna z resztą tego, w co wierzysz? 3. Co dokładnie oznacza w praktyce (a nie tylko abstrakcyjnie)? 4. Co stałoby się, gdybyś trochę ją zluzował/a?</div>
+      <textarea class="values-input" id="dialog" placeholder='np. „Wartość: czystość seksualna. 1. Z wychowania religijnego, ojciec pastora. 2. Tak — spójna z ideami wierności, integralności. 3. W praktyce: brak masturbacji w ogóle? Brak fantazji? Brak pornografii? Niejasne — różne tradycje religijne mają różne definicje. 4. Gdybym zluzował: pewnie czułbym mniejsze codzienne napięcie, ale traciłbym pewną głębię — to wartość ważna, choć niepełnie sprawdzona.”' rows="5"></textarea>
+    </div>
+
+    <div class="values-card">
+      <div class="values-h"><span class="values-icon">🎯</span><span class="values-name">B. Realistyczne aspiracje vs perfekcjonizm</span></div>
+      <div class="values-q">Wartość rygorystyczna może generować cykl wstydu nawet po małych odstępstwach. Sprawdź — czy twoja interpretacja wartości <em>zostawia miejsce na ludzką niedoskonałość</em>?</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="r1" onclick="this.classList.toggle('picked')">"Zero PPU absolutne, każdy raz to porażka"</button>
+        <button type="button" class="example-chip" id="r2" onclick="this.classList.toggle('picked')">"Próbuję z całych sił, dopuszczam lapsy bez katastrofy"</button>
+        <button type="button" class="example-chip" id="r3" onclick="this.classList.toggle('picked')">"Skupiam się na trendzie długoterminowym"</button>
+        <button type="button" class="example-chip" id="r4" onclick="this.classList.toggle('picked')">"Kierunek wartości > pojedyncze epizody"</button>
+      </div>
+      <p class="card-detail" style="margin-top: 6px; font-size: 12px;"><em>Pierwsza opcja często napędza cykl wstydu w MI. Pozostałe trzy są kompatybilne z samowspółczuciem i trwałą zmianą.</em></p>
+    </div>
+
+    <div class="values-card">
+      <div class="values-h"><span class="values-icon">🤝</span><span class="values-name">C. Dialog ze wspólnotą / autorytetem</span></div>
+      <div class="values-q">Jeśli wartości są religijne lub wspólnotowe — czy możesz porozmawiać z kimś z tej tradycji o swojej trudności? Często autorytety duchowe są bardziej miłosierne, niż ich wewnętrzny obraz w głowie.</div>
+      <textarea class="values-input" id="commDialog" placeholder='np. „Mogę porozmawiać z księdzem N (kierownikiem duchowym), który zna mnie od lat. Lub z bratem D, który przeszedł podobną drogę i ma wiedzę religijną. Nie z księdzem, którego nie znam — to byłaby tylko spowiedź bez relacji.”' rows="3"></textarea>
+    </div>
+
+    <div class="values-card">
+      <div class="values-h"><span class="values-icon">⚖️</span><span class="values-name">D. Co wybierasz — twój plan</span></div>
+      <div class="values-q">Po dialogu — <em>jaką ścieżkę wybierasz świadomie</em>? Możesz zmienić wybór później; ważne, że <em>teraz</em> wybierasz konkretnie.</div>
+      <textarea class="values-input" id="myChoice" placeholder='np. „Wybieram ścieżkę A — zmiana zachowania w stronę wartości czystości i wierności. Jednocześnie pracuję z samowspółczuciem, by lapsy nie wpadały w cykl wstydu. Po 6 mies. sprawdzę, czy to zrównoważone, czy wymaga rewizji.”' rows="3"></textarea>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: praca z MI nie kończy się <em>rozwiązaniem</em> — kończy się <em>świadomym wyborem</em>. Wybór z perspektywy 6—12 miesięcy może wyglądać inaczej niż dziś; to też ok. Najważniejsze, byś <strong>nie żył/a w nieświadomym konflikcie wartości</strong> — ten konflikt napędza cykl wstydu, niezależnie od konsumpcji.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>napięcie się obniża</em>?</h1>
+    <p class="card-detail">Wróć tu po 4—6 tygodniach pracy z dialogiem wartości. MI nie rozwiązuje się szybko — ale po kilku tygodniach <em>świadomej refleksji</em> napięcie zwykle obniża się, niezależnie od poziomu konsumpcji.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy znasz pochodzenie swoich wartości?</span><span></span></div>
+      <input type="range" class="scale-input" id="postOrigin" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>0 = niejasne</span><span id="postOriginval">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy świadomie wybrałeś/aś ścieżkę?</span><span></span></div>
+      <input type="range" class="scale-input" id="postChoice" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postChoiceval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Intensywność moralnego cierpienia — po</span><span></span></div>
+      <input type="range" class="scale-input" id="postPain" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = brak</span><span id="postPainval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy lapsy generują mniej wstydu?</span><span></span></div>
+      <input type="range" class="scale-input" id="postLapseShame" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postLapseShameval">5</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: praca z MI postępuje, gdy <em>znasz pochodzenie wartości</em> (≥7), <em>świadomie wybrałeś/aś ścieżkę</em> (≥6), <em>moralne cierpienie spada</em> (≥−2 punkty od kroku 2), <em>lapsy nie eskalują we wstyd</em> (≥6). Praca z MI nie kończy się "rozwiązaniem" — kończy się <em>nawiązaniem dorosłej relacji z wartościami</em>, w której wybór jest świadomy, a niedoskonałość przyjmowana z troską.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Praca z moralną niespójnością wymaga <em>największej cierpliwości</em> ze wszystkich technik PPU — bo dotyka <strong>tożsamości</strong>, nie tylko zachowania. Zmiana relacji z wartościami trwa <strong>miesiące, nie tygodnie</strong>. W tej pracy szczególnie ważne jest, byś nie pracował/a sam/a — terapeuta otwarty na wymiar duchowy/moralny, kierownik duchowy znający psychologię, doświadczona osoba w tradycji religijnej (jeśli MI ma korzenie religijne) są <strong>najsilniejszymi sojusznikami</strong>. Praca z MI nie jest "wyzwoleniem z religii" ani "obroną tradycji" — jest <em>świadomym dorosłym dialogiem</em> ze swoim systemem wartości. Cel: żyć <strong>spójnie</strong>, nie <strong>perfekcyjnie</strong>.</div>
+    </div>
+
+    <div class="src">Grubbs i in. (2019, „Moral incongruence and pornography use: A critical review and integration"); Grubbs i in. (2020, „Moral incongruence and compulsive pornography use", Archives of Sexual Behavior); Borgogna i in. (2022, „Moral incongruence and pornography use: A clinical review"); Hayes, Strosahl &amp; Wilson (2012, ACT — values clarification); Pargament (2013, „APA Handbook of Psychology, Religion, and Spirituality"); Wilson, Murrell &amp; Sandoz (2009, „Acceptance and commitment therapy with religious values").</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['moralPain','useFreq','postOrigin','postChoice','postPain','postLapseShame'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedPath = null;
+function pickPath(code) {
+  window.pickedPath = code;
+  ['pA','pB','pC'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('p' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var origin = parseInt(document.getElementById('postOrigin').value, 10);
+  var choice = parseInt(document.getElementById('postChoice').value, 10);
+  var prePain = parseInt(document.getElementById('moralPain').value, 10);
+  var postPain = parseInt(document.getElementById('postPain').value, 10);
+  var lapse = parseInt(document.getElementById('postLapseShame').value, 10);
+
+  var rows = [];
+  var oW = origin <= 3 ? 'niejasne' : (origin <= 6 ? 'częściowo' : 'jasne');
+  rows.push('<div class="diff-row"><strong>Pochodzenie wartości</strong><span class="diff-delta">' + origin + '/10 — ' + oW + '</span></div>');
+  var cW = choice <= 3 ? 'nie' : (choice <= 6 ? 'wstępnie' : 'tak');
+  rows.push('<div class="diff-row"><strong>Świadomy wybór ścieżki</strong><span class="diff-delta">' + choice + '/10 — ' + cW + '</span></div>');
+  var dP = postPain - prePain;
+  var sign = dP > 0 ? '+' : '';
+  rows.push('<div class="diff-row"><strong>Moralne cierpienie</strong><span class="diff-delta">' + prePain + ' → ' + postPain + ' (' + sign + dP + ')</span></div>');
+  var lW = lapse <= 3 ? 'nie' : (lapse <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Lapsy bez eskalacji wstydu</strong><span class="diff-delta">' + lapse + '/10 — ' + lW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (origin >= 7 && choice >= 6 && dP <= -2 && lapse >= 6) {
+      msg = '<strong>Praca z MI postępuje.</strong> Znasz wartości, wybrałeś/aś ścieżkę, cierpienie spada, lapsy nie eskalują. <em>Kontynuuj 3—6 miesięcy</em> — to praca długoterminowa, ale efekty już są widoczne.';
+    } else if (origin >= 6 || choice >= 5) {
+      msg = '<strong>Pierwsze ruchy.</strong> Pomóż sobie: <em>zapisz dialog wartości</em> (krok 4). Bez pisemnej formy refleksja gubi szczegóły. Tygodniowy przegląd 30 min.';
+    } else if (origin <= 4) {
+      msg = '<strong>Wartości pozostają niejasne.</strong> Najczęstsza przyczyna: praca samotna, bez rozmowy z kimś znającym tradycję. Rozważ rozmowę z <em>kierownikiem duchowym</em> lub osobą z twojej tradycji, która ma psychologiczną wiedzę.';
+    } else if (dP >= 0) {
+      msg = '<strong>Cierpienie nie spada.</strong> Sprawdź: czy nie pracujesz w trybie <em>perfekcjonizmu</em> ("zero PPU absolutne")? Ten tryb generuje cykl wstydu. Wróć do kroku 4B i sprawdź, czy interpretacja wartości zostawia miejsce na ludzką niedoskonałość.';
+    } else if (lapse <= 3) {
+      msg = '<strong>Lapsy wciąż eskalują we wstyd.</strong> Praca z MI wymaga <em>integracji z samowspółczuciem</em>. Bez Self-Compassion Break (Karta wsparcia "Samowspółczucie") MI łatwo wpada w cykl wstydu. Zintegruj obie techniki.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Praca z MI to długoterminowa zmiana — efekty po 3—6 miesiącach systematycznej refleksji.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['pA','pB','pC'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['r1','r2','r3','r4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedPath = null;
+}
+
+['postOrigin','postChoice','postPain','postLapseShame'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_moral_incongruence_tool — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_moral_incongruence_tool";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['A','B','C'].forEach(function(code){
+    var el = document.getElementById('p' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedPath = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

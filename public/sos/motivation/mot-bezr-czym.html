@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wyuczona bezradność</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.dim-row { background: rgba(184,197,168,0.12); border-radius: 10px; padding: 11px 13px; margin: 10px 0; }
+.dim-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+.dim-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.dim-btn { background: rgba(255,255,255,0.5); border: 1px solid var(--sage); color: var(--ink); padding: 9px 11px; border-radius: 10px; font-size: 12.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; line-height: 1.4; text-align: left; }
+.dim-btn:hover, .dim-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.dim-btn.toxic { border-color: var(--warm); }
+.dim-btn.toxic.picked { background: var(--warm); border-color: var(--warm); }
+.dim-tag { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ink-mute); margin-bottom: 3px; }
+.dim-btn.picked .dim-tag { color: rgba(244,241,234,0.7); }
+
+.summary-box { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.summary-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.summary-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.summary-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wyuczona bezradność</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 — 🌱 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Bezradność jest <em>nauczona</em> — i może być oduczona</h1>
+    <p class="card-detail">Wyuczona bezradność (learned helplessness; Seligman i Maier, 1967) to stan, w którym organizm przestaje próbować, bo nauczył się, że jego działania nie mają wpływu na wynik. Klasyczny eksperyment Seligmana: zwierzęta poddawane niekontrolowanym wstrząsom przestawały uciekać nawet wtedy, gdy ucieczka stała się możliwa. Abramson, Seligman i Teasdale (1978) dodali model atrybucyjny: bezradność powstaje, gdy porażki są wyjaśniane jako wewnętrzne (moja wina), stałe (zawsze tak będzie) i globalne (dotyczy wszystkiego). Maier i Seligman (2016) opublikowali kluczową rewizję: bezradność jest <em>domyślnym</em> stanem mózgu — to nie bezradności się uczymy, lecz <em>kontroli</em>. Implikacja terapeutyczna: można odbudować naukę kontroli niezależnie od historii.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary modelu bezradności</div>
+      <div class="element-row">
+        <span class="element-icon">🧬</span>
+        <span class="element-text"><strong>Mechanizm pierwotny (Seligman, 1967)</strong> — niekontrolowane awersywne doświadczenia uczą reakcji „nic nie pomaga"; stan generalizuje się na nowe sytuacje, w których wpływ jest możliwy.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Trzy wymiary atrybucji (Abramson, 1978)</strong> — wewnętrzne/zewnętrzne, stałe/tymczasowe, globalne/specyficzne. Bezradność = wszystkie trzy „toksyczne". Resilience = wszystkie trzy ochronne.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔄</span>
+        <span class="element-text"><strong>Rewizja neuronalna (Maier i Seligman, 2016)</strong> — bezradność jest <em>domyślna</em>, nie nabyta. To kontrola wymaga aktywnego uczenia przez korę przedczołową (vmPFC).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛠️</span>
+        <span class="element-text"><strong>Implikacja kliniczna</strong> — terapia bezradności = trening doświadczania kontroli. Każdy mikrosukces wzmacnia ścieżkę vmPFC; powtarzanie buduje nową regułę „mam wpływ".</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Bezradność nie jest cechą charakteru ani lenistwem. Jest racjonalną adaptacją do środowiska, w którym wpływ był niemożliwy. Problem polega na tym, że adaptacja zostaje, gdy środowisko się zmienia."
+      <span class="frame-quote-attr">— Maier i Seligman (2016, Psychological Review, „Learned Helplessness at Fifty")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: bezradność jest <em>adaptacją</em>, nie defektem. Mózg nauczył się czegoś, co kiedyś chroniło przed rozczarowaniem i oszczędzało energię. Terapia nie „naprawia zepsutego" — uczy nowej lekcji w nowym kontekście: <em>teraz mam wpływ</em>.</div>
+
+    <div class="term-note"><strong>📌 Atrybucje a depresja</strong>: pesymistyczny styl atrybucyjny (wewnętrzne + stałe + globalne) jest jednym z najsilniejszych predyktorów depresji w badaniach prospektywnych (Peterson i Seligman, 1984; Nolen-Hoeksema i wsp., 1986). Praca z tym stylem to nie kosmetyka — to interwencja na rdzeń mechanizmu.</div>
+
+    <div class="src">Seligman i Maier (1967, Journal of Experimental Psychology) · Abramson, Seligman i Teasdale (1978, Journal of Abnormal Psychology, model atrybucyjny) · Maier i Seligman (2016, Psychological Review, rewizja po pięćdziesięciu latach) · Peterson i Seligman (1984, Psychological Review, ASQ) · Nolen-Hoeksema i wsp. (1986, Journal of Personality and Social Psychology)</div>
+  </section>
+
+  <!-- ============== KROK 2 — 🎯 ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+    <h1 class="card-prompt">Nazwij <em>obszar</em>, w którym czujesz „nic się nie zmieni"</h1>
+    <p class="card-detail">Bezradność rzadko jest globalna od razu — zwykle koncentruje się w jednym lub dwóch obszarach życia (praca, relacje, zdrowie, finanse), a stamtąd promieniuje. Pomyśl o obszarze, w którym pojawia Ci się myśl „cokolwiek zrobię, nic nie pomoże". Im konkretniej, tym lepsza praca dalej.</p>
+
+    <textarea class="thought-input" id="bezrObszar" placeholder="Konkretny obszar i sytuacja. np. „Praca — nieważne, ile godzin wkładam, awansu nie ma" / „Relacja z mamą — każda rozmowa kończy się tak samo" / „Zdrowie — od dwóch lat próbuję schudnąć i nic""  rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Bezradność PRZED — w tym obszarze</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="bPrzed" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>Wartość</span><span id="bPrzedVal">7</span></div>
+    </div>
+
+    <textarea class="thought-input" id="bezrPrzeszlosc" placeholder="Skąd ta bezradność mogła się wziąć? Czy w przeszłości — w dzieciństwie lub wcześniej — Twoje działania faktycznie nie miały wpływu? np. „Ojciec pił, cokolwiek robiłam, nic tego nie zmieniało" / „W szkole, mimo nauki, oceny były zaniżane""  rows="4"></textarea>
+
+    <div class="term-note"><strong>📊 Reguła normalizacji</strong>: jeśli w przeszłości Twoje działania faktycznie nie miały wpływu (przemoc, zaniedbanie, nieprzewidywalność opiekuna, chroniczna nierówność systemowa), bezradność była <em>racjonalną adaptacją</em>. Nie jest wadą Twojego charakteru — jest pamięcią o tamtym kontekście.</div>
+  </section>
+
+  <!-- ============== KROK 3 — 🧭 ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Twoje atrybucje</div>
+    <h1 class="card-prompt">Trzy wymiary — <em>jak wyjaśniasz</em> swoje porażki</h1>
+    <p class="card-detail">Pomyśl o sytuacji z kroku 2 i ostatnim niepowodzeniu w niej. Dla każdego z trzech wymiarów wybierz biegun, który najczęściej Ci się odzywa. Im więcej biegunów „toksycznych" (lewa strona), tym mocniejsze ciążenie ku bezradności.</p>
+
+    <div class="dim-row">
+      <div class="dim-h">Wymiar 1 — kto za to odpowiada</div>
+      <div class="dim-pair">
+        <button type="button" class="dim-btn toxic" id="dwA" onclick="pickDim('wew','in')">
+          <span class="dim-tag">wewnętrzne</span>To moja wina, jestem za to odpowiedzialny/a
+        </button>
+        <button type="button" class="dim-btn" id="dwB" onclick="pickDim('wew','out')">
+          <span class="dim-tag">zewnętrzne</span>Sytuacja, okoliczności, inni ludzie
+        </button>
+      </div>
+    </div>
+
+    <div class="dim-row">
+      <div class="dim-h">Wymiar 2 — czy się to zmieni w czasie</div>
+      <div class="dim-pair">
+        <button type="button" class="dim-btn toxic" id="dsA" onclick="pickDim('sta','in')">
+          <span class="dim-tag">stałe</span>Zawsze tak będzie, nigdy się nie zmieni
+        </button>
+        <button type="button" class="dim-btn" id="dsB" onclick="pickDim('sta','out')">
+          <span class="dim-tag">tymczasowe</span>Tym razem nie wyszło, następnym razem może
+        </button>
+      </div>
+    </div>
+
+    <div class="dim-row">
+      <div class="dim-h">Wymiar 3 — jak szeroko to sięga</div>
+      <div class="dim-pair">
+        <button type="button" class="dim-btn toxic" id="dgA" onclick="pickDim('glo','in')">
+          <span class="dim-tag">globalne</span>W niczym mi nie wychodzi, wszędzie tak mam
+        </button>
+        <button type="button" class="dim-btn" id="dgB" onclick="pickDim('glo','out')">
+          <span class="dim-tag">specyficzne</span>W tej jednej rzeczy nie wyszło
+        </button>
+      </div>
+    </div>
+
+    <div id="atrybSum"></div>
+
+    <div class="term-note"><strong>🔑 Reguła stylu</strong>: ten sam zewnętrzny fakt — np. odrzucone CV — jeden człowiek wyjaśnia jako <em>specyficzną, tymczasową porażkę zewnętrzną</em> („tym razem rynek był słaby, spróbuję dalej"), drugi jako <em>globalną, stałą porażkę wewnętrzną</em> („nie nadaję się do niczego, nigdy nic mi nie wyjdzie"). Fakty są takie same; konsekwencje psychiczne — diametralnie różne.</div>
+  </section>
+
+  <!-- ============== KROK 4 — ⚙️ ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Reframing atrybucji</div>
+    <h1 class="card-prompt">Przeformułuj <em>każdy</em> z toksycznych wymiarów</h1>
+    <p class="card-detail">Cel terapii poznawczej dla bezradności (Seligman, 1991; Beck) to przesunięcie atrybucji ku biegunom ochronnym — <em>nie</em> ku rzeczywistości naciąganej, lecz ku rzeczywistości <em>pełniejszej</em>. Większość pesymistycznych atrybucji to nadmierne uogólnienie; reframing je urealnia.</p>
+
+    <textarea class="thought-input" id="reWew" placeholder="WYMIAR 1 — przesunięcie ku zewnętrznym czynnikom. Co poza Tobą wpłynęło na sytuację? Nie eliminujesz swojego udziału — uznajesz, że nie jesteś jedynym/jedyną odpowiedzialnym/odpowiedzialną. np. „Mama też ma swój styl — nie wszystko zależy ode mnie""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="reSta" placeholder="WYMIAR 2 — przesunięcie ku tymczasowości. Co kiedyś w tej sferze działało? Co może się zmienić? np. „Trzy lata temu udało mi się nauczyć angielskiego, mimo początkowych porażek""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="reGlob" placeholder="WYMIAR 3 — przesunięcie ku specyficzności. Co Ci się udaje w innych obszarach życia? np. „W relacji z siostrą umiem rozmawiać; w pracy potrafię słuchać klientów""  rows="3"></textarea>
+
+    <textarea class="thought-input" id="reEksp" placeholder="EKSPERYMENT BEHAWIORALNY — jeden mały test, który sprawdzi przekonanie „nic nie zmieni się". np. „W ten weekend zaproszę mamę na kawę BEZ omawiania trudnego tematu — zobaczę, czy rozmowa może wyglądać inaczej""  rows="4"></textarea>
+
+    <div class="term-note"><strong>⚠️ Pułapka pozytywnego myślenia</strong>: reframing nie jest zaprzeczaniem rzeczywistości („wszystko jest świetnie!"). Jest urealnieniem — uznaniem <em>wszystkich</em> czynników, nie tylko tych, które potwierdzają bezradność. Cel: pełniejszy obraz, nie pochlebny obraz.</div>
+
+    <div class="term-note"><strong>📌 Reguła eksperymentu</strong>: same atrybucje rzadko zmieniają bezradność. Zmienia ją <em>doświadczenie kontroli</em> — choćby drobnej. Każdy zaplanowany i wykonany eksperyment behawioralny dostarcza mózgowi danych „mam wpływ" — i te dane budują nową regułę silniej niż refleksja.</div>
+  </section>
+
+  <!-- ============== KROK 5 — ✨ ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja bezradności</div>
+    <h1 class="card-prompt">Sprawdź <em>poziom bezradności</em> po reframing</h1>
+    <p class="card-detail">Po pracy z atrybucjami i zaplanowaniu eksperymentu — gdzie jesteś teraz na skali bezradności? Cel nie jest 0; cel: spadek o 1—3 punkty znaczy, że ścieżka działa i warto kontynuować.</p>
+
+    <div class="scale">
+      <div class="scale-title">Bezradność PO ćwiczeniu</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — pełna</span></div>
+      <input type="range" class="scale-input" id="bPo" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wartość</span><span id="bPoVal">5</span></div>
+    </div>
+
+    <div id="bezrDiff"></div>
+
+    <textarea class="thought-input" id="bezrPlan" placeholder="Jeden konkretny krok w najbliższych 7 dniach, który dostarczy Ci dowodu „mam wpływ". np. „Wtorek 18:00 — zadzwonić do mamy z pytaniem o jej dzień, BEZ tematów spornych""  rows="3"></textarea>
+
+    <div class="final-msg">
+      <strong>Co dalej</strong>: bezradność rzadko ustępuje po jednym ćwiczeniu — ustępuje po <em>serii eksperymentów</em>, które dostarczają mózgowi dowodów sprawczości. Wracaj do tego ćwiczenia raz na 2 tygodnie, dokumentuj wyniki eksperymentów. Po 4—6 tygodniach średnio widać przesunięcie atrybucji o 1—2 wymiary.
+    </div>
+
+    <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: zmiana stylu atrybucyjnego jest powolna i nieliniowa. Pierwsze tygodnie często bez ruchu — mózg nie wierzy nowym danym. Po krytycznej masie 5—10 udanych eksperymentów pojawia się punkt zwrotny: nowa reguła zaczyna konkurować ze starą, potem ją wyprzedza.</div>
+
+    <div class="term-note"><strong>📊 Reguła samowspółczucia</strong>: traktuj siebie z bezradnością jak osobę, która kiedyś nauczyła się ważnej lekcji w trudnym kontekście. Krytyka „jak możesz tak myśleć" wzmacnia bezradność (toksyczne wewnętrzne). Łagodność „rozumiem, skąd to się wzięło, i pokażę sobie nowe dane" — odbudowuje sprawczość.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Bezradność jest <strong>adaptacją</strong>, nie defektem — racjonalną reakcją na środowisko, w którym wpływ był niemożliwy. Można ją <em>oduczyć</em> przez serię eksperymentów dostarczających dowodów sprawczości. Wyrażane atrybucje (wewn/zewn, stałe/tymcz, glob/spec) są kotwicą — przesunięcie nawet jednego wymiaru obniża ryzyko depresji.</div>
+    </div>
+
+    <div class="src">Seligman i Maier (1967, Journal of Experimental Psychology) · Abramson, Seligman i Teasdale (1978, Journal of Abnormal Psychology) · Maier i Seligman (2016, Psychological Review, „Learned Helplessness at Fifty") · Peterson i Seligman (1984, Psychological Review, ASQ) · Seligman (1991, Learned Optimism)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+let dimWew = null;
+let dimSta = null;
+let dimGlo = null;
+
+function pickDim(group, val) {
+  if (group === 'wew') {
+    dimWew = val;
+    ['dwA','dwB'].forEach(id => document.getElementById(id)?.classList.remove('picked'));
+    document.getElementById(val === 'in' ? 'dwA' : 'dwB')?.classList.add('picked');
+  } else if (group === 'sta') {
+    dimSta = val;
+    ['dsA','dsB'].forEach(id => document.getElementById(id)?.classList.remove('picked'));
+    document.getElementById(val === 'in' ? 'dsA' : 'dsB')?.classList.add('picked');
+  } else if (group === 'glo') {
+    dimGlo = val;
+    ['dgA','dgB'].forEach(id => document.getElementById(id)?.classList.remove('picked'));
+    document.getElementById(val === 'in' ? 'dgA' : 'dgB')?.classList.add('picked');
+  }
+  renderSummary();
+  if (typeof save === 'function') save();
+}
+
+function renderSummary() {
+  const wrap = document.getElementById('atrybSum');
+  if (!wrap) return;
+  if (!dimWew || !dimSta || !dimGlo) { wrap.innerHTML = ''; return; }
+  const toxic = (dimWew === 'in' && dimSta === 'in' && dimGlo === 'in');
+  const healthy = (dimWew === 'out' && dimSta === 'out' && dimGlo === 'out');
+  let body = '';
+  if (toxic) {
+    body = '<strong>Profil bezradności (Abramson, 1978)</strong>: wszystkie trzy wymiary „toksyczne" (wewnętrzne + stałe + globalne). Ten styl atrybucji jest <em>rdzeniem</em> wyuczonej bezradności i głównym predyktorem ryzyka depresji. Cel pracy: przesunięcie atrybucji ku przeciwnym biegunom — krok 4.';
+  } else if (healthy) {
+    body = '<strong>Zdrowy styl atrybucyjny</strong>: wszystkie trzy wymiary po stronie ochronnej (zewnętrzne + tymczasowe + specyficzne). Ten styl chroni przed bezradnością i jest predyktorem odporności (resilience).';
+  } else {
+    const toks = [];
+    if (dimWew === 'in') toks.push('<em>wewnętrzne</em>'); else toks.push('zewnętrzne');
+    if (dimSta === 'in') toks.push('<em>stałe</em>'); else toks.push('tymczasowe');
+    if (dimGlo === 'in') toks.push('<em>globalne</em>'); else toks.push('specyficzne');
+    const nTox = [dimWew, dimSta, dimGlo].filter(x => x === 'in').length;
+    body = '<strong>Mieszany styl atrybucji</strong>: ' + toks.join(' + ') + '. Liczba toksycznych wymiarów: ' + nTox + ' z 3. Im więcej, tym silniejsze ciążenie ku bezradności. Krok 4 pokaże, jak przesunąć każdy z nich.';
+  }
+  wrap.innerHTML = '<div class="summary-box"><div class="summary-h">Twój profil atrybucji</div><div class="summary-body">' + body + '</div></div>';
+}
+
+function updateBezrVals() {
+  ['bPrzed','bPo'].forEach(id => {
+    const r = document.getElementById(id);
+    const v = document.getElementById(id + 'Val');
+    if (r && v) v.textContent = r.value;
+  });
+  renderBezrDiff();
+}
+
+function renderBezrDiff() {
+  const a = document.getElementById('bPrzed');
+  const b = document.getElementById('bPo');
+  const d = document.getElementById('bezrDiff');
+  if (!a || !b || !d) return;
+  const delta = parseInt(b.value) - parseInt(a.value);
+  const sign = delta > 0 ? '+' : '';
+  // Spadek bezradności = pozytywny (neg-class odwrotnie)
+  const cls = delta > 0 ? ' neg' : '';
+  d.innerHTML = '<div class="diff-list"><div class="diff-row"><strong>Bezradność przed → po</strong><span class="diff-delta' + cls + '">' + a.value + ' → ' + b.value + ' (' + sign + delta + ')</span></div></div>';
+}
+
+function onStepChange(step) {
+  if (step === 5) updateBezrVals();
+}
+
+function onReset() {
+  dimWew = null; dimSta = null; dimGlo = null;
+  ['dwA','dwB','dsA','dsB','dgA','dgB'].forEach(id => document.getElementById(id)?.classList.remove('picked'));
+  const wrap = document.getElementById('atrybSum'); if (wrap) wrap.innerHTML = '';
+  const d = document.getElementById('bezrDiff'); if (d) d.innerHTML = '';
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mot_bezr_czym — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mot_bezr_czym";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.querySelectorAll('input[type="range"]').forEach(r => {
+  r.addEventListener('input', updateBezrVals);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

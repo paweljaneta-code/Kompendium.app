@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Najmniejszy krok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (step 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative; }
+.frame-card::before { content: "✦ MIKROHABIT"; position: absolute; top: 12px; left: 20px; background: var(--sage); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; }
+.frame-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.9); }
+.frame-body strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+
+/* === HALVING ALGORITHM (step 3) === */
+.halving-list { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 14px; }
+.halving-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-left: 4px solid var(--sage);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: all 0.2s;
+  position: relative;
+}
+.halving-block.l1 { border-left-color: var(--warm); }
+.halving-block.l2 { border-left-color: var(--sage); }
+.halving-block.l3 { border-left-color: var(--sage-deep); background: rgba(122,146,112,0.08); }
+.halving-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.halving-num { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; width: 30px; }
+.halving-block.l1 .halving-num { color: var(--warm); }
+.halving-block.l2 .halving-num { color: var(--sage); }
+.halving-block.l3 .halving-num { color: var(--sage-deep); }
+.halving-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; flex: 1; }
+.halving-arrow { text-align: center; font-size: 18px; color: var(--ink-mute); margin: 4px 0; }
+.halving-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  resize: none;
+  min-height: 38px;
+}
+.halving-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -1px; background: white; }
+.halving-input::placeholder { color: var(--ink-mute); }
+
+.value-display {
+  background: rgba(122,146,112,0.08);
+  border: 1px solid var(--sage-soft);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.value-display strong { color: var(--ink); font-style: normal; font-weight: 700; }
+
+/* === RESISTANCE (step 4) === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.scale { background: transparent; padding: 0; margin: 0; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm)); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm)); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+
+.verdict-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-top: 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.verdict-card strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-card.warn strong { color: var(--warm); }
+
+.target-display {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.target-display .label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; font-style: normal; margin-bottom: 4px; }
+
+/* === PLAN (step 5) === */
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Najmniejszy krok</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: WHY MICROACTION -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Mała akcja <em>przed motywacją</em></h1>
+    <p class="card-detail"><strong>Smallest possible step</strong> (Harris 2009) — technika zaangażowanego działania w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania), zbieżna z modelem Tiny Habits (Fogg 2020). Gdy działanie zgodne z wartościami wydaje się <em>za duże</em> — zmniejszasz je, aż znika opór.</p>
+    
+    <div class="term-note"><strong>Klucz</strong>: nie czekasz na motywację — <em>działanie tworzy motywację</em>. Mikrokrok obniża barierę aktywacji tak nisko, że wykonanie go jest trudniejsze do uniknięcia niż zrobienia.</div>
+    
+    <div class="frame-card">
+      <div class="frame-h">Bariera aktywacji</div>
+      <div class="frame-body">Klasyczny problem: cel <em>„napisać książkę"</em>. Bariera: ogromna. Wynik: prokrastynacja przez tygodnie. Mikrokrok: <em>„otworzyć dokument"</em>. Bariera: <strong>2 minuty</strong>. Często otwarcie dokumentu prowadzi do napisania zdania, potem akapitu — ale celem nie jest akapit, tylko otwarcie. <strong>Każde wykonanie wzmacnia tożsamość „jestem osobą, która pisze"</strong> — a to napędza kolejne kroki.</div>
+      <div class="frame-quote">„Tiny is mighty. Tiny works." — BJ Fogg</div>
+    </div>
+    
+    <div class="src">Hayes (1999) · Harris (2009) · Fogg (2020, Tiny Habits)</div>
+  </section>
+
+  <!-- 2: VALUE + IDEAL -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Wartość + ideał</div>
+    <h1 class="card-prompt">Dokąd <em>idziesz</em>?</h1>
+    <p class="card-detail">Zacznij od jasności: <strong>którą wartość</strong> chcesz teraz realizować i <strong>jak wygląda idealne działanie</strong> — to, do którego dążysz, ale na które brakuje ci dziś zasobów lub odwagi.</p>
+    
+    <div class="examples-h">Wartość, którą chcę realizować</div>
+    <textarea class="thought-input" id="value" placeholder="np. „odwaga" / „zdrowie" / „bliskość z rodziną" / „kreatywność"..." rows="2"></textarea>
+    
+    <div class="examples-h">Idealne działanie zgodne z tą wartością</div>
+    <textarea class="thought-input" id="ideal" placeholder="np. „poprosić szefa o podwyżkę" / „bieganie 3× w tygodniu" / „cotygodniowy obiad z rodzicami"..." rows="2"></textarea>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: idealne działanie powinno być <em>realne</em>, ale na tyle duże, że teraz wywołuje opór. Jeśli nie czujesz oporu, prawdopodobnie już to robisz — wybierz coś, co odkładasz.</div>
+  </section>
+
+  <!-- 3: HALVING -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Algorytm dzielenia</div>
+    <h1 class="card-prompt">Dziel <em>aż za łatwo</em></h1>
+    <p class="card-detail">Zasada: dziel idealne działanie na pół, dopóki krok nie wyda ci się <strong>śmiesznie łatwy</strong>. Jeśli czujesz „mogę to zrobić, ale nie chce mi się" — to <em>za duże</em>. Jeśli „przecież to nic" — to dobry rozmiar.</p>
+    
+    <div class="value-display" id="idealEcho">
+      <strong>Ideał:</strong> —
+    </div>
+    
+    <div class="halving-list">
+      <div class="halving-block l1">
+        <div class="halving-h">
+          <span class="halving-num">/2</span>
+          <span class="halving-label">Połowa ideału</span>
+        </div>
+        <textarea class="halving-input" id="half1" placeholder="np. „przygotować argumenty do rozmowy z szefem" / „bieganie 1× w tygodniu"..." rows="2"></textarea>
+      </div>
+      <div class="halving-arrow">↓</div>
+      <div class="halving-block l2">
+        <div class="halving-h">
+          <span class="halving-num">/4</span>
+          <span class="halving-label">Połowa tego</span>
+        </div>
+        <textarea class="halving-input" id="half2" placeholder="np. „spisać 3 osiągnięcia z ostatniego roku" / „pójść raz na 15 min spaceru"..." rows="2"></textarea>
+      </div>
+      <div class="halving-arrow">↓</div>
+      <div class="halving-block l3">
+        <div class="halving-h">
+          <span class="halving-num">/8</span>
+          <span class="halving-label">Mój najmniejszy krok</span>
+        </div>
+        <textarea class="halving-input" id="half3" placeholder="np. „napisać jedno osiągnięcie na kartce" / „założyć buty do biegania, postać 2 minuty"..." rows="2"></textarea>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Test</strong>: jeśli najmniejszy krok wciąż wywołuje opór, dziel dalej. Cel: krok, który <em>wykonasz, zanim zdążysz się o nim zastanowić</em>.</div>
+  </section>
+
+  <!-- 4: RESISTANCE TEST -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Test oporu</div>
+    <h1 class="card-prompt"><em>Czy wciąż za duży</em>?</h1>
+    <p class="card-detail">Sprawdźmy, czy znalazłeś/aś naprawdę najmniejszy krok. Wyobraź sobie, że masz to zrobić w ciągu <strong>najbliższej godziny</strong>. Oceń <strong>opór</strong>, jaki czujesz na samą myśl.</p>
+    
+    <div class="target-display">
+      <div class="label">Mój krok do testu</div>
+      <span id="stepEcho">—</span>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Opór, jaki czuję na samą myśl o wykonaniu tego</div>
+      <div class="scale">
+        <div class="scale-label"><span>żaden</span><span>silny</span></div>
+        <input type="range" min="0" max="10" value="3" class="scale-input" id="resistanceSlider" oninput="updateResistance()">
+        <div class="scale-readout"><span id="resistanceVal">3</span><span class="unit"> / 10</span></div>
+      </div>
+    </div>
+    
+    <div class="verdict-card" id="verdict">
+      <strong>Dobry rozmiar</strong> — opór niski. Możesz to zrobić.
+    </div>
+    
+    <div class="term-note"><strong>Standard skuteczności</strong> (Fogg): mikrokrok powinien generować opór ≤ 2/10. Powyżej 4/10 — wróć do dzielenia. „Wykonalność jest ważniejsza niż ambicja."</div>
+  </section>
+
+  <!-- 5: COMMIT -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Wykonanie</div>
+    <h1 class="card-prompt">Zrobię to <em>dziś</em></h1>
+    <p class="card-detail">Mikrokrok ma sens tylko wtedy, gdy jest <strong>wykonany</strong>. Zaplanuj <em>kiedy</em> i <em>w jakich warunkach</em>. To zdejmuje z ciebie konieczność „decydowania" w danej chwili — decyzja jest już podjęta.</p>
+    
+    <div class="target-display">
+      <div class="label">Mój mikrokrok</div>
+      <span id="stepEcho2">—</span>
+    </div>
+    
+    <div class="examples-h">Konkretne kiedy (data + godzina + miejsce)</div>
+    <textarea class="thought-input" id="when" placeholder="np. „dziś 18:00 po kolacji w salonie" / „jutro 7:30 zaraz po obudzeniu"..." rows="2"></textarea>
+    
+    <div class="examples-h">Wyzwalacz — co dokładnie zacznie ten krok?</div>
+    <textarea class="thought-input" id="trigger" placeholder="np. „gdy odłożę telefon po obiedzie" / „gdy zrobię kawę i usiądę"..." rows="2"></textarea>
+    
+    <div class="examples-h">Co zrobię JUTRO — kolejny mały krok</div>
+    <textarea class="thought-input" id="tomorrow" placeholder="np. „spisać kolejne 1-2 osiągnięcia" / „pójść 5 minut na spacer"..." rows="2"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła akumulacji</div>
+      <div class="repeat-body">Każdy wykonany mikrokrok wzmacnia <strong>tożsamość</strong> osoby, która działa zgodnie z wartością. Po 14 dniach mikrokroków <em>nie potrzebujesz już motywacji</em> — masz <strong>nawyk</strong>. Działanie zaczyna napędzać samo siebie.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 3) renderIdealEcho();
+  if (curStep === 4) { renderStepEcho(); updateResistance(); }
+  if (curStep === 5) renderStepEcho2();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    ['value','ideal','half1','half2','half3','when','trigger','tomorrow'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('resistanceSlider').value = 3;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function renderIdealEcho() {
+  const ideal = document.getElementById('ideal').value.trim() || '—';
+  document.getElementById('idealEcho').innerHTML = `<strong>Ideał:</strong> ${ideal}`;
+}
+
+function getSmallest() {
+  return document.getElementById('half3').value.trim() 
+      || document.getElementById('half2').value.trim() 
+      || document.getElementById('half1').value.trim() 
+      || '—';
+}
+
+function renderStepEcho() {
+  document.getElementById('stepEcho').textContent = getSmallest();
+}
+function renderStepEcho2() {
+  document.getElementById('stepEcho2').textContent = getSmallest();
+}
+
+function updateResistance() {
+  const v = parseInt(document.getElementById('resistanceSlider').value);
+  document.getElementById('resistanceVal').textContent = v;
+  
+  const verdict = document.getElementById('verdict');
+  verdict.classList.remove('warn');
+  
+  if (v <= 2) {
+    verdict.innerHTML = '<strong>Idealny rozmiar</strong> — opór niski (≤ 2). Krok jest wykonalny niemal natychmiast. To dobrze skalibrowany mikrokrok.';
+  } else if (v <= 4) {
+    verdict.innerHTML = '<strong>Dobry rozmiar</strong> — opór umiarkowany. Wykonalny, choć wymaga decyzji. Możesz spróbować, ale jeśli zaczniesz odkładać — wróć do dzielenia.';
+  } else if (v <= 6) {
+    verdict.classList.add('warn');
+    verdict.innerHTML = '<strong>Wciąż za duży</strong> — opór ' + v + '/10. Wróć do kroku 3 i podziel jeszcze raz na pół. Nie traktuj tego jak porażki — to standardowa korekta.';
+  } else {
+    verdict.classList.add('warn');
+    verdict.innerHTML = '<strong>Zdecydowanie za duży</strong> — opór ' + v + '/10. Podziel agresywnie: na 1/16 lub 1/32. Cel: krok tak mały, że odmowa byłaby śmieszna.';
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_najmniejszy_krok";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

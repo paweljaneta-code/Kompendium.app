@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Surfowanie na impulsie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.wave-box { background: linear-gradient(135deg, rgba(184,197,168,0.22), rgba(184,197,168,0.08)); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.wave-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--sage-deep); margin-bottom: 10px; }
+.wave-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.wave-phase { background: rgba(255,255,255,0.55); border-radius: 8px; padding: 9px; text-align: center; }
+.wave-phase-icon { font-size: 22px; line-height: 1; margin-bottom: 4px; }
+.wave-phase-h { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--sage-deep); margin-bottom: 3px; }
+.wave-phase-desc { font-size: 11px; color: var(--ink-soft); line-height: 1.3; }
+
+.def-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.def-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 11px 13px; cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: left; }
+.def-card:hover, .def-card.picked { background: var(--sage-deep); border-color: var(--sage-deep); }
+.def-card.picked .def-fused, .def-card.picked .def-defused, .def-card.picked .def-arrow { color: var(--bg); }
+.def-fused { font-size: 12px; color: var(--ink-soft); font-style: italic; margin-bottom: 4px; }
+.def-arrow { font-size: 12px; color: var(--sage-deep); margin-bottom: 4px; }
+.def-defused { font-size: 13px; color: var(--ink); font-weight: 500; line-height: 1.4; }
+
+.urge-meter { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.urge-meter-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.urge-meter .urge-progress { height: 8px; background: rgba(255,255,255,0.18); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+.urge-meter .urge-fill { height: 100%; background: var(--sage); transition: width 0.3s; border-radius: 4px; }
+.urge-meter-val { font-size: 13px; color: rgba(255,255,255,0.85); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Surfowanie na impulsie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Impuls to <em>fala</em>, nie rozkaz</h1>
+  <p class="card-detail">AEBT (Acceptance-Enhanced Behavior Therapy, Woods i Twohig, 2008) łączy klasyczne HRT z elementami ACT. Założenie: dłubanie często służy <em>unikaniu</em> niewygodnych doświadczeń wewnętrznych — napięcia, lęku, nudy. Walka z impulsem („nie wolno mi o tym myśleć\") paradoksalnie nasila go (efekt Wegnera). Akceptacja i defuzja działają inaczej: pozwalają impulsowi <em>przyjść i odejść</em>, bez reagowania.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery filary AEBT</div>
+    <div class="element-row"><span class="element-icon">🌊</span><span class="element-text"><strong>Akceptacja impulsu</strong> — impuls to czucie, nie rozkaz. „Zauważam, że mam impuls\" zamiast „muszę to zrobić\"</span></div>
+    <div class="element-row"><span class="element-icon">🧠</span><span class="element-text"><strong>Defuzja od myśli</strong> — „mam myśl, że muszę dłubać\" zamiast „muszę dłubać\". Myśl to dźwięk, nie fakt</span></div>
+    <div class="element-row"><span class="element-icon">🏄</span><span class="element-text"><strong>Surfowanie na impulsie</strong> — fala narasta, osiąga szczyt, opada. Zwykle 5–15 min bez reagowania</span></div>
+    <div class="element-row"><span class="element-icon">🧭</span><span class="element-text"><strong>Wartości jako kontekst</strong> — co ważnego tracisz przez dłubanie? Zdrowie? Wolność? Bliskość?</span></div>
+  </div>
+
+  <div class="frame-quote">„Impuls jest jak fala — narasta, osiąga szczyt, opada. Nie musisz na nią reagować — wystarczy ją <em>przeczekać</em>. Każde przeczekane uderzenie uczy mózg, że impuls przemija sam z siebie.\"
+    <span class="frame-quote-attr">— Marlatt (2005, urge surfing); Twohig i Woods (2004)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Kiedy AEBT</strong>: po niepełnym efekcie klasycznego HRT; gdy walka z impulsem nasila napięcie; przy silnej komponencie emocjonalnej (lęk, wstyd, samokrytyka). AEBT nie zastępuje HRT — działa jako jego rozszerzenie, dodając akceptację tam, gdzie sama reakcja konkurencyjna nie wystarcza.</div>
+
+  <div class="src">Źródła: Twohig i Woods (2004, AEBT); Capriotti i wsp. (2015, AEBT skin picking); Hayes i wsp. (2012, ACT processes); Marlatt (2005, urge surfing)</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Anatomia fali impulsu</div>
+  <h1 class="card-prompt">Każda fala ma <em>trzy fazy</em></h1>
+  <p class="card-detail">Większość ludzi reaguje na impuls dłubania w fazie narastania — bo wydaje się, że napięcie będzie rosnąć w nieskończoność. To złudzenie. Każda fala impulsu ma trzy fazy i każda — bez wyjątku — opada. Trzeba tylko poczekać.</p>
+
+  <div class="wave-box">
+    <div class="wave-h">Trzy fazy fali (typowy czas: 5–15 minut)</div>
+    <div class="wave-phases">
+      <div class="wave-phase">
+        <div class="wave-phase-icon">📈</div>
+        <div class="wave-phase-h">Narastanie</div>
+        <div class="wave-phase-desc">1–3 min<br>napięcie rośnie</div>
+      </div>
+      <div class="wave-phase">
+        <div class="wave-phase-icon">⛰️</div>
+        <div class="wave-phase-h">Szczyt</div>
+        <div class="wave-phase-desc">2–5 min<br>tu zwykle ulegasz</div>
+      </div>
+      <div class="wave-phase">
+        <div class="wave-phase-icon">📉</div>
+        <div class="wave-phase-h">Opadanie</div>
+        <div class="wave-phase-desc">3–10 min<br>fala słabnie sama</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="examples-h">Co dzieje się w fazie szczytu</p>
+  <div class="frame-card">
+    <div class="element-row"><span class="element-icon">💢</span><span class="element-text">Napięcie czuje się jak coś, co <strong>rozsadzi</strong> ciało, jeśli czegoś nie zrobisz</span></div>
+    <div class="element-row"><span class="element-icon">🗣️</span><span class="element-text">Myśli stają się <strong>nakazujące</strong>: „muszę\", „teraz\", „tylko ten jeden raz\"</span></div>
+    <div class="element-row"><span class="element-icon">⏳</span><span class="element-text">Wydaje się, że to <strong>trwa wiecznie</strong> — w rzeczywistości szczyt to 2–5 minut</span></div>
+    <div class="element-row"><span class="element-icon">🎁</span><span class="element-text">Dłubanie daje <strong>natychmiastową ulgę</strong> — to wzmocnienie, które zamyka pętlę</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Klucz</strong>: dłubanie nie kończy fali — fala kończy się sama. Kiedy reagujesz, ulga jest natychmiastowa, ale ucząsz mózg, że <em>tylko dłubanie kończy napięcie</em>. Kiedy poczekasz, mózg uczy się: <em>fala przemija sama</em>. To jest właśnie wygaszenie warunkowania.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Defuzja od myśli nakazujących</div>
+  <h1 class="card-prompt">Zamień <em>fakt</em> na <em>myśl</em></h1>
+  <p class="card-detail">Defuzja (Hayes, ACT) to umiejętność widzenia myśli <em>jako myśli</em>, a nie jako faktów lub rozkazów. Przy dłubaniu mózg podaje myśli w trybie nakazującym („muszę to wycisnąć\"). Defuzja dodaje jedno słowo z przodu — i wszystko się zmienia. Kliknij każdą parę, żeby ją zarejestrować.</p>
+
+  <div class="def-list">
+    <button class="def-card" id="def_jeden" onclick="pickDef('jeden')" type="button">
+      <div class="def-fused">„Muszę to wycisnąć.\"</div>
+      <div class="def-arrow">↓</div>
+      <div class="def-defused">„<strong>Mam myśl</strong>, że muszę to wycisnąć. To myśl, nie rozkaz.\"</div>
+    </button>
+    <button class="def-card" id="def_dwa" onclick="pickDef('dwa')" type="button">
+      <div class="def-fused">„Jeszcze tylko ten jeden raz.\"</div>
+      <div class="def-arrow">↓</div>
+      <div class="def-defused">„<strong>Zauważam myśl</strong> ‚jeszcze tylko jeden raz' — wiem, do czego prowadzi.\"</div>
+    </button>
+    <button class="def-card" id="def_trzy" onclick="pickDef('trzy')" type="button">
+      <div class="def-fused">„Skóra musi być gładka, ZARAZ.\"</div>
+      <div class="def-arrow">↓</div>
+      <div class="def-defused">„<strong>Mam wymóg</strong>, żeby skóra była gładka. Wymóg to nie konieczność.\"</div>
+    </button>
+    <button class="def-card" id="def_cztery" onclick="pickDef('cztery')" type="button">
+      <div class="def-fused">„Nie wytrzymam tego napięcia.\"</div>
+      <div class="def-arrow">↓</div>
+      <div class="def-defused">„<strong>Mózg podpowiada</strong>, że nie wytrzymam. Już 100 razy wytrzymałam/em.\"</div>
+    </button>
+  </div>
+
+  <div class="term-note"><strong>💡 Mechanizm defuzji</strong>: dodanie z przodu „mam myśl\", „zauważam myśl\", „mózg mówi\" tworzy <em>dystans</em> między tobą a myślą. Myśl staje się obiektem, który obserwujesz, a nie rozkazem, który wykonujesz. To dosłownie zmienia neuronalną reakcję — fMRI pokazuje niższą aktywację amygdali (Hayes, 2012).</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Ćwiczenie surfowania</div>
+  <h1 class="card-prompt">5 kroków, gdy <em>nadchodzi fala</em></h1>
+  <p class="card-detail">Następnym razem, gdy poczujesz impuls dłubania, wykonaj te 5 kroków zamiast reagować. Pierwsze 2–3 razy fala wyda się nieznośna — to normalne. Z każdym powtórzeniem mózg uczy się, że <em>nie musisz reagować</em>. Po 10–15 udanych surfowaniach impuls naturalnie słabnie.</p>
+
+  <p class="examples-h">Pięć kroków surfowania</p>
+  <ol style="font-size: 13px; color: var(--ink-soft); line-height: 1.6; padding-left: 22px; margin: 8px 0;">
+    <li><strong>STOP.</strong> Zatrzymaj rękę w drodze do skóry. Nie walcz — tylko zatrzymaj.</li>
+    <li><strong>NAZWIJ.</strong> „Mam impuls do dłubania.\" Powiedz na głos lub w myśli.</li>
+    <li><strong>ZLOKALIZUJ.</strong> Gdzie w ciele czujesz napięcie? (klatka, brzuch, ręce). Jak silne 0–10?</li>
+    <li><strong>ODDYCHAJ PRZEZ FALĘ.</strong> 4 sekundy wdech, 6 sekund wydech. Powtórz 5 razy.</li>
+    <li><strong>OBSERWUJ.</strong> Patrz, jak fala narasta… szczyt… opada. Zwykle 5–15 min.</li>
+  </ol>
+
+  <p class="examples-h">Twoje notatki po pierwszym surfowaniu</p>
+  <textarea class="thought-input" id="surfNotes" placeholder="np. „Pierwszy raz: poczekałam/em 8 minut przed lustrem.&#10;Napięcie zaczęło się od 8/10, doszło do 9/10 (szczyt po 4 min), spadło do 4/10 po 8 min.&#10;Pomyślałam/em ‚to nie do wytrzymania' kilka razy — ale wytrzymałam/em.&#10;Po: ulga + duma. Nie dłubałam/em.\"" rows="6"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka „muszę nie myśleć\"</strong>: surfowanie nie polega na wyparciu impulsu — przeciwnie, na <em>obserwowaniu</em> go. Im silniej walczysz („nie myśl o białym misiu\"), tym bardziej myśl wraca (Wegner, 1987). Akceptacja jest paradoksalnie skuteczniejsza niż walka.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar fali</div>
+  <h1 class="card-prompt">Czy fala <em>opadła</em>?</h1>
+  <p class="card-detail">Po pierwszym surfowaniu zaznacz, jak silny/a był/a impuls na początku i na końcu. To prosty test, czy fala rzeczywiście przemija sama. Większość osób przy pierwszym surfowaniu obserwuje spadek o 3–5 punktów po 10–15 minutach.</p>
+
+  <div class="urge-meter">
+    <div class="urge-meter-h">🌊 Impuls na początku</div>
+    <div class="urge-progress"><div class="urge-fill" id="urgeFillStart" style="width:80%"></div></div>
+    <input type="range" class="scale-input" id="urgeStart" min="0" max="10" step="1" value="8" data-default="8" style="margin-top:8px">
+    <div class="urge-meter-val">poziom: <span id="urgeStartVal">8</span> / 10</div>
+  </div>
+
+  <div class="urge-meter">
+    <div class="urge-meter-h">🏄 Impuls po 10–15 minutach surfowania</div>
+    <div class="urge-progress"><div class="urge-fill" id="urgeFillEnd" style="width:30%"></div></div>
+    <input type="range" class="scale-input" id="urgeEnd" min="0" max="10" step="1" value="3" data-default="3" style="margin-top:8px">
+    <div class="urge-meter-val">poziom: <span id="urgeEndVal">3</span> / 10</div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Spadek o 5 pkt</strong> — wyraźna ulga bez dłubania. Zapamiętaj to uczucie. Twój mózg właśnie zarejestrował: <em>impuls przemija sam z siebie</em>. To fundament zmiany.</div>
+
+  <div class="term-note"><strong>📐 Reguła powtórzeń</strong>: jedno udane surfowanie nie wystarczy — mózg potrzebuje 10–15 powtórzeń, żeby wzorzec „fala przemija\" stał się automatyczny. Po 3–4 tygodniach codziennego ćwiczenia surfowanie staje się odruchem; po 8–12 tygodniach częstość dłubania spada o 40–60% (Capriotti, 2015).</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Impuls jest <strong>falą</strong>, nie rozkazem. Każde przeczekane uderzenie uczy mózg, że <em>nie musisz reagować</em>. Defuzja („mam myśl, że…\"), surfowanie (5–15 min), wartości („co tracę przez dłubanie?\") — to trzy narzędzia, które razem przerywają cykl walki, w którym dłubanie zawsze wygrywało.</div>
+  </div>
+
+  <div class="src">Źródła: Twohig i Woods (2004, AEBT); Capriotti i wsp. (2015, AEBT skin picking case series); Hayes i wsp. (2012, ACT processes); Marlatt (2005, urge surfing); Wegner (1987, paradoxical effects of thought suppression); Neff (2003, self-compassion)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickDef(d) {
+  var el = document.getElementById('def_' + d);
+  if (el) el.classList.toggle('picked');
+}
+function onReset() {
+  document.querySelectorAll('.def-card.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+function updateUrge() {
+  var s = parseInt(document.getElementById('urgeStart').value, 10) || 0;
+  var e = parseInt(document.getElementById('urgeEnd').value, 10) || 0;
+  document.getElementById('urgeStartVal').textContent = s;
+  document.getElementById('urgeEndVal').textContent = e;
+  var fillS = document.getElementById('urgeFillStart');
+  var fillE = document.getElementById('urgeFillEnd');
+  if (fillS) fillS.style.width = (s * 10) + '%';
+  if (fillE) fillE.style.width = (e * 10) + '%';
+  var diff = s - e;
+  var msg = document.getElementById('finalMsg');
+  if (msg) {
+    if (diff <= 0) msg.innerHTML = '<strong>Impuls nie opadł</strong> — to znak, że nie czekałaś/eś dość długo (typowy szczyt 5–15 min) lub że surfowanie wymaga jeszcze ćwiczenia. Wróć do tego za tydzień.';
+    else if (diff <= 2) msg.innerHTML = '<strong>Spadek o ' + diff + ' pkt</strong> — fala opadła, chociaż niewiele. To pierwszy dowód, że <em>możesz przeżyć impuls</em> bez reagowania. Z każdą kolejną sesją różnica będzie większa.';
+    else msg.innerHTML = '<strong>Spadek o ' + diff + ' pkt</strong> — wyraźna ulga bez dłubania. Zapamiętaj to uczucie. Twój mózg właśnie zarejestrował: <em>impuls przemija sam z siebie</em>. To fundament zmiany.';
+  }
+}
+function onStepChange(s) { if (s === 5) updateUrge(); }
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_derm_act — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_derm_act";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.addEventListener('input', function(e) {
+  if (!e.target) return;
+  if (e.target.id === 'urgeStart' || e.target.id === 'urgeEnd') updateUrge();
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

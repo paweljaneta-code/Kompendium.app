@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Rozwiązywanie problemów</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.proto-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 14px 16px; border-radius: 12px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.proto-row { display: flex; gap: 10px; padding: 6px 0; align-items: flex-start; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--warm); font-size: 14px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.proto-text strong { color: var(--ink); font-weight: 600; }
+
+.opt-grid { display: grid; gap: 8px; margin: 12px 0; }
+.opt-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.opt-btn:hover, .opt-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.opt-btn .opt-name { font-weight: 600; display: block; margin-bottom: 4px; font-size: 14px; }
+.opt-btn .opt-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; display: block; }
+.opt-btn.picked .opt-desc { color: rgba(244,241,234,0.85); }
+
+.field-grid { display: grid; gap: 8px; margin: 10px 0; }
+.field-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; color: var(--sage-deep); }
+
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.compare-half { padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+.compare-half.rumin { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); }
+.compare-half.solve { background: rgba(184,197,168,0.22); border: 1px solid var(--sage); }
+.compare-h { font-family: 'Fraunces', serif; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.compare-half.rumin .compare-h { color: #8a6e3a; }
+.compare-half.solve .compare-h { color: var(--sage-deep); }
+.compare-half strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Rozwiązywanie problemów</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Rozwiązywanie problemów — kiedy emocja <em>pasuje</em> do faktów</h1>
+    <p class="card-detail">Rozwiązywanie problemów (Problem Solving) to umiejętność z modułu regulacji emocji DBT — dialektycznej terapii behawioralnej (Linehan, 2015). Stosujesz je, gdy <strong>emocja jest uzasadniona</strong> — pasuje do faktów, jest proporcjonalna, niesie informację o realnej sytuacji wymagającej zmiany. Wtedy nie tłumisz emocji, lecz <em>zmieniasz sytuację</em>, która ją wytwarza.</p>
+
+    <p class="card-detail">Linehan (2015) zaadaptowała klasyczną terapię rozwiązywania problemów (Problem-Solving Therapy) D'Zurilli i Nezu (1971, Journal of Abnormal Psychology). Mechanizm: <strong>strukturalny proces</strong> zamiast pętli ruminacyjnej. Ruminacja kręci się wokół „dlaczego” bez wyjścia; rozwiązywanie problemów prowadzi przez pytania w kierunku <em>działania</em>: co dokładnie jest problemem, jakie są opcje, którą wybieram, jaki jest pierwszy ruch.</p>
+
+    <p class="card-detail">Różnica jest praktyczna. Po godzinie ruminacji zwykle czujesz się gorzej i nie masz planu. Po godzinie rozwiązywania problemów masz plan z pierwszym konkretnym ruchem na 24 godziny — niezależnie od tego, czy plan jest idealny. Sam akt strukturalnego myślenia obniża pobudzenie, bo daje korze przedczołowej coś do roboty.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Siedem kroków rozwiązywania problemów (Linehan 2015 / D'Zurilla & Nezu 1971)</div>
+      <div class="element-row">
+        <span class="element-icon">📋</span>
+        <span class="element-text"><strong>1 · Definicja problemu</strong>: konkretnie i operacyjnie. Kto, co, gdzie, kiedy. Nie „w pracy jest źle” — „mam dwa razy w tygodniu wieczorne nadgodziny od miesiąca”.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>2 · Cel</strong>: czego chcesz po rozwiązaniu? Konkretnie i mierzalnie, z terminem. „Maksymalnie 1 nadgodzinę tygodniowo do końca października”.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">💡</span>
+        <span class="element-text"><strong>3 · Burza mózgów</strong>: wszystkie możliwe rozwiązania, nawet absurdalne. Cel: ilość, nie jakość. 5–10 opcji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚖️</span>
+        <span class="element-text"><strong>4 · Analiza za/przeciw</strong>: dla każdej opcji krótka lista plusów i minusów, krótko- i długoterminowo.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✅</span>
+        <span class="element-text"><strong>5 · Wybór</strong>: jedna opcja (lub kombinacja dwóch) na pierwszy podejście. Nie idealna — wystarczająca i wykonalna.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚀</span>
+        <span class="element-text"><strong>6 · Wdrożenie</strong>: konkretny pierwszy ruch w ciągu 24–48 godzin. Bez „kiedyś”, „wkrótce” — termin i osoba odpowiedzialna (czyli Ty).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📊</span>
+        <span class="element-text"><strong>7 · Ewaluacja</strong>: po tygodniu sprawdź, czy zbliżyło Cię do celu. Jeśli tak — kontynuuj. Jeśli nie — wróć do kroku 3, dobierz inną opcję. Iteracja, nie idealizm.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Ruminacja kręci się wokół problemu, jakby rozważanie miało go rozwiązać. Rozwiązywanie problemów prowadzi do działania — najmniejszego, jakie jeszcze coś zmienia.”
+      <span class="frame-quote-attr">— Marsha Linehan (2015, DBT Skills Training Manual, wyd. 2)</span>
+    </div>
+
+    <div class="term-note"><strong>💡 Klucz</strong>: Rozwiązywanie problemów stosujesz tylko wtedy, gdy <em>masz wpływ</em> na sytuację — przynajmniej na jeden jej element. Jeśli problem jest poza Twoim wpływem (np. choroba bliskiej osoby, decyzja systemowa), narzędzie zmienia się w <strong>akceptację radykalną</strong> + <strong>działanie tylko tam, gdzie wpływ jest</strong>. Mądry Umysł rozróżnia te sytuacje.</div>
+
+    <div class="src">Linehan (2015, DBT Skills Training Manual, wyd. 2) · D'Zurilla & Nezu (1971, Journal of Abnormal Psychology — Problem-Solving Therapy) · Linehan (2014, DBT Skills Manual for Adolescents) · Nezu i wsp. (2013, Problem-Solving Therapy: A Treatment Manual)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+    <h1 class="card-prompt">Jaki <em>problem</em>, jak Cię <em>przytłacza</em>?</h1>
+    <p class="card-detail">Wybierz JEDEN konkretny problem, który ostatnio wraca w głowie i wywołuje uzasadnioną emocję — taki, na który masz przynajmniej częściowy wpływ. Im konkretniej go opiszesz, tym sprawniej pójdą kolejne kroki.</p>
+
+    <div class="scale">
+      <div class="scale-title">Poczucie przytłoczenia problemem — przed</div>
+      <div class="scale-bounds"><span>0 — opanowuję</span><span>10 — paraliż</span></div>
+      <input type="range" class="scale-input" id="preOver" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>Poziom</span><span id="preOverVal">7</span></div>
+    </div>
+
+    <textarea class="thought-input" id="psSit" placeholder="np. „Od miesiąca mam średnio 3 nadgodziny tygodniowo. Wracam do domu o 20:00, jem szybko, padam. Sprawdziłam fakty — to jest realnie za dużo, ciało się buntuje (bóle głowy, bezsenność). Emocja: zmęczenie + irytacja, uzasadniona.”" rows="4"></textarea>
+
+    <div class="term-note"><strong>📌 Reguła pomiaru</strong>: Wysokie przytłoczenie (8–10) zwykle blokuje już samo myślenie o opcjach. W tym stanie najpierw STOP + samoukojenie 10 minut, dopiero potem protokół rozwiązywania problemów. Średnie (4–7) — zwykle reaguje na strukturalne przejście. Niskie (0–3) — protokół działa profilaktycznie i porządkująco.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór typu problemu</div>
+    <h1 class="card-prompt">Jaki <em>typ</em> problemu rozwiązujesz?</h1>
+    <p class="card-detail">Linehan (2015) wyróżnia kilka typowych kategorii. Każda ma swoje pułapki. Wybierz tę najbardziej pasującą — to wpływa na to, na co warto zwrócić uwagę w burzy mózgów.</p>
+
+    <div class="opt-grid">
+      <button class="opt-btn" id="oA" onclick="pickOpt('A')">
+        <span class="opt-name">A · Problem praktyczny / logistyczny</span>
+        <span class="opt-desc">Praca, finanse, mieszkanie, czas, organizacja, zdrowie fizyczne. Konkretne, zewnętrzne. Najbardziej podatne na strukturalny protokół.</span>
+      </button>
+      <button class="opt-btn" id="oB" onclick="pickOpt('B')">
+        <span class="opt-name">B · Problem relacyjny</span>
+        <span class="opt-desc">Konflikt z partnerem, rodziną, w pracy. Wymaga rozróżnienia: co jest po Twojej stronie (Twoje działania), a co po stronie drugiej osoby (jej decyzje, których nie kontrolujesz).</span>
+      </button>
+      <button class="opt-btn" id="oC" onclick="pickOpt('C')">
+        <span class="opt-name">C · Problem decyzyjny</span>
+        <span class="opt-desc">Czy zmienić pracę, zostać w związku, podjąć leczenie, przeprowadzić się. Często paraliżuje wielość opcji. Pomocne ograniczenie do 2–3 alternatyw + termin decyzji.</span>
+      </button>
+      <button class="opt-btn" id="oD" onclick="pickOpt('D')">
+        <span class="opt-name">D · Problem zdrowotny / kryzysowy</span>
+        <span class="opt-desc">Choroba, leczenie, zachowania ryzykowne, kryzys finansowy. Wymaga współpracy z profesjonalistami i czasem stopniowych celów (najpierw stabilizacja, potem zmiana).</span>
+      </button>
+    </div>
+
+    <div class="term-note"><strong>🔑 Reguła wyboru</strong>: Często problem ma wiele warstw (relacyjna + praktyczna). Wybierz tę warstwę, na którą masz <em>największy wpływ</em>. Z czasem rozwiążesz pozostałe — ale nie naraz. Próba rozwiązania wszystkich warstw jednocześnie zwykle kończy się paraliżem.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — protokół 7 kroków</div>
+    <h1 class="card-prompt">Definicja → opcje → <em>pierwszy ruch w 24h</em></h1>
+    <p class="card-detail">Wykonaj protokół po kolei. Wypełnij krótko każde pole. Cel ostatecznego pola: konkretny pierwszy ruch w ciągu 24–48 godzin. Nie cały plan — pierwszy mały krok, który już dziś coś zmieni.</p>
+
+    <div class="compare-row">
+      <div class="compare-half rumin">
+        <div class="compare-h">⚠️ Ruminacja</div>
+        <div>„Dlaczego znowu jest tyle pracy? Czemu szef tak ustawia? Czemu zawsze ja? Co ze mną nie tak, że nie umiem postawić granic? Jutro znowu...” — pętla 30 min.</div>
+      </div>
+      <div class="compare-half solve">
+        <div class="compare-h">✅ Rozwiązywanie</div>
+        <div>„Problem: 3 nadgodziny tygodniowo. Cel: maks. 1 do końca października. Opcje: rozmowa z szefem, delegacja, sztywne wyjście o 17, redukcja zakresu... Pierwszy ruch: jutro 9:00 maila do szefa o spotkanie.”</div>
+      </div>
+    </div>
+
+    <div class="proto-card">
+      <div class="proto-h">Sześć pól arkusza</div>
+      <div class="proto-row">
+        <div class="proto-num">1.</div>
+        <div class="proto-text"><strong>Definicja</strong>: kto, co, gdzie, kiedy. Bez interpretacji.</div>
+      </div>
+      <div class="proto-row">
+        <div class="proto-num">2.</div>
+        <div class="proto-text"><strong>Cel</strong>: konkretny, mierzalny, z terminem.</div>
+      </div>
+      <div class="proto-row">
+        <div class="proto-num">3.</div>
+        <div class="proto-text"><strong>5–10 opcji</strong>: nawet absurdalne. Cel: ilość, nie jakość.</div>
+      </div>
+      <div class="proto-row">
+        <div class="proto-num">4.</div>
+        <div class="proto-text"><strong>Analiza za/przeciw</strong>: krótko dla 2–3 najmocniejszych opcji.</div>
+      </div>
+      <div class="proto-row">
+        <div class="proto-num">5.</div>
+        <div class="proto-text"><strong>Wybór</strong>: jedna opcja (lub kombinacja).</div>
+      </div>
+      <div class="proto-row">
+        <div class="proto-num">6.</div>
+        <div class="proto-text"><strong>Pierwszy ruch w 24–48h</strong>: konkretny, mały, wykonalny.</div>
+      </div>
+    </div>
+
+    <div class="field-grid">
+      <div>
+        <div class="field-h">1. Definicja problemu (fakty, bez ocen)</div>
+        <textarea class="thought-input" id="psDef" placeholder="Kto, co, gdzie, kiedy, jak często, jak długo." rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">2. Cel (mierzalny, z terminem)</div>
+        <textarea class="thought-input" id="psGoal" placeholder="Co chcesz osiągnąć? Konkretnie i mierzalnie. W jakim terminie?" rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">3. Burza mózgów — 5–10 opcji</div>
+        <textarea class="thought-input" id="psOpts" placeholder="Wymień wszystkie opcje. Nawet absurdalne. Nie filtruj." rows="3"></textarea>
+      </div>
+      <div>
+        <div class="field-h">4. Analiza za/przeciw (2–3 najmocniejsze opcje)</div>
+        <textarea class="thought-input" id="psAna" placeholder="Dla każdej z najlepszych 2–3 opcji: krótkoterminowy plus + minus, długoterminowy plus + minus." rows="3"></textarea>
+      </div>
+      <div>
+        <div class="field-h">5. Wybrana opcja</div>
+        <textarea class="thought-input" id="psPick" placeholder="Jedna opcja lub kombinacja. Nie idealna — wystarczająca." rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">🎯 6. Pierwszy ruch w 24–48 godzin</div>
+        <textarea class="thought-input" id="psFirst" placeholder="Konkretny, mały, wykonalny krok. Termin (godzina + dzień). Co dokładnie zrobisz?" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>⚠️ Trzy częste pułapki</strong>: (1) <em>Definicja zbyt ogólna</em> — „mam za dużo pracy” nie da się rozwiązać. „Mam 3 nadgodziny w tygodniu od miesiąca” — da się. (2) <em>Cel idealistyczny</em> — „mieć wymarzoną pracę za miesiąc” paraliżuje. „Maks. 1 nadgodzina tygodniowo do końca października” — wykonalne. (3) <em>Pominięcie pierwszego ruchu</em> — kończysz protokół z planem, ale bez konkretnej akcji w 24h. Plan bez pierwszego ruchu zwykle nie żyje.</div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: Strukturalne myślenie aktywuje grzbietowo-boczną korę przedczołową (planowanie, generowanie alternatyw, ocena), która hamuje aktywność sieci stanu spoczynkowego (DMN — siedziby ruminacji). Brewer i wsp. (2011, PNAS) pokazali, że osoby praktykujące strukturalne myślenie i uważność mają obniżoną aktywność DMN. Każdy protokół rozwiązywania problemów to jednocześnie ćwiczenie wyłączania pętli ruminacyjnych.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po protokole</div>
+    <h1 class="card-prompt">Czy <em>chaos</em> stał się <em>krokiem</em>?</h1>
+    <p class="card-detail">Porównaj poczucie przytłoczenia po wykonaniu protokołu z poziomem przed. Spadek = problem ma teraz strukturę i pierwszy ruch. Brak spadku = albo protokół był zbyt szybki, albo problem wymaga pomocy z zewnątrz (terapeuta, doradca, prawnik, lekarz).</p>
+
+    <div class="scale">
+      <div class="scale-title">Poczucie przytłoczenia — po protokole</div>
+      <div class="scale-bounds"><span>0 — opanowuję</span><span>10 — paraliż</span></div>
+      <input type="range" class="scale-input" id="postOver" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Poziom</span><span id="postOverVal">3</span></div>
+    </div>
+
+    <div class="final-msg" id="diffMsg"><strong>Zmiana przytłoczenia</strong>: −4 pkt (przed 7 → po 3). Wyraźny spadek przytłoczenia. Strukturalny proces zamienił mglistą „katastrofę” na konkretne kroki, na które masz wpływ — i to obniża pobudzenie.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: Pojedyncze przejście protokołu obniża przytłoczenie o 2–4 punkty na 24–72 godziny. Powtarzanie nad różnymi problemami przez 4–6 tygodni buduje <em>strukturalny nawyk</em>: kiedy pojawia się ruminacja, automatycznie pytasz „jaki jest tu problem? jaki cel? jaki pierwszy ruch?”. Po 8–12 tygodniach typowe pętle ruminacyjne skracają się z godzin do minut.</div>
+
+    <div class="term-note"><strong>📈 Trajektoria praktyki</strong>: Tydzień 1 — protokół wymaga 30–60 minut, a niektóre kroki wydają się sztywne. Tydzień 2–3 — przejście trwa 15–20 minut. Tydzień 4+ — w trudnej sytuacji odruchowo szukasz definicji i pierwszego ruchu, zamiast brnąć w ruminację. Po 8 tygodniach protokół staje się wewnętrznym nawigatorem przez codzienne problemy.</div>
+
+    <div class="term-note"><strong>🔄 Rozwiązywanie problemów po sprawdzeniu faktów</strong>: To jest druga droga rozwidlenia ścieżki regulacji DBT. Najpierw sprawdzasz fakty. Jeśli emocja <strong>nieuzasadniona</strong> → przeciwne działanie. Jeśli <strong>uzasadniona</strong> → rozwiązywanie problemów. Razem te trzy narzędzia (sprawdź fakty + przeciwne działanie + rozwiązywanie problemów) tworzą rdzeń modułu zmiany emocji.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Rozwiązywanie problemów = <strong>siedem kroków</strong>: definicja → cel → 5–10 opcji → analiza za/przeciw → wybór → pierwszy ruch w 24–48h → ewaluacja po tygodniu. Stosujesz, gdy emocja uzasadniona i masz wpływ. Ruminacja kręci się wokół „dlaczego”; rozwiązywanie prowadzi do <em>działania</em>. Pierwszy ruch — najmniejszy, jaki coś jeszcze zmienia.</div>
+    </div>
+
+    <div class="src">Linehan (2015, DBT Skills Training Manual, wyd. 2) · D'Zurilla & Nezu (1971, Journal of Abnormal Psychology) · Nezu i wsp. (2013, Problem-Solving Therapy: A Treatment Manual) · Brewer i wsp. (2011, PNAS — meditation and DMN) · Linehan (2014, DBT Skills Manual for Adolescents)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickOpt(letter) {
+  ['oA','oB','oC','oD'].forEach(id => {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('o' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+function updateDiff() {
+  var preEl = document.getElementById('preOver');
+  var postEl = document.getElementById('postOver');
+  var diffEl = document.getElementById('diffMsg');
+  if (!preEl || !postEl || !diffEl) return;
+  var pre = parseInt(preEl.value, 10);
+  var post = parseInt(postEl.value, 10);
+  var delta = pre - post;
+  var label = '';
+  if (delta >= 3) label = 'Wyraźny spadek przytłoczenia. Strukturalny proces zamienił mglistą „katastrofę” na konkretne kroki, na które masz wpływ — i to obniża pobudzenie.';
+  else if (delta >= 1) label = 'Drobny spadek — typowy po pierwszym przejściu protokołu. Im więcej powtórzeń, tym łatwiej zauważyć, kiedy ruminacja zaczyna zastępować rozwiązywanie problemów.';
+  else if (delta === 0) label = 'Bez zmiany — być może problem wymaga współpracy innej osoby, której nie kontrolujesz, albo decyzji systemowej. W takim wypadku skuteczność oznacza działanie tylko w tym, na co masz wpływ — to także rozwiązanie.';
+  else label = 'Wzrost przytłoczenia — czasami zobaczenie wszystkich opcji naraz przeciąża. Wybierz JEDNĄ najmniejszą i wykonaj ją w 24 godziny. Plan duży zawsze paraliżuje; pierwszy ruch — uruchamia.';
+  diffEl.innerHTML = '<strong>Zmiana przytłoczenia</strong>: ' + (delta >= 0 ? '−' : '+') + Math.abs(delta) + ' pkt (przed ' + pre + ' → po ' + post + '). ' + label;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_dbt_rozwi_zywanie_problem_w — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_dbt_rozwi_zywanie_problem_w";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.addEventListener('input', function(e) {
+  if (!e.target) return;
+  if (e.target.id === 'preOver') {
+    var v = document.getElementById('preOverVal');
+    if (v) v.textContent = e.target.value;
+    updateDiff();
+  } else if (e.target.id === 'postOver') {
+    var v = document.getElementById('postOverVal');
+    if (v) v.textContent = e.target.value;
+    updateDiff();
+  }
+});
+setTimeout(updateDiff, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

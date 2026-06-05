@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Eskalacja: Coolidge effect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.mech-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.mech-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.mech-icon { font-size: 22px; line-height: 1; }
+.mech-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.mech-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 6px; }
+
+.timeline-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.timeline-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.timeline-row {
+  padding: 8px 0; border-bottom: 1px dashed rgba(184,197,168,0.25);
+  display: grid; grid-template-columns: 80px 1fr; gap: 10px;
+  font-size: 12.5px; line-height: 1.55;
+}
+.timeline-row:last-child { border-bottom: none; }
+.timeline-time { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); }
+.timeline-text { color: rgba(244,241,234,0.92); }
+.timeline-text strong { color: var(--bg); display: block; margin-bottom: 2px; }
+.timeline-text em { color: var(--sage); font-style: italic; }
+
+.danger-card {
+  background: rgba(166,74,58,0.15); border-left: 3px solid #a64a3a;
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.danger-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #a64a3a; margin-bottom: 4px; }
+.danger-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.danger-body strong { color: var(--ink); font-weight: 600; }
+
+.warn-clinical {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Eskalacja: Coolidge effect</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">"Potrzebuję coraz mocniejszych rzeczy" — <em>mechanizm, nie fetysz</em></h1>
+    <p class="card-detail">Donald Dewsbury (1981) zbadał <strong>Coolidge effect</strong> — zwierzęta (i ludzie) reagują silniej na <em>nowego</em> partnera niż na znanego. Gary Wilson (2014, „Your Brain on Porn") opisał, jak ten mechanizm w połączeniu z <strong>habituacją</strong> i <em>nieskończoną podażą</em> pornografii online tworzy zjawisko <em>eskalacji</em> — zmiany typów konsumowanych treści w stronę bardziej intensywnych, bardziej dewiacyjnych. <strong>Krytyczna świadomość</strong> (Prause i in. 2015): eskalacja <em>nie</em> dotyczy każdej osoby z PPU. U większości się <em>nie</em> pojawia. Gdy jest — to <em>mechanizm habituacji + szukanie nowości</em>, NIE oznacza, że "twój prawdziwy fetysz" się odsłonił. Ten Karta wsparcia normalizuje mechanizm bez patologizacji.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady eskalacji</div>
+      <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Coolidge effect + habituacja</strong> — mózg reaguje silniej na nowość. Po wielokrotnej ekspozycji siła reakcji spada → mózg szuka <em>nowych</em> bodźców.</span></div>
+      <div class="element-row"><span class="element-icon">🌐</span><span class="element-text"><strong>Online = nieskończona podaż</strong> — pornografia internetowa <em>maksymalizuje</em> nowość. Trzy kliknięcia = nowy materiał. Mechanizm habituacji "uruchamia się" znacznie szybciej niż w realnej seksualności.</span></div>
+      <div class="element-row"><span class="element-icon">🎭</span><span class="element-text"><strong>Eskalacja ≠ ujawnienie "prawdziwego fetyszu"</strong> — ważna świadomość. To nie "twoja prawdziwa orientacja", tylko <em>habituacja</em>, która szuka nowych dystrybutorów dopaminy. Po reset (abstynencji) preferencje wracają do bazowych.</span></div>
+      <div class="element-row"><span class="element-icon">🔬</span><span class="element-text"><strong>Nie u każdego</strong> — Prause i in. (2015): u <em>większości</em> osób z PPU eskalacja się nie pojawia lub jest minimalna. Gdy jest — związana z czasem korzystania, częstotliwością, indywidualnymi predyspozycjami.</span></div>
+    </div>
+
+    <div class="frame-quote">„Eskalacja w pornografii nie pokazuje, kim 'naprawdę' jesteś. Pokazuje, jak działa habituacja w środowisku nieograniczonej dostępności nowości. To <em>mechanizm</em>, nie tożsamość."
+      <span class="frame-quote-attr">— parafraza po Gary'm Wilsonie, „Your Brain on Porn" (2014)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ten Karta wsparcia jest dla osób, które (a) zauważyły u siebie eskalację treści w stronę "coraz mocniejszych" / "dziwniejszych" rzeczy; (b) niepokoją się "czy to mój prawdziwy fetysz" / "czy jestem zboczeńcem"; (c) chcą zrozumieć mechanizm i wiedzieć, czy eskalacja jest odwracalna. <em>Tak, jest</em> — przez abstynencję 30—90 dni preferencje zwykle wracają do bazowych. Ale: <strong>eskalacja w stronę nielegalnych treści</strong> (CSAM, non-consent realny) wymaga <em>natychmiastowej</em> konsultacji specjalistycznej, niezależnie od mechanizmu.</div>
+
+    <div class="src">Dewsbury (1981, „Effects of novelty on copulatory behavior: The Coolidge effect"); Wilson (2014, „Your Brain on Porn: Internet Pornography and the Emerging Science of Addiction"); Voon i in. (2014, neural correlates); Brand i in. (2021, „Cue-specific habituation"); krytyka — eskalacja NIE u większości: Prause i in. (2015, 2019); Park i in. (2016, „Is Internet pornography causing sexual dysfunctions?"); Hilton (2013, „Pornography addiction — a supranormal stimulus").</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoja eskalacja</div>
+    <h1 class="card-prompt">Sprawdź <em>czy i jak</em> eskalujesz</h1>
+    <p class="card-detail">Eskalacja nie jest pojedynczym zdarzeniem — to wzorzec zmian preferencji w czasie. Sprawdź, jakie zmiany zauważasz u siebie. <strong>Eskalacja nie zachodzi u każdego</strong> — sama jej obecność / brak nie świadczy o "ciężkości" PPU.</p>
+
+    <div class="examples-h">A. Czy zauważasz eskalację? (kierunek zmian)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="eA1" onclick="this.classList.toggle('picked')">Coraz dłuższe sesje (czas)</button>
+      <button type="button" class="example-chip" id="eA2" onclick="this.classList.toggle('picked')">Coraz mocniejsze treści (intensywność)</button>
+      <button type="button" class="example-chip" id="eA3" onclick="this.classList.toggle('picked')">Bardziej "specyficzne" / niszowe</button>
+      <button type="button" class="example-chip" id="eA4" onclick="this.classList.toggle('picked')">Stopniowe rozszerzanie kategorii</button>
+      <button type="button" class="example-chip" id="eA5" onclick="this.classList.toggle('picked')">Treści, które kiedyś mnie odpychały</button>
+      <button type="button" class="example-chip" id="eA6" onclick="this.classList.toggle('picked')">Bez eskalacji — te same preferencje</button>
+      <button type="button" class="example-chip" id="eA7" onclick="this.classList.toggle('picked')">Trudno powiedzieć — niepewność</button>
+    </div>
+
+    <div class="examples-h">B. Treści, które niepokoją (zaznacz, jeśli rozpoznajesz)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="dB1" onclick="this.classList.toggle('picked')">Sceny z nierównymi rolami / dominacją</button>
+      <button type="button" class="example-chip" id="dB2" onclick="this.classList.toggle('picked')">Treści ze "fake non-consent"</button>
+      <button type="button" class="example-chip" id="dB3" onclick="this.classList.toggle('picked')">Większa specyficzność (parafilie)</button>
+      <button type="button" class="example-chip" id="dB4" onclick="this.classList.toggle('picked')">Sceny grupowe / orgiastyczne</button>
+      <button type="button" class="example-chip" id="dB5" onclick="this.classList.toggle('picked')">Tabu kulturowe (incest fantasy itp.)</button>
+      <button type="button" class="example-chip" id="dB6" onclick="this.classList.toggle('picked')">Treści agresywne / krzywdzące</button>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy zauważasz eskalację u siebie? (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="esc" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="escval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czas używania PPU (lata)</span><span></span></div>
+      <input type="range" class="scale-input" id="years" min="0" max="30" step="1" value="8" data-default="8">
+      <div class="scale-readout"><span>0 = świeże</span><span id="yearsval">8</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Niepokój o "co to oznacza o mnie"</span><span></span></div>
+      <input type="range" class="scale-input" id="worry" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="worryval">6</span></div>
+    </div>
+
+    <div class="examples-h">Twoja konkretna eskalacja — opisz</div>
+    <textarea class="thought-input" id="myEsc" placeholder='Konkretnie. np. „W ostatnich 3 latach zauważam zmiany. 5 lat temu — proste sceny vanilla, partner-partnerka. 3 lata temu — kategorie z elementami dominacji (wizualnie). Ostatni rok — coraz bardziej specyficzne (pewne fetysze, których nie chcę nazywać). Niepokoi mnie to — »czy to ja naprawdę?«. Z drugiej strony zauważam też, że w realu z partnerką moje preferencje są zupełnie inne — wciąż klasyczne. Zastanawia mnie ta rozbieżność.”' rows="6"></textarea>
+
+    <div class="danger-card">
+      <div class="danger-h">🚨 Linia czerwona — natychmiastowa konsultacja</div>
+      <div class="danger-body">Eskalacja w stronę: (a) <strong>treści z udziałem osób nieletnich</strong> (CSAM); (b) <strong>realnego non-consent</strong> (nie fake / fantasy); (c) <strong>brutalnej przemocy seksualnej</strong>; (d) <strong>fantazji o realnym wykorzystywaniu</strong> osób trzecich, partnerki, członków rodziny — <em>natychmiast</em> konsultacja z terapeutą / psychiatrą. Niezależnie od mechanizmu (habituacja / fetysz / inne). Niektóre treści mają konsekwencje karne — niezależnie od intencji.</div>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Eskalacja jest <em>częsta</em>, ale nie uniwersalna</div>
+      <div class="warn-body">Prause i in. (2015): u większości osób z PPU eskalacja jest <em>minimalna</em> lub <em>brak</em>. Pojawia się przy: (a) długim czasie korzystania (≥5 lat); (b) wysokiej częstotliwości (≥4×/tydz.); (c) cech impulsywnych (ADHD, search novelty); (d) braku alternatywnych źródeł satysfakcji. <em>Brak eskalacji</em> nie znaczy "łagodne PPU" — znaczy, że twoja konsumpcja jest stabilna w kategoriach treści. <em>Obecność eskalacji</em> nie znaczy "ciężkie" — znaczy, że mechanizm habituacji jest aktywny.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła obrazu</strong>: typowy obraz eskalacji w PPU: 5—10 lat korzystania, częstotliwość ≥3×/tydz., stopniowe rozszerzanie kategorii treści (zwykle w stronę "specyficznych" lub "intensywniejszych"), <em>realne preferencje seksualne</em> w kontaktach często pozostają inne (klasyczne). Ta rozbieżność <em>jest</em> wskaźnikiem mechanizmu habituacji, nie "ujawnienia prawdziwej tożsamości".</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — mechanizmy i mity</div>
+    <h1 class="card-prompt">Pięć mechanizmów <em>+ mity</em></h1>
+    <p class="card-detail">Świadomość mechanizmów eskalacji + obalenie mitów wokół nich pomaga: (a) zredukować wstyd ("to mechanizm, nie ja"); (b) zaplanować realne kroki (reset przez abstynencję); (c) uniknąć pułapek myślenia ("to mój prawdziwy fetysz").</p>
+
+    <div class="mech-card">
+      <div class="mech-h">
+        <span class="mech-icon">🔄</span>
+        <span class="mech-name">Mechanizm 1: Coolidge effect</span>
+      </div>
+      <div class="mech-desc">Zwierzęta (Bermant 1976, Dewsbury 1981) — samiec wyczerpany seksualnie z jedną samicą znowu staje się aktywny przy nowej. <em>Ten sam mechanizm</em> obserwuje się u ludzi: nowy partner / nowy bodziec aktywuje motywację mocniej niż znany. Pornografia online <em>maksymalizuje</em> ten efekt — nieskończona nowość 1 kliknięciem.</div>
+    </div>
+
+    <div class="mech-card">
+      <div class="mech-h">
+        <span class="mech-icon">📉</span>
+        <span class="mech-name">Mechanizm 2: Habituacja</span>
+      </div>
+      <div class="mech-desc">Po wielokrotnej ekspozycji <em>siła reakcji</em> mózgu na ten sam bodziec spada. Mózg "kompensuje" przez: (a) większą częstotliwość; (b) mocniejszy bodziec; (c) nowy bodziec (Coolidge effect). Habituacja jest <em>uniwersalnym</em> mechanizmem mózgu — występuje również w jedzeniu, muzyce, grach.</div>
+    </div>
+
+    <div class="mech-card">
+      <div class="mech-h">
+        <span class="mech-icon">🎯</span>
+        <span class="mech-name">Mechanizm 3: Cue-specific habituation</span>
+      </div>
+      <div class="mech-desc">Brand i in. (2021): habituacja jest <em>specyficzna</em> dla rodzaju bodźca. Eskalacja w jednej kategorii nie znaczy eskalacji w innych. To wyjaśnia, dlaczego <em>realne</em> preferencje seksualne w kontaktach często pozostają inne — bo są <em>innym</em> rodzajem bodźca, do którego habituacja nie zachodzi w tym samym tempie.</div>
+    </div>
+
+    <div class="mech-card">
+      <div class="mech-h">
+        <span class="mech-icon">🔍</span>
+        <span class="mech-name">Mechanizm 4: Novelty seeking</span>
+      </div>
+      <div class="mech-desc">Indywidualna cecha — niektóre osoby (zwłaszcza z ADHD lub wysokim trait-impulsywności) mają <em>silniejszy</em> drive na nowość. U nich eskalacja w PPU jest <em>częstsza i szybsza</em>. To koreluje z genetycznymi wariantami DRD4 (receptor dopaminy D4) — choć badania ograniczone.</div>
+    </div>
+
+    <div class="mech-card">
+      <div class="mech-h">
+        <span class="mech-icon">🌀</span>
+        <span class="mech-name">Mechanizm 5: Kontekstualne uczenie się</span>
+      </div>
+      <div class="mech-desc">Mózg <em>uczy się</em> łączyć określone bodźce (treści) z dopaminowym rewardem. Im więcej powtórzeń → tym silniejsze połączenie. Eskalacja może być wynikiem <em>uczenia się</em>, nie odsłonięcia "prawdziwego fetyszu". Po reset (30—90 dni abstynencji) <em>uczenie się słabnie</em> — preferencje wracają do bazowych.</div>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Trzy mity wokół eskalacji</div>
+      <div class="warn-body"><strong>Mit 1:</strong> "Eskalacja oznacza, że jestem zboczony/a". <em>Nieprawda</em> — to mechanizm habituacji, nie ujawnienie tożsamości. <strong>Mit 2:</strong> "Po eskalacji nie ma powrotu". <em>Nieprawda</em> — preferencje są plastyczne. Reset 30—90 dni zwykle przywraca bazę. <strong>Mit 3:</strong> "Każdy z PPU eskaluje". <em>Nieprawda</em> — Prause i in.: u większości eskalacja minimalna lub brak. Sama jej obecność/brak nie diagnozuje "ciężkości" PPU.</div>
+    </div>
+
+    <div class="examples-h">Twój główny mechanizm — co pasuje?</div>
+    <button type="button" class="rel-btn" id="m1" onclick="pickMech('1')">
+      <span class="rel-name">📍 Mechanizm 1+2 — Coolidge + habituacja</span>
+      <span class="rel-desc">Standardowy: nowość pcha, znane się "nudzi". Eskalacja stopniowa.</span>
+    </button>
+    <button type="button" class="rel-btn" id="m4" onclick="pickMech('4')">
+      <span class="rel-name">📍 Mechanizm 4 — Novelty seeking (ADHD)</span>
+      <span class="rel-desc">Wysokie zapotrzebowanie na nowość — eskalacja szybsza. Często z ADHD.</span>
+    </button>
+    <button type="button" class="rel-btn" id="m5" onclick="pickMech('5')">
+      <span class="rel-name">📍 Mechanizm 5 — Kontekstualne uczenie się</span>
+      <span class="rel-desc">Mózg "uczy się" specyficznych skojarzeń. Reset przerywa uczenie.</span>
+    </button>
+    <button type="button" class="rel-btn" id="mN" onclick="pickMech('N')">
+      <span class="rel-name">📍 Brak eskalacji — preferencje stabilne</span>
+      <span class="rel-desc">U większości osób z PPU eskalacja minimalna. Stabilność też normalna.</span>
+    </button>
+
+    <div class="term-note"><strong>Reguła rozróżnienia</strong>: rozróżnienie <em>mechanizm vs tożsamość</em> jest kluczowe. Eskalacja w PPU = mechanizm habituacji. <em>Nie jest</em> ujawnieniem tożsamości seksualnej. <em>Nie</em> diagnozuje fetyszyzmu, parafilii, "zboczenia". Jeśli realnie istnieje stabilna parafilia (utrwalone wzorce pobudzenia wobec specyficznych bodźców niezależnie od PPU) — to <em>osobne</em> zjawisko, wymagające osobnej oceny diagnostycznej (parafilia w ICD-11 6D3).</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — reset i monitoring</div>
+    <h1 class="card-prompt">Jak <em>zatrzymać i odwrócić</em> eskalację</h1>
+    <p class="card-detail">Eskalacja jest <em>odwracalna</em> u większości osób. Klucz: <strong>reset przez abstynencję</strong> (30—90 dni), połączony z świadomością mechanizmu i monitoringiem powrotu preferencji bazowych. Praktyka jest średnio krótka — efekty już po 3—6 tygodniach.</p>
+
+    <div class="timeline-card">
+      <div class="timeline-h">⏰ Timeline resetu — co się dzieje przy abstynencji</div>
+      <div class="timeline-row">
+        <span class="timeline-time">Dni 1—7</span>
+        <span class="timeline-text"><strong>Wzmożone urge, intruzje</strong>Mózg domaga się dotychczasowej dopaminy. Najtrudniejszy okres. <em>Cue reactivity</em> wzmocniona w pierwszych dniach.</span>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-time">Dni 7—21</span>
+        <span class="timeline-text"><strong>Stabilizacja, fluktuacje</strong>Urge pojawia się falami. Cue reactivity stopniowo słabnie. Pierwsze zauważalne zmniejszenie myśli intruzywnych.</span>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-time">Dni 21—45</span>
+        <span class="timeline-text"><strong>Zauważalna zmiana preferencji</strong>Bodźce, które wcześniej "nudziły", znowu wywołują reakcję. Specyficzne kategorie (eskalacja) tracą na sile. Powrót zainteresowania bodźcami bazowymi.</span>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-time">Dni 45—90</span>
+        <span class="timeline-text"><strong>Stabilizacja preferencji bazowych</strong>U większości: powrót do "klasycznych" preferencji. Specyficzne kategorie tracą atrakcyjność. <em>Test:</em> wyobraź sobie tę kategorię — czy nadal silna reakcja?</span>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-time">Po 90 dniach</span>
+        <span class="timeline-text"><strong>Plastyczność długoterminowa</strong>Wzorce uczenia się wymagają miesięcy do pełnej zmiany. <em>Świadomość mechanizmu</em> + dalsze unikanie eskalacyjnych treści = trwała zmiana.</span>
+      </div>
+    </div>
+
+    <div class="examples-h">Konkretne narzędzia resetu (zaznacz, które stosujesz)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="r1" onclick="this.classList.toggle('picked')">Pełna abstynencja od PPU 30—90 dni</button>
+      <button type="button" class="example-chip" id="r2" onclick="this.classList.toggle('picked')">Environmental design (DNS-blokery)</button>
+      <button type="button" class="example-chip" id="r3" onclick="this.classList.toggle('picked')">Karta "Plan powrotu" jeśli lapse</button>
+      <button type="button" class="example-chip" id="r4" onclick="this.classList.toggle('picked')">Świadomość: "to habituacja, nie tożsamość"</button>
+      <button type="button" class="example-chip" id="r5" onclick="this.classList.toggle('picked')">Realna intymność z partnerką (jeśli możliwe)</button>
+      <button type="button" class="example-chip" id="r6" onclick="this.classList.toggle('picked')">Karta "Cykl PPU" — przerwanie cyklu</button>
+      <button type="button" class="example-chip" id="r7" onclick="this.classList.toggle('picked')">Karta "Warning signs" — monitoring powrotu eskalacji</button>
+      <button type="button" class="example-chip" id="r8" onclick="this.classList.toggle('picked')">Sponsor / accountability (rozbicie izolacji)</button>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Co po reset — strategia długoterminowa</div>
+      <div class="warn-body">Reset 30—90 dni przywraca preferencje bazowe, ale <em>nie</em> zabezpiecza na zawsze. Jeśli wracasz do PPU bez świadomości mechanizmu — eskalacja zwykle wraca w 3—12 mies. <strong>Klucze długoterminowe</strong>: (1) <em>świadomość mechanizmu</em> jako stała perspektywa; (2) <em>limits na kategorie treści</em> jeśli wracasz (np. tylko vanilla); (3) <em>monitoring</em> sygnałów powrotu eskalacji (zauważanie znowu "potrzebuję mocniejszych"); (4) <em>realna intymność</em> jako alternatywa; (5) <em>rozważenie pełnej abstynencji długoterminowej</em>, jeśli reset trzymasz krótko.</div>
+    </div>
+
+    <div class="examples-h">Twój plan resetu</div>
+    <textarea class="thought-input" id="myReset" placeholder='Konkretnie. np. „PLAN RESETU 60 dni:
+
+Dni 1—14:
+- Pełna abstynencja PPU
+- NextDNS na całą sieć (Covenant Eyes)
+- Cotygodniowe sesje terapii
+- SMS do brata po każdym silnym urge
+- Świadome przypominanie: »to habituacja, mechanizm, nie tożsamość«
+
+Dni 15—45:
+- Kontynuacja abstynencji
+- Mindfulness 15 min codziennie
+- Trening 4× tygodniowo
+- Praca z partnerką: realna intymność, sensate focus
+- Po 30 dniach: ocena — czy preferencje zaczęły wracać do bazowych
+
+Dni 45—60:
+- Test: świadome przypomnienie eskalacyjnych kategorii — sprawdzenie reakcji
+- Decyzja: czy wracam do umiarkowanej PPU (z limits) czy długoterminowa abstynencja
+- Plan na okres po reset z konkretami”' rows="14"></textarea>
+
+    <div class="danger-card">
+      <div class="danger-h">🚨 Eskalacja w stronę nielegalnych treści — natychmiast specjalista</div>
+      <div class="danger-body">Reset i samodzielna praca <em>nie wystarczą</em> przy: (a) myślach lub konsumpcji treści CSAM (osoby nieletnie); (b) realnym non-consent (nie fake fantasy); (c) fantazjach o realnym wykorzystywaniu konkretnych osób (znajomych, członków rodziny). <strong>Natychmiastowa konsultacja</strong>: terapeuta specjalizujący się w CSBD/parafiliach, psychiatra, ośrodek seksuologiczny. Niektóre treści mają konsekwencje karne; niektóre fantazje są ostrzeżeniem o ryzyku przyszłego zachowania. Profesjonalna ocena niezbędna.</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: reset przez abstynencję działa, bo: (1) <em>habituacja słabnie</em> bez bodźca; (2) <em>uczenie się skojarzeń</em> nie jest wzmacniane; (3) <em>cue reactivity</em> spada w skali tygodni. Nie "resetuje" mózgu (mit) — <em>przerywa pętle</em>, które zostały wzmocnione. Po reset preferencje bazowe wracają, ale <em>uczenie się</em> jest plastyczne — jeśli wracasz do tych samych treści, eskalacja może wrócić. Świadome limits + monitoring są ważne długoterminowo.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>preferencje wróciły do bazowych</em>?</h1>
+    <p class="card-detail">Wróć tu po 6—10 tygodniach pracy z resetem (lub minimum po 30 dniach abstynencji). Praca z eskalacją jest <em>średnio szybka</em> — pierwsze efekty po 3—4 tyg., znaczące po 6—12 tyg.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy rozumiesz mechanizm eskalacji świadomie?</span><span></span></div>
+      <input type="range" class="scale-input" id="postUnd" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postUndval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy preferencje wróciły do bazowych?</span><span></span></div>
+      <input type="range" class="scale-input" id="postBase" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postBaseval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy odeszło myślenie "to mój prawdziwy fetysz"?</span><span></span></div>
+      <input type="range" class="scale-input" id="postFet" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postFetval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Aktualna eskalacja — teraz</span><span></span></div>
+      <input type="range" class="scale-input" id="postEsc" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = brak</span><span id="postEscval">3</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: skuteczna praca z eskalacją = <em>świadome rozumienie mechanizmu</em> ≥7 + <em>powrót preferencji bazowych</em> ≥6 + <em>zatrzymanie myślenia "prawdziwy fetysz"</em> ≥7 + <em>spadek aktualnej eskalacji</em> (delta vs pre-pomiar) ≥−3. Najczęstsza luka: <em>zatrzymanie eskalacji bez powrotu preferencji bazowych</em> — sygnał, że reset był za krótki (ideal 60—90 dni) lub niepełny (z lapsami).</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Eskalacja w PPU (potrzeba "coraz mocniejszych" treści) jest <em>mechanizmem</em>, nie ujawnieniem tożsamości. Wynika z: (1) <strong>Coolidge effect</strong> (silniejsza reakcja na nowość); (2) <strong>habituacji</strong> (osłabienie reakcji na powtarzane bodźce); (3) <strong>nieskończonej podaży</strong> online (1 kliknięcie = nowy materiał); (4) <strong>kontekstualnego uczenia się</strong> (mózg uczy się skojarzeń); (5) <strong>indywidualnej tendencji do novelty seeking</strong> (zwłaszcza ADHD). Eskalacja <em>nie</em> dotyczy każdej osoby z PPU — Prause i in.: u większości minimalna lub brak. <strong>Reset przez abstynencję</strong> 30—90 dni zwykle przywraca preferencje bazowe — bo habituacja słabnie, uczenie nie jest wzmacniane, cue reactivity spada. Świadomość: eskalacja ≠ "prawdziwy fetysz". Po reset preferencje wracają do bazowych, co jest dowodem, że to mechanizm. <strong>Czerwona linia</strong>: eskalacja w stronę treści CSAM, realnego non-consent, fantazji o realnym wykorzystywaniu konkretnych osób — <em>natychmiastowa</em> konsultacja specjalistyczna. Reset i samopomoc niewystarczające.</div>
+    </div>
+
+    <div class="src">Dewsbury (1981, „Effects of novelty on copulatory behavior"); Bermant (1976, „Coolidge effect" oryginalna obserwacja); Wilson (2014, „Your Brain on Porn"); Voon i in. (2014, neural correlates); Brand i in. (2021, „Cue-specific habituation"); krytyka — eskalacja NIE u większości: Prause i in. (2015, 2019); Hilton (2013, „Pornography addiction — a supranormal stimulus"); Park i in. (2016); ICD-11 6D3 (parafilie — osobna kategoria).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['esc','years','worry','postUnd','postBase','postFet','postEsc'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedMech = null;
+function pickMech(code) {
+  window.pickedMech = code;
+  ['m1','m4','m5','mN'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('m' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var u = parseInt(document.getElementById('postUnd').value, 10);
+  var b = parseInt(document.getElementById('postBase').value, 10);
+  var f = parseInt(document.getElementById('postFet').value, 10);
+  var preE = parseInt(document.getElementById('esc').value, 10);
+  var postE = parseInt(document.getElementById('postEsc').value, 10);
+
+  var rows = [];
+  var uW = u <= 3 ? 'nie' : (u <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Rozumienie mechanizmu</strong><span class="diff-delta">' + u + '/10 — ' + uW + '</span></div>');
+  var bW = b <= 3 ? 'nie' : (b <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Powrót preferencji bazowych</strong><span class="diff-delta">' + b + '/10 — ' + bW + '</span></div>');
+  var fW = f <= 3 ? 'nadal' : (f <= 6 ? 'częściowo' : 'odeszło');
+  rows.push('<div class="diff-row"><strong>"Prawdziwy fetysz" mythology</strong><span class="diff-delta">' + f + '/10 — ' + fW + '</span></div>');
+  var dE = postE - preE;
+  var sE = dE > 0 ? '+' : '';
+  rows.push('<div class="diff-row"><strong>Aktualna eskalacja</strong><span class="diff-delta">' + preE + ' → ' + postE + ' (' + sE + dE + ')</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (u >= 7 && b >= 6 && f >= 7 && dE <= -3) {
+      msg = '<strong>Reset działa.</strong> Świadome rozumienie, preferencje wróciły do bazowych, mythology odeszło, eskalacja spadła. <em>Kontynuuj świadomość mechanizmu długoterminowo</em>.';
+    } else if (u >= 6 && (b >= 5 || dE <= -2)) {
+      msg = '<strong>Pierwsze ruchy.</strong> Wzmocnij <em>najsłabsze ogniwo</em>. Najczęściej: powrót preferencji bazowych wymaga 60—90 dni pełnej abstynencji. Sprawdź, czy reset był pełen i wystarczająco długi.';
+    } else if (u <= 3) {
+      msg = '<strong>Brak rozumienia mechanizmu — krytyczne.</strong> Bez tego wstyd dominuje. <em>W tym tygodniu</em>: przeczytaj uważnie krok 3 (5 mechanizmów). Świadomość: "eskalacja = mechanizm habituacji, nie moja tożsamość".';
+    } else if (b <= 3) {
+      msg = '<strong>Preferencje nie wracają do bazowych.</strong> Najczęściej: reset zbyt krótki lub z lapsami. Pełny reset wymaga 60—90 dni <em>bez</em> przerw. Każdy lapse "resetuje zegar". Konsultacja z terapeutą o strategii.';
+    } else if (f <= 3) {
+      msg = '<strong>"Prawdziwy fetysz" mythology nadal silne.</strong> Wstyd tożsamościowy wynika z błędnej interpretacji mechanizmu. Codziennie afirmowanie: "eskalacja to habituacja, nie ja prawdziwy". Karta "Tożsamość" jako wsparcie.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Reset wymaga 30—90 dni dla pełnych efektów. Cierpliwość.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['eA1','eA2','eA3','eA4','eA5','eA6','eA7','dB1','dB2','dB3','dB4','dB5','dB6','r1','r2','r3','r4','r5','r6','r7','r8'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['m1','m4','m5','mN'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedMech = null;
+}
+
+['postUnd','postBase','postFet','postEsc'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_escalation — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_escalation";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['1','4','5','N'].forEach(function(code){
+    var el = document.getElementById('m' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedMech = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

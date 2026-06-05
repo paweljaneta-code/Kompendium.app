@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wypalenie zdalne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.zd-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.zd-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.zd-card.picked .zd-d, .zd-card.picked .zd-mark { color: rgba(244,241,234,0.85); }
+.zd-h { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
+.zd-d { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; margin-bottom: 5px; }
+.zd-mark { font-size: 11.5px; color: var(--ink-mute); font-style: italic; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wypalenie zdalne</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Praca zdalna daje wolność — i <em>zabiera strukturę</em></h1>
+  <p class="card-detail">Praca zdalna i hybrydowa po pandemii zmieniła naturę wypalenia. Microsoft Work Trend Index (2021, badanie 30 000 pracowników z 31 krajów) — pierwsze duże dane systemowe — pokazał, że <strong>54% pracowników zdalnych czuje się przepracowanych</strong>, 39% wyczerpanych, a 40% rozważa odejście z pracy w ciągu roku. Ana Toniolo-Barrios i Leyland Pitt z Simon Fraser University w pracy z 2021 roku w „Business Horizons" zidentyfikowali specyficzny profil wypalenia zdalnego: dominuje <em>wyczerpanie</em> (ciągłe ekrany, brak fizycznych przerw) i <em>izolacja</em> (utrata nieformalnych interakcji, poczucia wspólnoty), a depersonalizacja jest paradoksalnie <em>niższa</em> niż w pracy stacjonarnej (mniej kontaktów z trudnymi osobami).</p>
+  <p class="card-detail">Jeremy Bailenson — psycholog z Stanford Virtual Human Interaction Lab — w 2021 roku w „Technology, Mind, and Behavior" opisał <strong>Zoom fatigue</strong>: specyficzne wyczerpanie wynikające z czterech mechanizmów wideokonferencji. Po pierwsze: <em>nadmierny kontakt wzrokowy</em> z dużej odległości (twarze blisko, jakby intymne, ale 5–10 osób naraz, co mózg interpretuje jako „grożąca sytuacja"). Po drugie: <em>widzenie własnej twarzy</em> (mirror anxiety, ciągła samoocena). Po trzecie: <em>ograniczona mobilność</em> (sztywne siedzenie w jednej pozycji 6+ godz. dziennie). Po czwarte: <em>wyższe obciążenie poznawcze</em> (dekodowanie sygnałów niewerbalnych przez ekran zużywa więcej zasobów niż w realu). Praca hybrydowa dodaje stres <em>przełączania</em> kontekstu między biurem a domem oraz <em>nierówności</em> — kto jest fizycznie obecny, ten ma większy wpływ na decyzje.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery specyficzne czynniki wypalenia zdalnego</div>
+    <div class="element-row">
+      <span class="element-icon">🏠</span>
+      <span class="element-text"><strong>Erozja granic dom-praca</strong> — biurko 3 m od kanapy. Mózg nie ma sygnału „przekroczyłaś próg, wracasz". Praca rozszerza się na cały dzień. Reuters Institute 2021: zdalni pracują średnio 2 godz. dłużej dziennie niż przed pandemią.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📹</span>
+      <span class="element-text"><strong>Zoom fatigue</strong> — wideokonferencje są 1,5–2× bardziej obciążające poznawczo niż spotkania na żywo (Bailenson 2021). Po 6 godz. wideo dziennie poziom kortyzolu jak po fizycznej pracy.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🏝️</span>
+      <span class="element-text"><strong>Izolacja społeczna</strong> — brak nieformalnych interakcji (kawa z kolegą, lunch zespołowy). Microsoft 2021: 60% pracowników zdalnych raportuje słabsze poczucie więzi z zespołem niż przed pandemią.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⏰</span>
+      <span class="element-text"><strong>Always-on culture</strong> — telefon zawsze obok, brak fizycznego „kończę i wychodzę". Slack o 22:00, mail w sobotę. Erozja regeneracji wieczornej i weekendowej.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Praca zdalna daje wolność, ale zabiera strukturę. Osoby z silną samoregulacją prosperują; osoby potrzebujące zewnętrznej struktury (np. z ADHD, perfekcjonistyczne, młode w karierze) wypalają się <em>szybciej</em> niż w biurze. Format pracy musi być dopasowany do profilu regulacji."
+    <span class="frame-quote-attr">— Toniolo-Barrios &amp; Pitt (2021, Business Horizons)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: typowy błąd w pracy zdalnej — traktowanie jej jak „komfortowy benefit". Brak rozpoznania, że 12-godzinne dni, brak końca pracy, samotność i Zoom fatigue to konkretne czynniki ryzyka. Pierwsza interwencja: <em>świadomość</em>, że praca zdalna ma własny profil ryzyka, wymagający świadomych przeciwdziałań. Bez tego pracownik zdalny tłumaczy wyczerpanie „swoją słabością", nie strukturalnym problemem.</div>
+
+  <div class="src">Microsoft Work Trend Index (2021, 2022) · Toniolo-Barrios &amp; Pitt (2021, Business Horizons) · Bailenson (2021, Tech Mind Behav, Zoom fatigue) · Wang i in. (2021, Appl Psychol) · Galanti i in. (2021, J Occup Environ Med) · Allen i in. (2015, meta-analiza pracy zdalnej)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Audit czterech obszarów</div>
+  <h1 class="card-prompt">Gdzie <em>konkretnie</em> erozja jest największa?</h1>
+  <p class="card-detail">Praca zdalna eroduje cztery obszary: granice czasowe, granice przestrzenne, interakcje społeczne, regeneracja. Każdy wymaga innej interwencji. Cel kroku: zlokalizować, gdzie erozja jest największa — bo to wskaże punkt startu.</p>
+
+  <div class="zd-card" id="obszCzas">
+    <div class="zd-h">⏰ Granice czasowe</div>
+    <div class="zd-d">Stała godzina startu i końca pracy? Czy praca rozszerza się na wieczór? Mail w sobotę? Slack po 21:00?</div>
+    <div class="scale" style="margin-top:8px;">
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — twardo</span></div>
+      <input type="range" class="scale-input" id="zdCzas" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Granice czasowe (jak utrzymane)</span><span id="zdCzasVal">3</span></div>
+    </div>
+  </div>
+
+  <div class="zd-card" id="obszPrz">
+    <div class="zd-h">🏠 Granice przestrzenne</div>
+    <div class="zd-d">Osobny pokój / kąt / biurko do pracy? Czy pracujesz z łóżka, kuchni, kanapy? Mózg potrzebuje fizycznej separacji kontekstów.</div>
+    <div class="scale" style="margin-top:8px;">
+      <div class="scale-bounds"><span>0 — wszędzie</span><span>10 — osobne miejsce</span></div>
+      <input type="range" class="scale-input" id="zdPrz" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>Granice przestrzenne</span><span id="zdPrzVal">4</span></div>
+    </div>
+  </div>
+
+  <div class="zd-card" id="obszSoc">
+    <div class="zd-h">🤝 Interakcje społeczne</div>
+    <div class="zd-d">Ile nieformalnych kontaktów (poza meetingami) masz w tygodniu? Z kolegami z zespołu? Z osobami spoza pracy? Microsoft 2021: minimum 2 nieformalne interakcje tygodniowo to próg ryzyka izolacji.</div>
+    <div class="scale" style="margin-top:8px;">
+      <div class="scale-bounds"><span>0 — żadnych</span><span>10 — kilka tygodniowo</span></div>
+      <input type="range" class="scale-input" id="zdSoc" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Interakcje społeczne</span><span id="zdSocVal">3</span></div>
+    </div>
+  </div>
+
+  <div class="zd-card" id="obszReg">
+    <div class="zd-h">🌳 Regeneracja</div>
+    <div class="zd-d">Czy masz „commute substitute" (15–30 min przejścia z pracy do życia prywatnego)? Spacer po pracy? Ruch w ciągu dnia? Bez fizycznej granicy „dojazdu" mózg nie wychodzi z trybu pracy.</div>
+    <div class="scale" style="margin-top:8px;">
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — codziennie</span></div>
+      <input type="range" class="scale-input" id="zdReg" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Regeneracja po pracy</span><span id="zdRegVal">3</span></div>
+    </div>
+  </div>
+
+  <div class="examples-h">Sygnały Zoom fatigue (zaznacz)</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="zf1" onclick="pickZf('1')">😵 Wyczerpanie po dniu wideokonferencji</button>
+    <button type="button" class="example-chip" id="zf2" onclick="pickZf('2')">😶 Twarz boli / sucha skóra po wideo</button>
+    <button type="button" class="example-chip" id="zf3" onclick="pickZf('3')">👁️ Zmęczenie wzroku / bóle głowy</button>
+    <button type="button" class="example-chip" id="zf4" onclick="pickZf('4')">🪑 Bóle pleców / sztywność karku</button>
+    <button type="button" class="example-chip" id="zf5" onclick="pickZf('5')">🪞 Lęk przed swoją twarzą na ekranie</button>
+    <button type="button" class="example-chip" id="zf6" onclick="pickZf('6')">⏱️ Brak przerw między spotkaniami</button>
+    <button type="button" class="example-chip" id="zf7" onclick="pickZf('7')">🎙️ Wyczerpanie z dekodowania niewerbalnych sygnałów</button>
+    <button type="button" class="example-chip" id="zf8" onclick="pickZf('8')">📹 6+ godz. wideo dziennie</button>
+  </div>
+
+  <textarea class="thought-input" id="zdObs" rows="3" placeholder="Twoja diagnoza: np. „Granice czasowe: 3/10 (pracuję często do 19–20). Przestrzenne: 6/10 (osobne biurko, ale w salonie). Interakcje: 2/10 (kolega na Slacku raz w tygodniu, brak nieformalnych kontaktów). Regeneracja: 4/10 (czasem spacer po pracy). Najsłabszy obszar: interakcje + czasowe. Zoom fatigue: 1, 3, 4, 6, 8 — silny.""></textarea>
+
+  <div class="term-note"><strong>Reguła interpretacji</strong>: obszar z najniższą oceną to punkt startu. Najczęściej w pracy zdalnej dominuje brak interakcji + brak granic czasowych. Te dwa razem wytwarzają specyficzny profil zdalnego wypalenia. Granice przestrzenne i regeneracja są ważne, ale wtórne.</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Cztery interwencje</div>
+  <h1 class="card-prompt">Która interwencja <em>najpilniejsza</em>?</h1>
+  <p class="card-detail">Cztery interwencje, każda dla innego obszaru. Wybierz <em>jedną</em>, dla najsłabszego obszaru, ćwicz 4 tygodnie. Po stabilizacji dodaj kolejną. Wszystkie naraz nie zadziałają — zbyt duża zmiana w krótkim czasie.</p>
+
+  <div class="zd-card" id="techCzas" onclick="pickTech('Czas')">
+    <div class="zd-h">⏰ Granice czasowe</div>
+    <div class="zd-d">Stała godzina startu (np. 9:00) i twarda godzina końca (np. 17:30). Alarm „koniec pracy". Po alarmie: laptop zamknięty, powiadomienia wyłączone, fizyczne wyjście z miejsca pracy. Reguła: po 17:30 <em>nie istniejesz</em> dla firmy. Trudne pierwsze 7 dni, potem automatyzuje się.</div>
+    <div class="zd-mark">Klucz: <strong>fizyczna</strong> akcja kończenia, nie tylko mental.</div>
+  </div>
+
+  <div class="zd-card" id="techPrz" onclick="pickTech('Prz')">
+    <div class="zd-h">🏠 Granice przestrzenne</div>
+    <div class="zd-d">Wydziel <em>jedną</em> przestrzeń do pracy — najlepiej osobny pokój, jeśli nie — narożnik / biurko. Zasada: gdy wchodzisz tam, zaczynasz pracę. Gdy wychodzisz, kończysz. Nie pracujesz z łóżka, kuchni, kanapy. Brak fizycznej granicy = brak granicy mentalnej. „Strefy buforowe" (5 min spacer po pokoju przed startem) wzmacniają efekt.</div>
+    <div class="zd-mark">Bailenson: zmiana fizycznego kontekstu = sygnał dla mózgu „inny tryb".</div>
+  </div>
+
+  <div class="zd-card" id="techSoc" onclick="pickTech('Soc')">
+    <div class="zd-h">🤝 Interakcje społeczne</div>
+    <div class="zd-d">Proaktywne planowanie kontaktów — nie czekanie aż pojawią się same. Minimum: 2 nieformalne interakcje tygodniowo. Konkretnie: kawa z kolegą online (15 min, czysta rozmowa, nie o pracy), lunch w kawiarni 1× tydz. (jeśli możliwe), coworking 1× tydz. Microsoft 2021: regularne kontakty społeczne obniżają ryzyko izolacji o 40%.</div>
+    <div class="zd-mark">Klucz: <em>plan</em>, nie spontaniczność. Bez planu interakcje znikają.</div>
+  </div>
+
+  <div class="zd-card" id="techReg" onclick="pickTech('Reg')">
+    <div class="zd-h">🌳 Regeneracja (commute substitute)</div>
+    <div class="zd-d">15–30 min przerwy między pracą a życiem domowym. Spacer wokół bloku, krótki bieg, joga, prysznic. Cel: <em>zastąpić</em> dojazd, który był naturalną granicą fizyczną. Bez tego mózg pozostaje w trybie pracy do późna. Dodatkowo: zmiana ubrania (z roboczego w domowe) wzmacnia efekt.</div>
+    <div class="zd-mark">Allen 2015 (meta): 20 min ruchu po pracy zwiększa jakość snu o 25%.</div>
+  </div>
+
+  <div class="examples-h">Hacki przeciwko Zoom fatigue (zaznacz, które wprowadzisz)</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="hack1" onclick="pickHack('1')">📹 Kamera off na spotkaniach &gt; 4 osób</button>
+    <button type="button" class="example-chip" id="hack2" onclick="pickHack('2')">🪞 Wyłącz self-view (mirror anxiety)</button>
+    <button type="button" class="example-chip" id="hack3" onclick="pickHack('3')">⏱️ 10 min przerwy między spotkaniami</button>
+    <button type="button" class="example-chip" id="hack4" onclick="pickHack('4')">📞 Spotkania spacerowe (telefon zamiast wideo)</button>
+    <button type="button" class="example-chip" id="hack5" onclick="pickHack('5')">🚫 Bezpieczna 1–2 godz. dziennie bez wideo</button>
+    <button type="button" class="example-chip" id="hack6" onclick="pickHack('6')">⏰ Limit wideokonferencji: 4 godz. dziennie max</button>
+  </div>
+
+  <div class="term-note"><strong>Reguła „mała stała > duża sporadyczna"</strong>: 15-minutowa kawa z kolegą co tydzień przez 3 miesiące (12 kontaktów) ma większy wpływ na izolację niż jedna 4-godzinna integracja co kwartał. Mózg potrzebuje powtarzalności, by zbudować poczucie więzi. Stałość ważniejsza niż intensywność.</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan na 4 tygodnie</div>
+  <h1 class="card-prompt">Jakie <em>konkretne</em> elementy wprowadzisz?</h1>
+  <p class="card-detail">Plan na 4 tygodnie — jeden główny obszar + 1–2 hacki Zoom fatigue. Konkretnie: kiedy, jak, mierzalnie. Bez szczegółu plan zostaje teorią.</p>
+
+  <textarea class="thought-input" id="zdPlan" rows="6" placeholder="Plan na 4 tygodnie: np. „Główny obszar: interakcje + czasowe. Plan: 1) Stała godzina końca pracy 17:30 — alarm + zamknięcie laptopa + wyjście z pokoju. 2) Kawa z kolegą K. — co środę 15:00, 15 min. 3) Lunch w kawiarni — co czwartek (zmiana otoczenia). 4) Hacki Zoom: kamera off na spotkaniach &gt; 4 osób, wyłączony self-view. Pomiar tygodniowy: niedziela wieczór — sen, energia, izolacja.""></textarea>
+
+  <div class="examples-h">Konkretne pierwsze elementy</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="el1" onclick="pickEl('1')">⏰ Alarm końca pracy + fizyczne wyjście</button>
+    <button type="button" class="example-chip" id="el2" onclick="pickEl('2')">📅 Kawa z kolegą online (15 min, 1× tydz.)</button>
+    <button type="button" class="example-chip" id="el3" onclick="pickEl('3')">☕ Praca w kawiarni 1× tydz.</button>
+    <button type="button" class="example-chip" id="el4" onclick="pickEl('4')">🚶 Spacer 20 min po pracy (commute substitute)</button>
+    <button type="button" class="example-chip" id="el5" onclick="pickEl('5')">🏠 Osobne biurko / kąt do pracy</button>
+    <button type="button" class="example-chip" id="el6" onclick="pickEl('6')">📹 Kamera off na meetingach 5+</button>
+    <button type="button" class="example-chip" id="el7" onclick="pickEl('7')">⏱️ 10 min przerwy między meetingami</button>
+    <button type="button" class="example-chip" id="el8" onclick="pickEl('8')">👕 Zmiana ubrania (rano + po pracy)</button>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „praca zdalna jest komfortowa, więc nie jest stresująca"</strong>: częsta racjonalizacja blokująca świadomość problemu. Komfort fizyczny nie znaczy brak stresu psychologicznego. Brak dojazdu nie kompensuje braku struktury. Dłużej działająca — komfort tłumi sygnały ostrzegawcze, wypalenie rozwija się dłużej, ale silniej.</div>
+
+  <div class="term-note"><strong>Pułapka „chcę powrotu do biura"</strong>: część osób w wypaleniu zdalnym tęskni za biurem. Ważne rozróżnienie: tęsknota za <em>strukturą</em> i <em>kontaktami</em> (która wymaga interwencji w ramach zdalnej pracy) vs realne dopasowanie do pracy stacjonarnej (które może być sygnałem do hybrydy / powrotu). Bez interwencji w obecnej strukturze trudno odróżnić.</div>
+
+  <div class="term-note"><strong>Pułapka „inni dają radę zdalnie"</strong>: rozkład tolerancji pracy zdalnej jest <em>bimodalny</em>. Część osób (z ADHD, ekstrawertycy, rodzice małych dzieci, młodzi w karierze) wymaga więcej struktury i interakcji. Część (introwertycy, osoby z silną samoregulacją) prosperuje. Brak adaptacji nie jest wadą — jest sygnałem profilu regulacji. Praca z tym profilem, nie próba „bycia jak inni".</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po czterech tygodniach</div>
+  <h1 class="card-prompt">Czy obszar dominujący <em>się stabilizuje</em>?</h1>
+  <p class="card-detail">Po 4 tyg. wróć i powtórz pomiar 4 obszarów. Najczęstszy mierzalny efekt: poprawa o 1–2 punkty w głównym obszarze, przy często bez zmian w pozostałych. To normalne — interwencje są specyficzne.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez zmian</span><span>10 — wyraźna poprawa</span></div>
+    <input type="range" class="scale-input" id="zdImprove" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Subiektywna poprawa głównego obszaru</span><span id="zdImproveVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — porzucone</span><span>10 — wszystkie elementy</span></div>
+    <input type="range" class="scale-input" id="zdExec" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Realizacja planu</span><span id="zdExecVal">5</span></div>
+  </div>
+
+  <textarea class="thought-input" id="zdReflect" rows="3" placeholder="Co się stało? np. „4 tyg. Granice czasowe: alarm 17:30 — utrzymany 18 z 20 dni roboczych. Interakcje: kawa z K. 3 razy (planowane 4), lunch w kawiarni 2 razy. Hacki Zoom: kamera off — wprowadzona, self-view wyłączony. Pomiary: granice czasowe 3→6, interakcje 3→5, regeneracja 3→4. Sen lepszy o 25%. Plan: utrzymuję, dodaję spacer po pracy.""></textarea>
+
+  <div class="final-msg" id="finalMsg">Wpisz oba pomiary, by zobaczyć podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła „struktura tworzy wolność"</strong>: paradoks pracy zdalnej — im więcej świadomej struktury (granic, rytuałów, planu), tym większa realna wolność. Bez struktury praca zdalna staje się 24/7. Ze strukturą jest 8 godz. dobrej pracy + reszta dnia regeneracji. Dyscyplina struktury to nie ograniczenie wolności — to warunek jej trwania.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Praca zdalna ma <strong>specyficzny profil ryzyka wypalenia</strong> (Microsoft 2021, Toniolo-Barrios 2021). Cztery obszary erozji: <em>granice czasowe, przestrzenne, interakcje społeczne, regeneracja</em>. Zoom fatigue (Bailenson 2021): wideokonferencje 1,5–2× bardziej obciążające niż realne spotkania. Hacki: kamera off &gt; 4 osób, self-view off, przerwy 10 min, limit 4 godz. wideo dziennie. Reguła „proaktywne kontakty": minimum 2 nieformalne interakcje tygodniowo. Struktura tworzy wolność, nie ją ogranicza.</div>
+  </div>
+
+  <div class="src">Microsoft Work Trend Index (2021) · Toniolo-Barrios &amp; Pitt (2021) · Bailenson (2021, Zoom fatigue) · Wang i in. (2021) · Galanti i in. (2021) · Allen i in. (2015, meta-analiza) · Kniffin i in. (2021, Am Psychologist)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['zdCzas','zdPrz','zdSoc','zdReg','zdImprove','zdExec'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; if (id === 'zdImprove' || id === 'zdExec') updateFinalMsg(); });
+    }
+  });
+}
+
+function pickZf(n) {
+  var el = document.getElementById('zf' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickTech(code) {
+  var el = document.getElementById('tech' + code);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickHack(n) {
+  var el = document.getElementById('hack' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickEl(n) {
+  var el = document.getElementById('el' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function updateFinalMsg() {
+  var imp = parseInt(document.getElementById('zdImprove').value, 10);
+  var exec = parseInt(document.getElementById('zdExec').value, 10);
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  if (imp === 5 && exec === 5) {
+    fm.innerHTML = 'Wpisz oba pomiary, by zobaczyć podsumowanie.';
+    return;
+  }
+  var msg = '';
+  if (exec >= 7 && imp >= 6) msg = '<strong>Główny obszar stabilizuje się</strong> — kontynuuj kolejne 4 tygodnie. Następny krok: zacznij pracę nad drugim najsłabszym obszarem. Nie wszystko naraz — sekwencyjnie.';
+  else if (exec >= 7 && imp < 4) msg = '<strong>Plan wykonany, ale poprawy mało</strong> — możliwe, że obszar był źle zdiagnozowany. Wróć do kroku 2 i sprawdź, który obszar realnie najsłabszy. Lub: wypalenie ma głębsze przyczyny niż struktura zdalnej pracy (sprawdź sens, wartości, organizację).';
+  else if (exec < 4) msg = '<strong>Plan głównie nie wykonany</strong> — w zdalnej pracy najczęściej powód: brak zewnętrznego sygnału. Dodaj zewnętrzny mechanizm: alarm w telefonie, kalendarz z blokami, partnera odpowiedzialności (kolega, który też wprowadza zmiany).';
+  else msg = 'Częściowy ruch — kontynuuj. Cel: realizacja ≥7/10 i potwierdzenie poprawy w głównym obszarze o ≥ 1 punkt.';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateFinalMsg();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bo_zdalna — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bo_zdalna";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

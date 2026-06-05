@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Karta drogowa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.card-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 12px 14px; border-radius: 10px; margin: 8px 0; }
+.card-h { font-family: 'Fraunces', serif; font-size: 13px; color: var(--sage-deep); font-weight: 700; margin-bottom: 8px; }
+.card-line { display: flex; gap: 10px; padding: 4px 0; align-items: flex-start; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.card-icon { flex-shrink: 0; min-width: 22px; }
+.card-line strong { color: var(--ink); font-weight: 600; }
+
+.fmt-grid { display: grid; gap: 8px; margin: 12px 0; }
+.fmt-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.fmt-btn:hover, .fmt-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.fmt-btn .fmt-name { font-weight: 600; display: block; margin-bottom: 4px; font-size: 14px; }
+.fmt-btn .fmt-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; display: block; }
+.fmt-btn.picked .fmt-desc { color: rgba(244,241,234,0.85); }
+
+.field-grid { display: grid; gap: 8px; margin: 10px 0; }
+.field-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; color: var(--sage-deep); }
+
+.score-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 6px; padding: 6px 0; align-items: center; font-size: 12.5px; }
+.score-label { color: var(--ink-soft); }
+.score-value { font-family: 'Fraunces', serif; font-weight: 700; color: var(--warm); text-align: right; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Karta drogowa</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Karta drogowa — codzienny <em>monitoring DBT</em></h1>
+    <p class="card-detail">Karta drogowa (Diary Card) to fundamentalne narzędzie monitoringu w terapii DBT — dialektycznej terapii behawioralnej (Linehan, 2015). To <strong>codzienny zapis</strong> kluczowych wskaźników: nastrój i emocje (0–5), impulsy problemowe (samouszkodzenie, samobójstwo, używki — 0–5), wykonane zachowania problemowe, użyte umiejętności DBT, kluczowe wydarzenia. Wypełniana <strong>codziennie wieczorem</strong>, omawiana na każdej sesji terapii.</p>
+
+    <p class="card-detail">Linehan (2015) podkreśla, że karta drogowa jest <strong>obowiązkowa w standardowym DBT</strong>. Brak wypełniania staje się tematem sesji — bo bez monitorowania trudno znaleźć wzorce i połączenia między bodźcami a reakcjami. „Brak danych = chaos sesji" jest stałym powiedzeniem w treningach DBT.</p>
+
+    <p class="card-detail">Mechanizm: <strong>self-monitoring</strong> jako klasyczny element terapii poznawczo-behawioralnej (Beck, 1976). Korzeniami tkwi w obserwacji, że samo regularne notowanie zachowania zmienia jego częstotliwość — Korotitsch i Nelson-Gray (1999, Psychological Assessment) zebrali dowody na to, że self-monitoring obniża zachowania niepożądane o 20–40% niezależnie od interwencji. Karta jest jednocześnie pomiarem i interwencją.</p>
+
+    <p class="card-detail">Drugi mechanizm: <strong>komunikacja z terapeutą</strong>. Sesja zaczyna się od przeglądu karty z zeszłego tygodnia. To pozwala terapeucie szybko zlokalizować trudne dni, korelacje między emocjami a zachowaniami, użyte (i nieużyte) umiejętności. Bez karty 90% sesji to próba odtworzenia tygodnia z pamięci — co jest zniekształcone przez nastrój ostatniego dnia.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Sześć obszarów karty drogowej (Linehan 2015)</div>
+      <div class="element-row">
+        <span class="element-icon">😣</span>
+        <span class="element-text"><strong>Emocje (0–5)</strong>: smutek, gniew, lęk, wstyd. Każdej rano oceniasz najwyższe natężenie z dnia. Cztery liczby to standard, można dodać własne emocje.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚠️</span>
+        <span class="element-text"><strong>Impulsy (0–5)</strong>: do samouszkodzenia, samobójstwa, używek, kompulsywnego jedzenia. Sam impuls, nie wykonanie. Zerowy impuls = 0; bardzo silny = 5.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🚨</span>
+        <span class="element-text"><strong>Zachowania problemowe</strong>: czy zaszło? Tak/nie + krótka notka. Samouszkodzenie, próba samobójcza, atak gniewu, używki, zachowania zakłócające terapię.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛠️</span>
+        <span class="element-text"><strong>Użyte umiejętności DBT</strong>: które z modułów (uważność, tolerancja dystresu, regulacja emocji, skuteczność interpersonalna)? Krótka lista nazw.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📌</span>
+        <span class="element-text"><strong>Kluczowe wydarzenia / SUDS</strong>: subiektywna jednostka dystresu (Subjective Units of Distress, 0–100). Krótka notka o najważniejszym wydarzeniu dnia.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔄</span>
+        <span class="element-text"><strong>Tygodniowy przegląd na sesji</strong>: terapeuta przegląda kartę z całego tygodnia. Wzorce + analiza łańcuchowa najtrudniejszych dni.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Karta drogowa to twoje codzienne lustro. Bez niej terapia opiera się na pamięci, która jest zafarbowana ostatnimi 24 godzinami. Z nią — masz mapę całego tygodnia.”
+      <span class="frame-quote-attr">— Marsha Linehan (2015, DBT Skills Training Manual, wyd. 2)</span>
+    </div>
+
+    <div class="term-note"><strong>💡 Klucz</strong>: Najlepsza karta to ta, którą <em>faktycznie wypełniasz</em>. Wybierz format dopasowany do Ciebie — papierową, aplikację, prostą notatkę w telefonie. Lepsza karta wypełniana 5/7 dni, niż idealna karta wypełniana 1/7. Cel: <strong>regularność, nie kompletność</strong>.</div>
+
+    <div class="src">Linehan (2015, DBT Skills Training Manual, wyd. 2) · Linehan (2014, DBT Skills Manual for Adolescents) · Beck (1976, Cognitive Therapy and the Emotional Disorders) · Korotitsch & Nelson-Gray (1999, Psychological Assessment — self-monitoring)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+    <h1 class="card-prompt">Jak <em>mglisty</em> jest Twój ostatni tydzień?</h1>
+    <p class="card-detail">Pomyśl o ostatnich 7 dniach. Co pamiętasz konkretnie — godziny, emocje, sytuacje? Co jest mgliste — „trudny tydzień", „dużo się działo"? Wysoka mglistość = brak strukturalnych danych o sobie. Niska = pamięć szczegółów.</p>
+
+    <div class="scale">
+      <div class="scale-title">Mglistość obrazu ostatniego tygodnia — przed kartą</div>
+      <div class="scale-bounds"><span>0 — pamiętam dokładnie</span><span>10 — kompletna mgła</span></div>
+      <input type="range" class="scale-input" id="preBlur" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Poziom</span><span id="preBlurVal">6</span></div>
+    </div>
+
+    <textarea class="thought-input" id="kdSit" placeholder="np. „Ostatni tydzień: praca → dom → praca. W środę coś się stało, ale nie pamiętam. W czwartek krzyczałam na partnera — nie wiem dlaczego. W piątek czułam się gorzej niż zwykle. Ogólny obraz: ciężki tydzień, ale szczegółów brak.”" rows="3"></textarea>
+
+    <div class="term-note"><strong>📌 Reguła pomiaru</strong>: Wysoka mglistość (8–10) sygnalizuje, że <em>dane o sobie giną</em>. Bez karty trudno zauważyć, że poniedziałek-środa były OK, a piątek-niedziela trudne — pamięć tygodnia jest zafarbowana ostatnim dniem. Średnia (4–7) — typowy stan bez monitoringu. Niska (0–3) — masz wewnętrzne mechanizmy wglądu, karta wzmocni je systemowo.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór formatu</div>
+    <h1 class="card-prompt">Jaki <em>format</em> karty wybierzesz?</h1>
+    <p class="card-detail">Format = realne wypełnianie. Wybierz ten, który najprawdopodobniej będziesz <em>codziennie</em> wypełniać. Lepiej prosta forma codziennie niż pełna forma raz w tygodniu.</p>
+
+    <div class="fmt-grid">
+      <button class="fmt-btn" id="fmA" onclick="pickFmt('A')">
+        <span class="fmt-name">A · 📄 Papierowa standardowa</span>
+        <span class="fmt-desc">Wzór z DBT Skills Training Manual — A4 z 7 kolumnami (jeden tydzień). Najpełniejsza wersja, najlepsza dla terapii DBT z terapeutą. Wymaga noszenia/skanowania.</span>
+      </button>
+      <button class="fmt-btn" id="fmB" onclick="pickFmt('B')">
+        <span class="fmt-name">B · 📱 Aplikacja DBT</span>
+        <span class="fmt-desc">DBT Coach, eBlocker, podobne. Wbudowane przypomnienia, eksport do PDF. Wymaga adopcji aplikacji, łatwiej zapomnieć przy rzadkim otwieraniu.</span>
+      </button>
+      <button class="fmt-btn" id="fmC" onclick="pickFmt('C')">
+        <span class="fmt-name">C · 📝 Notatka w telefonie</span>
+        <span class="fmt-desc">Prosta notatka z ustalonymi polami, codziennie kopia szablonu. Niski próg wejścia, łatwo edytować, zawsze pod ręką. Mniejsza struktura.</span>
+      </button>
+      <button class="fmt-btn" id="fmD" onclick="pickFmt('D')">
+        <span class="fmt-name">D · 📓 Bullet journal / dziennik</span>
+        <span class="fmt-desc">Połączenie karty drogowej z osobistym dziennikiem. Najwięcej swobody, najmniej standardyzacji — gorszy do analizy z terapeutą, lepszy dla wglądu osobistego.</span>
+      </button>
+    </div>
+
+    <div class="term-note"><strong>🔑 Reguła wyboru</strong>: Jeśli jesteś w terapii DBT z terapeutą, wybierz <em>A</em> (papier) lub <em>B</em> (aplikacja eksportująca PDF). Jeśli pracujesz solo lub w terapii, która nie wymaga karty — wybierz <em>C</em> (notatka) lub <em>D</em> (dziennik). Najważniejsza zasada: <strong>format wybierasz raz, używasz codziennie</strong>.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — wypełnij swoją kartę</div>
+    <h1 class="card-prompt">Twój dzisiejszy <em>wpis</em></h1>
+    <p class="card-detail">Wypełnij kartę dla dzisiejszego dnia. To pierwsza próba — jutro zrobisz to samo, pojutrze znów. Po 7 dniach obejrzysz wzorce.</p>
+
+    <div class="card-row">
+      <div class="card-h">Standardowa karta drogowa — pola</div>
+      <div class="card-line"><div class="card-icon">😢</div><div><strong>Smutek 0–5</strong>: 0 = brak; 1–2 = lekki; 3 = średni; 4 = silny; 5 = przytłaczający.</div></div>
+      <div class="card-line"><div class="card-icon">😡</div><div><strong>Gniew 0–5</strong>: ten sam zakres. Najwyższe natężenie z dnia, nie średnie.</div></div>
+      <div class="card-line"><div class="card-icon">😨</div><div><strong>Lęk 0–5</strong>: ten sam zakres. Może być rozproszony (cały dzień) lub szczyt (jeden moment).</div></div>
+      <div class="card-line"><div class="card-icon">😶</div><div><strong>Wstyd 0–5</strong>: dla wielu osób to najbardziej ukrywana emocja. Zapisz uczciwie.</div></div>
+      <div class="card-line"><div class="card-icon">⚠️</div><div><strong>Impulsy 0–5</strong>: samouszkodzenie / samobójstwo / używki / inne. Sam impuls, nawet niewykonany.</div></div>
+      <div class="card-line"><div class="card-icon">🚨</div><div><strong>Zachowania problemowe</strong>: tak/nie + krótka notka. Co dokładnie się wydarzyło.</div></div>
+      <div class="card-line"><div class="card-icon">🛠️</div><div><strong>Umiejętności DBT</strong>: których z modułów użyłeś/aś dziś? Krótka lista.</div></div>
+      <div class="card-line"><div class="card-icon">📌</div><div><strong>Kluczowe wydarzenie + SUDS (0–100)</strong>: jeden zdaniem najważniejszy moment dnia + maksymalny dystres.</div></div>
+    </div>
+
+    <div class="field-grid">
+      <div>
+        <div class="field-h">😣 Emocje (smutek / gniew / lęk / wstyd) 0–5</div>
+        <textarea class="thought-input" id="kdEmo" placeholder="np. smutek 3, gniew 2, lęk 4, wstyd 1" rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">⚠️ Impulsy (samouszkodzenie / używki / inne) 0–5</div>
+        <textarea class="thought-input" id="kdImp" placeholder="np. samouszkodzenie 0, używki 1 (myśl o winie wieczorem), inne — żadne." rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">🚨 Zachowania problemowe (tak/nie + notka)</div>
+        <textarea class="thought-input" id="kdBeh" placeholder="np. nie. Albo: tak — krzyk na partnera o 20:30, 5 minut." rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">🛠️ Użyte umiejętności DBT</div>
+        <textarea class="thought-input" id="kdSkill" placeholder="np. STOP w pracy, sprawdź fakty wieczorem, oddech 4–6 w samochodzie." rows="2"></textarea>
+      </div>
+      <div>
+        <div class="field-h">📌 Kluczowe wydarzenie + SUDS (0–100)</div>
+        <textarea class="thought-input" id="kdEvent" placeholder="np. Trudna rozmowa z szefem o 11:00, SUDS w szczycie 75/100. Kolacja z mamą — SUDS 30/100." rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>⚠️ Trzy częste pułapki</strong>: (1) <em>Pomijanie pól nieprzyjemnych</em> — wstyd, impulsy do samouszkodzenia, używki. To są dokładnie pola, których terapeuta najbardziej potrzebuje. Pomijanie nie chroni — odcina od wsparcia. (2) <em>Wypełnianie raz w tygodniu „z pamięci”</em> — pamięć tygodnia jest zafarbowana ostatnim dniem. Wypełniaj wieczorem każdego dnia, nawet w ciągu 60 sekund. (3) <em>Perfekcjonizm</em> — „wczoraj nie wypełniłem/am, więc dziś też nie ma sensu”. Każdy dzień to osobny zapis. Pominięty dzień zostaje pominięty; kontynuuj jutro.</div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: Self-monitoring zmienia zachowanie przez kilka równoległych mechanizmów. Po pierwsze, <em>świadomość obecnego stanu</em> obniża reaktywność emocjonalną (Lieberman i wsp., 2007 — affect labeling). Po drugie, <em>baza danych do analizy</em> pozwala znaleźć wzorce niewidoczne z pamięci („wszystkie ataki gniewu były w dni z 5h snu”). Po trzecie, <em>poczucie sprawczości</em> w wypełnianiu samej karty buduje self-efficacy w innych obszarach.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po wypełnieniu</div>
+    <h1 class="card-prompt">Czy <em>obraz dnia</em> stał się ostrzejszy?</h1>
+    <p class="card-detail">Porównaj poziom mglistości po wypełnieniu pierwszej karty z poziomem przed. Spadek = dane są teraz strukturalne, dostępne do analizy. Brak spadku = pierwsza karta jest niepełna; wzorce stają się widoczne dopiero po 7–14 dniach codziennego wypełniania.</p>
+
+    <div class="scale">
+      <div class="scale-title">Mglistość obrazu dnia/tygodnia — po pierwszej karcie</div>
+      <div class="scale-bounds"><span>0 — pamiętam dokładnie</span><span>10 — kompletna mgła</span></div>
+      <input type="range" class="scale-input" id="postBlur" min="0" max="10" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>Poziom</span><span id="postBlurVal">3</span></div>
+    </div>
+
+    <div class="final-msg" id="diffMsg"><strong>Zmiana mglistości tygodnia</strong>: −3 pkt (przed 6 → po 3). Wyraźny spadek poczucia chaosu w obrazie tygodnia. Karta drogowa daje strukturalne dane — wzorce stają się widoczne dopiero po 7–14 dniach codziennego wypełniania.</div>
+
+    <div class="term-note"><strong>📌 Reguła kalibracji</strong>: Pierwsza karta obniża mglistość o 1–3 punkty. 7 dni codziennego wypełniania zaczyna ujawniać <em>wzorce</em>: korelacje między snem a gniewem, między PMS a smutkiem, między określonymi osobami a wstydem. 30 dni daje obraz miesiąca, na podstawie którego można planować realistyczne interwencje. 90 dni — solidna baza do długoterminowej terapii.</div>
+
+    <div class="term-note"><strong>📈 Trajektoria praktyki</strong>: Tydzień 1 — wypełnianie zajmuje 5–10 minut, niektóre pola pomijane. Tydzień 2–3 — 2–3 minuty, format znany. Miesiąc 2 — wypełnianie staje się odruchem wieczornym. Miesiąc 3+ — masz osobistą bazę 90 dni, na podstawie której z terapeutą identyfikujecie wzorce niedostępne wcześniej z pamięci. Diary card staje się jednym z najbardziej cenionych narzędzi — bo daje konkretne dane do każdej decyzji terapeutycznej.</div>
+
+    <div class="term-note"><strong>🔄 Karta drogowa w łańcuchu narzędzi</strong>: To nie jest narzędzie regulacji ani profilaktyki — to <em>warstwa monitoringu</em> wszystkich pozostałych narzędzi DBT. Bez karty trudno wiedzieć, czy STOP, TIPP, sprawdzanie faktów, ABC PLEASE rzeczywiście działają. Z kartą widzisz: w tygodniach z 7+ użyciami umiejętności impulsy spadają o 30%; w tygodniach z 4h snu emocje rosną o 50%. Karta jest ramą empiryczną dla całej terapii.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Karta drogowa = <strong>codzienny zapis 5–6 wskaźników</strong>. Emocje (0–5), impulsy (0–5), zachowania problemowe (tak/nie + notka), użyte umiejętności DBT, kluczowe wydarzenie + SUDS. Wypełniaj wieczorem każdego dnia, 2–10 minut. Najlepszy format = ten, który faktycznie wypełniasz. Wzorce widać po 7–14 dniach. Standard w DBT — omawiana na każdej sesji terapii.</div>
+    </div>
+
+    <div class="src">Linehan (2015, DBT Skills Training Manual, wyd. 2) · Linehan (2014, DBT Skills Manual for Adolescents) · Beck (1976, Cognitive Therapy and the Emotional Disorders) · Korotitsch & Nelson-Gray (1999, Psychological Assessment) · Lieberman i wsp. (2007, Psychological Science)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickFmt(letter) {
+  ['fmA','fmB','fmC','fmD'].forEach(id => {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('fm' + letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+function updateDiff() {
+  var preEl = document.getElementById('preBlur');
+  var postEl = document.getElementById('postBlur');
+  var diffEl = document.getElementById('diffMsg');
+  if (!preEl || !postEl || !diffEl) return;
+  var pre = parseInt(preEl.value, 10);
+  var post = parseInt(postEl.value, 10);
+  var delta = pre - post;
+  var label = '';
+  if (delta >= 3) label = 'Wyraźny spadek poczucia chaosu w obrazie tygodnia. Karta drogowa daje strukturalne dane — wzorce stają się widoczne dopiero po 7–14 dniach codziennego wypełniania.';
+  else if (delta >= 1) label = 'Drobny spadek — typowo po pierwszym wypełnieniu. Karta zaczyna pokazywać wzorce dopiero po 7 dniach. Wytrwaj — efekt narasta.';
+  else if (delta === 0) label = 'Bez zmiany — być może format jest zbyt szczegółowy lub niedopasowany. Sprawdź alternatywne formaty (papier vs aplikacja, mniej pól vs więcej). Najlepsza karta to ta, którą faktycznie wypełnisz.';
+  else label = 'Wzrost mglistości — czasami zauważenie, ile rzeczy nie pamiętasz z tygodnia, samo w sobie ujawnia poziom rozproszenia. To informacja, nie błąd. Karta zaczyna budować szczegółowość pamięci od jutra.';
+  diffEl.innerHTML = '<strong>Zmiana mglistości tygodnia</strong>: ' + (delta >= 0 ? '−' : '+') + Math.abs(delta) + ' pkt (przed ' + pre + ' → po ' + post + '). ' + label;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_dbt_karta_drogowa — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_dbt_karta_drogowa";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+document.addEventListener('input', function(e) {
+  if (!e.target) return;
+  if (e.target.id === 'preBlur') {
+    var v = document.getElementById('preBlurVal');
+    if (v) v.textContent = e.target.value;
+    updateDiff();
+  } else if (e.target.id === 'postBlur') {
+    var v = document.getElementById('postBlurVal');
+    if (v) v.textContent = e.target.value;
+    updateDiff();
+  }
+});
+setTimeout(updateDiff, 100);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

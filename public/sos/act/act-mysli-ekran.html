@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Myśli na ekranie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--sage-deep); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--sage-soft); border-color: var(--sage); color: var(--ink); }
+
+/* === FRAME (step 1) === */
+.frame-card { 
+  background: linear-gradient(135deg, #1c2620 0%, #2a2620 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ METAPERSPEKTYWA"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "🎬"; position: absolute; bottom: 10px; right: 10px;
+  font-size: 80px; opacity: 0.06; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.frame-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; position: relative; z-index: 1; }
+.frame-block { background: rgba(244,241,234,0.06); border-radius: 8px; padding: 10px 12px; }
+.frame-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 4px; }
+.frame-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.4; }
+.frame-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+
+/* === ECHO === */
+.echo-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--sage-deep);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+}
+.echo-card .label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; font-style: normal; margin-bottom: 4px; font-family: 'DM Sans', sans-serif; }
+
+/* === FORMAT EXPERIMENTS (step 3) === */
+.exp-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.exp-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.exp-block:hover { background: var(--sage-soft); }
+.exp-block.active { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 11px; }
+.exp-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.exp-icon { font-size: 16px; }
+.exp-name { font-size: 13px; font-weight: 700; flex: 1; }
+.exp-desc { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; }
+
+/* === SCREEN VARIANTS (step 4) === */
+.screen-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.screen-block {
+  background: rgba(255,255,255,0.55);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.screen-block:hover { background: var(--sage-soft); }
+.screen-block.active { background: rgba(122,146,112,0.15); border-color: var(--sage-deep); border-left: 4px solid var(--sage-deep); padding-left: 11px; }
+.screen-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.screen-icon { font-size: 18px; }
+.screen-name { font-size: 13px; font-weight: 700; flex: 1; }
+.screen-desc { font-size: 12px; color: var(--ink-soft); font-style: italic; line-height: 1.4; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--warm), var(--sage)); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--warm), var(--sage)); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+
+.delta-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 16px 20px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14.5px; line-height: 1.5; }
+.delta-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.delta-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === DAILY (step 5) === */
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--sage); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Myśli na ekranie</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: WHY -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Z fotela <em>widowni</em></h1>
+    <p class="card-detail"><strong>Thoughts on a screen</strong> (Harris 2009) — wizualizacyjna technika defuzji w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania). Wyobrażasz sobie, że siedzisz w kinie i oglądasz film — twoich myśli. Myśli pojawiają się na ekranie jako napisy, obrazy, sceny. Ty jesteś <strong>widzem</strong> — nie aktorem.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Aktor czy widz?</div>
+      <div class="frame-row">
+        <div class="frame-block">
+          <div class="frame-label">Aktor (fuzja)</div>
+          <div class="frame-text">JESTEŚ w filmie. Każdy zwrot akcji to twoje życie. Każda emocja postaci to twoja emocja. Brak dystansu.</div>
+        </div>
+        <div class="frame-block">
+          <div class="frame-label">Widz (defuzja)</div>
+          <div class="frame-text">SIEDZISZ w fotelu. Patrzysz na ekran. Widzisz akcję. Możesz ją <strong>obserwować</strong>, ale nie jesteś w niej.</div>
+        </div>
+      </div>
+      <div class="frame-quote">„To nie ty walczysz — to scena na ekranie. Ty siedzisz w fotelu z popcornem."</div>
+    </div>
+    
+    <div class="term-note"><strong>Mechanizm</strong>: technika wzmacnia <em>ja kontekstualne</em> (ja-obserwujące) — kluczowy filar ACT. Pozycja widza generuje metaperspektywę: odróżniasz <em>treść doświadczenia</em> (film) od <em>świadomości, która ją zauważa</em> (widz w fotelu).</div>
+    
+    <div class="src">Hayes (1999, 2005) · Harris (2009, ACT Made Simple)</div>
+  </section>
+
+  <!-- 2: PICK THOUGHT -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Trudna myśl</div>
+    <h1 class="card-prompt"><em>Co</em> wyświetlisz?</h1>
+    <p class="card-detail">Wybierz myśl, która zawładnęła twoim ekranem ostatnio — taką, w którą się <em>wciągnąłeś/aś</em>. Możesz wpisać własną lub wybrać z przykładów.</p>
+    
+    <div class="examples-h">Przykłady — kliknij, by wstawić</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useMysl(this)">Wszyscy mnie oceniają</div>
+      <div class="example-chip" onclick="useMysl(this)">Coś jest ze mną nie tak</div>
+      <div class="example-chip" onclick="useMysl(this)">Zawsze coś psuję</div>
+      <div class="example-chip" onclick="useMysl(this)">Nikt mnie nie rozumie</div>
+      <div class="example-chip" onclick="useMysl(this)">Jestem za słaby/a</div>
+      <div class="example-chip" onclick="useMysl(this)">To się nigdy nie skończy</div>
+    </div>
+    
+    <textarea class="thought-input" id="myslInput" placeholder="lub wpisz własną myśl..." rows="2"></textarea>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: technika ekranu działa najlepiej z myślami <em>narracyjnymi</em> („coś się stanie", „on tak myśli o mnie", scenariusze) — wszystkim, co umysł produkuje jak film. Z prostymi twierdzeniami („jestem głupi") spróbuj raczej powtarzania słowa lub prefiksu defuzyjnego.</div>
+  </section>
+
+  <!-- 3: FORMAT EXPERIMENTS -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Eksperymenty z formatem</div>
+    <h1 class="card-prompt">Zmień <em>jak wygląda</em></h1>
+    <p class="card-detail">Wyobraź sobie tę myśl wyświetloną na ekranie — i <strong>zacznij ją modyfikować</strong>. Każda zmiana formy osłabia automatyczne traktowanie myśli jak prawdy.</p>
+    
+    <div class="echo-card">
+      <div class="label">Twoja myśl na ekranie</div>
+      <span id="thoughtEcho">—</span>
+    </div>
+    
+    <div class="exp-list">
+      <div class="exp-block" onclick="selectExp(this, 'font')">
+        <div class="exp-h">
+          <span class="exp-icon">🔤</span>
+          <span class="exp-name">Zmień czcionkę</span>
+        </div>
+        <div class="exp-desc">Wyobraź sobie myśl napisaną Comic Sans, gotykiem, lub czcionką z bajki dla dzieci</div>
+      </div>
+      <div class="exp-block" onclick="selectExp(this, 'speed')">
+        <div class="exp-h">
+          <span class="exp-icon">⏪</span>
+          <span class="exp-name">Zmień tempo</span>
+        </div>
+        <div class="exp-desc">Wyświetl myśl w zwolnionym tempie albo w przyspieszeniu (jak na YouTube 0.25× lub 2×)</div>
+      </div>
+      <div class="exp-block" onclick="selectExp(this, 'color')">
+        <div class="exp-h">
+          <span class="exp-icon">🎨</span>
+          <span class="exp-name">Zmień kolor / tło</span>
+        </div>
+        <div class="exp-desc">Czarno-biała, neonowa różowa na żółtym tle, pastele, jak rysunek z przedszkola</div>
+      </div>
+      <div class="exp-block" onclick="selectExp(this, 'music')">
+        <div class="exp-h">
+          <span class="exp-icon">🎵</span>
+          <span class="exp-name">Dodaj muzykę</span>
+        </div>
+        <div class="exp-desc">Z muzyką cyrkową, soundtrackiem akcji, dźwiękami kreskówki, dżinglem reklamy</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: eksperymentuj z 2-3 transformacjami pod rząd na tej samej myśli. Im bardziej absurdalne, tym lepiej. Celem nie jest estetyka, lecz funkcja: <em>złamać automatyczne traktowanie myśli jak fakt</em>.</div>
+  </section>
+
+  <!-- 4: SCREEN VARIANT + DISTANCE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Wariant ekranu</div>
+    <h1 class="card-prompt">Twój <em>ulubiony</em> ekran</h1>
+    <p class="card-detail">Cztery warianty wizualizacji — każdy daje inną jakość dystansu. Wybierz ten, który pasuje do twojej wyobraźni i sytuacji. Po wyborze zaznacz, jak bardzo <strong>oddalił/a</strong> cię od myśli.</p>
+    
+    <div class="screen-list">
+      <div class="screen-block" onclick="selectScreen(this, 'cinema')">
+        <div class="screen-h">
+          <span class="screen-icon">🎬</span>
+          <span class="screen-name">Ekran kinowy</span>
+        </div>
+        <div class="screen-desc">Klasyczny — ty w fotelu, myśl jako film. Najsilniejszy dystans przestrzenny.</div>
+      </div>
+      <div class="screen-block" onclick="selectScreen(this, 'departures')">
+        <div class="screen-h">
+          <span class="screen-icon">✈️</span>
+          <span class="screen-name">Tablica odlotów</span>
+        </div>
+        <div class="screen-desc">Myśl = lot. Odczytujesz, ale nie wsiadasz. Dobre dla powracających myśli.</div>
+      </div>
+      <div class="screen-block" onclick="selectScreen(this, 'ticker')">
+        <div class="screen-h">
+          <span class="screen-icon">📺</span>
+          <span class="screen-name">Napisy w telewizji</span>
+        </div>
+        <div class="screen-desc">Myśl biegnie na dole ekranu, jak ticker w wiadomościach. Pojawia się i znika.</div>
+      </div>
+      <div class="screen-block" onclick="selectScreen(this, 'phone')">
+        <div class="screen-h">
+          <span class="screen-icon">📱</span>
+          <span class="screen-name">Ekran telefonu</span>
+        </div>
+        <div class="screen-desc">Myśl jako powiadomienie. Zauważasz, ale nie otwierasz aplikacji.</div>
+      </div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak bardzo BYŁEM/AM tą myślą przed wizualizacją</div>
+      <div class="scale-label"><span>obserwator</span><span>JESTEM myślą</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="beforeSlider" oninput="updateLevels()">
+      <div class="scale-readout"><span id="beforeVal">7</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak bardzo TERAZ — po wyświetleniu na ekranie</div>
+      <div class="scale-label"><span>obserwator</span><span>JESTEM myślą</span></div>
+      <input type="range" min="0" max="10" value="3" class="scale-input" id="afterSlider" oninput="updateLevels()">
+      <div class="scale-readout"><span id="afterVal">3</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="delta-summary" id="deltaSummary">
+      Dystans wzrósł o <span class="num">4 punkty</span> — <strong>z aktora przeszedłeś/aś do widzowni</strong>.
+    </div>
+  </section>
+
+  <!-- 5: BEST VARIANT + PLAN -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan praktyki</div>
+    <h1 class="card-prompt">Twój <em>najlepszy ekran</em></h1>
+    <p class="card-detail">Każda osoba ma jeden wariant, który działa najmocniej. Identyfikacja go i używanie konsekwentnie — to zwiększa skuteczność. To staje się twoim <strong>narzędziem-pierwszego-wyboru</strong> przy ruminacjach.</p>
+    
+    <div class="examples-h">Który wariant ekranu działa u mnie najlepiej i dlaczego?</div>
+    <textarea class="thought-input" id="bestVariant" placeholder="np. „tablica odlotów — bo łatwo wizualizuję myśl jako coś, co odlatuje i nie wraca" / „ekran kinowy z fotelem — najsilniejszy dystans"..." rows="3"></textarea>
+    
+    <div class="day-h">Sytuacje, w których zastosuję technikę ekranu</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useTrigger(this)">Gdy myśl „kręci się" 5+ razy</div>
+      <div class="example-chip" onclick="useTrigger(this)">Przed snem przy hiperaktywnym umyśle</div>
+      <div class="example-chip" onclick="useTrigger(this)">W sytuacji stresu — szybka wersja „to tylko film"</div>
+      <div class="example-chip" onclick="useTrigger(this)">Po przykrej rozmowie</div>
+      <div class="example-chip" onclick="useTrigger(this)">Codzienna praktyka 5 min</div>
+      <div class="example-chip" onclick="useTrigger(this)">Przy katastroficznych scenariuszach</div>
+    </div>
+    <textarea class="thought-input" id="triggerInput" placeholder="lub wpisz własne sytuacje..." rows="2"></textarea>
+    
+    <div class="day-h">Gdy się „wciągniesz" w film</div>
+    <div class="term-note"><strong>To się stanie</strong> — nawet doświadczeni medytujący „wsiadają" w myśli. Klucz: <em>zauważ to</em> i wróć do fotela widowni. Każde takie powrócenie wzmacnia umiejętność. Cel nie polega na utrzymaniu pozycji widza non-stop, tylko na <em>zauważaniu</em>, gdy ją tracisz, i wracaniu do niej.</div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła praktyki</div>
+      <div class="repeat-body">Technika ekranu jest <strong>wizualnym</strong> sposobem osiągnięcia tego, co medytacja liści robi <strong>spokojem</strong>. Wybierz to, co pasuje do twojego stylu — wizualizatorzy korzystają z ekranu, „skupieni na ciele" — z liści. <strong>Skuteczność jest taka sama</strong>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+let selectedExp = null;
+let selectedScreen = null;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+// Initialize button state
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 3) renderThoughtEcho();
+  if (curStep === 4) updateLevels();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1; selectedExp = null; selectedScreen = null;
+    document.querySelectorAll('.exp-block.active, .screen-block.active').forEach(b => b.classList.remove('active'));
+    ['myslInput','bestVariant','triggerInput'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('beforeSlider').value = 7;
+    document.getElementById('afterSlider').value = 3;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function useMysl(el) {
+  document.getElementById('myslInput').value = el.textContent;
+}
+
+function selectExp(el, key) {
+  el.classList.toggle('active');
+  // Allow multiple
+}
+
+function selectScreen(el, key) {
+  document.querySelectorAll('.screen-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedScreen = key;
+}
+
+function renderThoughtEcho() {
+  const t = document.getElementById('myslInput').value.trim() || '— wpisz w kroku 2 —';
+  document.getElementById('thoughtEcho').textContent = t;
+}
+
+function updateLevels() {
+  const before = parseInt(document.getElementById('beforeSlider').value);
+  const after = parseInt(document.getElementById('afterSlider').value);
+  document.getElementById('beforeVal').textContent = before;
+  document.getElementById('afterVal').textContent = after;
+  
+  const delta = before - after;
+  const summary = document.getElementById('deltaSummary');
+  
+  if (delta >= 4) {
+    summary.innerHTML = `Dystans wzrósł o <span class="num">${delta} punktów</span> — <strong>z aktora przeszedłeś/aś do widzowni</strong>. Wizualizacja zadziałała wyraźnie.`;
+  } else if (delta >= 1) {
+    summary.innerHTML = `Dystans wzrósł o <span class="num">${delta} ${delta === 1 ? 'punkt' : 'punkty'}</span>. Subtelna zmiana, ale realna — przy regularnej praktyce różnica się pogłębia.`;
+  } else if (delta === 0) {
+    summary.innerHTML = `Bez zmiany (<span class="num">${before}</span> = <span class="num">${after}</span>). Możliwe powody: (a) myśl była zbyt silna na sam ekran — połącz z rozszerzaniem; (b) wizualizacja jest dla ciebie trudna — spróbuj wariantu „napisy" lub „telefon" zamiast pełnego kina.`;
+  } else {
+    summary.innerHTML = `Wzrost (<span class="num">${before}</span> → <span class="num">${after}</span>) — wizualizacja czasem <em>aktywuje</em> myśl mocniej, jeśli była wcześniej wypierana. To informacja: technika docira do treści, którą trzeba przepracować akceptacją lub liściem na strumieniu.`;
+  }
+}
+
+function useTrigger(el) {
+  const t = document.getElementById('triggerInput');
+  if (t.value.trim()) t.value += ', ';
+  t.value += el.textContent;
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_mysli_ekran";
+  var clickSel0 = '.exp-block, .screen-block';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.exp-block, .screen-block')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

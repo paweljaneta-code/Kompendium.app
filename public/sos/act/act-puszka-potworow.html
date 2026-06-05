@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Puszka potworów</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --dread: #6a4a7a; --dread-deep: #3a2845;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(106,74,122,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--dread); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--dread); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dread); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--dread); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--dread); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(106,74,122,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--dread); font-weight: 700; }
+.warn-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(201,122,82,0.10); border: 1px solid rgba(201,122,82,0.3); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.warn-note strong { color: var(--warm); font-weight: 700; }
+.warn-note::before { content: "⚠ "; color: var(--warm); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--dread); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — dread violet === */
+.frame-card { 
+  background: linear-gradient(180deg, #3a2845 0%, #1f1428 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ TIN CAN MONSTER"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "📦"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.13; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.layer-list {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.layer-row {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 9px 12px;
+  display: flex; align-items: baseline; gap: 12px;
+}
+.layer-num { font-family: 'Fraunces', serif; font-size: 18px; color: var(--warm); font-weight: 700; min-width: 18px; }
+.layer-name { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm); font-weight: 700; min-width: 105px; }
+.layer-desc { font-size: 12.5px; color: rgba(244,241,234,0.85); line-height: 1.4; flex: 1; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dread); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+.step-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.step-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--dread);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.step-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.step-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--dread); line-height: 1; min-width: 24px; }
+.step-name { font-size: 13px; font-weight: 700; flex: 1; letter-spacing: 0.04em; }
+.step-time { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.step-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 4px; }
+.step-howto strong { color: var(--ink); font-weight: 700; }
+.step-question {
+  font-size: 11.5px; color: var(--dread-deep);
+  font-style: italic; font-weight: 600;
+  padding: 6px 10px;
+  background: rgba(106,74,122,0.08);
+  border-radius: 6px;
+}
+.step-question::before { content: "❓ "; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--dread);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dread); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dread); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(106,74,122,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dread); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--dread); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Puszka potworów</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Potwór z <em>puszek</em> po konserwach</h1>
+    <p class="card-detail">Kluczowe ćwiczenie gotowości w nurcie <strong>ACT</strong> (terapia akceptacji i zaangażowania) Hayesa. Trudna emocja wygląda jak <em>potwór</em> — ogromna, niemożliwa do udźwignięcia. <strong>Faktycznie składa się z pojedynczych puszek</strong>: myśli, wspomnień, doznań w ciele, impulsów, kilku emocji. <em>Każda puszka osobno</em> jest do udźwignięcia. Razem wyglądały jak potwór.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">5 warstw demontażu</div>
+      
+      <div class="layer-list">
+        <div class="layer-row">
+          <span class="layer-num">1</span>
+          <span class="layer-name">Myśli</span>
+          <span class="layer-desc">jakie słowa, zdania pojawiają się?</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">2</span>
+          <span class="layer-name">Wspomnienia</span>
+          <span class="layer-desc">jakie obrazy, sceny się pojawiają?</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">3</span>
+          <span class="layer-name">Ciało</span>
+          <span class="layer-desc">gdzie czujesz? temperatura, ścisk, ciężar?</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">4</span>
+          <span class="layer-name">Impulsy</span>
+          <span class="layer-desc">co chcesz zrobić? uciec, krzyczeć?</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">5</span>
+          <span class="layer-name">Emocje</span>
+          <span class="layer-desc">jakie (zwykle mieszanka)? nazwij każdą</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Potwór nie jest jednym monolitem. To <em>zlepek</em> wielu reakcji, które nauczyłeś się traktować razem. <strong>Rozłóż na puszki</strong> — i każdą z osobna ponieś przez 30 sekund."
+      <span class="frame-quote-attr">— Hayes, Strosahl, Wilson (1999)</span></div>
+    </div>
+    
+    <div class="warn-note"><strong>Kiedy NIE stosować</strong>: świeża trauma (&lt;3 miesiące), aktywna psychoza/dysocjacja, faza kryzysowa (suicydalna), pierwsze sesje terapii bez psychoedukacji. Ta praca wymaga stabilności — w kryzysie najpierw stabilizacja, potem demontaż.</div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999, ACT — An Experiential Approach)</div>
+  </section>
+
+  <!-- 2: SITUATION -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Wybór sytuacji</div>
+    <h1 class="card-prompt">Jeden <em>potwór</em></h1>
+    <p class="card-detail">Wybierz <strong>jedną konkretną sytuację</strong> z ostatniego tygodnia, w której pojawił się trudny stan. <em>Nie uogólniaj</em> („zawsze jest źle") — wybierz pojedyncze wydarzenie. Im konkretniejsze, tym łatwiejszy demontaż.</p>
+    
+    <div class="examples-h">Konkretna sytuacja (kiedy, gdzie, kto)</div>
+    <textarea class="thought-input" id="situation" placeholder='np. „Wczoraj 20:00, niedzielny obiad u rodziców. Teściowa spojrzała znacząco na mój talerz. Ojciec zapytał o pracę."' rows="3"></textarea>
+    
+    <div class="examples-h">Główna emocja (jednym słowem)</div>
+    <textarea class="thought-input" id="mainEmo" placeholder='np. „Wstyd" / „Upokorzenie" / „Lęk" / „Złość" / „Smutek" / „Mieszanka — wstyd + złość"' rows="2"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Intensywność „potwora" przed demontażem</div>
+      <div class="scale-label"><span>0 — nic</span><span>10 — paroksyzm</span></div>
+      <input type="range" min="0" max="10" value="7" class="scale-input" id="intensity" oninput="updateInt()">
+      <div class="scale-readout"><span id="intVal">7</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="intVerdict">
+      Intensywność <span class="num">7/10</span> — <strong>silny potwór</strong>. Faktycznie czuć przygniecenie. Demontaż w 5 warstwach pokaże, że to zlepek pojedynczych reakcji.
+    </div>
+    
+    <div class="examples-h">Jak ten potwór wygląda? (metafora — góra, burza, fala)</div>
+    <textarea class="thought-input" id="metaphor" placeholder='np. „Jak ciężka kamienna kula w klatce piersiowej" / „Jak burza, która ogarnia całe ciało" / „Jak fala, która zalewa od stóp"' rows="2"></textarea>
+  </section>
+
+  <!-- 3: PROTOCOL — 5 LAYERS -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Demontaż 5 warstw</div>
+    <h1 class="card-prompt">Krok <em>po kroku</em></h1>
+    <p class="card-detail">Zamknij oczy. Przywołaj sytuację <em>jak najżywiej</em>. Przechodź po warstwach pojedynczo. <strong>Po każdej zatrzymuj się 1-3 minuty</strong>. Po każdym komponencie kluczowe pytanie: „czy mogę to udźwignąć 30 sekund z otwartą postawą?".</p>
+    
+    <div class="step-list">
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">1</span>
+          <span class="step-name">Myśli — wymień pojedynczo</span>
+          <span class="step-time">~ 2 min</span>
+        </div>
+        <div class="step-howto"><strong>Jakie zdania słyszysz?</strong> Wymieniaj na głos lub w głowie. Po każdym: zatrzymaj się przy nim 30s. Czy do udźwignięcia? Tak — idź dalej. Nie — wróć do oddechu, próbuj ponownie.</div>
+        <div class="step-question">"Co mówi mi umysł o tej sytuacji — zdanie po zdaniu?"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">2</span>
+          <span class="step-name">Wspomnienia — obrazy</span>
+          <span class="step-time">~ 2 min</span>
+        </div>
+        <div class="step-howto"><strong>Jakie obrazy się pojawiają?</strong> Sceny z dzieciństwa, podobne wydarzenia, twarze ludzi. Każdy obraz osobno. Zatrzymaj się przy nim — czy do udźwignięcia 30s?</div>
+        <div class="step-question">"Co widzę oczami umysłu — scena po scenie?"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">3</span>
+          <span class="step-name">Ciało — gdzie i jak</span>
+          <span class="step-time">~ 2 min</span>
+        </div>
+        <div class="step-howto"><strong>Jakie doznania — gdzie?</strong> Ścisk w klatce, gorąca twarz, drżenie w nogach, ciężar w żołądku. Każde doznanie osobno: lokalizacja, temperatura, intensywność. Bez chęci „zmiany" — tylko obserwacja.</div>
+        <div class="step-question">"Gdzie konkretnie czuję — i jak to opisać fizycznie?"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">4</span>
+          <span class="step-name">Impulsy — bez działania</span>
+          <span class="step-time">~ 2 min</span>
+        </div>
+        <div class="step-howto"><strong>Co chce zrobić ciało?</strong> Uciec, krzyczeć, schować się, zaatakować, zasnąć, zalać alkoholem. <em>Zauważ — nie wykonuj</em>. Impuls to nie polecenie. Każdy impuls osobno: czy do udźwignięcia 30s bez wykonania?</div>
+        <div class="step-question">"Co chce zrobić moje ciało — i czy potrafię nie działać?"</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">5</span>
+          <span class="step-name">Emocje — często mieszanka</span>
+          <span class="step-time">~ 2 min</span>
+        </div>
+        <div class="step-howto"><strong>Jakie emocje — nazwij każdą</strong>. Zwykle nie jedna — są 2-4 jednocześnie. Wstyd + złość + smutek. Każdą osobno z intensywnością /10. Zauważ, jak <em>razem wyglądały jak potwór</em>, osobno są nazwane i ograniczone.</div>
+        <div class="step-question">"Jak nazwać każdą — i jaka jest jej intensywność?"</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Kluczowa zasada</strong>: nie pędź. Nie próbuj zrobić wszystkich warstw za jednym razem. <em>Czasem wystarczą tylko 1-2 warstwy</em>. Lepiej 1 warstwa głęboko niż 5 powierzchownie. Po demontażu: „to były puszki — każda osobno do udźwignięcia". To gotowość, nie ekspozycja.</div>
+  </section>
+
+  <!-- 4: PRACTICE — REASSEMBLY -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Po demontażu</div>
+    <h1 class="card-prompt">Zlicz <em>puszki</em></h1>
+    <p class="card-detail">Po przejściu warstw — <strong>zsumuj komponenty</strong>. Zauważ: zlepek nie jest tym samym, co suma puszek. Coś znika, gdy rozłożysz emocję na elementy. Konkretne nazwane puszki ≠ niejasny ciężki potwór.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Lista puszek</div>
+      
+      <div class="commit-prompt-label">Myśli (wymień)</div>
+      <textarea class="thought-input" id="thoughts" placeholder='np. „1) Myśli, że jestem niewdzięcznym dzieckiem. 2) Myśli, że ojciec jest rozczarowany. 3) Myśli, że nigdy nie będę dorosła w ich oczach"' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Wspomnienia (jakie obrazy się podniosły)</div>
+      <textarea class="thought-input" id="memories" placeholder='np. „Obiad u dziadków gdy miałem 12 lat. Twarz mamy gdy dostałem złą ocenę. Cisza przy stole po kłótni rodziców"' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Ciało (gdzie + jak)</div>
+      <textarea class="thought-input" id="body" placeholder='np. „Ścisk w gardle. Gorąco w policzkach. Skurcz w brzuchu. Drżenie w nogach"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Impulsy (zauważone, niezrobione)</div>
+      <textarea class="thought-input" id="impulses" placeholder='np. „Wyjść od stołu (zauważone, nie wykonane). Krzyknąć »dajcie mi spokój« (zauważone, nie wykonane). Zalać alkoholem (zauważone, nie wykonane)"' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Emocje (lista + intensywność)</div>
+      <textarea class="thought-input" id="emotions" placeholder='np. „Wstyd 8/10. Złość 5/10. Smutek 6/10. Bezradność 4/10."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Intensywność TERAZ — po demontażu</div>
+      <textarea class="thought-input" id="afterInt" placeholder='np. „4/10. Spadek z 7 do 4. Każda puszka osobno jest znośna. Całość już nie wygląda jak potwór — wygląda jak lista konkretnych reakcji."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Kluczowy moment</strong>: gdy zlepek staje się listą, <em>gotowość staje się możliwa</em>. „Mogę być przy wstydzie 8/10" jest realniejsze niż „mogę być przy potworze". Nie znaczy „lubię to" — znaczy „<strong>mogę to udźwignąć przez 30s bez ucieczki</strong>". To esencja akceptacji w ACT.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan praktyki</div>
+    <h1 class="card-prompt">4 tygodnie <em>budowania</em></h1>
+    <p class="card-detail">Demontaż jest umiejętnością — buduje się stopniowo. Plan: <strong>od łatwych do trudnych emocji w 4 tygodnie</strong>. Nie zaczynaj od najtrudniejszych — to recepta na zniechęcenie.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój kontrakt 4 tygodni</div>
+      
+      <div class="commit-prompt-label">Tydzień 1 — łatwe emocje (poranna irytacja, drobny wstyd)</div>
+      <textarea class="thought-input" id="week1" placeholder='np. „2× w tygodniu, np. wtorek i czwartek po pracy, 10 min demontażu na świeżej drobnej irytacji."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Tydzień 2 — średnie (konflikt w pracy, lęk przed jutrem)</div>
+      <textarea class="thought-input" id="week2" placeholder='np. „3× w tygodniu, demontaż wieczorny przy bardziej złożonych emocjach. Spowolnione tempo."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Tydzień 3 — trudne (konfrontacja, wstyd, bezradność)</div>
+      <textarea class="thought-input" id="week3" placeholder='np. „2× w tygodniu, najtrudniejsze emocje. Może wymagać dłuższego czasu (30-45 min)."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Tydzień 4 — integracja, użycie spontaniczne</div>
+      <textarea class="thought-input" id="week4" placeholder='np. „Gdy pojawi się potwór — od razu odruch demontażu. Skrócony do 5-10 min. Naturalny element radzenia sobie."' rows="2" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Reguła praktyki</div>
+    <div class="term-note">
+      <strong>Stopniowo</strong> — nie zaczynaj od najtrudniejszych emocji<br>
+      <strong>Pomału</strong> — czas jest częścią terapii, nie przeszkodą<br>
+      <strong>Pojedynczo</strong> — jedna sytuacja, nie uogólnienie<br>
+      <strong>Bez pędu</strong> — czasem 1-2 warstwy w jednej sesji wystarczą<br>
+      <strong>W kryzysie</strong> — pytanie: <em>czy widzę potwora, czy listę puszek?</em>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Hayesa</div>
+      <div class="repeat-body">Po demontażu potwór <em>nie znika</em> — ale przestaje być potworem. <strong>Zostają puszki</strong>. Każdą osobno udźwigniesz. To nie ekspozycja — to <em>praktyka otwartości</em>. Im więcej demontaży, tym łatwiej rozpoznawać, że trudna emocja to zawsze zlepek, nie monolit.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateInt();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    ['situation','mainEmo','metaphor','thoughts','memories','body','impulses','emotions','afterInt','week1','week2','week3','week4'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('intensity').value = 7;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function updateInt() {
+  const v = parseInt(document.getElementById('intensity').value);
+  document.getElementById('intVal').textContent = v;
+  
+  const verdict = document.getElementById('intVerdict');
+  if (v >= 9) {
+    verdict.innerHTML = `Intensywność <span class="num">${v}/10</span> — <strong>potwór ekstremalny</strong>. Demontaż wskazany, ale <em>spokojnie</em>. Może być potrzeba zatrzymania na 1-2 warstwach. Jeśli czujesz panikę — odłóż, wróć po kotwiczeniu.`;
+  } else if (v >= 7) {
+    verdict.innerHTML = `Intensywność <span class="num">${v}/10</span> — <strong>silny potwór</strong>. Faktycznie czuć przygniecenie. Demontaż w 5 warstwach pokaże, że to zlepek pojedynczych reakcji.`;
+  } else if (v >= 4) {
+    verdict.innerHTML = `Intensywność <span class="num">${v}/10</span> — <strong>średni potwór</strong>. Dobry materiał na ćwiczenie — wystarczająco silny by ćwiczyć, na tyle bezpieczny by nie zalać.`;
+  } else if (v >= 2) {
+    verdict.innerHTML = `Intensywność <span class="num">${v}/10</span> — <strong>łagodna emocja</strong>. Idealne do nauki demontażu — niskie ryzyko zalania, można skoncentrować się na technice.`;
+  } else {
+    verdict.innerHTML = `Intensywność <span class="num">${v}/10</span> — <strong>słaba reakcja</strong>. Może za mało materiału do demontażu. Wybierz inne wydarzenie z większym ładunkiem albo wróć później, gdy potwór się pojawi.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_puszka_potworow";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

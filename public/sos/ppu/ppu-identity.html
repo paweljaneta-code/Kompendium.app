@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Tożsamość w zmianie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.stage-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.stage-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.stage-num {
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--sage-deep); color: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.stage-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.stage-narration {
+  font-size: 12.5px; color: var(--ink-soft); font-style: italic;
+  background: rgba(244,241,234,0.5); padding: 6px 10px; border-radius: 6px;
+  border-left: 2px solid var(--sage); margin-top: 6px;
+}
+
+.identity-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.identity-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.identity-row {
+  display: grid; grid-template-columns: 1fr 24px 1fr; gap: 10px;
+  align-items: flex-start; padding: 8px 0;
+  border-bottom: 1px dashed rgba(184,197,168,0.25);
+  font-size: 12.5px; line-height: 1.5;
+}
+.identity-row:last-child { border-bottom: none; }
+.identity-bad { color: rgba(244,241,234,0.7); font-style: italic; }
+.identity-arrow { color: var(--sage); text-align: center; font-family: 'Fraunces', serif; }
+.identity-good { color: var(--bg); font-weight: 500; }
+
+.action-card {
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin: 10px 0;
+}
+.action-h {
+  font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600;
+  color: var(--sage-deep); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.warn-clinical {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.warn-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #8a6a2a; margin-bottom: 4px; }
+.warn-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.warn-body strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Tożsamość w zmianie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Tożsamość zlana z problemem <em>blokuje zmianę</em></h1>
+    <p class="card-detail">James Prochaska i Carlo DiClemente (twórcy Transtheoretical Model — TTM, 1983) opisali, jak <strong>tożsamość ewoluuje przez etapy zmiany</strong>: prekontemplacja, kontemplacja, przygotowanie, działanie, utrzymanie, integracja. James Clear („Atomic Habits", 2018) wzmocnił to spostrzeżenie: <em>"trwała zmiana zachowania jest zmianą tożsamości"</em>. Dopóki mówisz <em>"jestem uzależniony/a od porno"</em>, twoja tożsamość <strong>jest</strong> problemem — co paradoksalnie utrwala go. Praca polega na <em>świadomej zmianie narracji</em>: od "jestem PPU" do "byłem/am — jestem osobą w procesie zmiany — jestem osobą, która żyje inaczej". Michael White i David Epston (narrative therapy, 1990) pokazali, że zmiana narracji o sobie jest <em>warunkiem koniecznym</em> trwałej zmiany.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady tożsamości w zmianie</div>
+      <div class="element-row"><span class="element-icon">🌀</span><span class="element-text"><strong>Tożsamość kieruje zachowaniem</strong> — Clear: "każde działanie potwierdza twoją tożsamość". Jeśli widzisz siebie jako "osobę uzależnioną", lapsy są <em>zgodne</em> z tą tożsamością. Jeśli jako "osobę w procesie zmiany" — lapsy są wyjątkami, nie regułą.</span></div>
+      <div class="element-row"><span class="element-icon">📜</span><span class="element-text"><strong>Narracja, nie etykieta</strong> — White &amp; Epston: "problem nie jest tobą, problem jest problemem". Mówisz <em>"borykam się z PPU"</em> zamiast "jestem PPU-uzależniony/a". Dystans językowy buduje przestrzeń psychologiczną.</span></div>
+      <div class="element-row"><span class="element-icon">🌿</span><span class="element-text"><strong>"Jestem osobą, która..."</strong> — Clear: pracuj z afirmacjami w formie tożsamościowej, nie behawioralnej. Nie "ćwiczę"; <em>"jestem osobą, która ćwiczy"</em>. Każde działanie to "głos" w tożsamości, którą budujesz.</span></div>
+      <div class="element-row"><span class="element-icon">⏳</span><span class="element-text"><strong>Cierpliwość — miesiące, nie dni</strong> — tożsamość to <em>warstwa głębsza</em> niż zachowanie. Zmiana zachowania w 4 tygodnie; zmiana tożsamości w 6—12 miesięcy. Bez cierpliwości tożsamość się "cofa" przy pierwszym lapsie.</span></div>
+    </div>
+
+    <div class="frame-quote">„Każde działanie, które wykonujesz, jest głosem w wyborze, kim chcesz się stać. Żaden pojedynczy głos nie zmieni twojej tożsamości — ale ich nawarstwianie się zmieni."
+      <span class="frame-quote-attr">— parafraza po Jamesie Clearze, „Atomic Habits" (2018)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: ten Karta wsparcia jest dla osób w <strong>późnej fazie zdrowienia</strong> (≥3 mies. stabilnej pracy z PPU), które chcą wzmocnić długoterminowość zmiany. Praca z tożsamością <em>na wcześniejszym etapie</em> jest mniej skuteczna — najpierw potrzebne jest "doświadczenie" zmiany zachowania, dopiero potem można je "ułożyć" w nową tożsamość. Bez doświadczenia tożsamość staje się fantazją; z doświadczeniem — staje się prawdą.</div>
+
+    <div class="src">Prochaska &amp; DiClemente (1983, „Stages and processes of self-change of smoking", Journal of Consulting and Clinical Psychology); Prochaska &amp; DiClemente (2005, „The transtheoretical approach"); Clear (2018, „Atomic Habits: An Easy &amp; Proven Way to Build Good Habits &amp; Break Bad Ones"); White &amp; Epston (1990, „Narrative Means to Therapeutic Ends"); Deci &amp; Ryan (2000, „Self-Determination Theory"); Oyserman &amp; Destin (2010, „Identity-based motivation"); McAdams (2008, „The redemptive self").</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoja obecna tożsamość</div>
+    <h1 class="card-prompt">Sprawdź <em>jak o sobie mówisz</em></h1>
+    <p class="card-detail">Świadomość obecnej narracji o sobie jest pierwszym krokiem. <em>Słowa kształtują tożsamość</em> — to, jak siebie nazywasz w głowie, w rozmowach, w terapii, buduje fundament. Sprawdź swój obecny "głos".</p>
+
+    <div class="examples-h">A. Jak mówisz o swoim PPU? (zaznacz, które rozpoznajesz)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="lA1" onclick="this.classList.toggle('picked')">"Jestem uzależniony/a"</button>
+      <button type="button" class="example-chip" id="lA2" onclick="this.classList.toggle('picked')">"Jestem porn-addicted"</button>
+      <button type="button" class="example-chip" id="lA3" onclick="this.classList.toggle('picked')">"Mam problem z porno"</button>
+      <button type="button" class="example-chip" id="lA4" onclick="this.classList.toggle('picked')">"Borykam się z PPU"</button>
+      <button type="button" class="example-chip" id="lA5" onclick="this.classList.toggle('picked')">"Pracuję nad PPU"</button>
+      <button type="button" class="example-chip" id="lA6" onclick="this.classList.toggle('picked')">"Kiedyś miałem trudność z PPU"</button>
+      <button type="button" class="example-chip" id="lA7" onclick="this.classList.toggle('picked')">"To część mojej historii, nie tożsamość"</button>
+    </div>
+
+    <div class="examples-h">B. Jak siebie definiujesz wewnętrznie?</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="lB1" onclick="this.classList.toggle('picked')">"Jestem słaby/a charakterowo"</button>
+      <button type="button" class="example-chip" id="lB2" onclick="this.classList.toggle('picked')">"Jestem zepsuty/a"</button>
+      <button type="button" class="example-chip" id="lB3" onclick="this.classList.toggle('picked')">"Jestem normalny/a, mam problem do rozwiązania"</button>
+      <button type="button" class="example-chip" id="lB4" onclick="this.classList.toggle('picked')">"Jestem osobą w procesie zmiany"</button>
+      <button type="button" class="example-chip" id="lB5" onclick="this.classList.toggle('picked')">"Jestem osobą wartościową, która walczy"</button>
+      <button type="button" class="example-chip" id="lB6" onclick="this.classList.toggle('picked')">"Mam wiele wymiarów; PPU jest jednym"</button>
+    </div>
+
+    <div class="examples-h">C. Jak interpretujesz lapse?</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="lC1" onclick="this.classList.toggle('picked')">"Lapse potwierdza, że jestem zepsuty/a"</button>
+      <button type="button" class="example-chip" id="lC2" onclick="this.classList.toggle('picked')">"Cofa mnie do punktu zero"</button>
+      <button type="button" class="example-chip" id="lC3" onclick="this.classList.toggle('picked')">"To mój prawdziwy ja"</button>
+      <button type="button" class="example-chip" id="lC4" onclick="this.classList.toggle('picked')">"Lapse to wyjątek, nie reguła"</button>
+      <button type="button" class="example-chip" id="lC5" onclick="this.classList.toggle('picked')">"Lapse to informacja o sytuacji"</button>
+      <button type="button" class="example-chip" id="lC6" onclick="this.classList.toggle('picked')">"Każda walka z urge to głos w nowej tożsamości"</button>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Jak silnie tożsamość zlana z PPU? (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="fusion" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = oddzielona</span><span id="fusionval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Jak często myślisz "jestem PPU-osobą"? (na tydzień)</span><span></span></div>
+      <input type="range" class="scale-input" id="freqId" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nigdy</span><span id="freqIdval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy widzisz siebie szerzej niż przez pryzmat PPU?</span><span></span></div>
+      <input type="range" class="scale-input" id="multiDim" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = wąsko</span><span id="multiDimval">5</span></div>
+    </div>
+
+    <div class="examples-h">Twoja obecna główna narracja o sobie (1 zdanie)</div>
+    <textarea class="thought-input" id="myNarration" placeholder='Napisz uczciwie, jak myślisz o sobie w kontekście PPU. np. „Jestem facetem 35 lat, który od 15 lat zmaga się z porno. Próbowałem kilka razy zmienić — bezskutecznie. Teraz znowu próbuję, ale w głębi nie wierzę, że mogę być inną osobą. Poczucie »to po prostu jestem ja«.”' rows="5"></textarea>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Najczęstsze pułapki tożsamościowe</div>
+      <div class="warn-body"><strong>Tożsamość ofiary</strong> — "to nie moja wina, to choroba"; tożsamość bezsilna. <strong>Tożsamość zepsutego</strong> — "jestem fundamentalnie wadliwy/a"; tożsamość wstydu. <strong>Tożsamość tylko-przez-PPU</strong> — życie skoncentrowane wyłącznie na "nie PPU", inne wymiary zaniedbane. <strong>Tożsamość heroiczna</strong> — "jestem wojownikiem walczącym z demonem", przesadna mitologizacja, która kończy się rozczarowaniem przy pierwszym lapsie. Każda z tych pułapek <em>blokuje</em> zdrową zmianę.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła obrazu</strong>: typowy obraz osoby w średniej fazie zdrowienia: <em>fusion ≥6</em>, <em>częste myślenie o PPU jako tożsamości</em> (≥5/10), <em>wąskie widzenie siebie</em> (≤6/10). To <em>normalne</em> i nie patologiczne — ale wymaga świadomej pracy, by tożsamość się <em>rozwarstwiła</em>. Bez tego rozwarstwienia trwała zmiana jest trudna. Z nim — staje się możliwa.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — etapy TTM + tożsamość</div>
+    <h1 class="card-prompt">Sześć etapów <em>z różną narracją</em></h1>
+    <p class="card-detail">Prochaska opisał 6 etapów zmiany. Każdy ma <strong>swoją narrację tożsamościową</strong> — sposób mówienia o sobie, który jest charakterystyczny dla tego etapu. Świadomość, w którym jesteś, pomaga nazwać własną narrację i zauważyć, jaki kolejny krok jest możliwy.</p>
+
+    <div class="stage-card">
+      <div class="stage-h"><span class="stage-num">1</span><span class="stage-name">Prekontemplacja</span></div>
+      <div class="stage-narration">"Nie mam problemu. To jest mój sposób radzenia sobie. Nie potrzebuję zmiany."</div>
+    </div>
+
+    <div class="stage-card">
+      <div class="stage-h"><span class="stage-num">2</span><span class="stage-name">Kontemplacja</span></div>
+      <div class="stage-narration">"Może to jest problem... nie wiem... Trochę mnie martwi, ale jeszcze nie czuję, że muszę coś robić. Jestem rozszczepiony/a — ambiwalencja."</div>
+    </div>
+
+    <div class="stage-card">
+      <div class="stage-h"><span class="stage-num">3</span><span class="stage-name">Przygotowanie</span></div>
+      <div class="stage-narration">"Wiem, że chcę zmieniać. Szukam pomocy, czytam, planuję. Jestem »ktoś w drodze« — zaczynam, ale jeszcze nie zacząłem/am."</div>
+    </div>
+
+    <div class="stage-card">
+      <div class="stage-h"><span class="stage-num">4</span><span class="stage-name">Działanie</span></div>
+      <div class="stage-narration">"Aktywnie pracuję. Terapia, narzędzia, środowisko. Jestem »ex-user«, »w walce«, »pracujący/a nad zmianą«. Dużo energii w temat PPU."</div>
+    </div>
+
+    <div class="stage-card">
+      <div class="stage-h"><span class="stage-num">5</span><span class="stage-name">Utrzymanie</span></div>
+      <div class="stage-narration">"Zmiana jest stabilna. Pracuję dalej, ale nie tak intensywnie. Jestem »osobą, która kiedyś miała trudność; teraz żyje inaczej«."</div>
+    </div>
+
+    <div class="stage-card">
+      <div class="stage-h"><span class="stage-num">6</span><span class="stage-name">Termination / integracja</span></div>
+      <div class="stage-narration">"PPU przestaje być centralnym wymiarem mojego życia. Mam różne ważne role i historie; PPU jest jedną z moich historii, nie tożsamością. Dostrzegam ją, ale nie definiuje mnie."</div>
+    </div>
+
+    <div class="examples-h">W którym etapie obecnie jesteś?</div>
+    <button type="button" class="rel-btn" id="st3" onclick="pickStage('3')">
+      <span class="rel-name">📍 Etap 3 — Przygotowanie</span>
+      <span class="rel-desc">Planuję, szukam pomocy, czytam. "Ktoś w drodze".</span>
+    </button>
+    <button type="button" class="rel-btn" id="st4" onclick="pickStage('4')">
+      <span class="rel-name">📍 Etap 4 — Działanie</span>
+      <span class="rel-desc">Aktywnie pracuję. Terapia, narzędzia. "W walce", "pracujący/a nad zmianą".</span>
+    </button>
+    <button type="button" class="rel-btn" id="st5" onclick="pickStage('5')">
+      <span class="rel-name">📍 Etap 5 — Utrzymanie</span>
+      <span class="rel-desc">Zmiana stabilna ≥6 mies. "Osoba, która kiedyś miała trudność".</span>
+    </button>
+    <button type="button" class="rel-btn" id="st6" onclick="pickStage('6')">
+      <span class="rel-name">📍 Etap 6 — Integracja</span>
+      <span class="rel-desc">PPU jako jedna z historii, nie tożsamość. Dostrzegam, ale nie definiuje.</span>
+    </button>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ Cel: nie jest "nigdy nie myśleć o PPU"</div>
+      <div class="warn-body">Częsty mylny obraz: "wyleczę się = nie będę myślał/a o PPU". <strong>Nieprawda</strong> i niemożliwe. Cel to: <em>PPU zajmuje proporcjonalnie mniej przestrzeni w tożsamości</em>. Dostrzegasz, że istniało, że jest częścią twojej historii — ale nie jest <em>centralną</em> ani <em>dominującą</em> historią. Twoje życie ma 100 wymiarów; PPU jest 1 z nich, nie 50. To etap 6 (integracja).</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła progresji</strong>: ruch między etapami nie jest liniowy. Możesz cofnąć się z etapu 5 do 4 po nawrocie, potem znowu do 5. <em>To normalne, nie regres tożsamościowy</em>. Każda iteracja buduje silniejszą tożsamość niż poprzednia. Marlatt: <em>"recidivism is normal, abstinence is the deviance"</em> — większość zmian wymaga 3—7 prób przed stabilizacją. Świadomość tej dynamiki sama w sobie chroni przed AVE.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — codzienne potwierdzanie nowej tożsamości</div>
+    <h1 class="card-prompt">Buduj <em>nową tożsamość</em> codziennymi krokami</h1>
+    <p class="card-detail">Clear (2018) opisał, że <strong>tożsamość zmienia się przez powtarzające się działania</strong>. Każde małe działanie zgodne z nową tożsamością jest "głosem" w wyborze, kim się stajesz. Pojedynczy głos nic nie zmienia; tysiąc głosów zmienia tożsamość. Praktyka polega na <em>świadomym</em> wyborze małych działań i <em>świadomym</em> ich nazwaniu w języku tożsamościowym.</p>
+
+    <div class="identity-card">
+      <div class="identity-h">Język behawioralny → Język tożsamościowy</div>
+      <div class="identity-row">
+        <div class="identity-bad">"Próbuję nie oglądać porno"</div>
+        <div class="identity-arrow">→</div>
+        <div class="identity-good">"Jestem osobą, która chroni swoją uwagę"</div>
+      </div>
+      <div class="identity-row">
+        <div class="identity-bad">"Idę na terapię"</div>
+        <div class="identity-arrow">→</div>
+        <div class="identity-good">"Jestem osobą, która dba o swoje zdrowie psychiczne"</div>
+      </div>
+      <div class="identity-row">
+        <div class="identity-bad">"Telefon do kuchni na noc"</div>
+        <div class="identity-arrow">→</div>
+        <div class="identity-good">"Jestem osobą, która szanuje swój sen i obecność"</div>
+      </div>
+      <div class="identity-row">
+        <div class="identity-bad">"SMS do brata po trudnym dniu"</div>
+        <div class="identity-arrow">→</div>
+        <div class="identity-good">"Jestem osobą, która buduje realne relacje"</div>
+      </div>
+      <div class="identity-row">
+        <div class="identity-bad">"Trening 3× tygodniowo"</div>
+        <div class="identity-arrow">→</div>
+        <div class="identity-good">"Jestem osobą, która dba o ciało i umysł"</div>
+      </div>
+    </div>
+
+    <div class="action-card">
+      <div class="action-h">🌱 Twoje "Jestem osobą, która..." — 5—7 stwierdzeń</div>
+      <p style="font-size:12px; color:var(--ink-mute); font-style:italic; margin-bottom:8px;">
+        Nie wymyślasz nowej fantazji. Spisujesz <em>realne działania, które już wykonujesz</em>, w języku tożsamościowym. Każde z nich musi być prawdą o tobie <em>dziś</em>.
+      </p>
+      <textarea class="thought-input" id="iAm" placeholder='Wypisz 5—7 stwierdzeń. np. „1. Jestem osobą, która chodzi na terapię cotygodniowo. 2. Jestem osobą, która kontaktuje się z bratem co niedzielę. 3. Jestem osobą, która zauważa swoje urge i szuka wsparcia. 4. Jestem osobą, która trenuje 3× tygodniowo dla siebie. 5. Jestem osobą, która rozmawia z partnerką o trudnych sprawach. 6. Jestem osobą, która czyta książki rozwojowe. 7. Jestem osobą, która wybacza sobie lapsy i wraca do pracy.”' rows="9"></textarea>
+    </div>
+
+    <div class="action-card">
+      <div class="action-h">📜 Twoja narracyjna mapa — od "byłem/am" przez "jestem" do "staję się"</div>
+      <textarea class="thought-input" id="narrative" placeholder='Trzy akapity — od kogo idziesz, gdzie jesteś, dokąd zmierzasz. np. „BYŁEM/AM: Człowiekiem, który przez 15 lat ukrywał PPU. Samotny w problemie, wstyd, ucieczka od trudności w fantazje. PPU zajmowało ogromną część mojej tożsamości — czułem, że to »kim jestem«.
+
+JESTEM: Człowiekiem, który aktywnie pracuje od 8 mies. Mam terapeutkę, grupę, brata, narzędzia. Były 3 lapsy w tym czasie — każdy dał mi informację. Buduję inny sposób życia. PPU jest częścią mojej historii, ale już nie centralną.
+
+STAJĘ SIĘ: Człowiekiem, dla którego PPU będzie jedną z wielu historii — nie definicją. Mężem, który jest obecny dla partnerki. Bratem, który jest obecny dla rodzeństwa. Profesjonalistą, który jest obecny w pracy. Osobą, która ma głębsze relacje, niż gdyby PPU nigdy nie było. Być może paradoksalnie — bogatszym/ą przez tę walkę.”' rows="14"></textarea>
+    </div>
+
+    <div class="examples-h">Codzienne mikropraktyki tożsamościowe (zaznacz, które wprowadzasz)</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="m1" onclick="this.classList.toggle('picked')">Rano: 1 zdanie "jestem osobą, która..."</button>
+      <button type="button" class="example-chip" id="m2" onclick="this.classList.toggle('picked')">Wieczorem: 3 działania zgodne z nową tożsamością</button>
+      <button type="button" class="example-chip" id="m3" onclick="this.classList.toggle('picked')">Zmiana języka mówionego o sobie (nie "jestem PPU", lecz "borykam się")</button>
+      <button type="button" class="example-chip" id="m4" onclick="this.classList.toggle('picked')">Tygodniowe pisanie narracji (max 1 strona)</button>
+      <button type="button" class="example-chip" id="m5" onclick="this.classList.toggle('picked')">Świadome unikanie etykiet "uzależniony"</button>
+      <button type="button" class="example-chip" id="m6" onclick="this.classList.toggle('picked')">Po lapsie: "to wyjątek, nie reguła"</button>
+      <button type="button" class="example-chip" id="m7" onclick="this.classList.toggle('picked')">Cele tożsamościowe (kim, nie co)</button>
+      <button type="button" class="example-chip" id="m8" onclick="this.classList.toggle('picked')">Otoczenie ludzi, którzy widzą cię szerzej niż przez PPU</button>
+    </div>
+
+    <div class="warn-clinical">
+      <div class="warn-h">⚠️ "Jestem osobą, która..." nie jest fantazją</div>
+      <div class="warn-body"><strong>Każde stwierdzenie musi mieć dowód w realności</strong>. "Jestem osobą, która ćwiczy" — jeśli nie ćwiczyłeś/aś od miesięcy, to fantazja, nie tożsamość. Najpierw <em>zacznij ćwiczyć</em> (1× tygodniowo), <em>potem</em> nazwij siebie tak. Clear: "twoje działania są dowodami w sądzie tożsamości". Bez dowodów wyrok jest niewiarygodny — także dla ciebie.</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: codzienne mikropraktyki tożsamościowe budują nową narrację <em>od dołu</em>. Każda mała akcja zgodna z nową tożsamością + świadome jej nazwanie = "głos" w wyborze, kim się stajesz. Po 3—6 miesiącach takich praktyk tożsamość zaczyna się <em>realnie</em> przesuwać. Po 12 miesiącach — jest <em>inna niż na początku</em>. To nie sztuka, to <em>kumulacja</em>. Tożsamość zmienia się powoli, ale trwale.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>tożsamość się przesuwa</em>?</h1>
+    <p class="card-detail">Wróć tu po 6—12 tygodniach świadomej pracy z tożsamością. Praca z tożsamością jest <em>najwolniejsza</em> z technik RP — efekty pierwsze po 8 tyg., znaczące po 6—12 mies. Liczy się <em>trend</em>, nie pojedynczy tydzień.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy tożsamość zlana z PPU? (teraz)</span><span></span></div>
+      <input type="range" class="scale-input" id="postFusion" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = oddzielona</span><span id="postFusionval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy widzisz siebie szerzej niż przez pryzmat PPU?</span><span></span></div>
+      <input type="range" class="scale-input" id="postMulti" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = wąsko</span><span id="postMultival">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy używasz "jestem osobą, która..." świadomie?</span><span></span></div>
+      <input type="range" class="scale-input" id="postIam" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postIamval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy lapsy interpretujesz jako "wyjątki, nie reguły"?</span><span></span></div>
+      <input type="range" class="scale-input" id="postLapse" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postLapseval">5</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: praca z tożsamością postępuje, gdy <em>tożsamość mniej zlana z PPU</em> ≥−1 punkt + <em>widzenie siebie szersze</em> ≥6 + <em>"jestem osobą, która..." używane</em> ≥5 + <em>lapsy jako wyjątki</em> ≥5. Najwolniej zmienia się <em>fusion</em> (wymaga miesięcy); najszybciej <em>język "jestem osobą, która..."</em> (kilka tygodni). Liczy się trend, nie wartość bezwzględna.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Praca z tożsamością jest <em>warstwą najgłębszą</em> w pracy z PPU — i <em>najpotężniejszą</em> długoterminowo. Trzy zasady: (1) <strong>tożsamość kieruje zachowaniem</strong> — Clear "każde działanie potwierdza twoją tożsamość"; (2) <strong>narracja, nie etykieta</strong> — White &amp; Epston "problem nie jest tobą, problem jest problemem"; (3) <strong>codzienne małe akcje + ich świadome nazwanie</strong> = budowanie nowej tożsamości od dołu. <strong>Cel</strong> nie jest "nigdy nie myśleć o PPU" — niemożliwy. <em>Cel</em>: PPU zajmuje proporcjonalnie mniej przestrzeni w tożsamości; staje się jedną z wielu historii, nie centralną. Praca jest powolna — pierwsze efekty po 8 tyg., znaczące po 6—12 mies. <strong>Cierpliwość przez miesiące</strong>. Lapsy są <em>częścią</em> historii zmiany, nie jej zaprzeczeniem. Ruch między etapami TTM nie jest liniowy — cofnięcia są normalne, każda iteracja buduje silniejszą tożsamość. Tożsamość zmienia się <em>kumulacją głosów</em>, nie skokowo.</div>
+    </div>
+
+    <div class="src">Prochaska &amp; DiClemente (1983, „Stages and processes of self-change"); Prochaska &amp; DiClemente (2005); Clear (2018, „Atomic Habits"); White &amp; Epston (1990, „Narrative Means to Therapeutic Ends"); Deci &amp; Ryan (2000); Oyserman &amp; Destin (2010); McAdams (2008); Marlatt &amp; Donovan (2005, sekcje o tożsamości w prewencji nawrotów); Twohig &amp; Hayes (2008, ACT i identity work).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['fusion','freqId','multiDim','postFusion','postMulti','postIam','postLapse'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+window.pickedStage = null;
+function pickStage(code) {
+  window.pickedStage = code;
+  ['st3','st4','st5','st6'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('st' + code);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var preFus = parseInt(document.getElementById('fusion').value, 10);
+  var postFus = parseInt(document.getElementById('postFusion').value, 10);
+  var multi = parseInt(document.getElementById('postMulti').value, 10);
+  var iam = parseInt(document.getElementById('postIam').value, 10);
+  var lapse = parseInt(document.getElementById('postLapse').value, 10);
+
+  var rows = [];
+  var dF = postFus - preFus;
+  var sign = dF > 0 ? '+' : '';
+  rows.push('<div class="diff-row"><strong>Fusion z PPU</strong><span class="diff-delta">' + preFus + ' → ' + postFus + ' (' + sign + dF + ')</span></div>');
+  var mW = multi <= 3 ? 'wąsko' : (multi <= 6 ? 'częściowo' : 'szeroko');
+  rows.push('<div class="diff-row"><strong>Widzenie siebie</strong><span class="diff-delta">' + multi + '/10 — ' + mW + '</span></div>');
+  var iW = iam <= 3 ? 'nie' : (iam <= 6 ? 'czasem' : 'tak');
+  rows.push('<div class="diff-row"><strong>"Jestem osobą, która..."</strong><span class="diff-delta">' + iam + '/10 — ' + iW + '</span></div>');
+  var lW = lapse <= 3 ? 'klęska' : (lapse <= 6 ? 'częściowo' : 'wyjątek');
+  rows.push('<div class="diff-row"><strong>Lapse jako</strong><span class="diff-delta">' + lapse + '/10 — ' + lW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (dF <= -1 && multi >= 6 && iam >= 5 && lapse >= 5) {
+      msg = '<strong>Tożsamość się przesuwa.</strong> Fusion spada, widzenie szersze, język tożsamościowy w użyciu, lapse jako wyjątki. <em>Kontynuuj 6—12 mies.</em> — to długoterminowy proces, ale fundament jest zdrowy.';
+    } else if (iam >= 5) {
+      msg = '<strong>Pierwsze ruchy w języku tożsamościowym.</strong> Najszybciej zmieniający się obszar. Wzmocnij <em>codzienne mikropraktyki</em>: rano "jestem osobą, która..."; wieczorem 3 działania zgodne z tą tożsamością. Po 8 tyg. zauważysz przesunięcie.';
+    } else if (multi <= 4) {
+      msg = '<strong>Wąskie widzenie siebie — krytyczne.</strong> Życie skupione tylko na "nie PPU" jest zubożałe. <em>Aktywnie</em> rozwijaj inne wymiary: hobby, przyjaźnie, kreatywność, sport, służba. Każdy nowy wymiar życia <em>rozszerza tożsamość</em>, paradoksalnie zmniejszając wagę PPU.';
+    } else if (lapse <= 3) {
+      msg = '<strong>Lapse interpretowany jako klęska.</strong> Tożsamościowa pułapka. Wzmocnij Kartę "AVE" (przerwanie błędu poznawczego) + Kartę "Samowspółczucie" (Neff). Świadomie po lapsie: "to wyjątek od mojej nowej tożsamości, nie potwierdzenie starej".';
+    } else if (postFus >= 7) {
+      msg = '<strong>Tożsamość nadal silnie zlana z PPU.</strong> Najwolniej zmieniający się obszar. Praca: (1) zmiana języka mówionego (nie "jestem uzależniony", lecz "borykam się"); (2) celebrowanie sukcesów w innych obszarach; (3) otoczenie ludzi, którzy widzą cię szerzej niż przez PPU. Po 6—12 mies. zauważysz różnicę.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Praca z tożsamością wymaga 6—12 mies. konsekwentnej pracy. Liczy się trend, nie pojedynczy tydzień.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['lA1','lA2','lA3','lA4','lA5','lA6','lA7','lB1','lB2','lB3','lB4','lB5','lB6','lC1','lC2','lC3','lC4','lC5','lC6','m1','m2','m3','m4','m5','m6','m7','m8'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['st3','st4','st5','st6'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  window.pickedStage = null;
+}
+
+['postFusion','postMulti','postIam','postLapse'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_identity — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_identity";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  ['3','4','5','6'].forEach(function(code){
+    var el = document.getElementById('st' + code);
+    if (el && el.classList.contains('picked')) {
+      window.pickedStage = code;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

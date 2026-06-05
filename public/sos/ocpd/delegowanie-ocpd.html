@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · nauka delegowania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.gr-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.gr-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.gr-row { padding: 9px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 12px; align-items: flex-start; }
+.gr-row:first-of-type { border-top: none; }
+.gr-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; font-size: 18px; flex-shrink: 0; min-width: 28px; }
+.gr-body { flex: 1; }
+.gr-name { font-weight: 600; color: var(--bg); font-size: 13px; margin-bottom: 4px; }
+.gr-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.85); }
+
+.bel-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.bel-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.bel-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.bel-row.picked .bel-d { color: rgba(244,241,234,0.85) !important; }
+.bel-h { font-weight: 600; font-size: 13.5px; }
+.bel-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>nauka delegowania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Delegowanie — gdy <em>kontrola</em> zastępuje zaufanie</h1>
+  <p class="card-detail">Niechęć do delegowania w OCPD — kryterium DSM-5 #6. „Niechęć do delegowania zadań lub współpracy z innymi, dopóki ci inni nie poddadzą się dokładnie wykonywaniu rzeczy po jego myśli". Anthony Pinto, Helen Steinglass i wsp. (2014, „Capacity to delegate work and burnout in obsessive-compulsive personality disorder", Journal of Personality Disorders) — niemożność delegowania jest jednym z najsilniejszych predyktorów wypalenia w OCPD. Klasyczna kombinacja: schemat WYGÓROWANYCH STANDARDÓW + schemat MISTRUST (Brak Zaufania, Young 2003). Często ma korzenie w doświadczeniu, że „inni zawodzili" — co pacjent UOGÓLNIŁ do reguły. Mechanizm: próba delegowania uruchamia natychmiastowy LĘK: „nie zrobi tego dobrze", „będę musiała poprawiać", „w razie błędu to moja odpowiedzialność". Lęk redukuje się przez PRZEJĘCIE zadania — co potwierdza schemat („widzisz, lepiej samemu"). Z czasem zespół / partner uczą się BEZRADNOŚCI — i schemat wygląda na potwierdzony obiektywnie. Klasyczna pętla samowypełniającej się przepowiedni: „nikt nie potrafi" → przejmuję wszystko → inni przestają próbować → rzeczywiście nie potrafią → potwierdzenie schematu.</p>
+
+  <div class="gr-card">
+    <div class="gr-h">5 etapów dojrzewania delegowania (od kontroli do zaufania)</div>
+    <div class="gr-row">
+      <span class="gr-num">1.</span>
+      <div class="gr-body">
+        <div class="gr-name">DELEGOWANIE Z PEŁNĄ KONTROLĄ — instrukcje krok po kroku</div>
+        <div class="gr-cont">„Zrób X dokładnie tak: krok 1, krok 2, krok 3...". Zero swobody. Klasyczne dla OCPD jako pierwszy etap. Inni czują się traktowani jak roboty. Demotywuje.</div>
+      </div>
+    </div>
+    <div class="gr-row">
+      <span class="gr-num">2.</span>
+      <div class="gr-body">
+        <div class="gr-name">DELEGOWANIE Z CZĘSTYM SPRAWDZANIEM — co 30 minut</div>
+        <div class="gr-cont">„Zrób X. Pokaż mi za godzinę". Powrót co 30-60 min. „A jak to robisz?". Klasyczne dla OCPD - pseudodelegowanie. Inni odczuwają jako kontrolę.</div>
+      </div>
+    </div>
+    <div class="gr-row">
+      <span class="gr-num">3.</span>
+      <div class="gr-body">
+        <div class="gr-name">DELEGOWANIE Z REZULTATEM — wynik, NIE proces</div>
+        <div class="gr-cont">„Potrzebuję X gotowe do piątku, w takim formacie. Jak to zrobisz - twoja sprawa". Klasyczne ujęcie zdrowego delegowania. Konkretny wynik, swoboda metody. Po raz pierwszy szanuje autonomię.</div>
+      </div>
+    </div>
+    <div class="gr-row">
+      <span class="gr-num">4.</span>
+      <div class="gr-body">
+        <div class="gr-name">DELEGOWANIE Z ZAUFANIEM — bez sprawdzania w trakcie</div>
+        <div class="gr-cont">„Wiem, że to ogarniesz. Zgłaszaj się tylko, jeśli będziesz potrzebował pomocy". Niewracanie do zadania w trakcie. Klasyczna zmiana paradygmatyczna w OCPD. Wymaga wytrzymania niepewności.</div>
+      </div>
+    </div>
+    <div class="gr-row">
+      <span class="gr-num">5.</span>
+      <div class="gr-body">
+        <div class="gr-name">DELEGOWANIE Z AUTONOMIĄ — pełne przekazanie</div>
+        <div class="gr-cont">„To Twój obszar. Pokazujesz wyniki kwartalnie". Pełna autonomia. Klasyczne dla zdrowego liderowania. W OCPD - cel długoterminowy, możliwy po 12-24 mies. terapii.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🛡️</span><span class="element-text"><strong>Niechęć do delegowania jako regulacja LĘKU</strong>. Klasyczne dla OCPD. Próba delegowania uruchamia myśli: „nie zrobi tego dobrze", „będę musiała poprawiać", „w razie błędu to moja odpowiedzialność". Lęk redukuje się PRZEZ PRZEJĘCIE zadania. Mózg uczy się: „samemu = bezpiecznie, delegacja = ryzyko". Negatywne wzmocnienie. Po latach: wszystko na barkach pacjenta.</span></div>
+    <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Pętla samowypełniającej się przepowiedni</strong>. Klasyczne odkrycie. Pacjent z OCPD wierzy: „inni nie potrafią". Przejmuje zadania. Inni (zespół, partner, dzieci) przestają próbować — bo wiedzą, że pacjent przejmie. Z czasem rzeczywiście nie umieją (brak praktyki). Pacjent widzi „dowód" - i schemat się utrwala. To pacjent NIESWIADOMIE tworzy obraz, w który wierzy.</span></div>
+    <div class="element-row"><span class="element-icon">📊</span><span class="element-text"><strong>Niemożność delegowania = predyktor wypalenia</strong>. Pinto 2014 - empirycznie. Pacjenci z OCPD mają wyższe ryzyko wypalenia zawodowego, gdy nie delegują. Mechanizm: nadmierna ilość pracy + chroniczne zmęczenie + brak czasu na regenerację + utrata sensu („wszystko sama, nikt mi nie pomaga"). Po 5-15 latach: wypalenie, depresja, somatyzacja.</span></div>
+    <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Pierwsze eksperymenty na NISKIEJ STAWCE</strong>. Klasyczne narzędzie z protokołu CT-PD (Beck 2015). Zaczynaj od zadań niskiej stawki: zakupy, prosta rozmowa służbowa, drobny projekt. Pacjent NIE sprawdza wyniku w trakcie. Akceptuje wynik, jeśli „wystarczająco dobry". Po kilku takich doświadczeniach widzi: (a) inni potrafią, (b) jego standard nie był jedynym możliwym, (c) ma więcej czasu.</span></div>
+  </div>
+
+  <div class="frame-quote">„Pierwsze eksperymenty na zadaniach o NISKIEJ STAWCE (zakupy, prosta rozmowa służbowa, drobny projekt). Pacjent NIE sprawdza wyniku w trakcie, akceptuje wynik, jeśli jest „wystarczająco dobry". Po kilku takich doświadczeniach widzi, że (a) inni potrafią, (b) jego standard nie był jedynym możliwym, (c) ma więcej czasu. To paradygmatyczna zmiana - od „nikt nie zrobi tego dobrze jak ja" do „inni potrafią, choć inaczej"."<span class="frame-quote-attr">— Anthony Pinto, Helen Steinglass i wsp. (2014, Capacity to delegate work and burnout in obsessive-compulsive personality disorder, Journal of Personality Disorders)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: praca z delegowaniem w OCPD = stopniowa GRADACJA ZAUFANIA + akceptacja, że „inaczej ≠ gorzej". Klasyczne narzędzia: hierarchia zadań od niskiej do wysokiej stawki + delegowanie z REZULTATEM (NIE procesem) + brak sprawdzania w trakcie + akceptacja „wystarczająco dobrego" wyniku + praca ze schematem Mistrust (Schema Therapy). Empirycznie wsparte: ST (Bamelis 2014 RCT), Pinto 2014 (predyktor wypalenia), CT-PD (Beck 2015). 8-12 tyg. systematycznej praktyki = pierwsze trwałe zmiany. Klasyczne odkrycie: inni potrafią, choć INACZEJ.</div>
+
+  <div class="src">American Psychiatric Association (2013, Diagnostic and Statistical Manual of Mental Disorders, 5th ed., DSM-5) · Pinto, Steinglass, Greene, Weber, Simpson (2014, Capacity to delegate work and burnout in obsessive-compulsive personality disorder, Journal of Personality Disorders) · Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner''s Guide) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry) · Beck, Davis i Freeman (2015, Cognitive Therapy of Personality Disorders, 3rd ed.) · Maslach i Leiter (1997, The Truth About Burnout)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje przekonania o delegowaniu</div>
+  <h1 class="card-prompt">Które <em>przekonania</em> rozpoznajesz u siebie?</h1>
+  <p class="card-detail">8 typowych przekonań blokujących delegowanie w OCPD. Zaznacz te, które ROZPOZNAJESZ u siebie. Mapa pomoże zauważyć, że to PRZEKONANIA - NIE prawdy obiektywne. Każde przekonanie jest podtrzymywane przez schemat + pętlę samowypełniającej się przepowiedni.</p>
+
+  <div class="bel-grid">
+    <div class="bel-row" id="b1" onclick="pickBel('b1')">
+      <div class="bel-h">⚡ „Nikt nie zrobi tego TAK dobrze jak ja"</div>
+      <div class="bel-d">Klasyczne przekonanie OCPD. Połączenie schematu Wygórowanych Standardów + Mistrust. „Mój sposób jest jedyny dobry". Klasyczne — pacjent NIE WIDZI alternatywnych metod osiągnięcia tego samego rezultatu.</div>
+    </div>
+    <div class="bel-row" id="b2" onclick="pickBel('b2')">
+      <div class="bel-h">🔧 „Łatwiej zrobić samemu, niż tłumaczyć"</div>
+      <div class="bel-d">Klasyczne usprawiedliwienie nieprzekazywania. Krótkoterminowo: prawda. Długoterminowo: przeszkoda - „nigdy nie nauczę nikogo". Klasyczne dla OCPD - prefer immediate efficiency over long-term capacity building.</div>
+    </div>
+    <div class="bel-row" id="b3" onclick="pickBel('b3')">
+      <div class="bel-h">⚖️ „W razie błędu - to MOJA odpowiedzialność"</div>
+      <div class="bel-d">Niechęć do delegowania ze strachu przed konsekwencjami. „Jeśli pomyłka - ja stracę reputację". Klasyczne dla OCPD - hyper-odpowiedzialność.</div>
+    </div>
+    <div class="bel-row" id="b4" onclick="pickBel('b4')">
+      <div class="bel-h">🔁 „Wcześniej już ktoś mnie zawiódł"</div>
+      <div class="bel-d">Pierwsze złe doświadczenie zostało uogólnione do reguły. „Raz mnie kolega zawiódł - więc nie ma sensu próbować z innymi". Klasyczne dla schematu Mistrust (Young 2003).</div>
+    </div>
+    <div class="bel-row" id="b5" onclick="pickBel('b5')">
+      <div class="bel-h">🛑 „Inni nie traktują tego tak poważnie jak ja"</div>
+      <div class="bel-d">Klasyczne moralizowanie pracy. „Tylko ja DBAM o jakość". Inni są oceniani jako mniej zaangażowani, lekkomyślni, niesprawdzający. Klasyczne dla OCPD - sprzężenie z krytyką innych.</div>
+    </div>
+    <div class="bel-row" id="b6" onclick="pickBel('b6')">
+      <div class="bel-h">⏰ „W tym czasie mogłabym sama to zrobić"</div>
+      <div class="bel-d">Klasyczne odrzucenie myśli o delegacji. Krótkoterminowo prawda - przekazanie zadania = inwestycja czasu. Długoterminowo - inwestycja zwraca się 10x. Klasyczne dla OCPD - brak myślenia w długim horyzoncie.</div>
+    </div>
+    <div class="bel-row" id="b7" onclick="pickBel('b7')">
+      <div class="bel-h">😟 „Jeśli oddam zadanie, stracę wartość/poczucie kompetencji"</div>
+      <div class="bel-d">Tożsamość zlana z wykonywaniem. „Jeśli nie ja - to kim jestem?". Klasyczne dla OCPD i workaholizmu - praca jako tożsamość, delegacja jako utrata siebie.</div>
+    </div>
+    <div class="bel-row" id="b8" onclick="pickBel('b8')">
+      <div class="bel-h">🔍 „Jeśli oddam, i tak będę musiała sprawdzać"</div>
+      <div class="bel-d">Pseudodelegowanie. „Niby przekazałam, ale i tak monitoruję, sprawdzam, korekta. To samo robie sama". Klasyczne dla OCPD - delegowanie z pełną kontrolą = brak prawdziwego delegowania.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myObs" placeholder="Konkretnie: ile przekonań rozpoznajesz? Najsilniejsze? Czy widzisz, że to są PRZEKONANIA (założenia), NIE prawdy obiektywne? Skąd wzięły się w Twoim doświadczeniu (rodzic, wcześniejsza praca, pojedyncze złe doświadczenia)?" style="min-height: 110px;"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Zdolność delegowania — TERAZ</div>
+    <div class="scale-bounds"><span>0 — wszystko sama/sam</span><span>10 — pełna umiejętność</span></div>
+    <input type="range" class="scale-input" id="bDel" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bDelv">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: 5-8 chronicznych przekonań = klasyczny obraz OCPD. Pierwsza praca: ZAUWAŻYĆ przekonania jako PRZEKONANIA. Drugi krok: zauważyć pętlę samowypełniającej się przepowiedni - „inni nie potrafią" → przejmuję → inni nie ćwiczą → rzeczywiście nie potrafią. Klasyczne dla OCPD - to JA nieświadomie tworzę obraz, w który wierzę.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Pierwszy eksperyment delegacji</div>
+  <h1 class="card-prompt">Zaplanuj <em>jedno</em> delegowane zadanie niskiej stawki</h1>
+  <p class="card-detail">Klasyczny eksperyment z protokołu CT-PD (Beck 2015). Wybierz JEDNO zadanie niskiej stawki. Deleguj z REZULTATEM (NIE z procesem). NIE sprawdzaj w trakcie. Akceptuj wynik „wystarczająco dobry" - nawet jeśli inny niż Twój.</p>
+
+  <textarea class="thought-input" id="task" placeholder="① ZADANIE — wybierz drobne zadanie niskiej stawki, które obecnie robisz sama, choć ktoś inny mógłby. (np.: „zakupy spożywcze raz w tygodniu - mąż mógłby"; „rezerwacja stolika na kolację z teściami - córka 16 lat"; „odpisanie na e-mail klienta z podstawowym pytaniem - asystentka")." style="min-height: 100px;"></textarea>
+
+  <textarea class="thought-input" id="who" placeholder="② DO KOGO DELEGUJESZ — konkretna osoba. (np.: „mąż Marek"; „córka Hania"; „asystentka Anna")." style="min-height: 70px;"></textarea>
+
+  <textarea class="thought-input" id="result" placeholder="③ REZULTAT (NIE proces) — co konkretnie ma być wynikiem? Bez instrukcji jak. (np.: „zakupy: lista 15 produktów ma być w domu w sobotę do 14:00"; „rezerwacja: stolik dla 4 osób w restauracji włoskiej w piątek 19:00"; „e-mail: klient ma otrzymać profesjonalną odpowiedź na 3 jego pytania, do końca dnia")." style="min-height: 110px;"></textarea>
+
+  <textarea class="thought-input" id="protocol" placeholder="④ ZASADY EKSPERYMENTU — bez sprawdzania w trakcie. (np.: „NIE pytam mąża 'czy już byłeś po zakupy', NIE sprawdzam czy ma listę przy sobie, NIE poprawiam listy. Jeśli nie kupi czegoś - nie kupuje. Akceptuję wynik 'wystarczająco dobry' - nawet jeśli inny niż mój sposób")." style="min-height: 130px;"></textarea>
+
+  <textarea class="thought-input" id="evaluation" placeholder="⑤ EWALUACJA PO (po wykonaniu) — wróć tu po faktycznym eksperymencie. CO SIĘ STAŁO? Jak silny był lęk podczas niesprawdzania? Czy rezultat był OK? (np.: „pierwsze 3 godziny - silne parcie do zadzwonienia 'czy pamiętasz'; powstrzymałam się; mąż przyszedł z 14 z 15 produktów (pominął jeden); świat się nie zawalił, mogłam zająć się czymś innym; mąż widoczne docenienie zaufania")." style="min-height: 130px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch w OCPD przy pierwszej delegacji - SPRAWDZANIE w trakcie („tylko zapytam, jak idzie", „upewnię się, że nie zapomniał"). To NIE jest delegacja - to mikrokontrola w nowej szacie. Drugi typowy odruch: po wykonaniu zadania przez kogoś innego - korekta („zrobiłeś to OK, ale następnym razem zrób X"). Demotywuje. Klucz: AKCEPTACJA wyniku takim, jaki jest, jeśli jest „wystarczająco dobry".</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — protokół 12 tygodni</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> stopniowej budowy zaufania</h1>
+  <p class="card-detail">Praca z delegowaniem w OCPD wymaga DŁUGOTERMINOWEJ budowy zaufania (12-24 mies. dla trwałej zmiany schematu). Te cztery kroki tworzą strukturę pierwszych 12 tygodni. Klucz: gradacja stawki + brak sprawdzania w trakcie + akceptacja „inaczej" + ST z Mistrust.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — pierwsze 12 tygodni</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>TYDZIEŃ 1-3: HIERARCHIA + 1 ZADANIE NISKIEJ STAWKI TYGODNIOWO</strong>. Wypisz 10-15 zadań, które obecnie robisz sama, choć ktoś inny mógłby. Uszereguj od najniższej do najwyższej stawki. Deleguj 1 zadanie tygodniowo z dna hierarchii. Z rezultatem. Bez sprawdzania w trakcie. Po 3 tyg.: 3 udane delegacje. Pierwsze dowody dla schematu.</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>TYDZIEŃ 4-6: ŚREDNIA STAWKA + AKCEPTACJA „INACZEJ"</strong>. Po 3 tyg. niskiej stawki - przesunięcie wyżej. Klucz nowy: AKCEPTACJA, że ktoś zrobi INACZEJ, niż Ty by zrobiła. Inaczej ≠ gorzej. Ten sam wynik osiągnięty inną drogą. Klasyczna trudność OCPD - akceptacja alternatywnych metod osiągnięcia tego samego.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>TYDZIEŃ 7-9: DELEGOWANIE Z ZAUFANIEM — bez sprawdzania w trakcie</strong>. Po 6 tyg. - pełne zaufanie na delegowanych zadaniach. „Wiem, że to ogarniesz. Zgłaszaj się tylko, jeśli będziesz potrzebował pomocy". Niewracanie do zadania w trakcie. Pierwsze tygodnie: silny lęk i parcie do sprawdzania. Po 4-6 tyg: lęk maleje, drugiej osobie dajesz większą autonomię.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>TYDZIEŃ 10-12+: PRACA Z MISTRUST SCHEMA — Schema Therapy</strong>. Z terapeutą ST. Praca ze schematem Mistrust. Skąd przekonanie „nie ufam"? Wczesne doświadczenia (rodzeństwo, rodzice). Imagery rescripting scen, gdzie zaufanie zostało zawiedzione. Plus: ćwiczenie nowego doświadczenia - „inni potrafią mnie zawieść CZASEM, ale w większości są godni zaufania". Trwała zmiana 12-24 mies.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: na którym kroku zaczynasz w nadchodzącym tygodniu? Konkret: które zadanie niskiej stawki delegujesz w nadchodzących 7 dniach? Komu? Z jakim rezultatem? Jak będziesz zarządzać lękiem przy niesprawdzaniu w trakcie?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: po 12 tyg. systematycznej praktyki delegacji pacjenci raportują (Pinto 2014, Bamelis 2014 RCT, Beck 2015): redukcja godzin pracy o 20-30%, wzrost zaufania do innych, lepsze relacje zawodowe (zespół docenia autonomię), zmniejszenie objawów wypalenia, paradoks empiryczny: jakość PRZEKAZANYCH zadań = ta sama lub lepsza (różnorodność metod). Trwała zmiana 12-24 mies. Klucz: schemat Mistrust ulega zmianie poprzez DOSWIADCZENIE - „inni potrafią, choć inaczej".</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>delegowanie</em> staje się dostępne?</h1>
+  <p class="card-detail">Wróć tu po refleksji nad przekonaniami (punkt 2) i zaplanowaniu eksperymentu (punkt 3). Mierzymy zdolność delegowania. Pierwsza refleksja zwykle daje +1 do +2 punkty. Trwała zmiana wymaga 12-24 mies. systematycznej praktyki + ST z Mistrust.</p>
+
+  <div class="scale">
+    <div class="scale-title">Zdolność delegowania — po refleksji</div>
+    <div class="scale-bounds"><span>0 — wszystko sama/sam</span><span>10 — pełna umiejętność</span></div>
+    <input type="range" class="scale-input" id="aDel" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Wartość</span><span id="aDelv">5</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz pętlę samowypełniającej się przepowiedni („inni nie potrafią" → przejmuję → inni nie ćwiczą → rzeczywiście nie potrafią)? Co byłoby Twoim pierwszym konkretnym delegowaniem niskiej stawki w nadchodzących 7 dniach?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: niemożność delegowania w OCPD wymaga GRADACJI ZAUFANIA + akceptacji „inaczej ≠ gorzej". Klasyczne narzędzia: hierarchia zadań od niskiej do wysokiej stawki + delegowanie z REZULTATEM (NIE procesem) + brak sprawdzania w trakcie + akceptacja „wystarczająco dobrego" wyniku + ST z Mistrust schema. Empirycznie wsparte: ST (Bamelis 2014 RCT), Pinto 2014 (predyktor wypalenia). 12-24 mies. systematycznej praktyki = trwała zmiana. Klasyczne odkrycie: inni potrafią, choć INACZEJ.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Delegowanie w OCPD: <em>kryterium DSM-5 #6 - „niechęć do delegowania, dopóki inni nie poddają się dokładnie wykonywaniu rzeczy po jego myśli"</em>. Mechanizm: schemat Wygórowanych Standardów + Mistrust + lęk → przejęcie zadania → ulga → pętla. <strong>Pętla samowypełniającej się przepowiedni: „inni nie potrafią" → przejmuję wszystko → inni przestają próbować → rzeczywiście nie potrafią → potwierdzenie schematu</strong>. Praca: gradacja zaufania + delegowanie z REZULTATEM + brak sprawdzania w trakcie + akceptacja „inaczej ≠ gorzej". Pinto 2014: niemożność delegowania = predyktor wypalenia w OCPD.</div>
+  </div>
+
+  <div class="src">American Psychiatric Association (2013, Diagnostic and Statistical Manual of Mental Disorders, 5th ed., DSM-5) · Pinto, Steinglass, Greene, Weber, Simpson (2014, Capacity to delegate work and burnout in obsessive-compulsive personality disorder, Journal of Personality Disorders) · Young, Klosko i Weishaar (2003, Schema Therapy: A Practitioner''s Guide) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry) · Beck, Davis i Freeman (2015, Cognitive Therapy of Personality Disorders, 3rd ed.) · Maslach i Leiter (1997, The Truth About Burnout)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickBel(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bDel').value || 0, 10);
+    var aU = parseInt(document.getElementById('aDel').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Zdolność delegowania wzrosła o ' + dU + ' — masz teraz pierwszy plan delegacji niskiej stawki. Klucz: gradacja zaufania + brak sprawdzania w trakcie + akceptacja „inaczej ≠ gorzej".';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszym kontakcie. Praca z delegowaniem wymaga miesięcy. Schemat „nikt tego nie zrobi tak dobrze jak ja" ma głębokie korzenie.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że schemat „muszę kontrolować" jest tak głęboki, że trudno go zauważyć. Pierwszy krok: jedno zadanie niskiej stawki delegowane bez sprawdzania w trakcie.';
+    else msg = 'Spadek — czasem rozważanie delegowania aktywuje silny lęk („zniszczy projekt", „w razie błędu to moja odpowiedzialność"). To DOWÓD siły schematu. Praca: stopniowo, niska stawka.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.bel-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_delegowanie_ocpd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_delegowanie_ocpd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bDel','aDel'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

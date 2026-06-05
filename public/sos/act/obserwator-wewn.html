@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Obserwator wewnętrzny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --mountain: #5a6575; --mountain-deep: #3a4555;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(90,101,117,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--mountain); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--mountain); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mountain); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--mountain); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--mountain); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(90,101,117,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--mountain); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--mountain); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — mountain silver === */
+.frame-card { 
+  background: linear-gradient(180deg, #3a4555 0%, #1f2530 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ JA OBSERWUJĄCE"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "🏔"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.12; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.layer-list {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.layer-row {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 9px 12px;
+  display: flex; align-items: baseline; gap: 12px;
+}
+.layer-num { font-family: 'Fraunces', serif; font-size: 18px; color: var(--warm); font-weight: 700; min-width: 18px; }
+.layer-name { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm); font-weight: 700; min-width: 70px; }
+.layer-desc { font-size: 12.5px; color: rgba(244,241,234,0.85); line-height: 1.4; flex: 1; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mountain); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === STEP CARDS — 4 LAYERS === */
+.step-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.step-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--mountain);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.step-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.step-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--mountain); line-height: 1; min-width: 24px; }
+.step-name { font-size: 13px; font-weight: 700; flex: 1; letter-spacing: 0.04em; }
+.step-time { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.step-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 4px; }
+.step-howto strong { color: var(--ink); font-weight: 700; }
+.step-question {
+  font-size: 11.5px; color: var(--mountain-deep);
+  font-style: italic;
+  font-weight: 600;
+  padding: 6px 10px;
+  background: rgba(90,101,117,0.08);
+  border-radius: 6px;
+}
+.step-question::before { content: "❓ "; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--mountain);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mountain); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mountain); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(90,101,117,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--mountain); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--mountain); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Obserwator wewnętrzny</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Kim jest <em>ten kto patrzy</em>?</h1>
+    <p class="card-detail">Rozbudowana medytacja <em>ja kontekstualnego</em> z nurtu <strong>ACT</strong> (terapia akceptacji i zaangażowania). Systematycznie obserwujesz różne <strong>warstwy doświadczenia</strong>: ciało, emocje, myśli, role. W każdej zauważasz <em>zmienność treści i stałość obserwatora</em>. Budujesz poczucie „ja", które jest większe niż jakakolwiek treść umysłu.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">4 warstwy doświadczenia</div>
+      
+      <div class="layer-list">
+        <div class="layer-row">
+          <span class="layer-num">1</span>
+          <span class="layer-name">Ciało</span>
+          <span class="layer-desc">doznania, oddech, napięcie, ciepło</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">2</span>
+          <span class="layer-name">Emocje</span>
+          <span class="layer-desc">uczucia, nastrój, ich zmienność</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">3</span>
+          <span class="layer-name">Myśli</span>
+          <span class="layer-desc">strumień świadomości, narracje</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">4</span>
+          <span class="layer-name">Role</span>
+          <span class="layer-desc">tożsamości, funkcje, etykiety społeczne</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Wszystko, co widzisz wewnątrz — ciało, emocje, myśli, role — <em>zmieniło się</em>. Ale <strong>ktoś</strong> to widział wczoraj. <strong>Ktoś</strong> to widzi teraz. Ten ktoś jest <em>tobą bardziej niż cokolwiek z tych warstw</em>."
+      <span class="frame-quote-attr">— Steven Hayes (1999)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: w fuzji jesteś treścią. „Jestem zmęczony/a" = utożsamiasz się ze stanem ciała. „Jestem złym ojcem" = utożsamiasz się z rolą + oceną. Self-as-context buduje <em>nadbudówkę</em>: „Zauważam zmęczenie. Zauważam myśl, że jestem złym ojcem". Ten <strong>obserwator</strong> nie może być zraniony przez treści — bo ich zawiera, a nie nimi jest.</div>
+    
+    <div class="src">Hayes, Strosahl, Wilson (1999, ACT — An Experiential Approach)</div>
+  </section>
+
+  <!-- 2: DIAGNOSIS -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Twoja warstwa dominująca</div>
+    <h1 class="card-prompt">Z czym <em>zwykle</em> się utożsamiasz?</h1>
+    <p class="card-detail">Każda osoba ma <strong>warstwę dominującą</strong> — z nią najbardziej się utożsamia, w niej najczęściej znika. Niektórzy „mieszkają" w ciele, inni w myślach, inni w rolach. Rozpoznanie tej warstwy = pierwszy krok do dystansu.</p>
+    
+    <div class="examples-h">Z którą warstwą najczęściej się utożsamiam? (jaką oznaczam jako „ja")</div>
+    <textarea class="thought-input" id="dominant" placeholder='np. „Z myślami — ciągle analizuję, planuję, oceniam. Czuję się przede wszystkim »myślicielem«." Albo: „Z rolami — »jestem matką, partnerką, pracowniczką«. Trudno mi powiedzieć kim jestem »po prostu«."' rows="3"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Jak silny mam dostęp do „obserwatora"?</div>
+      <div class="scale-label"><span>0 — brak</span><span>10 — silny</span></div>
+      <input type="range" min="0" max="10" value="3" class="scale-input" id="access" oninput="updateAccess()">
+      <div class="scale-readout"><span id="accessVal">3</span><span class="unit"> / 10</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="accessVerdict">
+      Dostęp <span class="num">3/10</span> — <strong>słaby kontakt z obserwatorem</strong>. To częsty stan. Medytacja z 4 warstwami zacznie budować ten dostęp. Powtarzalność jest kluczowa.
+    </div>
+    
+    <div class="examples-h">Kiedy ostatnio czułem/am, że „jestem czymś więcej niż myśli/emocje"?</div>
+    <textarea class="thought-input" id="lastTime" placeholder='np. „Na medytacji rok temu — przez 30 sekund, czułem »ciszę za myślami«. Albo: na spacerze — patrzyłem na zachód słońca i przez chwilę nie było we mnie żadnej narracji."' rows="3"></textarea>
+    
+    <div class="examples-h">Co najbardziej blokuje mi dostęp do obserwatora?</div>
+    <textarea class="thought-input" id="block" placeholder='np. „Ciągłe myślenie. Ekran w ręce co 30 sekund. Brak ciszy. Niewiara, że »obserwator« istnieje."' rows="3"></textarea>
+  </section>
+
+  <!-- 3: PROTOCOL — 4 LAYER MEDITATION -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Medytacja 15 minut</div>
+    <h1 class="card-prompt">4 warstwy <em>kolejno</em></h1>
+    <p class="card-detail">Pełna medytacja ~15 minut. Usiądź wygodnie, oczy zamknięte. Każda warstwa ~3 minuty. <strong>W każdej zadajesz to samo pytanie</strong>: „KTO to obserwuje?". Nie szukasz odpowiedzi słownej — czekasz na <em>doświadczenie obserwatora</em>.</p>
+    
+    <div class="step-list">
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">1</span>
+          <span class="step-name">Warstwa 1: Ciało</span>
+          <span class="step-time">~ 3 min</span>
+        </div>
+        <div class="step-howto"><strong>Skanuj od stóp do głowy</strong>. Napięcia, ciepło, pulsowanie, oddech. Twoje ciało zmieniło się od dzieciństwa — wzrastało, chudło, chorowało.</div>
+        <div class="step-question">Twoje ciało się zmieniło — kto je obserwował wtedy i teraz?</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">2</span>
+          <span class="step-name">Warstwa 2: Emocje</span>
+          <span class="step-time">~ 3 min</span>
+        </div>
+        <div class="step-howto"><strong>Co czujesz teraz?</strong> Lęk, smutek, spokój, ciekawość. Emocje zmieniały się tysiące razy w twoim życiu — od dziecięcej radości do dorosłej melancholii.</div>
+        <div class="step-question">Wszystkie te emocje przeszły — kto je przyjmował i puszczał?</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">3</span>
+          <span class="step-name">Warstwa 3: Myśli</span>
+          <span class="step-time">~ 3 min</span>
+        </div>
+        <div class="step-howto"><strong>Obserwuj strumień myśli</strong>. Plany, oceny, wspomnienia, krytyka. Myśli zmieniają się co kilka sekund — milion myśli przemknęło przez twój umysł od rana.</div>
+        <div class="step-question">Myśli płyną i znikają — kto je ogląda jak film?</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">4</span>
+          <span class="step-name">Warstwa 4: Role</span>
+          <span class="step-time">~ 3 min</span>
+        </div>
+        <div class="step-howto"><strong>Jakie role pełnisz?</strong> Dziecko, rodzic, pracownik, partner, przyjaciel. Role zmieniały się — dziecko stało się dorosłym, student pracownikiem. Jutro jeszcze inne.</div>
+        <div class="step-question">Wszystkie te role przyszły i odejdą — kto je pełnił?</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">5</span>
+          <span class="step-name">Synteza: TY — ja obserwujące</span>
+          <span class="step-time">~ 3 min</span>
+        </div>
+        <div class="step-howto"><strong>W każdej warstwie odpowiedź jest ta sama</strong>: TY. Stała przestrzeń świadomości, w której zachodzą wszystkie zmiany. <em>Ciało zmienia się — ty obserwujesz. Myśli płyną — ty obserwujesz. Role się zmieniają — ty obserwujesz</em>.</div>
+        <div class="step-question">Czy potrafisz <em>poczuć</em> tego obserwatora — choćby na 5 sekund?</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: obserwator nie ma cech — nie jest „dobry" ani „spokojny". Jest <em>tylko obecnością</em>, która widzi treści. Cechy (lęk, spokój, mądrość) to dalej treści. Obserwator to <strong>to, co widzi treści</strong> — i samo nie jest treścią. Trudne pojęciowo, oczywiste doświadczeniowo. Powtarzaj — przyjdzie.</div>
+  </section>
+
+  <!-- 4: PRACTICE — REFLECTION -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Po medytacji</div>
+    <h1 class="card-prompt">Co <em>zauważyłem/am</em>?</h1>
+    <p class="card-detail">Wykonałeś/aś medytację? Zapisz obserwacje z każdej warstwy. <strong>Konkretnie</strong> — bo abstrakcyjne odpowiedzi („było OK") nie utrwalają doświadczenia. Detale = pamięć ciała.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Notatki z 15 minut</div>
+      
+      <div class="commit-prompt-label">Warstwa ciała — co zauważyłem/am?</div>
+      <textarea class="thought-input" id="bodyObs" placeholder='np. „Napięcie w plecach, ciepło w dłoniach, oddech głębszy niż zwykle. Ciało starsze niż 5 lat temu — i ten sam obserwator je widział."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Warstwa emocji — co zauważyłem/am?</div>
+      <textarea class="thought-input" id="emoObs" placeholder='np. „Lekki niepokój przed snem, ciekawość przy ćwiczeniu, smutek w tle. Emocje przeleciały jak chmury — pojawiały się i znikały."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Warstwa myśli — co zauważyłem/am?</div>
+      <textarea class="thought-input" id="thoughtObs" placeholder='np. „Plany na jutro, oceny »czy robię ćwiczenie dobrze«, wspomnienia z dzieciństwa. Myśli przeszły szybciej niż się spodziewałem/am."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Warstwa ról — co zauważyłem/am?</div>
+      <textarea class="thought-input" id="roleObs" placeholder='np. „Dominuje rola »pracownika« — tym najczęściej się definiuję. »Przyjaciel« w tle. »Dziecko własnych rodziców« — kiedyś dominująca, teraz cicha."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Czy poczułem/am obserwatora? Choć na chwilę?</div>
+      <textarea class="thought-input" id="observerFelt" placeholder='np. „Tak, na 5-10 sekund — poczucie cichej przestrzeni za wszystkimi warstwami. Spokój nie z treści, ale z bycia świadomym treści."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Pułapka</strong>: szukanie obserwatora jako „kolejnej rzeczy". To nie obiekt do znalezienia — to <em>pozycja, z której patrzysz</em>. Jeśli czujesz, że „nie znalazłeś", zauważ: <strong>kto czuje, że nie znalazł?</strong> Ten ktoś — to obserwator. Już go masz. Trudność polega tylko na zauważeniu.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Codzienna higiena</div>
+    <h1 class="card-prompt">Pytanie <em>w ciągu dnia</em></h1>
+    <p class="card-detail">Pełna 15-minutowa medytacja — raz w tygodniu. <strong>W ciągu dnia — krótkie pytanie</strong>: „Kto to zauważa?". 5 sekund. Robi cuda przy wciąganiu w treść (silna emocja, krytyka, ruminacja).</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój plan praktyki</div>
+      
+      <div class="commit-prompt-label">Pełna medytacja (15 min) — kiedy w tygodniu?</div>
+      <textarea class="thought-input" id="weeklySession" placeholder='np. „Niedziela 8:00 rano, przed śniadaniem. Spokojne miejsce, bez telefonu."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Krótkie pytanie w ciągu dnia (5s) — kiedy?</div>
+      <textarea class="thought-input" id="dailyCue" placeholder='np. „Gdy łapię się na silnej emocji lub ruminacji — »Kto to zauważa?«. Krótka pauza, oddech, dalej."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Wariant ćwiczenia, który mi pasuje</div>
+      <textarea class="thought-input" id="variant" placeholder='np. „Wersja wzrokowa — wyobrażam sobie siebie na szczycie góry, obserwującego dolinę myśli." Albo: „Wersja dźwiękowa — myśli jak dźwięki, słucham bez reagowania."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Reguła praktyki</div>
+    <div class="term-note">
+      <strong>Co tydzień</strong> — 15-minutowa medytacja z 4 warstwami<br>
+      <strong>Codziennie</strong> — kilkukrotnie pytanie „Kto to zauważa?" (5s)<br>
+      <strong>W kryzysie</strong> — wracanie do warstwy ciała → emocji → myśli → obserwatora<br>
+      <strong>Po 3 miesiącach</strong> — sprawdź: czy łatwiej znajdujesz obserwatora?
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Hayesa</div>
+      <div class="repeat-body">Obserwator <em>nie ocenia</em>, nie potrzebuje, nie cierpi. <strong>Po prostu zauważa</strong>. Im częściej do niego wracasz, tym mniej cię definiują przelotne treści. To nie ucieczka od emocji — to <em>przestrzeń, w której emocje mogą bezpiecznie istnieć</em>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateAccess();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    ['dominant','lastTime','block','bodyObs','emoObs','thoughtObs','roleObs','observerFelt','weeklySession','dailyCue','variant'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('access').value = 3;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function updateAccess() {
+  const v = parseInt(document.getElementById('access').value);
+  document.getElementById('accessVal').textContent = v;
+  
+  const verdict = document.getElementById('accessVerdict');
+  if (v >= 8) {
+    verdict.innerHTML = `Dostęp <span class="num">${v}/10</span> — <strong>silny dostęp</strong>. Rzadkie u osób bez długiej praktyki kontemplacyjnej. Sprawdź, czy nie jest to dysocjacja — obserwator z ACT pozwala czuć emocje z dystansu, nie zamiast nich.`;
+  } else if (v >= 6) {
+    verdict.innerHTML = `Dostęp <span class="num">${v}/10</span> — <strong>dobry dostęp</strong>. Masz nawyk obserwowania siebie. Praktyka pogłębi to do trudniejszych sytuacji (silne emocje, kryzys).`;
+  } else if (v >= 4) {
+    verdict.innerHTML = `Dostęp <span class="num">${v}/10</span> — <strong>średni dostęp</strong>. Czasem czujesz obserwatora, czasem znikasz w treściach. Regularna praktyka stabilizuje ten dostęp.`;
+  } else if (v >= 2) {
+    verdict.innerHTML = `Dostęp <span class="num">${v}/10</span> — <strong>słaby kontakt z obserwatorem</strong>. To częsty stan. Medytacja z 4 warstwami zacznie budować ten dostęp. Powtarzalność jest kluczowa.`;
+  } else {
+    verdict.innerHTML = `Dostęp <span class="num">${v}/10</span> — <strong>brak kontaktu</strong>. Niemal stale w treści — myśli, emocji, ról. <em>To nie problem</em> — to punkt startowy. Pierwsze ćwiczenie pokaże ci, że obserwator istnieje. Reszta to powtarzanie.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_obserwator_wewn";
+
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

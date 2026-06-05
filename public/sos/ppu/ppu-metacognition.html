@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Metapoznanie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === Metacognition specific === */
+.meta-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.meta-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.meta-icon { font-size: 22px; line-height: 1; }
+.meta-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.meta-q { font-size: 12px; color: var(--ink-mute); font-style: italic; margin-bottom: 6px; }
+
+.bear-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.bear-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.bear-q { font-family: 'Fraunces', serif; font-size: 16px; color: var(--bg); font-style: italic; margin-bottom: 8px; }
+.bear-row { padding: 4px 0; font-size: 12.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.bear-row strong { color: var(--bg); }
+.bear-row em { color: var(--sage); font-style: italic; }
+
+.flag-card {
+  background: rgba(201,165,114,0.2); border-left: 3px solid var(--warm);
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.flag-h {
+  font-family: 'Fraunces', serif; font-size: 12.5px;
+  font-weight: 700; color: #8a6a2a; margin-bottom: 4px;
+}
+.flag-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.flag-body strong { color: var(--ink); font-weight: 600; }
+
+.dm-card {
+  background: rgba(184,197,168,0.2); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.dm-h {
+  font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600;
+  color: var(--sage-deep); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.dm-step {
+  display: flex; gap: 12px; margin-bottom: 6px;
+  font-size: 12.5px; line-height: 1.5; color: var(--ink-soft);
+}
+.dm-num {
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px;
+  color: var(--sage-deep); flex-shrink: 0; width: 20px;
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Metapoznanie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============ KROK 1 — Wprowadzenie ============ -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Problem to <em>nie myśl</em> — to <em>myśl o myśli</em></h1>
+    <p class="card-detail">Adrian Wells (twórca terapii metapoznawczej, MCT) i wcześniej Daniel Wegner (eksperyment "white bear") pokazali, że <strong>tłumienie</strong> niechcianych myśli paradoksalnie je <em>wzmacnia</em>. W problematycznym używaniu pornografii (PPU) typowy obraz wygląda tak: pojawia się myśl seksualna, osoba zamiast pozwolić jej przepłynąć — <em>tłumi ją</em>, <em>monitoruje umysł czy wróci</em>, <em>analizuje, co znaczy</em>. Każda z tych reakcji to nie problem z myślą, tylko <strong>metaproblem</strong>: nieprawidłowa relacja z myśleniem o myślach.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Trzy poziomy poznania</div>
+      <div class="element-row">
+        <span class="element-icon">💭</span>
+        <span class="element-text"><strong>Myśl pierwsza</strong> — np. "atrakcyjna postać"; "mam ochotę"; "wyobraź sobie X". Treść normalna, dzieje się każdemu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧠</span>
+        <span class="element-text"><strong>Metamyśl</strong> — myśl <em>o</em> myśli pierwszej: "to znaczy, że jestem zboczony/a", "muszę kontrolować swój umysł", "te myśli są niebezpieczne".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌀</span>
+        <span class="element-text"><strong>Reakcja</strong> — działanie wynikające z metamyśli: tłumienie, monitorowanie umysłu, analizowanie, sięganie po PPU "by sprawdzić" lub "by zaspokoić i zakończyć".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚡</span>
+        <span class="element-text"><strong>Paradoks</strong> — im bardziej tłumisz/monitorujesz, tym częściej myśl wraca i tym bardziej "ważna" się staje. To pętla, nie rozwiązanie.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Nie próbuj nie myśleć o białym niedźwiedziu. Im bardziej próbujesz, tym częściej go widzisz. Problem nie leży w niedźwiedziu — leży w próbie nie myślenia."
+      <span class="frame-quote-attr">— parafraza po Danielu Wegnerze („Ironic processes of mental control", 1994)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: praca metapoznawcza w PPU jest szczególnie ważna, gdy obraz przypomina <em>OCD</em> (zaburzenie obsesyjno-kompulsywne) — natrętne myśli seksualne + intensywne tłumienie + analizowanie. Dla części osób z PPU "natrętne myśli seksualne" są tak naprawdę POCD (pedophiliae OCD), nie parafilią — leczenie wtedy to ERP, nie terapia uzależnień. Różnicowanie ma duże znaczenie kliniczne.</div>
+
+    <div class="src">Wells (2009, „Metacognitive Therapy for Anxiety and Depression"); Wegner (1989, „White Bears and Other Unwanted Thoughts"); Wegner (1994, „Ironic processes of mental control"); Williams &amp; Farris (2011, „Sexual Obsessions in OCD" — POCD); Olatunji i in. (2013, differential POCD vs PPU); zastosowanie do compulsive sexual behavior: Hall (2013).</div>
+  </section>
+
+  <!-- ============ KROK 2 — Audyt metaprzekonań ============ -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoje metaprzekonania</div>
+    <h1 class="card-prompt">Sprawdź <em>metamyśli</em> o myślach seksualnych</h1>
+    <p class="card-detail">Trzy typy metaprzekonań (Wells) napędzają cykl PPU u osób z dużą komponentą myśli natrętnych. Zaznacz, które rozpoznajesz jako swoje.</p>
+
+    <div class="meta-card">
+      <div class="meta-h">
+        <span class="meta-icon">⚠️</span>
+        <span class="meta-name">Niebezpieczeństwo myśli</span>
+      </div>
+      <div class="meta-q">Przekonanie, że <em>same myśli</em> są niebezpieczne, nieczyste, znaczące moralnie. "Mieć taką myśl = być takim".</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="d1" onclick="this.classList.toggle('picked')">"Te myśli oznaczają, że jestem zboczony/a"</button>
+        <button type="button" class="example-chip" id="d2" onclick="this.classList.toggle('picked')">"Mam taką myśl, więc taki jestem/am"</button>
+        <button type="button" class="example-chip" id="d3" onclick="this.classList.toggle('picked')">"Same myśli są grzechem"</button>
+        <button type="button" class="example-chip" id="d4" onclick="this.classList.toggle('picked')">"Jeśli o tym myślę, na pewno to zrobię"</button>
+      </div>
+      <div class="scale">
+        <div class="scale-label"><span>Siła tej rodziny przekonań</span><span></span></div>
+        <input type="range" class="scale-input" id="m1" min="0" max="10" step="1" value="5" data-default="5">
+        <div class="scale-readout"><span>0 = obca</span><span id="m1val">5</span></div>
+      </div>
+    </div>
+
+    <div class="meta-card">
+      <div class="meta-h">
+        <span class="meta-icon">🎮</span>
+        <span class="meta-name">Konieczność kontroli</span>
+      </div>
+      <div class="meta-q">Przekonanie, że <em>muszę kontrolować</em> przepływ myśli. "Powinno się dać tłumić niechciane myśli — moja niemożność jest dowodem słabości".</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="d5" onclick="this.classList.toggle('picked')">"Muszę je tłumić"</button>
+        <button type="button" class="example-chip" id="d6" onclick="this.classList.toggle('picked')">"Powinno się dać kontrolować umysł"</button>
+        <button type="button" class="example-chip" id="d7" onclick="this.classList.toggle('picked')">"Moja niemoc nad myślami jest słabością"</button>
+        <button type="button" class="example-chip" id="d8" onclick="this.classList.toggle('picked')">"Jeśli wracają, robię coś źle"</button>
+      </div>
+      <div class="scale">
+        <div class="scale-label"><span>Siła tej rodziny przekonań</span><span></span></div>
+        <input type="range" class="scale-input" id="m2" min="0" max="10" step="1" value="5" data-default="5">
+        <div class="scale-readout"><span>0 = obca</span><span id="m2val">5</span></div>
+      </div>
+    </div>
+
+    <div class="meta-card">
+      <div class="meta-h">
+        <span class="meta-icon">🔍</span>
+        <span class="meta-name">Konieczność monitorowania</span>
+      </div>
+      <div class="meta-q">Przekonanie, że <em>muszę śledzić</em> swój umysł — sprawdzać, czy myśli wracają, czy są nowe, czy się zmieniają. "Tylko tak utrzymam czujność".</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="d9" onclick="this.classList.toggle('picked')">"Muszę sprawdzać, co przelatuje przez głowę"</button>
+        <button type="button" class="example-chip" id="d10" onclick="this.classList.toggle('picked')">"Muszę wiedzieć, dlaczego ta myśl wraca"</button>
+        <button type="button" class="example-chip" id="d11" onclick="this.classList.toggle('picked')">"Bez monitorowania będzie tylko gorzej"</button>
+        <button type="button" class="example-chip" id="d12" onclick="this.classList.toggle('picked')">"Analiza myśli mnie ochroni"</button>
+      </div>
+      <div class="scale">
+        <div class="scale-label"><span>Siła tej rodziny przekonań</span><span></span></div>
+        <input type="range" class="scale-input" id="m3" min="0" max="10" step="1" value="5" data-default="5">
+        <div class="scale-readout"><span>0 = obca</span><span id="m3val">5</span></div>
+      </div>
+    </div>
+
+    <div class="flag-card">
+      <div class="flag-h">⚠️ Sygnał ostrzegawczy: różnicowanie POCD vs PPU</div>
+      <div class="flag-body">Jeśli twoje myśli mają treść <strong>ego-dystoniczną</strong> (np. pedofilną, kazirodczą — głęboko sprzeczne z twoimi wartościami) i wywołują <strong>silny lęk</strong> oraz kompulsywne sprawdzanie ("czy się podnieciłem/am?", "czy to znaczy, że jestem taki/a?") — to obraz <em>OCD seksualnego</em> (POCD), nie PPU. Leczenie: ERP (Exposure &amp; Response Prevention), nie programy CBT-PPU. Skonsultuj się z terapeutą znającym OCD.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła dominanty</strong>: rodzina z najwyższym wynikiem (≥7) jest <em>twoim głównym blokerem metapoznawczym</em>. To z nią pracujesz w pierwszej kolejności w kroku 4. Jeśli wszystkie ≤4 — metapoznanie nie jest twoim głównym mechanizmem; pracujesz raczej z aktywacją behawioralną i regulacją afektu.</div>
+  </section>
+
+  <!-- ============ KROK 3 — Detached Mindfulness ============ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — Detached Mindfulness</div>
+    <h1 class="card-prompt">Naucz się <em>oderwanej obserwacji</em></h1>
+    <p class="card-detail"><strong>Detached Mindfulness</strong> (DM) to centralna technika MCT (Wells). Nie jest medytacją mindfulness w stylu MBSR — jest <em>specyficznie</em> sposobem pracy z myślami: nie walczysz, nie potwierdzasz, nie analizujesz, nie sprawdzasz. <em>Tylko zauważasz</em>, że myśl jest, i pozwalasz jej istnieć w tle.</p>
+
+    <div class="bear-card">
+      <div class="bear-h">Eksperyment z białym niedźwiedziem (Wegner, 1987)</div>
+      <div class="bear-q">"Nie myśl o białym niedźwiedziu przez 5 minut. Liczę, ile razy ci się to nie uda."</div>
+      <div class="bear-row"><strong>Wynik</strong>: <em>średnio 7 razy na minutę</em> myśl wraca. Tłumienie aktywnie ją wzmacnia.</div>
+      <div class="bear-row"><strong>Mechanizm</strong>: by tłumić myśl X, mózg musi <em>monitorować</em>, czy X nie wraca — czyli ciągle myśli o X.</div>
+      <div class="bear-row"><strong>Wniosek dla PPU</strong>: tłumienie myśli seksualnych nie pomaga; monitorowanie ich nie ochrania. <em>Oderwana obserwacja</em> przerywa pętlę.</div>
+    </div>
+
+    <div class="dm-card">
+      <div class="dm-h">🪶 Detached Mindfulness — protokół Wellsa (60 sekund)</div>
+      <div class="dm-step">
+        <span class="dm-num">1.</span>
+        <span><strong>Zauważ</strong> — myśl pojawia się. Nie udawaj, że jej nie ma.</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">2.</span>
+        <span><strong>Nazwij neutralnie</strong> — "myśl" lub "obraz". Bez emocjonalnego ładunku — nie "okropna myśl", "dziwna myśl", tylko "to jest myśl".</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">3.</span>
+        <span><strong>Nie reaguj</strong> — nie tłumisz, nie odpychasz, nie analizujesz, nie sprawdzasz, czy zostanie. Nic nie robisz.</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">4.</span>
+        <span><strong>Wróć do tego, co robiłeś/aś</strong> — myśl została z tyłu. Możesz wracać uwagą do działania świata zewnętrznego.</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">5.</span>
+        <span><strong>Powtórz</strong>, gdy myśl wraca. Każdy powrót jest <em>okazją do treningu</em>, nie problemem.</span>
+      </div>
+    </div>
+
+    <div class="examples-h">Twoja typowa intruzyjna myśl seksualna</div>
+    <textarea class="thought-input" id="ownIntr" placeholder='np. "Co jeśli ta postać jest niepełnoletnia?"; "Wyobrażam sobie X — co to znaczy?"; "Czuję podniecenie, gdy widzę Y — czy jestem taki/a?"' rows="2"></textarea>
+
+    <div class="examples-h">Co zwykle robisz, gdy ta myśl się pojawia?</div>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="rT" onclick="this.classList.toggle('picked')">Tłumię, próbuję wymazać</button>
+      <button type="button" class="example-chip" id="rA" onclick="this.classList.toggle('picked')">Analizuję, co znaczy</button>
+      <button type="button" class="example-chip" id="rC" onclick="this.classList.toggle('picked')">Sprawdzam ciało (czy reaguję)</button>
+      <button type="button" class="example-chip" id="rR" onclick="this.classList.toggle('picked')">Rasywaniu pewności (czy nie jestem...)</button>
+      <button type="button" class="example-chip" id="rS" onclick="this.classList.toggle('picked')">Sięgam po PPU, by się "pozbyć"</button>
+      <button type="button" class="example-chip" id="rP" onclick="this.classList.toggle('picked')">Modlę się / robię rytuał oczyszczenia</button>
+      <button type="button" class="example-chip" id="rO" onclick="this.classList.toggle('picked')">Obwiniam się, biję psychicznie</button>
+    </div>
+
+    <div class="term-note"><strong>Reguła nieingerencji</strong>: w DM <em>nie próbujesz wpłynąć na myśl</em> — ani jej zatrzymać, ani potwierdzić, ani zrozumieć. To brzmi prosto, jest trudne. Każdy z 7 powyższych mechanizmów to <em>aktywna ingerencja</em>, która wzmacnia myśl. Cel: stać się <em>obserwatorem nieingerującym</em>, jak ktoś, kto patrzy na chmury, nie na nie wpływając.</div>
+  </section>
+
+  <!-- ============ KROK 4 — Praktyka ============ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — codzienny trening DM</div>
+    <h1 class="card-prompt">Trenuj <em>oderwaną obserwację</em></h1>
+    <p class="card-detail">DM jest <strong>umiejętnością</strong>, nie sztuczką. Wymaga 2—3 tygodni codziennej praktyki, by stała się dostępna w realnej intruzji. Trenujesz na <em>łatwych myślach</em>, by potem mieć narzędzie na trudne.</p>
+
+    <div class="examples-h">A. Codzienna praktyka 5 minut — "free-floating attention"</div>
+    <p class="card-detail" style="margin-top:0; margin-bottom:8px;">Codziennie 5 minut: usiądź spokojnie, niech myśli przepływają. Nie wybierasz tematu, nie analizujesz. Co przyjdzie, to zauważasz neutralnie i pozwalasz odejść. Trening "free-floating attention".</p>
+    <div class="example-chips">
+      <button type="button" class="example-chip" id="pT1" onclick="this.classList.toggle('picked')">Codziennie 5 min rano</button>
+      <button type="button" class="example-chip" id="pT2" onclick="this.classList.toggle('picked')">Codziennie 5 min wieczorem</button>
+      <button type="button" class="example-chip" id="pT3" onclick="this.classList.toggle('picked')">2× dziennie 3 min</button>
+      <button type="button" class="example-chip" id="pT4" onclick="this.classList.toggle('picked')">Z aplikacją (timer + cisza)</button>
+    </div>
+
+    <div class="examples-h">B. Stosowanie DM przy intruzji</div>
+    <textarea class="thought-input" id="dmApp" placeholder='Opisz, jak zastosujesz DM, gdy pojawi się intruzja: np. „Gdy myśl pojawia się, mówię w głowie »to jest myśl«. Nie sięgam po telefon, nie analizuję. Wracam do czytania / rozmowy / oddechu."' rows="3"></textarea>
+
+    <div class="examples-h">C. Mit do obalenia: "muszę zrozumieć, dlaczego ta myśl"</div>
+    <div class="dm-card">
+      <div class="dm-h">🚫 Pułapka analizowania</div>
+      <div class="dm-step">
+        <span class="dm-num">×</span>
+        <span><em>"Muszę zrozumieć, dlaczego ta myśl wraca"</em> — wzmacnia myśl przez nadanie znaczenia.</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">×</span>
+        <span><em>"Muszę sprawdzić, czy nie reaguję ciałem"</em> — wzmacnia monitorowanie.</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">×</span>
+        <span><em>"Muszę się uspokoić, że to tylko myśl"</em> — to też ingerencja, choć łagodniejsza.</span>
+      </div>
+      <div class="dm-step">
+        <span class="dm-num">✓</span>
+        <span><strong>Akceptacja</strong>: myśl jest, niech będzie. Nie wymaga wyjaśnienia, sprawdzenia, uspokojenia. <em>Zwykła obserwacja</em>.</span>
+      </div>
+    </div>
+
+    <div class="examples-h">D. Eksperyment kontrolny: 1 dzień bez tłumienia</div>
+    <textarea class="thought-input" id="exp" placeholder='Zaplanuj 1 dzień, w którym świadomie REZYGNUJESZ z tłumienia, monitorowania i analizy: np. "Sobota — gdy myśl seksualna pojawia się, mówię »widzę myśl« i wracam do czytania. Nic nie robię z myślą. Wieczorem zapisuję, ile razy się pojawiła i jak silne były."' rows="3"></textarea>
+
+    <div class="term-note"><strong>Mechanizm</strong>: codzienna praktyka DM uczy mózg <em>nowego sposobu reagowania na myśli</em>. Po 14—21 dniach automatyczna reakcja na intruzję zaczyna się zmieniać — pojawia się "to jest myśl" zamiast "muszę coś z tym zrobić". To paradoksalnie sprawia, że <strong>myśli przepływają szybciej i są mniej intensywne</strong> — bo nic ich nie karmi.</div>
+  </section>
+
+  <!-- ============ KROK 5 — Po ============ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>pętla się rozluźniła</em>?</h1>
+    <p class="card-detail">Wróć tu po 14—21 dniach codziennej praktyki DM. Metapoznanie zmienia się powolniej niż myśli automatyczne — wymagaj cierpliwości.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Częstość intruzji seksualnych — przed (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="freqBefore" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = rzadko</span><span id="freqBeforeval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Częstość intruzji seksualnych — teraz (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="freqNow" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = rzadko</span><span id="freqNowval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Częstość tłumienia / monitorowania — teraz</span><span></span></div>
+      <input type="range" class="scale-input" id="suppNow" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>0 = rzadko</span><span id="suppNowval">4</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy DM wchodzi w nawyk?</span><span></span></div>
+      <input type="range" class="scale-input" id="dmHabit" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="dmHabitval">5</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: skuteczne MCT pokazuje <em>spadek tłumienia</em> (≤4) + <em>DM wchodzi w nawyk</em> (≥6). <em>Częstość intruzji</em> może spaść lub nie spaść — to nie jest główny wskaźnik. Kluczowy jest <strong>spadek reaktywności na intruzje</strong>: myśli mogą wracać, ale nie napędzają cyklu, bo nie ma tłumienia ani analizy.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Praca metapoznawcza wymaga <em>najwięcej cierpliwości</em> ze wszystkich technik CBT — bo idzie wbrew intuicji. Każda część ciebie chce <strong>coś zrobić</strong> z myślą; DM żąda, byś nic nie robił/a. To brzmi jak rezygnacja, jest <em>aktywnym treningiem</em> innej relacji z umysłem. Po 4—6 tygodniach większość osób z PPU napędzanym intruzjami zauważa, że <em>myśli straciły znaczenie egzystencjalne</em> — wciąż przelatują, ale nie wymagają reakcji. Wtedy PPU traci jeden z głównych motorów.</div>
+    </div>
+
+    <div class="src">Wells (2009, „Metacognitive Therapy"); Wegner (1989, 1994, ironic processes); Williams &amp; Farris (2011, „Sexual Obsessions in OCD"); Olatunji i in. (2013); meta-analiza MCT: Normann &amp; Morina (2018, „The Efficacy of Metacognitive Therapy: A Systematic Review and Meta-Analysis"); zastosowanie do compulsive sexual behavior: Hall (2013).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['m1','m2','m3','freqBefore','freqNow','suppNow','dmHabit'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var fB = parseInt(document.getElementById('freqBefore').value, 10);
+  var fN = parseInt(document.getElementById('freqNow').value, 10);
+  var sN = parseInt(document.getElementById('suppNow').value, 10);
+  var dm = parseInt(document.getElementById('dmHabit').value, 10);
+
+  var rows = [];
+  var dF = fN - fB;
+  var sign = dF > 0 ? '+' : '';
+  rows.push('<div class="diff-row"><strong>Częstość intruzji</strong><span class="diff-delta">' + fB + ' → ' + fN + ' (' + sign + dF + ')</span></div>');
+  var sW = sN <= 3 ? 'rzadko' : (sN <= 6 ? 'czasem' : 'często');
+  rows.push('<div class="diff-row"><strong>Tłumienie / monitorowanie</strong><span class="diff-delta">' + sN + '/10 — ' + sW + '</span></div>');
+  var dW = dm <= 3 ? 'nie' : (dm <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>DM w nawyku</strong><span class="diff-delta">' + dm + '/10 — ' + dW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (sN <= 4 && dm >= 6) {
+      msg = '<strong>MCT pracuje.</strong> Tłumienie spada, DM staje się dostępna. <em>Nie martw się, jeśli częstość intruzji nie spadła</em> — kluczowa jest spadająca reaktywność. Kontynuuj 4—6 tygodni.';
+    } else if (sN <= 5 || dm >= 5) {
+      msg = '<strong>Pierwsze ruchy.</strong> Trening trwa. Wzmocnij <em>codzienne 5 min "free-floating attention"</em> — to fundament dostępności DM w realnej intruzji.';
+    } else if (sN >= 7) {
+      msg = '<strong>Tłumienie wciąż dominuje.</strong> Najczęstsza przyczyna: pomijasz codzienną praktykę DM. Wróć do kroku 4 — bez 5-minutowej praktyki dziennie DM nie wchodzi w nawyk.';
+    } else if (dm <= 3) {
+      msg = '<strong>DM nie weszła jeszcze w nawyk.</strong> To wymaga 14—21 dni codziennego treningu. Sprawdź: <em>czy ćwiczyłeś/aś codziennie</em>? Niesystematyczność = brak efektu.';
+    } else {
+      msg = '<strong>Częściowy postęp.</strong> Praca metapoznawcza zmienia się w tygodniach, nie dniach. Pierwsze 14 dni to inwestycja, efekt skumulowany w 3—4 tygodniu.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11','d12'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['rT','rA','rC','rR','rS','rP','rO'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  ['pT1','pT2','pT3','pT4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+}
+
+['freqBefore','freqNow','suppNow','dmHabit'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_metacognition — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_metacognition";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

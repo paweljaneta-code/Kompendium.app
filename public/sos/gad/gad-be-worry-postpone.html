@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Odroczenie martwienia (eksperyment)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --bg-deep: #ebe6da;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --line: #c9c2b0;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+.element-text em { color: var(--sage); font-style: italic; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; display: block; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; z-index: 100; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+/* === GAD-specific shared classes === */
+.proto-card { background: rgba(184,197,168,0.14); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.proto-step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed rgba(122,146,112,0.3); }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 15px; flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; line-height: 1.5; color: var(--ink-soft); flex: 1; }
+.proto-text strong { color: var(--ink); font-weight: 600; }
+.proto-text em { font-style: italic; color: var(--sage-deep); }
+
+.tldr-box { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; line-height: 1.55; color: var(--ink); margin: 0 0 14px; border-left: 3px solid var(--sage-deep); }
+.tldr-box strong { color: var(--sage-deep); font-weight: 700; }
+
+
+.belief-card { padding: 10px 12px; background: rgba(184,197,168,0.16); border-left: 3px solid var(--sage-deep); border-radius: 0 10px 10px 0; margin: 6px 0; }
+.belief-card-h { font-weight: 700; color: var(--sage-deep); font-size: 13px; margin-bottom: 4px; }
+.belief-card-body { font-size: 12px; line-height: 1.5; color: var(--ink); font-style: italic; }
+.exp-cell { padding: 10px 12px; background: rgba(255,255,255,0.55); border: 1px dashed var(--sage); border-radius: 8px; margin: 6px 0; }
+.exp-cell-h { font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.exp-cell textarea { width: 100%; min-height: 50px; border: none; background: transparent; font: inherit; color: var(--ink); resize: vertical; }
+.exp-cell input[type="text"] { width: 100%; border: none; background: transparent; font: inherit; color: var(--ink); }
+.exp-cell input[type="range"] { width: 100%; }
+.exp-cell-val { font-weight: 700; color: var(--sage-deep); font-size: 13px; }
+.warn-card { padding: 8px 10px; background: rgba(214,184,90,0.18); border-left: 3px solid #d6b85a; border-radius: 0 8px 8px 0; margin: 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink); }
+.warn-card strong { color: var(--sage-deep); }
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.compare-cell { padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.compare-cell.before { background: rgba(214,184,90,0.18); border-left: 3px solid #d6b85a; }
+.compare-cell.after { background: rgba(184,197,168,0.20); border-left: 3px solid var(--sage-deep); }
+.compare-cell-h { font-size: 11px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.4px; text-transform: uppercase; }
+.compare-cell.before .compare-cell-h { color: #8a6d2a; }
+.compare-cell.after .compare-cell-h { color: var(--sage-deep); }
+@media (max-width: 480px) { .compare-row { grid-template-columns: 1fr; } }
+.day-row { display: grid; grid-template-columns: 60px 1fr 80px 80px; gap: 6px; padding: 6px; background: rgba(255,255,255,0.55); border-radius: 6px; margin: 4px 0; align-items: center; font-size: 12px; }
+.day-row-h { display: grid; grid-template-columns: 60px 1fr 80px 80px; gap: 6px; padding: 6px 0; font-size: 10px; font-weight: 700; color: var(--sage-deep); letter-spacing: 0.4px; text-transform: uppercase; }
+.day-cell { color: var(--ink); }
+.day-cell input { width: 100%; border: none; background: transparent; font: inherit; color: var(--ink); font-size: 12px; }
+@media (max-width: 480px) { .day-row, .day-row-h { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Odroczenie martwienia (eksperyment)</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1: WPROWADZENIE -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Eksperyment odroczenia martwienia — <em>czy</em> muszę martwić się TERAZ?</h1>
+  
+  <div class="tldr-box">
+    <strong>W skrócie</strong>: eksperyment odroczenia martwienia testuje pozytywne metaprzekonanie „<em>muszę się martwić TERAZ, bo inaczej coś złego się stanie</em>” lub „<em>jeśli nie martwię się od razu, problem mi umknie</em>”. Procedura: gdy myśl wyzwalająca pojawia się w ciągu dnia — odracza się ją do okna „<em>czas martwienia</em>” (20 min wieczorem). Wells (2009): 80% pacjentów po tygodniu eksperymentu stwierdza, że odroczone martwienie jest <strong>mniej intensywne</strong> lub <strong>całkowicie niepotrzebne</strong>.
+  </div>
+  
+  <div class="frame-card">
+    <div class="frame-card-h">Mechanizm eksperymentu — co konkretnie testujemy</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">🧪</span> <strong>Hipoteza A (przekonanie pacjenta)</strong>: „<em>jeśli odłożę martwienie, sytuacja się pogorszy</em>” lub „<em>nie zdołam później wrócić do problemu</em>”.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">🔬</span> <strong>Hipoteza B (model alternatywny)</strong>: „<em>odroczone martwienie traci na pilności i intensywności — często okaże się niepotrzebne</em>”.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">📊</span> <strong>Pomiar</strong>: % martwień, do których pacjent wraca w czasie martwienia, intensywność po odroczeniu, ocena „pilności”.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">⏱️</span> <strong>Czas testu</strong>: 7 dni.</div>
+  </div>
+  
+  <div class="frame-quote">
+    Pacjenci są przekonani, że muszą się martwić w momencie, gdy myśl się pojawia. Po tygodniu odroczenia odkrywają, że intensywność i znaczenie martwień zależą od kontekstu chwili, a nie od „<em>realnej</em>” pilności problemu.
+    <span class="frame-quote-attr">— Adrian Wells, 2009</span>
+  </div>
+  
+  <div class="term-note"><strong>Reguła kluczowa</strong>: ten eksperyment <em>nie</em> jest tym samym, co czas martwienia (osobne narzędzie). Czas martwienia to praktyka. Eksperyment odroczenia to <em>naukowy test przekonania</em> — z hipotezą, pomiarem i wnioskiem. Cel: zebrać dane, by sfalsyfikować lub potwierdzić metaprzekonanie pozytywne o martwieniu.</div>
+  
+  <div class="src">Wells (2009, MCT) · Borkovec (1990)</div>
+</section>
+
+<!-- KROK 2: METAPRZEKONANIE DO TESTU -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Wybór metaprzekonania do testu</div>
+  <h1 class="card-prompt">Sformułuj <em>swoje</em> przekonanie + prognozę</h1>
+  
+  <div class="belief-card">
+    <div class="belief-card-h">A. „Muszę martwić się natychmiast”</div>
+    <div class="belief-card-body">„Jeśli odłożę martwienie, problem zostanie zlekceważony i pogorszy się.”</div>
+  </div>
+  
+  <div class="belief-card">
+    <div class="belief-card-h">B. „Odłożone martwienie umknie”</div>
+    <div class="belief-card-body">„Jeśli nie pomyślę o tym teraz, później zapomnę albo nie wrócę — problem stanie się niewidoczny.”</div>
+  </div>
+  
+  <div class="belief-card">
+    <div class="belief-card-h">C. „Martwienie chroni”</div>
+    <div class="belief-card-body">„Martwienie jest aktem opieki, troski — odłożenie znaczy obojętność wobec problemu lub bliskich.”</div>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Twoje konkretne przekonanie do testu (sformułowane Twoimi słowami)</div>
+    <textarea id="testedBelief" placeholder="np. „jeśli odłożę myślenie o pracy, jutro nie zdołam wrócić do problemu i sprawa wymknie się spod kontroli”"></textarea>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Stopień wiary w to przekonanie PRZED eksperymentem (0–100%)</div>
+    <input type="range" id="beliefBefore" min="0" max="100" value="70" data-key="beliefBefore"><div class="exp-cell-val"><span id="beliefBeforeVal">70</span>%</div>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Twoja prognoza katastroficzna na 7 dni eksperymentu</div>
+    <textarea id="prediction" placeholder="np. „minimum 2 odłożone problemy wymkną się spod kontroli; intensywność wieczornego martwienia będzie taka sama jak natychmiastowego”"></textarea>
+  </div>
+  
+  <div class="warn-card"><strong>Sygnał ostrzegawczy</strong>: jeśli sformułowanie przekonania brzmi jak „<em>chyba</em> chciałbym sprawdzić...” — przekonanie jest za słabe na test. Eksperymenty behawioralne działają na <em>silnych</em> przekonaniach (≥60% wiary). Słabe przekonania nie potrzebują testu — wystarcza informacja. Wybierz najsilniejsze, najbardziej przeszkadzające w codzienności.</div>
+  
+  <div class="term-note"><strong>Reguła doboru</strong>: wybieraj przekonania, które (a) są aktywnie obecne w Twoich martwieniach, (b) mają wiarę ≥60%, (c) są jednoznacznie sformułowane (jedno zdanie). Jeśli masz 3 silne — testuj jedno na tydzień, kolejno. Test wielu naraz rozmywa wniosek.</div>
+  
+  <div class="src">Wells (1997, Cognitive Therapy) · Bennett-Levy i wsp. (2004)</div>
+</section>
+
+<!-- KROK 3: PROCEDURA EKSPERYMENTU -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Procedura — 7 dni</div>
+  <h1 class="card-prompt">Szczegółowy protokół wykonania</h1>
+  
+  <div class="frame-card">
+    <div class="frame-card-h">Pięć kroków każdego dnia eksperymentu</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">1️⃣</span> <strong>Pojawia się myśl wyzwalająca</strong> w ciągu dnia — zauważ ją.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">2️⃣</span> <strong>Zapisz hasło</strong> (1–3 słowa) na liście odroczonych martwień.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">3️⃣</span> <strong>Powiedz sobie</strong>: „<em>Wrócę do tego o 18:00</em>”.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">4️⃣</span> <strong>Wracaj do bieżącej aktywności</strong> — bez angażowania w martwienie.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">5️⃣</span> <strong>Wieczorem 18:00–18:20</strong>: przejrzyj listę. Oceń każde martwienie: nadal pilne / mniej pilne / niepotrzebne.</div>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Twoje wybrane okno czasu martwienia (preferowane wieczorem 17–19, NIE przed snem)</div>
+    <input type="text" id="worryWindow" placeholder="np. „18:00–18:20, codziennie 7 dni”">
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Miejsce zapisywania listy (telefon / kartka / notes)</div>
+    <input type="text" id="listLocation" placeholder="np. „aplikacja »Notatki« na telefonie, folder »martwienia tydzień testowy«”">
+  </div>
+  
+  <div class="frame-card">
+    <div class="frame-card-h">Klasyfikacja martwień w czasie martwienia (krok 5)</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">🔴</span> <strong>Nadal pilne (kategoria A)</strong>: wymaga rozwiązania problemu lub pełnego rozważenia.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">🟡</span> <strong>Mniej pilne (kategoria B)</strong>: wymaga 1–2 zdań refleksji, intensywność spadła.</div>
+    <div class="frame-card-row"><span class="frame-card-emoji">🟢</span> <strong>Niepotrzebne (kategoria C)</strong>: nie ma już powodu do dalszego rozważania, problem zniknął lub okazał się nierealny.</div>
+  </div>
+  
+  <div class="warn-card"><strong>Pułapka odroczenia jako tłumienia</strong>: odroczenie ≠ tłumienie. Nie próbuj „<em>nie myśleć</em>” o martwieniu — efekt rebound (Wegner, 1994). Zapisujesz, akceptujesz pojawienie się myśli, decydujesz, że <em>później</em>. Akcent na decyzji, nie na walce.</div>
+  
+  <div class="term-note"><strong>Reguła zapisu</strong>: zapis hasłem (1–3 słowa) jest kluczowy. „<em>Mama zdrowie</em>” — wystarczy. Zapis pełnym zdaniem już jest formą martwienia („<em>a co jeśli mama jest poważnie chora i...</em>” — to już ruminacja). Krótkość zapisu = wierność procedurze.</div>
+  
+  <div class="src">Wells (2009) · McLaughlin i wsp. (2007)</div>
+</section>
+
+<!-- KROK 4: REJESTR DZIENNY -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Rejestr — 7 dni</div>
+  <h1 class="card-prompt">Codzienny zapis: ile odroczono, ile pozostało pilne</h1>
+  
+  <p class="hint">Po każdym oknie czasu martwienia wpisz dane do tabeli. To Twoje surowe dane do wniosku w kroku 5.</p>
+  
+  <div class="day-row-h">
+    <div>Dzień</div>
+    <div>Najsilniejsze odroczone martwienie</div>
+    <div>Liczba odroczonych</div>
+    <div>% kategorii C (niepotrzebne)</div>
+  </div>
+  
+  <div class="day-row">
+    <div class="day-cell"><strong>1</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d1m"></div>
+    <div class="day-cell"><input type="text" placeholder="np. 5" id="d1n"></div>
+    <div class="day-cell"><input type="text" placeholder="np. 40%" id="d1c"></div>
+  </div>
+  <div class="day-row">
+    <div class="day-cell"><strong>2</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d2m"></div>
+    <div class="day-cell"><input type="text" placeholder="np. 7" id="d2n"></div>
+    <div class="day-cell"><input type="text" placeholder="np. 57%" id="d2c"></div>
+  </div>
+  <div class="day-row">
+    <div class="day-cell"><strong>3</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d3m"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d3n"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d3c"></div>
+  </div>
+  <div class="day-row">
+    <div class="day-cell"><strong>4</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d4m"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d4n"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d4c"></div>
+  </div>
+  <div class="day-row">
+    <div class="day-cell"><strong>5</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d5m"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d5n"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d5c"></div>
+  </div>
+  <div class="day-row">
+    <div class="day-cell"><strong>6</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d6m"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d6n"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d6c"></div>
+  </div>
+  <div class="day-row">
+    <div class="day-cell"><strong>7</strong></div>
+    <div class="day-cell"><input type="text" placeholder="hasło" id="d7m"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d7n"></div>
+    <div class="day-cell"><input type="text" placeholder="" id="d7c"></div>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Sumarycznie: średni % kategorii C (niepotrzebne) z 7 dni</div>
+    <input type="text" id="totalC" placeholder="np. „średnia 65% — większość martwień okazała się niepotrzebna”">
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Czy któreś martwienie „wymknęło się spod kontroli” (jak prognoza)?</div>
+    <textarea id="catastrophe" placeholder="np. „nie — żadne odroczone martwienie nie spowodowało realnej szkody; jedno wymagało faktycznie działania, ale o 18:00 było tak samo skuteczne jak o 14:00”"></textarea>
+  </div>
+  
+  <div class="warn-card"><strong>Sygnał ostrzegawczy</strong>: jeśli &lt;30% martwień odraczasz (większość angażujesz natychmiast), eksperyment <em>nie</em> jest aktywnie prowadzony. Wróć do kroku 3 i sprawdź procedurę. Skuteczność testu wymaga rzeczywistego odraczania w 70%+ przypadków. Bez tego dane są niepełne.</div>
+  
+  <div class="term-note"><strong>Reguła analizy</strong>: oczekiwany wynik w lęku uogólnionym to 50–80% kategorii C (niepotrzebne) — Wells (2009). Jeśli Twój wynik mieści się w tym zakresie, masz mocny dowód falsyfikujący przekonanie testowane. Jeśli &lt;30% — eksperyment się nie powiódł lub przekonanie ma głębszą strukturę (osobna praca z metaprzekonaniami).</div>
+  
+  <div class="src">Wells (2009) · Borkovec i wsp. (1983, original worry-time research)</div>
+</section>
+
+<!-- KROK 5: WNIOSEK + INTEGRACJA -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Wniosek + integracja</div>
+  <h1 class="card-prompt">Co dane mówią o przekonaniu — i co dalej?</h1>
+  
+  <div class="compare-row">
+    <div class="compare-cell before">
+      <div class="compare-cell-h">PRZED eksperymentem</div>
+      Stopień wiary: <span id="beliefBeforeShow">70</span>%
+    </div>
+    <div class="compare-cell after">
+      <div class="compare-cell-h">PO eksperymencie</div>
+      Stopień wiary: <span id="beliefAfterShow">25</span>%
+    </div>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Stopień wiary w testowane przekonanie PO 7 dniach (0–100%)</div>
+    <input type="range" id="beliefAfter" min="0" max="100" value="25" data-key="beliefAfter"><div class="exp-cell-val"><span id="beliefAfterVal">25</span>%</div>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Skorygowane przekonanie (sformułowane Twoimi słowami, oparte na danych)</div>
+    <textarea id="updatedBelief" placeholder="np. „odroczone martwienie traci na intensywności — 65% moich martwień okazuje się niepotrzebnych po kilku godzinach; mogę odraczać bez straty”"></textarea>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Plan integracji w codzienność</div>
+    <textarea id="integration" placeholder="np. „kontynuuję czas martwienia 18:00–18:20 jako stałą praktykę; po 4 tyg. powiększam okno do 18:00–18:30 jeśli potrzeba; po 8 tyg. — utrzymanie tylko gdy intensywność lęku wzrośnie”"></textarea>
+  </div>
+  
+  <div class="exp-cell">
+    <div class="exp-cell-h">Następne metaprzekonanie do testu (kolejny tydzień)</div>
+    <input type="text" id="nextBelief" placeholder="np. „martwienie pomaga się przygotować — test przez tydzień zadań planowanych z lub bez martwienia”">
+  </div>
+  
+  <div class="repeat-reminder"><strong>🔁 Powtarzaj</strong> eksperymenty odroczenia kwartalnie, gdy wracają silne metaprzekonania pozytywne. Po pierwszym sukcesie testu skuteczność rośnie — pacjent zyskuje pewność, że odraczanie działa, i naturalnie redukuje natychmiastowe angażowanie się w martwienie. Cel długoterminowy: 80%+ martwień jest odraczanych do okna; intensywność wieczornego martwienia spada poniżej 30 (SUDS) z czasem.</div>
+  
+  <div class="warn-card"><strong>Sygnał ostrzegawczy</strong>: jeśli wiara w przekonanie pozostała wysoka (≥50% po teście), oznacza to (a) niepełne wykonanie procedury, (b) ukryte kompensacyjne zachowania (np. martwienie w głowie zamiast zapisu), lub (c) silny komponent doświadczeniowy wymagający dodatkowego narzędzia (terapia metapoznawcza Wells). Konsultacja z terapeutą w takim przypadku jest wskazana.</div>
+  
+  <div class="term-note"><strong>Klucz długoterminowy</strong>: eksperymenty behawioralne są najsilniejszym narzędziem zmiany przekonań w terapii poznawczo-behawioralnej (Bennett-Levy i wsp., 2004) — wielkość efektu d=1,2 vs. samej restrukturyzacji werbalnej (d=0,7). Pacjent <em>doświadcza</em> falsyfikacji, nie tylko ją słyszy. Po sukcesie eksperymentu odroczenia większość pacjentów raportuje, że „<em>martwienie nie ma już takiej władzy</em>” — to zmiana relacji z martwieniem, nie tylko jego treści.</div>
+  
+  <div class="src">Bennett-Levy i wsp. (2004) · Wells (2009) · Wells i King (2006, RCT)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+// Aktualizacja widoków przed/po
+const _bb = document.getElementById('beliefBefore');
+const _bbs = document.getElementById('beliefBeforeShow');
+if (_bb && _bbs) { _bb.addEventListener('input', () => { _bbs.textContent = _bb.value; }); _bbs.textContent = _bb.value; }
+const _ba = document.getElementById('beliefAfter');
+const _bas = document.getElementById('beliefAfterShow');
+if (_ba && _bas) { _ba.addEventListener('input', () => { _bas.textContent = _ba.value; }); _bas.textContent = _ba.value; }
+
+
+/* ===== AUTO-ZAPIS (wzór SAD v580 + uniwersalny picker v585) ===== */
+(function(){
+  var KEY = "sos_gad_be_worry_postpone";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+  window.save = save;
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+updateUI();
+</script>
+</body>
+</html>

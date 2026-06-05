@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Trajektoria samooceny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.lf-input { width: 100%; min-height: 60px; padding: 11px 13px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 10px; }
+.lf-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.curve-frame { background: rgba(255,253,247,0.85); border: 1px solid var(--sage); border-radius: 12px; padding: 14px; margin: 12px 0; overflow-x: auto; }
+.curve-frame svg { display: block; margin: 0 auto; max-width: 100%; height: auto; color: var(--ink); }
+
+.phase-grid { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.phase-row { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; padding: 10px 12px; background: rgba(184,197,168,0.13); border-radius: 9px; border-left: 3px solid var(--sage-deep); align-items: center; }
+.phase-age { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); width: 60px; text-align: center; line-height: 1.2; font-style: italic; }
+.phase-trend { font-size: 16px; width: 28px; text-align: center; }
+.phase-name { font-weight: 600; font-size: 12.5px; color: var(--ink); margin-bottom: 3px; }
+.phase-tip { font-size: 11.5px; color: var(--ink-mute); line-height: 1.5; }
+
+.crit-grid { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.crit-chip { padding: 10px 12px; border: 1px solid var(--sage); border-radius: 9px; background: rgba(204,153,127,0.13); color: var(--ink); cursor: pointer; font-size: 12.5px; transition: all 0.18s; font-family: inherit; line-height: 1.5; text-align: left; }
+.crit-chip:hover, .crit-chip.picked { background: rgba(160,100,70,0.35); border-color: rgba(160,100,70,0.7); }
+.crit-chip strong { display: block; font-weight: 600; color: rgba(160,100,70,1); margin-bottom: 3px; }
+.crit-chip.picked strong { color: rgba(120,70,50,1); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Trajektoria samooceny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Samoocena <em>nie jest stała</em> — ma trajektorię</h1>
+    <p class="card-detail">Orth, Robins (2014) i Orth i in. (2018, meta-analiza 331 badań longitudinalnych, N&gt;165 000) opisali trajektorię samooceny przez całe życie — jeden z najlepiej udokumentowanych fenomenów psychologii rozwojowej. Wbrew intuicji, samoocena nie jest stałą cechą — ma <em>przewidywalny wzorzec</em>: rośnie 4–50 r.ż., plateau 50–70, spadek po 80. Znajomość trajektorii pozwala odróżnić <em>norma rozwojowa</em> od <em>problem kliniczny</em>.</p>
+
+    <div class="curve-frame">
+      <svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+        <text x="300" y="20" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="500" fill="currentColor">Trajektoria samooceny przez życie (Orth, Robins, 2014, 2018)</text>
+
+        <line x1="50" y1="180" x2="570" y2="180" stroke="currentColor" stroke-width="0.5" opacity="0.4"/>
+        <line x1="50" y1="40" x2="50" y2="180" stroke="currentColor" stroke-width="0.5" opacity="0.4"/>
+
+        <text x="50" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">0</text>
+        <text x="125" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">15</text>
+        <text x="200" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">30</text>
+        <text x="290" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">45</text>
+        <text x="380" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">60</text>
+        <text x="470" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">75</text>
+        <text x="560" y="195" text-anchor="middle" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">90 lat</text>
+
+        <text x="40" y="60" text-anchor="end" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">wysoko</text>
+        <text x="40" y="180" text-anchor="end" font-family="system-ui" font-size="9" fill="currentColor" opacity="0.6">nisko</text>
+
+        <path d="M50 80 Q90 75 125 130 Q160 130 200 100 Q260 70 320 60 Q380 60 440 75 Q500 100 560 130" fill="none" stroke="var(--sage-deep)" stroke-width="2.5"/>
+
+        <circle cx="80" cy="78" r="3" fill="rgba(160,100,70,0.7)"/>
+        <text x="80" y="62" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(160,100,70,1)">dzieciństwo</text>
+
+        <circle cx="125" cy="130" r="3" fill="rgba(160,100,70,0.7)"/>
+        <text x="125" y="148" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(160,100,70,1)">spadek</text>
+
+        <circle cx="200" cy="100" r="3" fill="var(--sage-deep)"/>
+        <text x="200" y="118" text-anchor="middle" font-family="system-ui" font-size="9" fill="var(--sage-deep)">wzrost</text>
+
+        <circle cx="320" cy="60" r="3" fill="var(--sage-deep)"/>
+        <text x="320" y="48" text-anchor="middle" font-family="system-ui" font-size="9" fill="var(--sage-deep)">szczyt 50–60</text>
+
+        <circle cx="440" cy="75" r="3" fill="var(--sage-deep)"/>
+        <text x="440" y="62" text-anchor="middle" font-family="system-ui" font-size="9" fill="var(--sage-deep)">plateau</text>
+
+        <circle cx="540" cy="120" r="3" fill="rgba(160,100,70,0.7)"/>
+        <text x="540" y="138" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(160,100,70,1)">spadek 80+</text>
+      </svg>
+    </div>
+
+    <div class="frame-card">
+      <div class="frame-h">Skąd to się wzięło</div>
+      <div class="element-row">
+        <span class="element-icon">🧬</span>
+        <span class="element-text"><strong>Tradycja</strong> — Orth, Robins (2014, „The Development of Self-Esteem", Current Directions in Psychological Science): syntetyczny model. Orth i in. (2018, „Development of Self-Esteem from Age 4 to 94 Years", Psychological Bulletin): meta-analiza 331 badań longitudinalnych. Erol, Orth (2011): wcześniejsze badanie lifespan. Robins, Trzesniewski (2005): porównanie samooceny do osobowości — względnie stabilna, ale globalnie się zmienia.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚙️</span>
+        <span class="element-text"><strong>Mechanizm</strong> — trajektoria jest <em>normatywnie wzbudzana</em> przez wydarzenia rozwojowe. Adolescencja: rozwój poznawczy umożliwia samoocenę, równocześnie ciało się zmienia, presje rówieśnicze — spadek. Młoda dorosłość: konsolidacja tożsamości, autonomia, pierwsze sukcesy — wzrost. Średnia dorosłość: dojrzałość emocjonalna, akceptacja ograniczeń — szczyt. Starość: utraty (praca, zdrowie, bliscy) — spadek.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Dane</strong> — Orth i in. (2018): wzorzec replikuje się w badaniach z USA, Niemiec, Holandii, Wielkiej Brytanii, Norwegii. Stabilność rankingowa (czy względnie wysokie pozostają wysokie) r=0.50–0.75 — porównywalna z osobowością. Międzyosobnicze różnice w samoocenie w dorosłości w 15–20% wyjaśnione wczesnymi doświadczeniami (rodzicielstwo, szkoła, rówieśnicy) — potwierdzenie koncepcji bottom line (Beck, Fennell).</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">✨</span>
+        <span class="element-text"><strong>Implikacje kliniczne</strong> — sama wiedza o trajektorii odsłania klientowi: „nie jestem chronicznie chora — jestem w fazie spadku, który ma zewnętrzne przyczyny". To depatologizuje normalne wahania i przekierowuje pracę na <em>fazo-specyficzne</em> interwencje.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Twoja samoocena nie jest cechą — jest trajektorią. Wahania związane z fazą życia są normą, nie patologią. Adolescenci spadają, młodzi dorośli rosną, dorośli plateau, starsi spadają. Znajomość wzorca odsłania <em>norma vs problem</em>."
+      <span class="frame-quote-attr">— parafraza Orth, Robins (2014)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: <span id="t-lf-norma">znajomość trajektorii</span> pozwala (1) <em>normalizować</em> wahania związane z fazą; (2) <em>identyfikować</em> punkty krytyczne (adolescencja, emerytura, wdowieństwo); (3) <em>planować</em> interwencje fazo-specyficzne. Klient w fazie spadku (np. po 60 r.ż.) wymaga innych narzędzi niż w fazie wzrostu (młoda dorosłość).</div>
+
+    <div class="src">Orth, Robins (2014, Current Directions in Psychological Science); Orth i in. (2018, Psychological Bulletin, meta-analiza); Erol, Orth (2011); Robins, Trzesniewski (2005); Trzesniewski i in. (2006); Harter (1999, 2012); Erikson (1968)</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Krok 1 — sześć faz trajektorii</div>
+    <h1 class="card-prompt">Trajektoria <em>w detalach</em></h1>
+    <p class="card-detail">Sześć faz rozwojowych z charakterystycznymi mechanizmami. Każda ma swoje typowe wyzwania i interwencje. Zauważ, w której fazie jesteś, żeby zrozumieć dynamikę swoich obecnych doświadczeń.</p>
+
+    <div class="phase-grid">
+      <div class="phase-row">
+        <span class="phase-age">0–8</span>
+        <span class="phase-trend" style="color:var(--sage-deep);">↑</span>
+        <div>
+          <div class="phase-name">Wczesne dzieciństwo — wysoka, ale zniekształcona</div>
+          <div class="phase-tip">Dzieci przeceniają siebie ze wskaźnikami niereal istycznymi. Bezpieczna baza relacyjna jest fundamentem.</div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <span class="phase-age">11–16</span>
+        <span class="phase-trend" style="color:rgba(160,100,70,1);">↓</span>
+        <div>
+          <div class="phase-name">Adolescencja — dramatyczny spadek (silniejszy u dziewcząt)</div>
+          <div class="phase-tip">Rozwój poznawczy + porównania społeczne + dojrzewanie cielesne + presje kulturowe. Spadek to <em>norma</em>, nie depresja.</div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <span class="phase-age">18–30</span>
+        <span class="phase-trend" style="color:var(--sage-deep);">↑</span>
+        <div>
+          <div class="phase-name">Młoda dorosłość — stopniowy wzrost</div>
+          <div class="phase-tip">Konsolidacja tożsamości (Erikson), autonomia, pierwsze sukcesy, decyzje życiowe. Faza budowania bazy.</div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <span class="phase-age">30–60</span>
+        <span class="phase-trend" style="color:var(--sage-deep);">⤴</span>
+        <div>
+          <div class="phase-name">Średnia dorosłość — szczyt + plateau</div>
+          <div class="phase-tip">Statystycznie najwyższa samoocena w życiu. Osiągnięcia, dojrzałość emocjonalna, akceptacja ograniczeń.</div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <span class="phase-age">60–80</span>
+        <span class="phase-trend" style="color:rgba(160,100,70,1);">↘</span>
+        <div>
+          <div class="phase-name">Starszy wiek — stopniowy spadek</div>
+          <div class="phase-tip">Utraty: praca (emerytura), zdrowie, bliscy, atrakcyjność cielesna. Faza adaptacji do strat.</div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <span class="phase-age">80+</span>
+        <span class="phase-trend" style="color:var(--ink-mute);">↕</span>
+        <div>
+          <div class="phase-name">Późna starość — paradoks mądrości</div>
+          <div class="phase-tip">Czasem ponowny wzrost u osób z dobrym zdrowiem i relacjami. Akceptacja całości życia (integracja vs rozpacz, Erikson).</div>
+        </div>
+      </div>
+    </div>
+
+    <textarea class="lf-input" id="myPhase" placeholder="„W której fazie jesteś teraz? Konkretnie — wiek + faza. Czy Twoja aktualna samoocena pasuje do normatywnego wzorca dla Twojej fazy, czy odbiega? Np.: 'Mam 34 lata, jestem w fazie 30–60. Powinnam być na szczycie, ale czuję się gorzej niż 5 lat temu — to odbiega od normy.'"" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Twoja aktualna samoocena vs normatywny wzorzec dla fazy</div>
+      <div class="scale-bounds"><span>(0 = znacznie poniżej)</span><span>(5 = zgodnie z fazą)</span><span>(10 = znacznie powyżej)</span></div>
+      <input type="range" class="scale-input" id="vsNorm" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>Wynik</span><span id="vsNormval">4</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła kliniczna</strong>: jeśli Twoja samoocena zgadza się z normą fazy — to faza pracy. Jeśli odbiega znacznie poniżej — to sygnał, że oprócz fazy działa inny mechanizm (depresja, trauma, niska samoocena dystymiczna). Jeśli odbiega znacznie powyżej — możliwa krucha wysoka (Kernis) lub narcystyczne wzmocnienia.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Krok 2 — punkty krytyczne</div>
+    <h1 class="card-prompt">Trzy <em>okna ryzyka</em> w trajektorii</h1>
+    <p class="card-detail">Niektóre przejścia są szczególnie wrażliwe — typowo wymagają targowanych interwencji. Trzy główne okna ryzyka (Orth i in. 2018, Erikson, Schimel i in. 2001): adolescencja, emerytura, wdowieństwo. W każdym samoocena może spaść istotnie nawet u osób, które wcześniej były stabilne.</p>
+
+    <p style="font-size:12px;color:var(--ink-mute);margin:0 0 10px;">Wybierz okno, które jest dla Ciebie aktualnie istotne (jeśli żadne — pomiń):</p>
+
+    <div class="crit-grid">
+      <button class="crit-chip" id="cAdo" onclick="this.classList.toggle('picked')">
+        <strong>📚 ADOLESCENCJA (11–16) — okno ryzyka i okno zmian</strong>
+        Dramatyczny spadek samooceny, głównie u dziewcząt. Ciało, rówieśnicy, presje kulturowe, social media. Wymaga: ciepło + autonomia od rodziców (nie krytyka + nadkontrola). Programy szkolne prewencji depresji. Harter: kompetencja w domenie ważnej + akceptacja w grupie.
+      </button>
+      <button class="crit-chip" id="cMid" onclick="this.classList.toggle('picked')">
+        <strong>🌅 KRYZYS WIEKU ŚREDNIEGO (45–55) — paradoks osiągnięć</strong>
+        Klient na szczycie kariery i materialnie czuje się gorzej. Mechanizm: dotarł do celu, którego się uczył dążyć, i odkrywa, że nie daje to satysfakcji. Wymaga przewartościowania (ACT, terapia egzystencjalna).
+      </button>
+      <button class="crit-chip" id="cRet" onclick="this.classList.toggle('picked')">
+        <strong>🏖️ EMERYTURA (60–70) — utrata roli zawodowej</strong>
+        Tożsamość zawodowa była głównym filarem samooceny. Przejście wymaga: nowa rola, hobby, relacje, sens. Bez przygotowania samoocena spada o 1 SD w pierwszym roku po emeryturze (Schaie, 2005).
+      </button>
+      <button class="crit-chip" id="cWid" onclick="this.classList.toggle('picked')">
+        <strong>💔 WDOWIEŃSTWO / SAMOTNOŚĆ (60+) — utrata partnera</strong>
+        Tożsamość relacyjna była głównym filarem. Wymaga: praca z żałobą, stopniowe odbudowywanie sieci relacyjnej, akceptacja nowej roli. Bez wsparcia ryzyko depresji rośnie 3-krotnie.
+      </button>
+      <button class="crit-chip" id="cTra" onclick="this.classList.toggle('picked')">
+        <strong>⚡ NIESPODZIEWANE TRANSITIONS — choroba, rozwód, utrata pracy</strong>
+        Niezwiązane z fazą wieku, ale wpływają silnie. Wymaga: praca z radykalną akceptacją (Linehan), samowspółczuciem (Neff), refraktoryzacja samooceny (Crocker — wartość niezależna od konkretnego wymiaru).
+      </button>
+    </div>
+
+    <textarea class="lf-input" id="myCritical" placeholder="„Twój punkt krytyczny — czy aktualnie jesteś w jednym z 5 okien? Jakim? Co konkretnie się zmieniło? Np.: 'Tak, w fazie pre-emerytalnej (62 lata). Boję się utraty pozycji zawodowej. Samoocena spadła w ostatnim roku.'"" rows="4"></textarea>
+
+    <div class="term-note"><strong>⚙️ Mechanizm okien</strong>: w punkcie krytycznym jeden z głównych <em>filarów samooceny</em> jest zagrożony lub utracony. Przed punktem klient nie zauważał, że samoocena była oparta o ten filar. Po — czuje pustkę. Praca polega na <em>zauważeniu</em> filaru i <em>przesunięciu</em> bazy samooceny na inne, bardziej trwałe filary (relacje, wartości, samowspółczucie).</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Krok 3 — interwencje wg fazy</div>
+    <h1 class="card-prompt">Twój <em>kierunek pracy</em> dla Twojej fazy</h1>
+    <p class="card-detail">Każda faza ma swoje typowe interwencje. Dopasowanie narzędzia do fazy zwiększa skuteczność istotnie. Klient 16-letni potrzebuje innych narzędzi niż 65-letni — mimo że oba mają niską samoocenę.</p>
+
+    <textarea class="lf-input" id="adoIntervention" placeholder="„ADOLESCENCJA (jeśli aktualna): (1) ciepło rodzicielskie + autonomia (NIE krytyka + nadkontrola); (2) kompetencja w domenie ważnej dla mnie (nie ogólnie, Harter); (3) akceptacja w grupie rówieśniczej; (4) limit social media (Hunt 2018); (5) prewencja depresji. Twój plan w tej fazie:"" rows="3"></textarea>
+
+    <textarea class="lf-input" id="adultIntervention" placeholder="„MŁODA / ŚREDNIA DOROSŁOŚĆ (jeśli aktualna): (1) eksperymentowanie z tożsamością (Marcia: moratorium > foreclosure); (2) kompetencja + autonomia + relacyjność (SDT Deci, Ryan); (3) zaakceptowanie ograniczeń (akceptacja); (4) wartości jako kompas (ACT). Twój plan:"" rows="3"></textarea>
+
+    <textarea class="lf-input" id="midCrisisIntervention" placeholder="„KRYZYS WIEKU ŚREDNIEGO (jeśli aktualny): (1) przewartościowanie celów (ACT, terapia egzystencjalna); (2) odkrycie nowych sensów; (3) generatywność (Erikson — przekazywanie, mentoring, wkład); (4) praca z lekiem przed śmiertelnością. Twój plan:"" rows="3"></textarea>
+
+    <textarea class="lf-input" id="seniorIntervention" placeholder="„STARSZY WIEK / EMERYTURA / WDOWIEŃSTWO (jeśli aktualne): (1) przygotowanie do emerytury 1 rok wcześniej (nowa rola, hobby, relacje); (2) life review — przegląd i akceptacja całości życia; (3) generatywność i przekazywanie; (4) walka z izolacją; (5) integracja vs rozpacz (Erikson). Twój plan:"" rows="3"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Po przeczytaniu interwencji dla Twojej fazy — gotowość do działania</div>
+      <div class="scale-bounds"><span>(0 = nie wiem)</span><span>(10 = wiem co robić)</span></div>
+      <input type="range" class="scale-input" id="readiness" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="readinessval">5</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła dopasowania</strong>: nie każda technika działa w każdej fazie. Eksperymenty behawioralne typu Bennett-Levy są mocne dla młodej dorosłości, słabsze dla starszego wieku (gdzie bardziej działa life review i generatywność). Samowspółczucie działa we wszystkich fazach. Trajektoria jest wskazówką do prioretyzacji narzędzi.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Krok 4 — perspektywa lifespan</div>
+    <h1 class="card-prompt">Spójrz na siebie <em>z lotu ptaka</em></h1>
+    <p class="card-detail">Końcowe ćwiczenie: spojrzenie na własną trajektorię z dystansu. Nie tylko teraz — całe Twoje życie do tej pory + przewidywanie. To daje perspektywę i często redukuje wagę aktualnych trudności („to faza, nie cecha").</p>
+
+    <textarea class="lf-input" id="myTrajectory" placeholder="„Krótka rekonstrukcja Twojej trajektorii samooceny. Wczesne dzieciństwo — co pamiętasz? Adolescencja — kiedy był spadek? Młoda dorosłość — wzrost czy stagnacja? Aktualne — gdzie jesteś?"" rows="5"></textarea>
+
+    <textarea class="lf-input" id="futureView" placeholder="„Patrząc na trajektorię — co przewidujesz na nadchodzące 10–20 lat? Czego potrzebujesz, by w nadchodzącej fazie zachować lub odzyskać samoocenę? Konkretnie."" rows="4"></textarea>
+
+    <textarea class="lf-input" id="depathologize" placeholder="„Co z aktualnych trudności wydaje się teraz <em>normą fazy</em>, nie patologią? Co naprawdę wymaga interwencji ponad fazę?"" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Po wglądzie w trajektorię — czy aktualne trudności są mniej obciążające?</div>
+      <div class="scale-bounds"><span>(0 = bez zmiany)</span><span>(10 = wyraźnie lżej)</span></div>
+      <input type="range" class="scale-input" id="lighter" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Wynik</span><span id="lighterval">5</span></div>
+    </div>
+
+    <div class="diff-list">
+      <div class="diff-row"><span><strong>Twoja faza vs norma</strong></span><span class="diff-delta" id="dN">—</span></div>
+      <div class="diff-row"><span><strong>Gotowość do działania</strong></span><span class="diff-delta" id="dR">—</span></div>
+      <div class="diff-row"><span><strong>Ulga po wglądzie</strong></span><span class="diff-delta" id="dL">—</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsgLF">Sama wiedza o trajektorii często redukuje wagę aktualnych trudności o 1–2 punkty. Klient typowo mówi: „to ulga wiedzieć, że to faza, nie cecha — i że są konkretne narzędzia dla mojej fazy". Najsilniejsza pojedyncza interwencja: <em>fazo-specyficzny plan</em> + <em>wsparcie społeczne</em> dopasowane do fazy (rówieśnicy w adolescencji, partner w średniej dorosłości, dzieci/wnuki w starości).</div>
+
+    <div class="term-note"><strong>🔁 Reguła dystansu</strong>: przeczytaj swoją trajektorię raz w miesiącu przez 6 miesięcy. Każde czytanie odsłania nowe wglądy — bo Twoja perspektywa się zmienia. To buduje <em>tożsamość lifespan</em> — poczucie, że jesteś w procesie, nie w stałym stanie. To samo w sobie redukuje patologizację aktualnych trudności.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Samoocena jest <em>trajektorią</em>, nie cechą. Sześć faz: <strong>dzieciństwo (wysoka) → adolescencja (spadek) → młoda dorosłość (wzrost) → średnia dorosłość (szczyt) → starszy wiek (spadek) → późna starość (paradoks)</strong>. Trzy okna ryzyka: <strong>adolescencja, emerytura, wdowieństwo</strong>. Reguła: dopasuj narzędzie do fazy.</div>
+    </div>
+
+    <div class="src">Orth, Robins (2014, Current Directions in Psychological Science); Orth i in. (2018, Psychological Bulletin, meta-analiza); Erol, Orth (2011); Trzesniewski i in. (2006); Harter (2012); Erikson (1968); Marcia (1980); Schaie (2005)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateDiff() {
+  var n = parseInt(document.getElementById('vsNorm').value);
+  var r = parseInt(document.getElementById('readiness').value);
+  var l = parseInt(document.getElementById('lighter').value);
+  var dNe = document.getElementById('dN');
+  var dRe = document.getElementById('dR');
+  var dLe = document.getElementById('dL');
+  dNe.textContent = n + '/10'; dNe.className = 'diff-delta' + (n <= 3 ? ' neg' : '');
+  dRe.textContent = r + '/10'; dRe.className = 'diff-delta';
+  dLe.textContent = l + '/10'; dLe.className = 'diff-delta';
+
+  var msg = document.getElementById('finalMsgLF');
+  if (l >= 7) {
+    msg.innerHTML = 'Wyraźna ulga po wglądzie w trajektorię — sama wiedza o normach fazy <em>depatologizowała</em> Twoje doświadczenie. To dobry punkt startu. Konkretny plan: zastosuj fazo-specyficzne interwencje przez 4–8 tygodni. Wróć do swojej trajektorii za miesiąc — perspektywa się dalej rozwija.';
+  } else if (n <= 3) {
+    msg.innerHTML = 'Twoja samoocena znacznie poniżej normy dla fazy — sygnał, że oprócz fazy działa inny mechanizm (depresja, trauma, niska samoocena dystymiczna, krytyczne wydarzenie). Sama trajektoria nie wyjaśnia obrazu. Pomocne: wizyta u psychiatry/terapeuty + trajektoria jako uzupełnienie, nie podstawowa interwencja.';
+  } else if (n >= 7) {
+    msg.innerHTML = 'Twoja samoocena znacznie powyżej normy fazy — możliwe profile: (1) wysoka stabilna autentyczna (Kernis: optimal — pielęgnuj); (2) krucha wysoka (narcystyczne wzmocnienia, agresja po krytyce — wymaga uwagi); (3) defensywne nadszacowanie (test IAT vs explicit). Warto zdiagnozować typ.';
+  } else if (r <= 4) {
+    msg.innerHTML = 'Niska gotowość do działania — typowe gdy klient otrzymuje dużo informacji teoretycznej, ale bez konkretnego pierwszego kroku. Wybierz JEDNĄ interwencję dla Twojej fazy i zacznij jutro. Pełna lista narzędzi czeka — ale ważniejsze jest <em>zacząć</em> niż znać wszystkie.';
+  } else {
+    msg.innerHTML = 'Średni wynik — typowy dla pierwszego wglądu w trajektorię. Powtórne czytanie raz w miesiącu daje stopniowo głębszą perspektywę. Najważniejsze: pamiętaj, że jesteś <em>w procesie</em>, nie w stałym stanie. Ta świadomość sama w sobie redukuje wagę aktualnych trudności.';
+  }
+}
+
+function onStepChange(step) { if (step === 5) updateDiff(); }
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) {
+    var id = e.target.id;
+    var out = document.getElementById(id + 'val');
+    if (out) out.textContent = e.target.value;
+    if (curStep === 5) updateDiff();
+  }
+});
+
+function onReset() {
+  ['vsNorm','readiness','lighter'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) {
+      var v = el.getAttribute('data-default') || '5';
+      el.value = v;
+      var out = document.getElementById(id + 'val');
+      if (out) out.textContent = v;
+    }
+  });
+  ['dN','dR','dL'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = 'diff-delta'; }
+  });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_se_lifespan — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_se_lifespan";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wewnętrzny krytyk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wewnętrzny krytyk</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Krytyk <em>introjektywny</em></h1>
+  <p class="card-detail">Blatt (2004) wyróżnił dwie formy samokrytyki: introjektywną (wewnętrzna, perfekcjonistyczna — „nigdy nie jestem wystarczająco dobry/a") i anaklityczną (relacyjna — „nikt mnie nie kocha"). U osób ze stylem oddalającym się dominuje introjektywna: krytyk surowy, ukryty, atakuje za potrzeby emocjonalne. Gilbert (2010, <em>Compassion Focused Therapy</em>): krytyk powstaje jako uwewnętrzniona reakcja na odrzucenie potrzeb w dzieciństwie — głos opiekuna, który komunikował „nie potrzebuj".</p>
+  <div class="frame-card">
+    <div class="frame-h">Cztery typowe zdania krytyka</div>
+    <div class="element-row"><div class="element-icon">🗣️</div><div class="element-text"><strong>„Potrzebowanie to słabość"</strong> — najczęstsze. Atakuje samo pojawienie się potrzeby więzi.</div></div>
+    <div class="element-row"><div class="element-icon">🗣️</div><div class="element-text"><strong>„Powinieneś/powinnaś radzić sobie sam/a"</strong> — atakuje proszenie o pomoc, kontakt, wsparcie.</div></div>
+    <div class="element-row"><div class="element-icon">🗣️</div><div class="element-text"><strong>„Jeśli pokażesz wrażliwość, wykorzystają cię"</strong> — atakuje samą myśl o ujawnieniu.</div></div>
+    <div class="element-row"><div class="element-icon">🗣️</div><div class="element-text"><strong>„Nie nadajesz się do bliskości"</strong> — globalna ocena tożsamości, najtrudniejsza do podważenia.</div></div>
+  </div>
+  <div class="frame-quote">„Wewnętrzny krytyk u osób z unikającym stylem nie jest słyszalny jako głos — jest doświadczany jako fakty o świecie. To czyni go potężniejszym niż krytyk lękowo-ambiwalentnego, który jest słyszalny jako głos i przez to łatwiejszy do podważenia."<span class="frame-quote-attr">— Gilbert (2010), <em>Compassion Focused Therapy</em></span></div>
+  <div class="term-note"><strong>Klucz</strong>: pierwszym krokiem jest <em>uświadomienie</em> głosu jako głosu, nie jako prawdy. „To krytyk mówi" — ten przekaz sam w sobie zmienia relację z głosem.</div>
+  <div class="src">📚 Blatt (2004, <em>Experiences of Depression</em>); Gilbert (2010, <em>Compassion Focused Therapy</em>); Schwartz (1995, IFS); Brown (2007, badania nad wstydem); Neff (2011, <em>Self-Compassion</em>); Fraley i Brumbaugh (2007).</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twój krytyk</div>
+  <h1 class="card-prompt">Konkretne <em>zdania</em></h1>
+  <p class="card-detail">Wyłapujesz konkretne zdania, które krytyk mówi — w sytuacjach, w których pojawia się potrzeba więzi, tęsknota, prośba o pomoc. To może być trudne, jeśli głos brzmi jak „fakty", a nie głos.</p>
+  <textarea class="thought-input" id="kr1" placeholder="Zdanie 1 — co krytyk mówi, gdy czujesz tęsknotę za kimś?"></textarea>
+  <textarea class="thought-input" id="kr2" placeholder="Zdanie 2 — co krytyk mówi, gdy chcesz prosić o pomoc?"></textarea>
+  <textarea class="thought-input" id="kr3" placeholder="Zdanie 3 — co krytyk mówi, gdy pojawia się chęć pokazania wrażliwości?"></textarea>
+  <div class="frame-card">
+    <div class="frame-h">Sygnały, że to krytyk</div>
+    <div class="element-row"><div class="element-icon">🎯</div><div class="element-text"><strong>Atak na potrzeby</strong> — gdy pojawia się potrzeba, zdanie ją kwestionuje, deprecjonuje, ośmiesza.</div></div>
+    <div class="element-row"><div class="element-icon">⚖️</div><div class="element-text"><strong>Tożsamościowy ton</strong> — „jesteś", „nie nadajesz się", „nigdy nie będziesz". Globalne, nie sytuacyjne.</div></div>
+    <div class="element-row"><div class="element-icon">⏰</div><div class="element-text"><strong>Stała obecność</strong> — głos pojawia się niezależnie od kontekstu, w podobnych sytuacjach od lat.</div></div>
+  </div>
+  <div class="term-note"><strong>Reguła</strong>: nawet jeśli zdania brzmią jak „fakty o tobie" — to zawsze są <em>głos</em>. Fakt nie potrzebuje powtarzania; krytyk powtarza, bo jest mechanizmem obronnym, nie diagnozą.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Geneza głosu</div>
+  <h1 class="card-prompt">Skąd <em>pochodzi</em></h1>
+  <p class="card-detail">Gilbert (2010) i Schwartz (1995, IFS): krytyk powstał jako mechanizm obronny w okolicznościach, w których ujawnienie potrzeby było zagrażające. „Nie potrzebuj" było wtedy <em>strategią przetrwania</em> — krytyk pilnował, żeby nie aktywować odrzucenia opiekuna.</p>
+  <textarea class="thought-input" id="opiekun" placeholder="Kto w dzieciństwie reagował dezaprobatą, ironią lub ignorowaniem na twoje potrzeby emocjonalne?"></textarea>
+  <textarea class="thought-input" id="komunikat" placeholder="Jaki jasny komunikat dostawałeś/aś — bezpośrednio lub między wierszami — o swoich potrzebach?"></textarea>
+  <div class="frame-card">
+    <div class="frame-h">Cztery typowe genezy</div>
+    <div class="element-row"><div class="element-icon">🚫</div><div class="element-text"><strong>Odrzucenie potrzeb</strong> — „Nie marudź", „nie histeryzuj", „inni mają gorzej". Komunikat: <em>twoje potrzeby są ciężarem</em>.</div></div>
+    <div class="element-row"><div class="element-icon">🏆</div><div class="element-text"><strong>Warunkowa miłość</strong> — kochany/a tylko za osiągnięcia, samodzielność, „dawanie radę". Komunikat: <em>masz wartość, gdy nie potrzebujesz</em>.</div></div>
+    <div class="element-row"><div class="element-icon">😤</div><div class="element-text"><strong>Brak tolerancji emocji</strong> — łzy karane, gniew tłumiony, smutek niezauważany. Komunikat: <em>emocje są problemem</em>.</div></div>
+    <div class="element-row"><div class="element-icon">🪞</div><div class="element-text"><strong>Modelowanie unikania</strong> — opiekunowie sami nie pokazywali wrażliwości; potrzeby nie istniały w słowniku rodzinnym.</div></div>
+  </div>
+  <div class="term-note"><strong>Mechanizm</strong>: krytyk ma swój sens — <em>w tamtym kontekście</em>. Nie pokazywanie potrzeb chroniło wtedy. Dziś ten sam mechanizm trzyma osobę w izolacji. Zrozumienie genezy nie usuwa krytyka, ale zmniejsza jego siłę.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Współczujący głos</div>
+  <h1 class="card-prompt">Druga <em>strona</em></h1>
+  <p class="card-detail">CFT (Gilbert): cel nie jest „zwalczyć" krytyka — jest dobudować <em>współczujący głos</em>, który mówi z perspektywy bezpiecznej figury opieki, której wcześniej brakowało. Ten głos buduje się świadomie, codziennie, z czasem staje się dostępny.</p>
+  <div class="frame-card">
+    <div class="frame-h">Cztery przeformułowania</div>
+    <div class="element-row"><div class="element-icon">💚</div><div class="element-text"><strong>„Potrzebowanie to słabość"</strong> → <em>„Potrzebowanie jest biologiczne, ludzkie. System więzi działa od urodzenia do śmierci (Bowlby)."</em></div></div>
+    <div class="element-row"><div class="element-icon">💚</div><div class="element-text"><strong>„Radź sobie sam/a"</strong> → <em>„Samodzielność miała sens, gdy nie było wsparcia. Dziś mogę wybierać."</em></div></div>
+    <div class="element-row"><div class="element-icon">💚</div><div class="element-text"><strong>„Wykorzystają cię"</strong> → <em>„Niektórzy tak. Ja decyduję, komu pokażę. To umiejętność rozpoznawania, nie zamknięcia."</em></div></div>
+    <div class="element-row"><div class="element-icon">💚</div><div class="element-text"><strong>„Nie nadajesz się do bliskości"</strong> → <em>„Mam strategię, która ograniczała bliskość. Strategia nie jest tożsamością. Mogę uczyć się innej."</em></div></div>
+  </div>
+  <textarea class="thought-input" id="moje-przeformulowanie" placeholder="Wybierz JEDNO zdanie krytyka z kroku 2 i napisz przeformułowanie w głosie współczującym:"></textarea>
+  <div class="term-note"><strong>Reguła</strong>: pierwsze przeformułowania brzmią sztucznie, nie wzbudzają emocji. To naturalne — głos współczujący buduje się przez powtórzenie, nie przez przekonanie. Po 4–8 tygodniach codziennej praktyki zaczyna brzmieć <em>jak swój</em>.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Codzienna praktyka</div>
+  <h1 class="card-prompt">Mikropowtórzenia <em>współczucia</em></h1>
+  <p class="card-detail">Neff (2011): self-compassion buduje się przez krótkie, częste akty — nie przez pojedyncze sesje. Trzy momenty dziennie to standard CFT.</p>
+  <div class="frame-card">
+    <div class="frame-h">Trzy mikromomenty</div>
+    <div class="element-row"><div class="element-icon">🌅</div><div class="element-text"><strong>Rano</strong> — „Dziś będę miał/a momenty trudności. Mogę być wobec siebie życzliwy/a, jak wobec drogiej osoby."</div></div>
+    <div class="element-row"><div class="element-icon">⚡</div><div class="element-text"><strong>W trakcie krytyki</strong> — gdy łapiesz głos krytyka, zatrzymanie + zdanie współczucia. Nie debata.</div></div>
+    <div class="element-row"><div class="element-icon">🌙</div><div class="element-text"><strong>Wieczór</strong> — „Co było dziś trudne? Co bym powiedział/a drogiej osobie w takiej sytuacji?"</div></div>
+  </div>
+  <div class="scale">
+    <div class="scale-title">Obecna częstość krytyka (0 = rzadko; 10 = nieustannie)</div>
+    <div class="scale-bounds"><span>0</span><span>10</span></div>
+    <input type="range" class="scale-input" id="czestosc" min="0" max="10" value="7" data-default="7" oninput="document.getElementById('czestoscV').textContent=this.value">
+    <div class="scale-readout"><span></span><span id="czestoscV">7</span></div>
+  </div>
+  <textarea class="thought-input" id="cel-praca" placeholder="Cel na 3 miesiące: jaka jest dla Ciebie satysfakcjonująca zmiana w częstości i sile głosu krytyka?"></textarea>
+  <div class="final-msg"><strong>Krytyk nie znika.</strong> CFT nie obiecuje eliminacji — obiecuje równowagę. Współczujący głos staje się wystarczająco silny, by krytyk przestał być jedynym głosem w głowie. To realna zmiana po 6–12 miesiącach pracy.</div>
+  <div class="term-note"><strong>Reguła kalibracji</strong>: u osób ze stylem oddalającym się praca nad krytykiem typowo trwa 12–24 miesiące — dłużej niż u stylu lękowo-ambiwalentnego, ze względu na większą obronę intelektualną. Wskazana terapia (CFT, IFS, Schema Therapy).</div>
+  <div class="repeat-reminder"><div class="repeat-h">Zapamiętaj</div><div class="repeat-body">Krytyk to <em>uwewnętrzniony głos</em>, nie diagnoza. <strong>Buduj drugi głos</strong> — codziennie, drobnymi krokami. Nie debata, lecz dodanie nowej ścieżki obok starej.</div></div>
+  <div class="src">📚 Blatt (2004); Gilbert (2010, CFT); Schwartz (1995, IFS); Neff (2011); Fraley i Brumbaugh (2007); Brown (2007).</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_av_samokrytyk — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_av_samokrytyk";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

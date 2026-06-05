@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · czym jest BDD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.fact-list { margin: 12px 0; }
+.fact-row { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; background: rgba(184,197,168,0.16); border-radius: 8px; margin-bottom: 6px; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.fact-row strong { color: var(--ink); font-weight: 600; }
+.fact-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.fact-text { flex: 1; }
+
+.proto-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 8px 8px 0; padding: 12px 14px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.04em; margin-bottom: 8px; text-transform: uppercase; }
+.proto-rule { display: flex; gap: 10px; padding: 6px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 22px; }
+.proto-content { flex: 1; }
+.proto-content strong { color: var(--ink); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>czym jest BDD</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Dysmorfofobia — kiedy <em>lustro nie pokazuje prawdy</em></h1>
+    <p class="card-detail">Dysmorfofobia (BDD — <em>Body Dysmorphic Disorder</em>) to zaburzenie, w którym <strong>zaabsorbowanie postrzeganymi „wadami" wyglądu</strong> staje się chroniczne i wyniszczające. „Wada" — niewidoczna albo minimalna dla innych — pochłania godziny dziennie. Phillips i in. (2005, <em>American Journal of Psychiatry</em>) opisali: 73% — skóra, 56% — włosy, 37% — nos. Mechanizm: selektywna uwaga na „defekcie" + zniekształcony obraz mentalny + rytuały sprawdzania, które dają chwilową ulgę i wzmacniają obsesję.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary BDD (Veale i Neziroglu, 2010)</div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Zaabsorbowanie</strong> — myśli o „defekcie" zajmują ≥1 godz. dziennie, często 3–8 godz. Pochłaniają uwagę, czas, energię.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🪞</span>
+        <span class="element-text"><strong>Zniekształcona percepcja</strong> — obraz mentalny ≠ to, co widzą inni. Mózg „dorysowuje" wadę, której fizycznie nie ma albo jest minimalna.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔁</span>
+        <span class="element-text"><strong>Rytuały i unikanie</strong> — sprawdzanie w lustrze, dopytywanie bliskich, kamuflaż, unikanie luster lub ludzi. Dają ulgę i wzmacniają obsesję.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚠️</span>
+        <span class="element-text"><strong>Cierpienie i ograniczenie</strong> — wycofanie społeczne, depresja, myśli samobójcze u ~80% (Phillips i Menard, 2006), ryzyko 2,6× wyższe niż w populacji ogólnej.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Osoby z BDD widzą swoje ciało inaczej, niż widzą je inni — to nie próżność, to zaburzenie percepcji, w którym mózg selektywnie skupia się na detalu i pomija całość."
+      <span class="frame-quote-attr">— Phillips (2009, <em>The Broken Mirror</em>)</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: BDD to <em>nie próżność</em>. To zaburzenie z rodziny OCD — zaabsorbowanie + rytuały + niezdolność do uwolnienia się od myśli o wyglądzie. Klasyfikowane w DSM-5 i ICD-11 w rozdziale „OCD i zaburzenia pokrewne".</div>
+
+    <div class="src">Phillips i in. (2005, <em>American Journal of Psychiatry</em>) · Veale i Neziroglu (2010, <em>Body Dysmorphic Disorder: A Treatment Manual</em>) · Phillips i Menard (2006, <em>Suicidality in BDD</em>) · APA (2022, DSM-5-TR) · WHO (2019, ICD-11)</div>
+  </section>
+
+  
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+    <h1 class="card-prompt">Co cię <em>nieproporcjonalnie</em> zajmuje?</h1>
+    <p class="card-detail">Najpierw zobacz, ile miejsca w dniu zajmuje myślenie o wyglądzie. Wpisz konkretnie — który obszar ciała, ile godzin dziennie, jaka emocja temu towarzyszy.</p>
+
+    <textarea class="thought-input" id="zaabsorbowanie" placeholder="np. „Skóra na twarzy — myślę o trądziku 4–5 godz. dziennie, sprawdzam w lustrze co 30 min, czuję wstyd i obrzydzenie. Unikam zdjęć i jasnego światła."" rows="5"></textarea>
+
+    <div class="scale">
+      <div class="scale-label"><span>Ile godzin dziennie zajmują myśli o „defekcie"?</span><span><strong id="hoursOut">3</strong> godz.</span></div>
+      <input type="range" class="scale-input" id="hoursIn" min="0" max="10" step="0.5" value="3" data-default="3">
+      <div class="scale-label"><span>0 — wcale</span><span>10 — cały dzień</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Jak bardzo to upośledza twoje funkcjonowanie?</span><span><strong id="impactOut">5</strong>/10</span></div>
+      <input type="range" class="scale-input" id="impactIn" min="0" max="10" value="5" data-default="5">
+      <div class="scale-label"><span>0 — nie wpływa</span><span>10 — paraliżuje</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Kryterium DSM-5</strong>: BDD diagnozuje się, gdy zaabsorbowanie zajmuje <em>co najmniej godzinę dziennie</em> i powoduje istotne cierpienie lub upośledza funkcjonowanie (relacje, praca, zdrowie). Powyżej 3 godz. dziennie to już ciężki przebieg.</div>
+  </section>
+
+  
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Krótki skrining BDDQ</div>
+    <h1 class="card-prompt">Czy spełniasz <em>cztery kryteria</em>?</h1>
+    <p class="card-detail">BDDQ (Phillips, 1995) to skrócony skrining BDD. Cztery pytania — kliknij te, które ci pasują. Trzy lub więcej zaznaczonych = wskazanie do pełnej oceny.</p>
+
+    <div class="examples-h">Zaznacz, co pasuje:</div>
+    <div class="example-chips">
+      <button class="example-chip" id="bddq1" onclick="this.classList.toggle('picked');saveSelection()">1. Martwię się wyglądem ≥1 godz. dziennie</button>
+      <button class="example-chip" id="bddq2" onclick="this.classList.toggle('picked');saveSelection()">2. Inni mówią, że problem jest mały albo go nie widzą</button>
+      <button class="example-chip" id="bddq3" onclick="this.classList.toggle('picked');saveSelection()">3. Unikam ludzi, sytuacji, zdjęć przez wygląd</button>
+      <button class="example-chip" id="bddq4" onclick="this.classList.toggle('picked');saveSelection()">4. Sprawdzam się, kamufluję, dopytuję — kompulsywnie</button>
+    </div>
+
+    <div class="proto-card">
+      <div class="proto-h">Co dalej, jeśli zaznaczyłeś/aś ≥3:</div>
+      <div class="proto-rule"><span class="proto-num">1.</span><span class="proto-content"><strong>Rozważ konsultację</strong> z psychiatrą lub psychoterapeutą znającym BDD.</span></div>
+      <div class="proto-rule"><span class="proto-num">2.</span><span class="proto-content"><strong>Pełna ocena</strong> — kwestionariusz BDD-YBOCS (Phillips, 1997) służy do potwierdzenia i pomiaru nasilenia.</span></div>
+      <div class="proto-rule"><span class="proto-num">3.</span><span class="proto-content"><strong>NIE szukaj zabiegu</strong> kosmetycznego ani chirurgicznego — w BDD chirurgia pogarsza objawy w ~50% przypadków (Crerand i in., 2010).</span></div>
+      <div class="proto-rule"><span class="proto-num">4.</span><span class="proto-content"><strong>Leczenie pierwszego rzutu</strong>: terapia poznawczo-behawioralna BDD (CBT-BDD, Wilhelm, 2013) i SSRI w wyższych dawkach. Razem dają najlepsze wyniki.</span></div>
+    </div>
+
+    <div class="term-note"><strong>⚠️ Ważne</strong>: dwa zaznaczenia mogą oznaczać podprogowe BDD lub inny problem (lęk społeczny, OCD, zaburzenia odżywiania). Trzy lub cztery — wskazanie do pełnej diagnostyki, nie samodzielnego leczenia.</div>
+  </section>
+
+  
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Mechanizm — jak BDD się utrzymuje</div>
+    <h1 class="card-prompt">Cykl <em>obsesja → rytuał → ulga → wzmocnienie</em></h1>
+    <p class="card-detail">BDD nie utrzymuje się samo. Każdy rytuał (sprawdzenie, dopytanie, kamuflaż) daje chwilową ulgę i jednocześnie utwierdza, że „wada" jest ważna. Mózg uczy się: „skoro sprawdzam, to musi być coś istotnego". Veale (2004) opisał ten cykl w modelu poznawczym BDD.</p>
+
+    <div class="proto-card">
+      <div class="proto-h">Pętla podtrzymująca BDD:</div>
+      <div class="proto-rule"><span class="proto-num">1.</span><span class="proto-content"><strong>Wyzwalacz</strong> — lustro, zdjęcie, czyjeś spojrzenie, jasne światło.</span></div>
+      <div class="proto-rule"><span class="proto-num">2.</span><span class="proto-content"><strong>Aktywacja przekonania</strong> — „mam zniekształcony nos / okropną cerę".</span></div>
+      <div class="proto-rule"><span class="proto-num">3.</span><span class="proto-content"><strong>Selektywna uwaga + obraz mentalny</strong> — uwaga skanuje „defekt"; obraz w głowie jest gorszy niż realny.</span></div>
+      <div class="proto-rule"><span class="proto-num">4.</span><span class="proto-content"><strong>Emocja</strong> — wstyd, obrzydzenie, lęk.</span></div>
+      <div class="proto-rule"><span class="proto-num">5.</span><span class="proto-content"><strong>Rytuał lub unikanie</strong> — sprawdzanie, kamuflaż, dopytywanie, omijanie luster i ludzi.</span></div>
+      <div class="proto-rule"><span class="proto-num">6.</span><span class="proto-content"><strong>Chwilowa ulga</strong> — lęk spada na minuty.</span></div>
+      <div class="proto-rule"><span class="proto-num">7.</span><span class="proto-content"><strong>Wzmocnienie przekonania</strong> — „skoro sprawdziłem/am, znaczy że to ważne". Pętla się zamyka.</span></div>
+    </div>
+
+    <div class="fact-list">
+      <div class="fact-row">
+        <span class="fact-icon">🧬</span>
+        <span class="fact-text"><strong>Neurobiologia</strong> — Feusner i in. (2010, <em>Archives of General Psychiatry</em>) wykazali nadmierną aktywację lewej półkuli (przetwarzanie detali) i niedostateczną prawej (przetwarzanie całości) podczas patrzenia na własną twarz.</span>
+      </div>
+      <div class="fact-row">
+        <span class="fact-icon">📊</span>
+        <span class="fact-text"><strong>Skuteczne leczenie</strong> — meta-analiza Harrison i in. (2016): CBT-BDD daje d = 1,22 (silny efekt). SSRI w wyższych dawkach: d = 0,92 (Ipser i in., 2009). Najlepiej — łącznie.</span>
+      </div>
+      <div class="fact-row">
+        <span class="fact-icon">⏱️</span>
+        <span class="fact-text"><strong>Średni czas do diagnozy</strong> — 5–10 lat od początku objawów (Phillips, 2005). Wcześniejsza interwencja oznacza lepsze rokowanie.</span>
+      </div>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz wyjścia z pętli</strong>: <em>przerwij rytuał, nawet kosztem lęku</em>. Każdy zatrzymany rytuał osłabia przekonanie, że „muszę sprawdzić, żeby było OK". To podstawa ekspozycji z powstrzymaniem reakcji (ERP) w terapii BDD.</div>
+  </section>
+
+  
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Co dalej</div>
+    <h1 class="card-prompt">Twój <em>najbliższy krok</em></h1>
+    <p class="card-detail">Wiedza o BDD nie wystarczy — potrzebne jest działanie. Wybierz JEDEN konkretny krok na najbliższy tydzień. Mały, wykonalny, skierowany w stronę leczenia, nie rytuału.</p>
+
+    <textarea class="thought-input" id="krok" placeholder="np. „Zapiszę się na konsultację u psychiatry i opowiem o godzinach przed lustrem." albo „Przez tydzień rejestruję, ile razy sprawdzam wygląd."" rows="3"></textarea>
+
+    <div class="scale">
+      <div class="scale-label"><span>Gotowość do tego kroku</span><span><strong id="readyOut">5</strong>/10</span></div>
+      <input type="range" class="scale-input" id="readyIn" min="0" max="10" value="5" data-default="5">
+      <div class="scale-label"><span>0 — żadna</span><span>10 — pełna</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsg">
+      Najtrudniejsza w BDD nie jest „wada" — jest <strong>chroniczność</strong>. Mózg powtarzający tę samą pętlę przez lata uczy się, że „defekt" jest ważny. Każde działanie, które przerywa pętlę — konsultacja, dziennik, godzina mniej przed lustrem — <em>uczy mózg czegoś innego</em>. Wystarczy zacząć od jednego.
+    </div>
+
+    <div class="term-note"><strong>⚙️ Reguła kalibracji</strong>: BDD reaguje na leczenie, ale wymaga <em>czasu</em> — terapia poznawczo-behawioralna 12–22 sesji, SSRI minimum 12–16 tygodni przed oceną skuteczności (Wilhelm, 2013; Phillips i Hollander, 2008). Pierwsze tygodnie często nie przynoszą zmian — to normalne, nie znak porażki.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">BDD to <strong>nie próżność i nie brak silnej woli</strong> — to zaburzenie percepcji i zachowania. Skuteczne leczenie istnieje: <em>terapia poznawczo-behawioralna BDD</em> i SSRI w wyższych dawkach. Pierwszy krok to nazwanie problemu i konsultacja — nie zabieg kosmetyczny.</div>
+    </div>
+
+    <div class="src">Phillips i in. (2005, <em>American Journal of Psychiatry</em>) · Veale (2004, <em>Body Image</em>) · Veale i Neziroglu (2010, <em>Body Dysmorphic Disorder: A Treatment Manual</em>) · Wilhelm i in. (2013, <em>Cognitive-Behavioral Therapy for BDD</em>) · Harrison i in. (2016, <em>Clinical Psychology Review</em>) · Feusner i in. (2010, <em>Archives of General Psychiatry</em>) · APA (2022, DSM-5-TR)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function saveSelection() {
+  if (typeof save === 'function') save();
+}
+
+function onStepChange(step) {
+  /* hooki dynamiczne — placeholder */
+}
+
+const hoursIn = document.getElementById('hoursIn');
+const hoursOut = document.getElementById('hoursOut');
+if (hoursIn && hoursOut) {
+  hoursIn.addEventListener('input', () => { hoursOut.textContent = hoursIn.value; });
+  hoursOut.textContent = hoursIn.value;
+}
+const impactIn = document.getElementById('impactIn');
+const impactOut = document.getElementById('impactOut');
+if (impactIn && impactOut) {
+  impactIn.addEventListener('input', () => { impactOut.textContent = impactIn.value; });
+  impactOut.textContent = impactIn.value;
+}
+const readyIn = document.getElementById('readyIn');
+const readyOut = document.getElementById('readyOut');
+if (readyIn && readyOut) {
+  readyIn.addEventListener('input', () => { readyOut.textContent = readyIn.value; });
+  readyOut.textContent = readyIn.value;
+}
+
+function onReset() {
+  document.querySelectorAll('.example-chip.picked').forEach(el => el.classList.remove('picked'));
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_czym_bdd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_czym_bdd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

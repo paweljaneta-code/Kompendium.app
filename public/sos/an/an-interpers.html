@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Relacje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.area-card { background: rgba(255,255,255,0.55); border: 1.5px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.area-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; display: flex; align-items: center; gap: 10px; }
+.area-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--sage-deep); color: var(--bg); font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.area-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 6px; }
+.area-text strong { color: var(--ink); font-weight: 600; }
+.area-prompt { font-size: 12px; color: var(--ink-mute); line-height: 1.4; padding: 6px 10px; background: rgba(184,197,168,0.12); border-radius: 6px; font-style: italic; margin-top: 6px; }
+
+.map-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 8px 0 12px; }
+.map-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.map-row { display: grid; grid-template-columns: 1fr 60px 60px 60px; gap: 8px; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: center; }
+.map-row:first-of-type { border-top: none; padding-bottom: 4px; padding-top: 0; }
+.map-row.head { font-size: 10px; color: rgba(244,241,234,0.6); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+.map-input { padding: 6px 8px; border: 1px solid var(--sage); border-radius: 5px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: inherit; font-size: 12px; }
+.map-input:focus { outline: 1px solid var(--bg); background: white; }
+.map-num { padding: 6px 4px; border: 1px solid var(--sage); border-radius: 5px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: 'Fraunces', serif; font-weight: 700; font-size: 12px; text-align: center; }
+
+.dear-card { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 8px 8px 0; margin: 8px 0; }
+.dear-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; }
+.dear-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 4px 0; align-items: baseline; font-size: 12px; line-height: 1.4; color: var(--ink-soft); }
+.dear-letter { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 13px; }
+.dear-row strong { color: var(--ink); font-weight: 600; }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Relacje</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Trudności <em>interpersonalne</em> — trzeci mechanizm</h1>
+  <p class="card-detail">Trudności interpersonalne to trzeci transdiagnostyczny mechanizm podtrzymujący zaburzenia odżywiania (Fairburn, 2008). W anoreksji ujawnia się jako: <em>izolacja społeczna</em> (unikanie jedzenia z innymi → wycofanie), <em>trudności w wyrażaniu emocji i potrzeb</em> („nikt mnie nie rozumie"), <em>konfliktowe relacje rodzinne</em> (często napięte, intensywne), <em>stałe role</em> („grzeczna dziewczynka", „pomocna", niekonfliktowa), <em>zmiany ról życiowych</em> (przejście do dorosłości, opuszczenie domu, pierwsza praca). Schmidt i Wonderlich (1999) — Interpersonal Psychotherapy for Eating Disorders (IPT-ED) — alternatywa dla CBT-E, skupiona <em>wyłącznie</em> na relacjach. CBT-E zawiera moduł IP jako dodatek (faza 3).</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery obszary IPT — gdzie szukać trudności</div>
+    <div class="element-row">
+      <span class="element-icon">🕯️</span>
+      <span class="element-text"><strong>Żałoba</strong> — śmierć bliskiej osoby; nierozwiązana strata; pojawienie albo zaostrzenie AN po niej</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚔️</span>
+      <span class="element-text"><strong>Spory interpersonalne</strong> — chroniczne konflikty z bliskimi (rodzic, partner, przyjaciel); ukryte żale, nieprzepracowane oczekiwania</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🚪</span>
+      <span class="element-text"><strong>Tranzycje życiowe</strong> — zmiany ról: dorosłość, wyjazd na studia, pierwsza praca, ślub, dziecko, rozstanie, śmierć rodzica</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌫️</span>
+      <span class="element-text"><strong>Deficyty interpersonalne</strong> — chroniczna izolacja, brak bliskich relacji, trudność w nawiązywaniu kontaktu; często długotrwały wzorzec</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Anoreksja często powstaje albo zaostrza się w okresie zmiany interpersonalnej. Identyfikacja, w którym z czterech obszarów IPT jesteś, daje konkretny kierunek pracy — bez tej mapy interwencje mogą być rozproszone."
+    <span class="frame-quote-attr">— interpretacja kliniczna na podstawie Klerman (1984, IPT) i Rieger (2010, IPT-ED)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — anoreksja i izolacja tworzą <em>cykl</em>. AN wymusza unikanie jedzenia z innymi → wycofanie z życia społecznego. Wycofanie zwiększa zależność od AN jako jedynego „towarzysza". Praca polega na <em>przerwaniu</em> tego cyklu w jednym punkcie — najczęściej przez pracę nad asertywnością i stopniową ekspozycję społeczną.</div>
+  
+  <div class="term-note"><strong>Walidacja</strong> — niektórzy pacjenci czują, że „relacje to nie ich obszar", że „lubią być sami". Cześć tej deklaracji może być prawdziwa (introwersja), część jest <em>obroną</em> wynikającą z trudności. Zauważ: introwertyk potrafi nawiązać bliskość — preferuje tylko mniejsze grono. Pacjent z trudnościami interpersonalnymi <em>chce</em> bliskości, ale nie umie albo nie umiał jej zbudować. To różnica.</div>
+  
+  <div class="src"><em>📚 Fairburn (2008, CBT-E enhanced); Klerman, Weissman i in. (1984, Interpersonal Psychotherapy); Rieger i in. (2010, IPT-ED); Wilfley i in. (2002, IPT for ED); Birmingham i Treasure (2010, jedzenie i relacje).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Mapa relacji</div>
+  <h1 class="card-prompt">Twoje <em>ważne</em> relacje</h1>
+  <p class="card-detail">Pierwsza praca — <strong>mapa relacji</strong>. Wypisz wszystkie ważne osoby w Twoim życiu (rodzina, partner, przyjaciele, koledzy z pracy/szkoły). Przy każdej oceń: jakość relacji (1–10), poziom konfliktu (1–10), wpływ na AN (-5 do +5; ujemne — sprzyja chorobie, dodatnie — sprzyja zdrowieniu). To daje wizualną mapę, w którą warto inwestować, którą warto zrewidować.</p>
+  
+  <div class="map-card">
+    <div class="map-h">Sześć ważnych relacji</div>
+    <div class="map-row head">
+      <span>Imię / rola</span>
+      <span style="text-align:center">Jakość<br>1–10</span>
+      <span style="text-align:center">Konflikt<br>1–10</span>
+      <span style="text-align:center">AN<br>-5..+5</span>
+    </div>
+    <div class="map-row">
+      <input type="text" id="ipr-r1-imie" class="map-input" placeholder="np. Mama">
+      <input type="number" id="ipr-r1-jak" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r1-kon" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r1-an" class="map-num" min="-5" max="5">
+    </div>
+    <div class="map-row">
+      <input type="text" id="ipr-r2-imie" class="map-input" placeholder="Drugi">
+      <input type="number" id="ipr-r2-jak" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r2-kon" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r2-an" class="map-num" min="-5" max="5">
+    </div>
+    <div class="map-row">
+      <input type="text" id="ipr-r3-imie" class="map-input" placeholder="Trzeci">
+      <input type="number" id="ipr-r3-jak" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r3-kon" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r3-an" class="map-num" min="-5" max="5">
+    </div>
+    <div class="map-row">
+      <input type="text" id="ipr-r4-imie" class="map-input" placeholder="Czwarty">
+      <input type="number" id="ipr-r4-jak" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r4-kon" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r4-an" class="map-num" min="-5" max="5">
+    </div>
+    <div class="map-row">
+      <input type="text" id="ipr-r5-imie" class="map-input" placeholder="Piąty">
+      <input type="number" id="ipr-r5-jak" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r5-kon" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r5-an" class="map-num" min="-5" max="5">
+    </div>
+    <div class="map-row">
+      <input type="text" id="ipr-r6-imie" class="map-input" placeholder="Szósty">
+      <input type="number" id="ipr-r6-jak" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r6-kon" class="map-num" min="1" max="10">
+      <input type="number" id="ipr-r6-an" class="map-num" min="-5" max="5">
+    </div>
+  </div>
+  
+  <div class="examples-h">Co Cię uderza, patrząc na mapę?</div>
+  <textarea id="ipr-uder" class="thought-input" rows="4" placeholder="Czy są relacje wysokiej jakości i niskiego konfliktu? Czy dominują niskiej jakości? Które relacje sprzyjają zdrowieniu, które chorobie? Ile relacji w ogóle ujęłaś/eś?…"></textarea>
+  
+  <div class="term-note"><strong>Wskazówka</strong> — pacjenci z anoreksją często wypełniają mniej niż 6 relacji — i to też jest informacją. Świadczy o izolacji, którą warto zaadresować. Wracaj do mapy co kilka miesięcy. Po 6 miesiącach pracy mapa zwykle się rozszerza — pojawiają się nowe relacje, część konfliktów się rozwiązuje.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Obszar IPT</div>
+  <h1 class="card-prompt">W którym <em>obszarze</em> jesteś</h1>
+  <p class="card-detail">Drugi etap — <strong>identyfikacja obszaru</strong>. Cztery obszary IPT to mapa, gdzie szukać. Anoreksja zwykle aktywuje się albo zaostrza w jednym z tych obszarów. Nazwanie go daje konkretny kierunek pracy. Możesz być w więcej niż jednym — rzadko w żadnym.</p>
+  
+  <div class="area-card">
+    <div class="area-h"><span class="area-num">1</span>Żałoba</div>
+    <div class="area-text">Śmierć bliskiej osoby. Nierozwiązana strata. AN pojawiła się albo zaostrzyła po stracie — często z opóźnieniem 6–18 miesięcy. <strong>Żałoba"zatrzymana"</strong> przez restrykcję — emocje wyłączone głodem.</div>
+    <div class="area-prompt">Czy AN pojawiła się/zaostrzyła po śmierci bliskiej osoby? Kiedy? Czy emocje żałoby zostały przeżyte?</div>
+  </div>
+  
+  <div class="area-card">
+    <div class="area-h"><span class="area-num">2</span>Spory interpersonalne</div>
+    <div class="area-text">Chroniczne konflikty — najczęściej z rodzicem (matką), partnerem, czasem przyjaciółką. Niewypowiedziane żale, nieprzepracowane oczekiwania. AN <em>jako bunt bez słów</em> — sposób komunikowania niezgody, gdy słowa nie są bezpieczne.</div>
+    <div class="area-prompt">Czy jest osoba, z którą masz długi, nieprzepracowany konflikt? Co jest istotą tego konfliktu? Co byś powiedział/a, gdybyś mógł/mogła?</div>
+  </div>
+  
+  <div class="area-card">
+    <div class="area-h"><span class="area-num">3</span>Tranzycje życiowe</div>
+    <div class="area-text">Zmiana roli — przejście do dorosłości (16–22 lat), wyjazd na studia, opuszczenie domu, pierwsza praca, ślub, dziecko, rozstanie, śmierć rodzica. AN <em>jako odpowiedź na pustkę</em>, którą zostawiła zmiana — pierwotna rola się skończyła, nowa jeszcze nie jest stabilna.</div>
+    <div class="area-prompt">Czy AN pojawiła się/zaostrzyła w okresie istotnej zmiany życiowej? Jakiej? Jak się czujesz w nowej roli?</div>
+  </div>
+  
+  <div class="area-card">
+    <div class="area-h"><span class="area-num">4</span>Deficyty interpersonalne</div>
+    <div class="area-text">Chroniczna izolacja. Brak bliskich relacji od zawsze. Trudność w nawiązywaniu kontaktu. Często długotrwały wzorzec, niepowiązany z konkretną stratą. AN <em>jako jedyny towarzysz</em>, którego masz.</div>
+    <div class="area-prompt">Czy izolacja jest długotrwała? Czy zawsze trudno było nawiązać bliskość? Czy AN stała się „towarzyszem"?</div>
+  </div>
+  
+  <div class="examples-h">W którym obszarze (lub obszarach) jesteś dzisiaj?</div>
+  <textarea id="ipr-obszar" class="thought-input" rows="4" placeholder="Numer (1–4) i konkretny opis. Co konkretnie się dzieje w tym obszarze? Jak to wpływa na AN?…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — często pacjenci są w <em>kilku</em> obszarach jednocześnie. Np. tranzycja życiowa (wyjazd na studia) + spór interpersonalny (z matką, która nie akceptuje wyjazdu) + deficyty (brak nowych przyjaźni w nowym mieście). Identyfikacja <em>wszystkich</em> obecnych obszarów daje pełniejszy obraz pracy.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Asertywność</div>
+  <h1 class="card-prompt">Wyrażanie potrzeb — <em>DEAR MAN</em></h1>
+  <p class="card-detail">Trzeci etap — <strong>konkretne narzędzie asertywności</strong>. DEAR MAN (Linehan, 1993, DBT) to akronim siedmiu kroków sformułowania prośby albo wyrażenia potrzeby w trudnej sytuacji interpersonalnej. Pacjenci z AN często „grzecznie" milczą, akumulując frustrację — która potem wypływa przez restrykcję. DEAR MAN daje strukturę.</p>
+  
+  <div class="dear-card">
+    <div class="dear-h">DEAR MAN — siedem kroków</div>
+    <div class="dear-row"><span class="dear-letter">D</span><span><strong>Describe</strong> — opisz fakty obiektywnie: „Wczoraj komentowałaś moje śniadanie".</span></div>
+    <div class="dear-row"><span class="dear-letter">E</span><span><strong>Express</strong> — wyraź emocje swoje: „Czuję się ranna, gdy to słyszę".</span></div>
+    <div class="dear-row"><span class="dear-letter">A</span><span><strong>Assert</strong> — proś o konkret: „Chciałabym, żebyś nie komentowała tego, co jem".</span></div>
+    <div class="dear-row"><span class="dear-letter">R</span><span><strong>Reinforce</strong> — wskazuj korzyść dla drugiej osoby: „Wtedy obiady będą spokojniejsze dla nas obu".</span></div>
+    <div class="dear-row"><span class="dear-letter">M</span><span><strong>Mindful</strong> — zostań przy temacie, nie daj się wciągnąć w boki.</span></div>
+    <div class="dear-row"><span class="dear-letter">A</span><span><strong>Appear confident</strong> — kontakt wzrokowy, spokojny ton, prosta postura.</span></div>
+    <div class="dear-row"><span class="dear-letter">N</span><span><strong>Negotiate</strong> — bądź gotowa/y na kompromis: „Może wystarczy, że…".</span></div>
+  </div>
+  
+  <div class="examples-h">Wybierz <em>jedną</em> sytuację, w której potrzebujesz asertywności</div>
+  <textarea id="ipr-syt" class="thought-input" rows="3" placeholder="Konkretna osoba, konkretna sytuacja. „Mama komentująca moje jedzenie". „Partner, który wymaga seksu". „Koleżanka, która wymaga, żebym jadła z nimi"…"></textarea>
+  
+  <div class="examples-h">Twój DEAR MAN — pisz każdy krok</div>
+  <textarea id="ipr-dm-d" class="thought-input" rows="2" placeholder="D — Describe (fakty obiektywnie)"></textarea>
+  <textarea id="ipr-dm-e" class="thought-input" rows="2" placeholder="E — Express (jak się czujesz)"></textarea>
+  <textarea id="ipr-dm-a" class="thought-input" rows="2" placeholder="A — Assert (konkretna prośba)"></textarea>
+  <textarea id="ipr-dm-r" class="thought-input" rows="2" placeholder="R — Reinforce (korzyść dla niego/niej)"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — pierwsze próby DEAR MAN są <em>niesamowicie</em> trudne. Pacjenci z anoreksją zwykle nie ćwiczyli asertywności — ich strategia to „grzecznie się dostosować, zachować pokój za wszelką cenę". DEAR MAN to nowa umiejętność. Pierwsze rozmowy będą szorstkie. Z każdą próbą stają się gładsze. Po 5–10 próbach asertywność zaczyna być <em>częścią Ciebie</em>, nie wymuszonym ćwiczeniem.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Stopniowo</div>
+  <h1 class="card-prompt">Praca <em>powolna</em> i zewnętrzna</h1>
+  <p class="card-detail">Trudności interpersonalne nie zmieniają się w izolacji — wymagają <em>zewnętrznych</em> doświadczeń. Cztery konkretne kroki na nadchodzące tygodnie.</p>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Tygodnie 1–2 — mapa i obszar</strong>. Mapę relacji wypełnij szczerze. Zidentyfikuj obszar IPT (1 do 4). To Twój punkt startowy.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Tygodnie 3–4 — pierwsza DEAR MAN</strong>. Wybierz <em>jedną</em> łagodniejszą sytuację (nie najtrudniejszą). Przeprowadź rozmowę. Potem napisz, co się stało. Powtórz w innej sytuacji.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>Tygodnie 5–8 — stopniowa ekspozycja społeczna</strong>. Hierarchia od łatwego: kawa z bliską osobą → spotkanie z kilkoma → udział w wydarzeniu → posiłek z grupą. Każdy krok — eksperyment.</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Pracuj z terapeutą</strong> — szczególnie obszary „spory" i „żałoba" wymagają wsparcia. IPT-ED (Rieger, 2010) jest dedykowanym podejściem, równie skutecznym jak CBT-E, ale skupionym na relacjach. W Polsce niewielu certyfikowanych terapeutów IPT — pytaj swojego.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Trudności interpersonalne to <strong>trzeci mechanizm</strong> podtrzymujący anoreksję — obok perfekcjonizmu i niskiej samooceny. Cztery obszary IPT: <em>żałoba, spory, tranzycje, deficyty</em>. Anoreksja i izolacja tworzą cykl — przerywasz go w jednym punkcie. Asertywność (DEAR MAN) jest narzędziem konkretnym; ekspozycja społeczna stopniowa jest drugim filarem. Praca powolna, zewnętrzna, w miesiącach.</div>
+  </div>
+  
+  <div class="final-msg"><strong>IPT-ED jako alternatywa</strong> — Rieger i in. (2010); Wilfley i in. (2002): w randomizowanych badaniach IPT-ED jest <em>równie skuteczna</em> jak CBT-E w długim horyzoncie (12+ miesięcy), choć wolniejsza w krótkim (6 miesięcy). Dla pacjentów, u których trudności interpersonalne są dominujące, IPT-ED może być <em>lepszą</em> pierwszą linią leczenia. CBT-E zawiera moduł IP jako dodatek (faza 3 enhanced).</div>
+  
+  <div class="src"><em>📚 Fairburn (2008, CBT-E enhanced); Klerman, Weissman i in. (1984, Interpersonal Psychotherapy); Rieger i in. (2010, IPT-ED); Wilfley i in. (2002, IPT for ED); Linehan (1993, DBT — DEAR MAN); Birmingham i Treasure (2010).</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Brak interaktywnego JS — inputs i textareas, persystencja zapisuje. */
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_interpers — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_interpers";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

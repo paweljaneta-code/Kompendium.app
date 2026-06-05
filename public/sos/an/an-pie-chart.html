@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Pie chart samooceny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.pie-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 8px 0 12px; }
+.pie-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; text-align: center; }
+.pie-svg-wrap { display: flex; justify-content: center; padding: 6px 0; }
+.pie-svg { width: 100%; max-width: 240px; height: auto; }
+.pie-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.pie-legend-row { display: grid; grid-template-columns: 14px 1fr 50px; gap: 10px; align-items: center; padding: 4px 0; }
+.pie-swatch { width: 14px; height: 14px; border-radius: 3px; }
+.pie-label { font-size: 12px; color: rgba(244,241,234,0.92); }
+.pie-pct { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); font-size: 13px; text-align: right; }
+
+.slider-card { background: rgba(255,255,255,0.55); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin: 8px 0 12px; }
+.slider-row { display: grid; grid-template-columns: 1fr 50px; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); align-items: center; }
+.slider-row:first-of-type { border-top: none; }
+.slider-label { display: flex; flex-direction: column; gap: 4px; }
+.slider-label-h { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 13px; }
+.slider-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: rgba(74,99,71,0.3); border-radius: 2px; outline: none; cursor: pointer; }
+.slider-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: var(--sage-deep); border-radius: 50%; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.slider-input::-moz-range-thumb { width: 18px; height: 18px; background: var(--sage-deep); border-radius: 50%; cursor: pointer; border: none; }
+.slider-pct { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 14px; text-align: center; }
+
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0 12px; }
+.compare-cell { background: rgba(255,255,255,0.55); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; text-align: center; }
+.compare-h { font-family: 'Fraunces', serif; font-size: 11px; font-weight: 700; color: var(--ink-mute); margin-bottom: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
+.compare-h.warm { color: #8a4a18; }
+.compare-h.sage { color: var(--sage-deep); }
+.compare-mini { width: 100%; height: 80px; }
+.compare-pct-list { font-size: 10.5px; color: var(--ink-soft); line-height: 1.5; margin-top: 8px; text-align: left; }
+
+.action-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.action-row { background: rgba(184,197,168,0.12); border-radius: 8px; padding: 10px 12px; }
+.action-h { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); font-size: 12.5px; margin-bottom: 4px; }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Pie chart samooceny</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Pie chart <em>samooceny</em></h1>
+  <p class="card-detail">Pie chart samooceny (<em>self-evaluation pie chart</em>, Fairburn 2008) to wizualne narzędzie CBT-E. Rysujesz koło reprezentujące <strong>wszystkie</strong> źródła Twojego poczucia wartości i dzielisz je na sektory <em>proporcjonalne</em> do tego, ile każda domena „waży". To pokazuje w 5 minut to, na co inne techniki potrzebują wielu sesji — strukturę nadwartościowania <em>wizualnie</em>. Pacjent, który widzi swój pie chart, rozumie problem inaczej niż pacjent, który tylko o nim mówi.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery elementy narzędzia</div>
+    <div class="element-row">
+      <span class="element-icon">🥧</span>
+      <span class="element-text"><strong>Wizualizacja</strong> — koło pokazuje proporcje; sektor „ciało/waga" zwykle zajmuje 60–90% u pacjentów z anoreksją (porównaj: u zdrowych 15–25%)</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Cel — nie zmniejszyć kawałek z wagą</strong> — to niemożliwe na rozkaz; cel to <em>rozszerzyć inne sektory</em>, aż „kawałek z wagą" automatycznie się zmniejszy</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📊</span>
+      <span class="element-text"><strong>Pomiar zmiany</strong> — powtarzasz co 2–3 miesiące; widzisz <em>mierzalny</em> postęp w ruchu sektorów; to rzadkie w psychoterapii</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌱</span>
+      <span class="element-text"><strong>Praca przez akcje</strong> — każdy nowy sektor rośnie tylko wtedy, gdy podejmujesz konkretne działania w tej domenie; intencja bez akcji nie zmienia koła</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Pie chart samooceny jest jednym z najbardziej ilustrujących narzędzi CBT-E. Pacjent w 5 minut pojmuje problem, na który inne techniki potrzebują sesji. Strukturalna kruchość staje się <em>widoczna</em>."
+    <span class="frame-quote-attr">— Christopher Fairburn (2008, <em>CBT and Eating Disorders</em>, rozdz. 10)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — pie chart nie jest „testem" Twojej psychiki. Jest <em>mapą</em> aktualnej konfiguracji samooceny. Mapa nie ocenia, mapa pokazuje. Możesz wracać do niej co kilka miesięcy i widzieć, jak się zmienia. Im bardziej zrównoważony pie chart, tym bardziej stabilny dom.</div>
+  
+  <div class="term-note"><strong>Praktyka</strong> — typowe sektory: <em>kształt/waga/kontrola | praca albo szkoła | relacje | zainteresowania albo pasje | charakter albo wartości | sens albo duchowość</em>. Możesz dodać własne. Ważne: suma = 100%, każdy sektor ma jakieś miejsce, nawet jeśli małe.</div>
+  
+  <div class="src"><em>📚 Fairburn (2008, Cognitive Behavior Therapy and Eating Disorders, rozdz. 10); Cooper i Fairburn (1993, Behaviour Research and Therapy); Cooper i in. (2007); Shafran i in. (2004, Behav Res Ther).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twój chart dziś</div>
+  <h1 class="card-prompt">Pie chart <em>na dziś</em></h1>
+  <p class="card-detail">Przesuń suwaki — każdy reprezentuje udział danej domeny w Twojej samoocenie. Suma jest automatycznie normalizowana do 100%. Spróbuj <em>uczciwie</em> oddać dzisiejszy stan, nie idealny. Jak to <em>realnie</em> wygląda u Ciebie teraz.</p>
+  
+  <div class="pie-card">
+    <div class="pie-h">Pie chart Twojej samooceny</div>
+    <div class="pie-svg-wrap">
+      <svg id="pie-svg" class="pie-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Pie chart samooceny">
+        <circle cx="100" cy="100" r="90" fill="rgba(244,241,234,0.06)"/>
+      </svg>
+    </div>
+    <div class="pie-legend" id="pie-legend"></div>
+  </div>
+  
+  <div class="slider-card">
+    <div class="slider-row">
+      <div class="slider-label">
+        <span class="slider-label-h">🎯 Ciało, waga, kontrola</span>
+        <input type="range" id="pie-cialo" class="slider-input" min="0" max="100" value="70" data-color="#c97a52">
+      </div>
+      <span class="slider-pct" id="pie-cialo-pct">70</span>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">
+        <span class="slider-label-h">👥 Relacje</span>
+        <input type="range" id="pie-relac" class="slider-input" min="0" max="100" value="10" data-color="#7aa3c9">
+      </div>
+      <span class="slider-pct" id="pie-relac-pct">10</span>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">
+        <span class="slider-label-h">💼 Praca, nauka</span>
+        <input type="range" id="pie-praca" class="slider-input" min="0" max="100" value="10" data-color="#a3a380">
+      </div>
+      <span class="slider-pct" id="pie-praca-pct">10</span>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">
+        <span class="slider-label-h">🎨 Pasje, zainteresowania</span>
+        <input type="range" id="pie-pasje" class="slider-input" min="0" max="100" value="5" data-color="#d4a574">
+      </div>
+      <span class="slider-pct" id="pie-pasje-pct">5</span>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">
+        <span class="slider-label-h">💎 Charakter, wartości</span>
+        <input type="range" id="pie-warto" class="slider-input" min="0" max="100" value="3" data-color="#9b7cb6">
+      </div>
+      <span class="slider-pct" id="pie-warto-pct">3</span>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label">
+        <span class="slider-label-h">🌟 Sens, służba</span>
+        <input type="range" id="pie-sens" class="slider-input" min="0" max="100" value="2" data-color="#7c9b8c">
+      </div>
+      <span class="slider-pct" id="pie-sens-pct">2</span>
+    </div>
+  </div>
+  
+  <div class="examples-h">Co widzisz, patrząc na swój pie chart? Co Cię uderzyło?</div>
+  <textarea id="pie-czuje" class="thought-input" rows="3" placeholder="Bez oceniania — czysta obserwacja. Co dominuje? Co prawie zniknęło? Co to mówi o stabilności Twojego „domu"…"></textarea>
+  
+  <div class="term-note"><strong>Wskazówka</strong> — możesz mieć trudność z oszacowaniem dokładnych wartości. To normalne. Suwaki nie wymagają precyzji; wymagają proporcji. Czy „ciało" jest <em>większe od reszty razem</em>? Czy <em>jakiś sektor zniknął</em>? Te jakościowe obserwacje są ważniejsze niż dokładne procenty.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Porównanie</div>
+  <h1 class="card-prompt">Twój chart vs <em>chart osoby zdrowej</em></h1>
+  <p class="card-detail">Porównanie z hipotetycznym pie chartem osoby zdrowej (bez zaburzenia odżywiania). To nie idealny wzorzec ani wymaganie. To <em>punkt odniesienia</em> — pokazuje, jak wygląda zrównoważona konfiguracja, w którą można się stopniowo dochodzić.</p>
+  
+  <div class="compare-row">
+    <div class="compare-cell">
+      <div class="compare-h warm">🔴 Twój dziś (dominuje ciało)</div>
+      <svg class="compare-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(184,197,168,0.3)" stroke-width="0.5"/>
+        <path d="M 50 5 A 45 45 0 1 1 27.5 88.97 L 50 50 Z" fill="#c97a52" opacity="0.9"/>
+        <path d="M 27.5 88.97 A 45 45 0 0 1 5 50 L 50 50 Z" fill="#7aa3c9" opacity="0.9"/>
+        <path d="M 5 50 A 45 45 0 0 1 14 27.5 L 50 50 Z" fill="#a3a380" opacity="0.9"/>
+        <path d="M 14 27.5 A 45 45 0 0 1 50 5 L 50 50 Z" fill="#d4a574" opacity="0.9"/>
+      </svg>
+      <div class="compare-pct-list">
+        ciało/waga/kontrola: <strong>~70%</strong><br>
+        relacje, praca, pasje: po <strong>~10%</strong>
+      </div>
+    </div>
+    <div class="compare-cell">
+      <div class="compare-h sage">✅ Osoba zdrowa (zrównoważone)</div>
+      <svg class="compare-mini" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(184,197,168,0.3)" stroke-width="0.5"/>
+        <path d="M 50 5 A 45 45 0 0 1 91.95 30.5 L 50 50 Z" fill="#c97a52" opacity="0.9"/>
+        <path d="M 91.95 30.5 A 45 45 0 0 1 91.95 69.5 L 50 50 Z" fill="#7aa3c9" opacity="0.9"/>
+        <path d="M 91.95 69.5 A 45 45 0 0 1 50 95 L 50 50 Z" fill="#a3a380" opacity="0.9"/>
+        <path d="M 50 95 A 45 45 0 0 1 8.05 69.5 L 50 50 Z" fill="#d4a574" opacity="0.9"/>
+        <path d="M 8.05 69.5 A 45 45 0 0 1 8.05 30.5 L 50 50 Z" fill="#9b7cb6" opacity="0.9"/>
+        <path d="M 8.05 30.5 A 45 45 0 0 1 50 5 L 50 50 Z" fill="#7c9b8c" opacity="0.9"/>
+      </svg>
+      <div class="compare-pct-list">
+        ciało: <strong>20%</strong>, relacje: <strong>20%</strong>,<br>
+        praca: <strong>20%</strong>, pasje: <strong>15%</strong>,<br>
+        wartości: <strong>15%</strong>, sens: <strong>10%</strong>
+      </div>
+    </div>
+  </div>
+  
+  <div class="examples-h">Co byś chciał/a, żeby zmieniło się w Twoim pie chart?</div>
+  <textarea id="pie-zmiana" class="thought-input" rows="3" placeholder="Konkretne sektory, które chciałbyś/abyś zwiększyć. Konkretne, które są dziś za małe…"></textarea>
+  
+  <div class="examples-h">Co by się zmieniło w Twoim życiu, gdyby ciało zajmowało <em>25%</em> zamiast 70%?</div>
+  <textarea id="pie-25pct" class="thought-input" rows="3" placeholder="Co mogłoby zająć tę przestrzeń? Jakie aktywności, ludzie, projekty by się tam pojawiły…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — sektor „ciało/waga" u zdrowej osoby <em>nie jest 0%</em>. Każdy w pewnym stopniu dba o zdrowie, wygląd, kondycję. Cel terapii to <em>nie</em> jest „zero zainteresowania ciałem". Cel to: ciało jako <em>jeden z wielu</em> sektorów, nie sektor dominujący.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan</div>
+  <h1 class="card-prompt">Konkretne <em>akcje</em> rozszerzające</h1>
+  <p class="card-detail">Sektor pie chartu nie rośnie przez intencję — rośnie przez konkretne <em>akcje</em>. Każdy z czterech tygodni najbliższego miesiąca dedykujesz jednej domenie. Nie próbujesz wszystkich naraz — to gwarancja porażki. Po jednej, systematycznie.</p>
+  
+  <div class="action-list">
+    <div class="action-row">
+      <div class="action-h">Tydzień 1 — domena, którą wybrałeś/aś jako pierwszą do rozszerzenia</div>
+      <textarea id="pie-w1-d" class="thought-input" rows="2" placeholder="Która domena? Np. „Relacje" / „Pasje" / „Charakter"…"></textarea>
+      <textarea id="pie-w1-a" class="thought-input" rows="3" placeholder="Trzy konkretne akcje w tej domenie. „Zadzwonić do X w środę", „spotkanie w piątek", „odzywać się aktywnie raz w tygodniu"…"></textarea>
+    </div>
+    <div class="action-row">
+      <div class="action-h">Tydzień 2 — druga domena</div>
+      <textarea id="pie-w2-d" class="thought-input" rows="2" placeholder="Która domena?"></textarea>
+      <textarea id="pie-w2-a" class="thought-input" rows="3" placeholder="Trzy konkretne akcje…"></textarea>
+    </div>
+    <div class="action-row">
+      <div class="action-h">Tydzień 3 — trzecia domena</div>
+      <textarea id="pie-w3-d" class="thought-input" rows="2" placeholder="Która domena?"></textarea>
+      <textarea id="pie-w3-a" class="thought-input" rows="3" placeholder="Trzy konkretne akcje…"></textarea>
+    </div>
+    <div class="action-row">
+      <div class="action-h">Tydzień 4 — czwarta domena albo powtórzenie najtrudniejszej</div>
+      <textarea id="pie-w4-d" class="thought-input" rows="2" placeholder="Która domena?"></textarea>
+      <textarea id="pie-w4-a" class="thought-input" rows="3" placeholder="Trzy konkretne akcje…"></textarea>
+    </div>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — akcje muszą być <em>realistyczne</em> i <em>specyficzne</em>. „Spędzać więcej czasu z przyjaciółmi" nie zadziała. „Zadzwonić do Marty w środę 18:00 i umówić spotkanie" — to działa. Im konkretniej, tym wyższa szansa na realizację.</div>
+  
+  <div class="term-note"><strong>Pułapka</strong> — podczas pierwszych akcji często pojawia się myśl „to nic mi nie daje", „nadal myślę głównie o ciele". Normalne. Sektor pie chartu rośnie <em>powoli</em>, w tygodniach i miesiącach, nie w dniach. Powtarzaj akcje mimo poczucia, że „nie działa". Po 6–8 tygodniach zauważysz różnicę.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar</div>
+  <h1 class="card-prompt">Pie chart <em>w czasie</em></h1>
+  <p class="card-detail">Pie chart staje się prawdziwie przydatny, gdy <em>powtarzasz go</em>. Pojedynczy pie chart pokazuje stan, ale nie ruch. Co kilka miesięcy nowy pie chart pokazuje progres — w sposób, którego nie da się zaprzeczyć.</p>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Zapisz dzisiejszą konfigurację</strong> — zrób zrzut ekranu albo zapisz wartości suwaków. Data: dzisiejsza. To Twój punkt zerowy.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Wracaj co 2–3 miesiące</strong> — wypełniaj suwaki na nowo, bez patrzenia na poprzednie wartości. Potem porównaj. Sektor „ciało" zwykle spada o 10–20% co kwartał, gdy praca idzie dobrze.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>Pokaż terapeucie</strong> — zrzut ekranu albo zapis wartości. To konkretny materiał do sesji, który pomaga uchwycić to, co czasem trudno opisać słowami.</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Po 6–9 miesiącach pracy</strong> — sektor „ciało" stabilizuje się w okolicach 30–40%, sektory innych domen rosną. To realistyczny cel pierwszego roku, nie pełnej remisji.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Pie chart samooceny <strong>wizualizuje</strong> nadwartościowanie — pokazuje, że stoisz na jednej kolumnie zamiast na wielu. Cel <em>nie</em> jest „zmniejszyć kawałek z wagą" (na rozkaz niewykonalne). Cel jest <em>rozszerzyć inne sektory</em>, aż kawałek z wagą się <em>automatycznie</em> zmniejszy. Konkretne akcje rozszerzające, powtarzane przez tygodnie i miesiące, są ścieżką pracy.</div>
+  </div>
+  
+  <div class="final-msg"><strong>Mierzalny postęp</strong> — Cooper i Fairburn (1993, <em>Behaviour Research and Therapy</em>): w skutecznej CBT-E sektor „ciało/waga" w pie chart spada średnio z 75% do 35% po 9 miesiącach pracy. To <em>jedna z niewielu</em> miar w psychoterapii, którą widać tak wyraźnie. Powtarzanie pie chart co kwartał to konkretny dowód, że proces idzie do przodu — także wtedy, gdy w codzienności ciężko go dostrzec.</div>
+  
+  <div class="src"><em>📚 Fairburn (2008, Cognitive Behavior Therapy and Eating Disorders, rozdz. 10); Cooper i Fairburn (1993, Behaviour Research and Therapy); Cooper i in. (2007); Shafran i in. (2004, Behav Res Ther).</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+const PIE_DOMAINS = [
+  { id: 'pie-cialo', label: '🎯 Ciało, waga, kontrola', color: '#c97a52' },
+  { id: 'pie-relac', label: '👥 Relacje', color: '#7aa3c9' },
+  { id: 'pie-praca', label: '💼 Praca, nauka', color: '#a3a380' },
+  { id: 'pie-pasje', label: '🎨 Pasje', color: '#d4a574' },
+  { id: 'pie-warto', label: '💎 Wartości', color: '#9b7cb6' },
+  { id: 'pie-sens', label: '🌟 Sens', color: '#7c9b8c' }
+];
+
+function polarToCartesian(cx, cy, r, angle) {
+  const rad = (angle - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArc = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+}
+
+function renderPie() {
+  const svg = document.getElementById('pie-svg');
+  const legend = document.getElementById('pie-legend');
+  if (!svg || !legend) return;
+  
+  const values = PIE_DOMAINS.map(d => {
+    const el = document.getElementById(d.id);
+    const pctEl = document.getElementById(d.id + '-pct');
+    const v = el ? parseFloat(el.value) : 0;
+    if (pctEl) pctEl.textContent = v;
+    return { ...d, value: v };
+  });
+  
+  const total = values.reduce((s, d) => s + d.value, 0);
+  if (total === 0) {
+    svg.innerHTML = '<circle cx="100" cy="100" r="90" fill="rgba(244,241,234,0.06)"/>';
+    legend.innerHTML = '<div class="pie-legend-row"><span></span><span class="pie-label">Wszystkie suwaki na 0 — przesuń którykolwiek</span><span></span></div>';
+    return;
+  }
+  
+  let svgContent = '<circle cx="100" cy="100" r="90" fill="rgba(244,241,234,0.06)"/>';
+  let legendContent = '';
+  let currentAngle = 0;
+  
+  values.forEach(d => {
+    const pct = d.value / total;
+    const pctDisplay = Math.round(pct * 100);
+    const angle = pct * 360;
+    if (d.value > 0) {
+      let path;
+      if (angle >= 359.99) {
+        path = `<circle cx="100" cy="100" r="90" fill="${d.color}" opacity="0.92"/>`;
+      } else {
+        path = `<path d="${describeArc(100, 100, 90, currentAngle, currentAngle + angle)}" fill="${d.color}" opacity="0.92"/>`;
+      }
+      svgContent += path;
+      currentAngle += angle;
+    }
+    legendContent += `<div class="pie-legend-row"><span class="pie-swatch" style="background:${d.color}"></span><span class="pie-label">${d.label}</span><span class="pie-pct">${pctDisplay}%</span></div>`;
+  });
+  
+  svg.innerHTML = svgContent;
+  legend.innerHTML = legendContent;
+}
+
+PIE_DOMAINS.forEach(d => {
+  const el = document.getElementById(d.id);
+  if (el) el.addEventListener('input', renderPie);
+});
+
+renderPie();
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_pie_chart — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_pie_chart";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

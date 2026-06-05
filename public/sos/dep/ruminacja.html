@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Przerywanie ruminacji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#f4f1ea; --ink:#1c2620; --ink-soft:#3a4a40; --ink-mute:#7a8a82; --sage:#b8c5a8; --sage-soft:#dde3d2; --sage-deep:#4a6347; --warm:#c9a572; --shadow:rgba(28,38,32,0.08); }
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:var(--bg); color:var(--ink); font-family:'DM Sans',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+body { max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:100px; }
+.hdr { padding:18px 22px 8px; display:flex; justify-content:space-between; align-items:baseline; }
+.hdr-title { font-family:'Fraunces',serif; font-size:13px; font-weight:600; color:var(--sage-deep); letter-spacing:0.12em; text-transform:uppercase; }
+.hdr-title em { font-style:italic; color:var(--ink); font-weight:500; letter-spacing:0.04em; text-transform:none; }
+.hdr-step { font-size:12px; color:var(--ink-mute); letter-spacing:0.1em; text-transform:uppercase; font-weight:600; }
+.dots { display:flex; gap:6px; padding:8px 22px 0; }
+.dot { width:100%; height:3px; background:var(--sage-soft); border-radius:2px; transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background:var(--sage-deep); transform:scale(1.15); }
+.stage { padding:18px 22px; }
+.card { display:none; transition:opacity 0.25s ease, transform 0.25s ease; transform:translateY(8px); opacity:0; }
+.card.active { display:block; opacity:1; transform:translateY(0); }
+.card-eyebrow { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--sage-deep); font-weight:700; margin-bottom:12px; }
+.card-prompt { font-family:'Fraunces',serif; font-size:28px; font-weight:500; line-height:1.2; margin-bottom:14px; color:var(--ink); }
+.card-prompt em { font-style:italic; color:var(--sage-deep); }
+.card-detail { font-size:14px; line-height:1.6; color:var(--ink-soft); margin-bottom:14px; }
+.card-detail strong { color:var(--ink); font-weight:600; }
+.card-detail em { font-style:italic; color:var(--sage-deep); }
+.frame-card { background:var(--ink); color:var(--bg); padding:16px 18px; border-radius:12px; margin:12px 0; }
+.frame-h { font-family:'Fraunces',serif; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--sage); font-weight:700; margin-bottom:12px; }
+.element-row { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top:none; }
+.element-icon { font-size:16px; flex-shrink:0; line-height:1.4; }
+.element-text { font-size:13px; line-height:1.55; color:rgba(244,241,234,0.92); flex:1; }
+.element-text strong { color:var(--bg); font-weight:600; }
+.frame-quote { font-family:'Fraunces',serif; font-style:italic; font-size:15px; line-height:1.5; color:var(--ink-soft); padding:12px 14px; background:rgba(184,197,168,0.18); border-left:3px solid var(--sage-deep); border-radius:0 6px 6px 0; margin:12px 0; }
+.frame-quote-attr { display:block; font-size:11.5px; letter-spacing:0.05em; color:var(--ink-mute); margin-top:6px; font-style:normal; font-family:'DM Sans',sans-serif; }
+.term-note { background:rgba(184,197,168,0.18); border-left:3px solid var(--sage-deep); padding:11px 14px; border-radius:0 6px 6px 0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); margin:10px 0; }
+.term-note strong { color:var(--ink); font-weight:600; }
+.term-note em { font-style:italic; color:var(--sage-deep); }
+.repeat-reminder { background:var(--ink); color:var(--bg); padding:14px 16px; border-radius:12px; margin:12px 0; }
+.repeat-h { font-family:'Fraunces',serif; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--sage); font-weight:700; margin-bottom:8px; }
+.repeat-body { font-size:13.5px; line-height:1.55; color:rgba(244,241,234,0.92); }
+.repeat-body strong { color:var(--bg); font-weight:600; }
+.repeat-body em { color:var(--sage); font-style:italic; }
+.src { font-size:11.5px; color:var(--ink-mute); margin-top:14px; line-height:1.5; font-style:italic; }
+.src em { font-style:italic; color:var(--ink-soft); }
+.thought-input { width:100%; min-height:70px; padding:12px 14px; border:1px solid var(--sage); border-radius:10px; background:rgba(255,255,255,0.5); font-family:inherit; font-size:14px; line-height:1.5; color:var(--ink); resize:vertical; margin-bottom:12px; transition:border-color 0.2s; }
+.thought-input:focus { outline:none; border-color:var(--sage-deep); background:white; }
+.scale { margin:12px 0 14px; }
+.scale-title { font-size:13px; color:var(--ink-soft); margin-bottom:4px; font-weight:500; }
+.scale-bounds { display:flex; justify-content:space-between; font-size:11px; color:var(--ink-mute); margin-bottom:6px; }
+.scale-input { width:100%; -webkit-appearance:none; appearance:none; height:4px; background:var(--sage-soft); border-radius:2px; outline:none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--sage-deep); cursor:pointer; box-shadow:0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:var(--sage-deep); cursor:pointer; border:none; }
+.scale-readout { display:flex; justify-content:space-between; font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:var(--sage-deep); margin-top:6px; }
+.foot { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); width:calc(100% - 32px); max-width:448px; display:flex; gap:10px; }
+.foot-btn { flex:1; padding:14px 0; border-radius:24px; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:transform 0.12s ease, box-shadow 0.2s ease; letter-spacing:0.02em; }
+.foot-btn:active:not(:disabled) { transform:scale(0.96); }
+.foot-btn.back { background:rgba(184,197,168,0.4); color:var(--ink); }
+.foot-btn.back:disabled { opacity:0.4; cursor:default; }
+.foot-btn.next { background:var(--sage-deep); color:var(--bg); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+@keyframes v578pulse { 0%,100% { box-shadow:0 2px 8px rgba(0,0,0,0.08); } 50% { box-shadow:0 4px 18px rgba(122,146,112,0.45); } }
+#nextBtn[data-final="true"] { animation:v578pulse 1.6s ease-in-out infinite; }
+.v578-toast { position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); padding:10px 20px; border-radius:24px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; letter-spacing:0.02em; opacity:0; pointer-events:none; transition:opacity 0.35s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1); z-index:200; white-space:nowrap; box-shadow:0 6px 22px rgba(0,0,0,0.25); }
+.v578-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.final-msg { background:linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding:14px 16px; border-radius:12px; font-size:14px; line-height:1.6; color:var(--ink); margin:12px 0; border:1px solid var(--sage); }
+.final-msg strong { color:var(--sage-deep); font-weight:700; }
+.final-msg em { font-style:italic; color:var(--sage-deep); }
+.example-chip { display:inline-block; padding:6px 11px; margin:3px 4px 3px 0; background:rgba(184,197,168,0.25); border:1px solid var(--sage); border-radius:14px; font-size:12px; color:var(--ink-soft); cursor:pointer; transition:all 0.2s; }
+.example-chip:hover { background:var(--sage-deep); color:var(--bg); border-color:var(--sage-deep); }
+.example-chip.picked { background:var(--sage-deep) !important; color:var(--bg) !important; border-color:var(--sage-deep) !important; }
+.examples-h { font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-mute); font-weight:600; margin:10px 0 8px; }
+.cycle-row { display:flex; gap:10px; align-items:flex-start; padding:9px 12px; background:rgba(201,165,114,0.12); border-left:3px solid var(--warm); border-radius:0 6px 6px 0; margin:6px 0; font-size:13px; line-height:1.5; color:var(--ink-soft); }
+.cycle-num { font-family:'Fraunces',serif; font-weight:700; color:var(--warm); font-size:14px; flex-shrink:0; min-width:18px; }
+.cycle-row strong { color:var(--ink); font-weight:600; }
+.intervention-card { background:rgba(74,99,71,0.1); border:1px solid var(--sage-deep); border-radius:10px; padding:12px 14px; margin:8px 0; }
+.intervention-h { font-family:'Fraunces',serif; font-size:12px; font-weight:700; color:var(--sage-deep); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+.intervention-body { font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
+.intervention-body strong { color:var(--ink); font-weight:600; }
+.row-pick { display:flex; gap:10px; align-items:flex-start; padding:11px 13px; background:rgba(184,197,168,0.12); border:1px solid rgba(184,197,168,0.3); border-radius:8px; margin-bottom:7px; cursor:pointer; transition:all 0.2s; }
+.row-pick:hover { background:rgba(184,197,168,0.22); }
+.row-pick.picked { background:rgba(74,99,71,0.18); border-color:var(--sage-deep); }
+.row-mark { width:20px; height:20px; border:2px solid var(--sage); border-radius:5px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:transparent; transition:all 0.2s; }
+.row-pick.picked .row-mark { background:var(--sage-deep); border-color:var(--sage-deep); color:var(--bg); }
+.row-body { flex:1; font-size:13px; line-height:1.5; color:var(--ink-soft); }
+.row-body strong { color:var(--ink); display:block; margin-bottom:2px; font-size:13.5px; font-weight:600; }
+.timetable { display:grid; grid-template-columns:60px 1fr; gap:6px; margin:10px 0 14px; font-size:13px; }
+.tt-h { font-family:'Fraunces',serif; font-weight:700; color:var(--sage-deep); padding:6px 8px; }
+.tt-c { padding:6px 8px; background:rgba(184,197,168,0.12); border-radius:6px; color:var(--ink-soft); }
+.tt-c strong { color:var(--ink); display:block; font-size:12px; }
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Z dlaczego w co mogę</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+<div class="dots" id="dots"></div>
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Ruminacja ≠ refleksja</div>
+    <h1 class="card-prompt">„Muszę to przemyśleć" — pułapka <em>iluzji</em> produktywności</h1>
+    <p class="card-detail">Nolen-Hoeksema (1991) opisała ruminację — powtarzające się, pasywne rozmyślanie o przyczynach i konsekwencjach złego samopoczucia. Watkins (2008) wykazał, że jest to <strong>najsilniejszy poznawczy predyktor nawrotu depresji</strong> — ryzyko kolejnego epizodu × 4. Kluczowa pułapka: ruminacja wydaje się produktywna („myślę o ważnych rzeczach"), ale w rzeczywistości jest abstrakcyjna, oceniająca, pasywna. NIE generuje rozwiązań — generuje więcej dowodów na bezradność.</p>
+    <div class="frame-card">
+      <div class="frame-h">Ruminacja vs refleksja vs rozwiązywanie</div>
+      <div class="element-row"><span class="element-icon">⊘</span><span class="element-text"><strong>Ruminacja</strong> — „dlaczego to mi się przydarza? Co jest ze mną nie tak? Co będzie dalej?". Abstrakcyjna, oceniająca, bez końca.</span></div>
+      <div class="element-row"><span class="element-icon">~</span><span class="element-text"><strong>Refleksja</strong> — „co ta sytuacja mi mówi? Czego mogę się nauczyć?". Konkretna, ciekawa, ze stop-em.</span></div>
+      <div class="element-row"><span class="element-icon">✓</span><span class="element-text"><strong>Rozwiązywanie problemu</strong> — „co mogę teraz zrobić? Jaki krok?". Działanie-zorientowane, kończy się decyzją.</span></div>
+      <div class="element-row"><span class="element-icon">📚</span><span class="element-text"><strong>Watkins (2008)</strong>: ruminacja × 4 ryzyka nawrotu. Refleksja jest neutralna lub adaptacyjna.</span></div>
+    </div>
+    <div class="term-note"><strong>Brooding vs reflection</strong> (Treynor i in., 2003) — dwa podtypy ruminacji. Brooding („dlaczego mnie to spotyka? Co jest ze mną nie tak?") silnie depresjogenny. Reflection („zastanawiam się nad tym, co czuję") mniej szkodliwy.</div>
+    <div class="term-note"><strong>Tryb abstrakcyjny vs konkretny</strong> (Watkins, 2004) — abstrakcyjny: „dlaczego to się dzieje?". Konkretny: „co dokładnie czuję teraz w ciele? Jaki jeden krok mogę zrobić w 5 minut?". Tryb konkretny redukuje depresję, abstrakcyjny ją napędza.</div>
+    <div class="frame-quote">„Pacjent w ruminacji jest pewny, że ROZWIĄZUJE problem. W rzeczywistości generuje go w pętli."<span class="frame-quote-attr">— Watkins, 2008 (parafraza)</span></div>
+    <div class="src">Źródła: <em>Nolen-Hoeksema (1991, „Responses to depression", J Abnorm Psychol); Watkins (2008, „Constructive and unconstructive repetitive thought", Psychol Bull); Treynor, Gonzalez &amp; Nolen-Hoeksema (2003, RRS).</em></div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 „Dlaczego" vs „co mogę"</div>
+    <h1 class="card-prompt">Test <em>diagnostyczny</em></h1>
+    <p class="card-detail">Najprostszy test, czy myślenie jest ruminacją czy rozwiązywaniem: <strong>jakie pytanie zadajesz</strong>? „Dlaczego" prowadzi do abstrakcji. „Co mogę" / „jak" prowadzi do konkretu. Sam akt zauważenia, że jesteś w trybie „dlaczego", już przerywa automatyzm.</p>
+    <p class="card-detail" style="margin-bottom:6px"><strong>Twoje typowe pytania ruminacyjne</strong> (które najczęściej krążą w głowie?):</p>
+    <span class="example-chip" onclick="pickChip(this)">„Dlaczego zawsze tak reaguję?"</span>
+    <span class="example-chip" onclick="pickChip(this)">„Co jest ze mną nie tak?"</span>
+    <span class="example-chip" onclick="pickChip(this)">„Dlaczego nie potrafię tego inaczej?"</span>
+    <span class="example-chip" onclick="pickChip(this)">„Co zrobiłam nie tak?"</span>
+    <span class="example-chip" onclick="pickChip(this)">„Dlaczego mnie to spotyka?"</span>
+    <span class="example-chip" onclick="pickChip(this)">„Co o mnie pomyślą?"</span>
+    <textarea class="thought-input" id="rumQuestions" placeholder="np. „1) 'Dlaczego znowu się tak czuję?' 2) 'Co o mnie pomyślą?' 3) 'Dlaczego nie potrafię tego naprawić?'""></textarea>
+    <p class="card-detail" style="margin-bottom:6px"><strong>Ich konkretne odpowiedniki</strong> („co mogę teraz zrobić w 5 min?"):</p>
+    <textarea class="thought-input" id="concreteAlt" placeholder="np. „Zamiast 'dlaczego znowu się tak czuję' → 'co teraz czuję w ciele i co konkretnie pomoże mi w najbliższych 5 minutach?'""></textarea>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Trzy techniki</div>
+    <h1 class="card-prompt">Trzy <em>sposoby</em> przerwania</h1>
+    <p class="card-detail">Watkins (2008, 2018) i Nolen-Hoeksema opisali trzy główne techniki przerywania ruminacji. Działają niezależnie — różne pasują do różnych osób i sytuacji. Wypróbuj wszystkie i zauważ, która Twoim mózgowi najbardziej pomaga.</p>
+    <div class="intervention-card">
+      <div class="intervention-h">Technika 1: DZIAŁANIE</div>
+      <div class="intervention-body">Wstań. Rusz się. Wyjdź z pomieszczenia. Zacznij wykonywać aktywność z planu (BA mode). Ruch fizyczny + zmiana otoczenia + zaangażowanie w aktywność = zewnętrzny sygnał, który przerywa wewnętrzny krążenie. Najmocniejsze, gdy ruminacja krąży 5+ minut.</div>
+    </div>
+    <div class="intervention-card">
+      <div class="intervention-h">Technika 2: UWAGA (zmysły)</div>
+      <div class="intervention-body">Wróć do tu i teraz przez 5 zmysłów. Co teraz <strong>widzisz</strong>? (5 rzeczy). Co <strong>słyszysz</strong>? (4). Co <strong>czujesz dotykiem</strong>? (3). Co <strong>czujesz węchem</strong>? (2). Co <strong>czujesz w ustach</strong>? (1). Mózg nie może być w abstrakcji i kotwicy zmysłowej jednocześnie.</div>
+    </div>
+    <div class="intervention-card">
+      <div class="intervention-h">Technika 3: WORRY TIME</div>
+      <div class="intervention-body">Zarezerwuj 20 minut dziennie na celowe martwienie się (np. 18:00–18:20). Gdy ruminacja przyjdzie wcześniej — „odłóż" ją: zapisz krótko temat na liście, powiedz „wrócę do tego o 18:00", przekieruj uwagę. O 18:00 wracasz. Często okazuje się, że temat już nie jest tak palący.</div>
+    </div>
+    <div class="intervention-card">
+      <div class="intervention-h">Bonus: NAZYWANIE</div>
+      <div class="intervention-body">Przed użyciem technik 1–3: <strong>nazwij to, co się dzieje</strong>: „Och, ruminuję". Samo nazwanie często wystarcza, by przerwać automatyzm. Decentering jest pierwszą warstwą wszystkich technik.</div>
+    </div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ 3-Minute Breathing Space</div>
+    <h1 class="card-prompt">Najprostsza <em>kotwica</em></h1>
+    <p class="card-detail">Z MBCT pochodzi 3MBS — trzy minuty, trzy fazy. Idealna dla osób ruminujących, bo przerywa krążenie w głowie i wprowadza w tu-i-teraz w bardzo krótkim czasie. Możesz wykonać 3MBS wszędzie: w pracy, w łóżku, w autobusie.</p>
+    <div class="cycle-row"><span class="cycle-num">1.</span><span><strong>Minuta 1: ŚWIADOMOŚĆ</strong> — co teraz przeżywam? Myśli (jakie?), emocje (jakie? gdzie w ciele?), doznania (gdzie napięcie?). Nazywam bez oceny.</span></div>
+    <div class="cycle-row"><span class="cycle-num">2.</span><span><strong>Minuta 2: SKUPIENIE</strong> — uwaga w pełni na oddechu. Brzuch unosi się i opada. Jeden oddech, drugi, trzeci.</span></div>
+    <div class="cycle-row"><span class="cycle-num">3.</span><span><strong>Minuta 3: ROZSZERZENIE</strong> — uwaga rozszerza się z oddechu na całe ciało. Akceptacja tego, co jest.</span></div>
+    <div class="term-note"><strong>Reguła „w środku ruminacji"</strong> — 3MBS najmocniej działa, gdy zaczniesz ją <em>w środku ruminacji</em>, nie po niej. Czujesz, że krążysz w myślach? Stop. 3MBS. Potem decyzja: ruminuję dalej, czy działam?</div>
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja kombinacja</strong>: która technika + 3MBS pasuje Ci najlepiej?</p>
+    <textarea class="thought-input" id="combo" placeholder="np. „Zauważam ruminację → 3MBS → potem aktywność z planu (technika DZIAŁANIE)""></textarea>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ 4 tygodnie</div>
+    <h1 class="card-prompt">Trening <em>łapania</em> ruminacji</h1>
+    <p class="card-detail">Cel: codziennie zauważyć i przerwać ruminację 3–5 razy. Przez 4 tygodnie. To 84–140 świadomych przerwań — wystarczająco, by mózg zaczął rozpoznawać ruminację automatycznie i sam ją przerywał.</p>
+    <div class="scale">
+      <div class="scale-title">Pewność, że uda się przez 4 tygodnie ćwiczyć przerywanie ruminacji 3–5× dziennie:</div>
+      <div class="scale-bounds"><span>0 — wcale</span><span>10 — w pełni</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="rumiConf" data-default="5" oninput="document.getElementById('rmVal').textContent=this.value">
+      <div class="scale-readout"><span>Pewność</span><span><span id="rmVal">5</span> / 10</span></div>
+    </div>
+    <p class="card-detail"><strong>Twój plan</strong>:</p>
+    <textarea class="thought-input" id="rumiPlan" placeholder="np. „Karteczka 'ruminuję?' przy lustrze. Worry time 18:00–18:20. 3MBS 3× dziennie. Gdy łapię ruminację → 3MBS → aktywność""></textarea>
+    <p class="card-detail" style="margin-bottom:6px"><strong>Najczęstsze sytuacje</strong>, w których się łapiesz na ruminacji (kontekst):</p>
+    <span class="example-chip" onclick="pickChip(this)">Przed snem</span>
+    <span class="example-chip" onclick="pickChip(this)">Pod prysznicem</span>
+    <span class="example-chip" onclick="pickChip(this)">W drodze do pracy</span>
+    <span class="example-chip" onclick="pickChip(this)">Sama/sam wieczorem</span>
+    <span class="example-chip" onclick="pickChip(this)">Po trudnej rozmowie</span>
+    <textarea class="thought-input" id="rumiContext" placeholder="np. „Najczęściej przed snem i w drodze do pracy. Przed snem — odłożenie na worry time pomaga""></textarea>
+    <div class="repeat-reminder">
+      <div class="repeat-h">Powracaj do tej karty</div>
+      <div class="repeat-body">Co tydzień przejrzyj — czy częstotliwość ruminacji spada? Czy szybciej ją łapiesz? Po 4 tygodniach: trening daje mocniejszy efekt — zauważanie ruminacji staje się odruchowe, a przerwanie zajmuje sekundy. Jeśli ruminacja jest dominująca i sumarycznie zajmuje wiele godzin dziennie — rozważ pełniejszy protokół <em>RFCBT</em> z terapeutą.</div>
+    </div>
+    <div class="src">Źródła: <em>Nolen-Hoeksema (1991, „Responses to depression"); Watkins (2008, 2018, „Rumination-Focused CBT for Depression"); Segal i in. (2013, „MBCT for Depression").</em></div>
+  </section>
+</main>
+<nav class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()" disabled>← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</nav>
+<script>
+var TOTAL_STEPS = 5;
+var curStep = 1;
+(function initDots() {
+  var dotsContainer = document.getElementById('dots');
+  for (var i = 0; i < TOTAL_STEPS; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    dotsContainer.appendChild(d);
+  }
+})();
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+}
+function scrollToTop() {
+  try { var hdr = document.querySelector('.hdr'); if (hdr && typeof hdr.scrollIntoView === 'function') { hdr.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; } } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+}
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast'); if (existing) existing.remove();
+  var t = document.createElement('div'); t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ if (t.parentNode) t.remove(); }, 400); }, 1600);
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); if (typeof save === 'function') save(); scrollToTop(); } }
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { var p = curStep; curStep++; updateUI(); if (typeof save === 'function') save(); showStepToast(p); scrollToTop(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) return;
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') { const def = el.getAttribute('data-default') || '5'; el.value = def; el.dispatchEvent(new Event('input', { bubbles: true })); }
+      else { el.value = ''; }
+    });
+    document.querySelectorAll('.row-pick.picked, .example-chip.picked').forEach(el => el.classList.remove('picked'));
+    updateUI(); if (typeof save === 'function') save(); scrollToTop();
+  }
+}
+function togglePick(el) { el.classList.toggle('picked'); }
+function pickChip(el) { el.classList.toggle('picked'); }
+(function(){
+  var KEY = "sos_ruminacja";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+  function applyRestore() {
+    if (saved.t) { var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]'); for (var i = 0; i < areas.length; i++) { var id = areas[i].id; if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) areas[i].value = saved.t[id]; } }
+    if (saved.r) { var ranges = document.querySelectorAll('input[type="range"][id]'); for (var i = 0; i < ranges.length; i++) { if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) { ranges[i].value = saved.r[ranges[i].id]; try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {} } } }
+    if (saved.p) { Object.keys(saved.p).forEach(function(id) { var el = document.getElementById(id); if (el && !el.classList.contains("picked")) el.classList.add("picked"); }); }
+  }
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) { if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value; }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) { if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value; }
+    document.querySelectorAll('.picked').forEach(function(el) { if (el.id) d.p[el.id] = 1; });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+  window.save = save;
+  document.addEventListener('input', function(e) { if (!e.target || !e.target.matches) return; if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save(); });
+  document.addEventListener('click', function(e) { if (!e.target) return; setTimeout(save, 30); });
+  applyRestore();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyRestore);
+  setTimeout(applyRestore, 100); setTimeout(applyRestore, 500);
+  if (typeof window.updateUI === 'function') { var orig = window.updateUI; window.updateUI = function() { orig(); applyRestore(); }; }
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) { dot = document.createElement('div'); dot.id = 'savedDot'; dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none'; dot.textContent = '\u2713 zapisano'; document.body.appendChild(dot); }
+    dot.style.opacity = '1'; clearTimeout(window._sosSaveTimer); window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+updateUI();
+</script>
+</body>
+</html>

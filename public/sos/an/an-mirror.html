@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mirror exposure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.session-card { background: rgba(255,255,255,0.55); border: 1.5px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.session-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; display: flex; align-items: center; gap: 10px; }
+.session-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sage-deep); color: var(--bg); font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.session-title { font-style: italic; color: var(--ink); font-weight: 600; }
+.session-meta { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; margin-bottom: 8px; }
+.session-content { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+.session-content strong { color: var(--ink); font-weight: 600; }
+.session-task { background: rgba(184,197,168,0.18); border-left: 2px solid var(--sage-deep); padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.session-task strong { color: var(--sage-deep); font-weight: 700; }
+
+.bad-good { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; }
+.bg-cell { padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; }
+.bg-warm { background: rgba(201,122,82,0.18); border: 1px solid #c97a52; }
+.bg-warm-h { font-family: 'Fraunces', serif; font-size: 11px; font-weight: 700; color: #8a4a18; margin-bottom: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+.bg-sage { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); }
+.bg-sage-h { font-family: 'Fraunces', serif; font-size: 11px; font-weight: 700; color: var(--sage-deep); margin-bottom: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+.bg-text { color: var(--ink-soft); font-style: italic; }
+.bg-text strong { color: var(--ink); font-weight: 600; font-style: normal; }
+
+.suds-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 8px 0 12px; }
+.suds-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.suds-row { display: grid; grid-template-columns: 90px 1fr 70px; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: center; }
+.suds-row:first-of-type { border-top: none; }
+.suds-time { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage); font-size: 13px; letter-spacing: 0.04em; }
+.suds-desc { font-size: 12px; color: rgba(244,241,234,0.85); line-height: 1.45; font-style: italic; }
+.suds-input { padding: 6px 8px; border: 1px solid var(--sage); border-radius: 6px; background: rgba(244,241,234,0.95); color: var(--ink); font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px; text-align: center; }
+.suds-input:focus { outline: 1px solid var(--bg); }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mirror exposure</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Mirror exposure — <em>strukturowany protokół</em></h1>
+  <p class="card-detail">Mirror exposure (Hildebrandt i in., 2012; Vocks i in., 2007) to <strong>strukturowany protokół ekspozycyjny</strong> na własne ciało w lustrze. Składa się zwykle z 6 sesji prowadzonych z terapeutą — na przestrzeni 6–8 tygodni. Cel <em>nie</em> jest „pokochać" ciało (to nierealistyczne dla większości pacjentów). Cel jest <em>zmniejszyć lęk</em> związany z patrzeniem na własne ciało, <em>skorygować zniekształcenia</em> obrazu ciała, <em>zbudować neutralny stosunek</em>. Skuteczność potwierdzona w meta-analizie Alleva i in. (2015).</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery zasady protokołu</div>
+    <div class="element-row">
+      <span class="element-icon">🪞</span>
+      <span class="element-text"><strong>Duże lustro</strong> — cała postać widoczna; dobre oświetlenie; pozycja swobodna, nie pozowana</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⏱️</span>
+      <span class="element-text"><strong>Czas 30–45 min</strong> na sesję; SUDS oceniana co 5 minut; mierzalny postęp w trakcie sesji</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📝</span>
+      <span class="element-text"><strong>Opis na głos</strong> — neutralnie, opisowo, nie oceniająco; trening neutralnego języka wobec ciała</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎯</span>
+      <span class="element-text"><strong>Cała postać</strong> — równomiernie, nie selektywnie skupiając się na „problematycznych częściach"; równowaga uwagi</span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„Mirror exposure to nie jest 'walka o pokochanie ciała'. To trening <em>neutralnej percepcji</em> — opisowo, bez oceniania. Pacjent uczy się patrzeć na ciało jak na każde inne obiektywnie istniejące zjawisko."
+    <span class="frame-quote-attr">— Vocks i in. (2007, <em>European Eating Disorders Review</em>)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — mirror exposure to <em>zaawansowane</em> narzędzie. Nie zaczynaj go w pierwszych miesiącach terapii. Prowadzi się go po: (a) stabilizacji wagi (głodny mózg nie ma zasobów do tej pracy), (b) redukcji body checking, (c) początkowej pracy z body avoidance. Zwykle <strong>faza 3 CBT-E</strong>, sesje 15–20.</div>
+  
+  <div class="term-note"><strong>Walidacja</strong> — pierwsza ekspozycja często wywołuje <em>silne</em> emocje. Płacz, gniew, panika. To normalne — wieloletnie unikanie, gdy zostaje przerwane, daje upust nagromadzonym uczuciom. Nie rezygnuj po pierwszej reakcji emocjonalnej. Każda kolejna sesja jest łatwiejsza.</div>
+  
+  <div class="src"><em>📚 Hildebrandt i in. (2012, Behav Res Ther — protokół 6-sesyjny); Vocks i in. (2007, Eur Eat Disord Rev — guided mirror exposure); Alleva i in. (2015, Body Image — meta-analiza); Morgan i in. (2014); Cash (2008, The Body Image Workbook).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Protokół</div>
+  <h1 class="card-prompt">Sześć <em>sesji</em> w 6 tygodniach</h1>
+  <p class="card-detail">Klasyczny protokół Hildebrandta i Vocks — sześć sesji rozłożonych na 6–8 tygodni. Każda buduje na poprzedniej. Pacjent zaczyna od krótkich kontaktów w ubraniu, stopniowo redukując warstwy i wydłużając czas ekspozycji. Cały protokół prowadzony zwykle z terapeutą.</p>
+  
+  <div class="session-card">
+    <div class="session-h"><span class="session-num">1</span><span class="session-title">Przygotowanie</span></div>
+    <div class="session-meta">Tydzień 1 · 5 minut przed lustrem</div>
+    <div class="session-content">Psychoedukacja mechanizmu (unikanie utrzymuje zniekształcenia). Plan protokołu. Pierwsza ocena bazowa SUDS. Pierwszy kontakt z lustrem — w pełni ubraniu, <em>tylko twarz</em>. Stopniowe budowanie tolerancji.</div>
+    <div class="session-task"><strong>Zadanie domowe</strong>: codziennie 1–2 minuty patrzenia w lustro na twarz, neutralnie.</div>
+  </div>
+  
+  <div class="session-card">
+    <div class="session-h"><span class="session-num">2</span><span class="session-title">Pełna postać w ubraniu</span></div>
+    <div class="session-meta">Tydzień 2 · 20 minut</div>
+    <div class="session-content">Całe ciało w ubraniu, w lustrze pełnej postaci. <strong>Opis neutralny na głos</strong>: „jasne włosy, zielona koszulka, dżinsy, stopy w butach sportowych". Każde 5 minut — ocena SUDS. Faktyczne, nieemocjonalne odbiór.</div>
+    <div class="session-task"><strong>Zadanie domowe</strong>: 5 minut dziennie, lustro pełnej postaci, ubranie codzienne, opisowo.</div>
+  </div>
+  
+  <div class="session-card">
+    <div class="session-h"><span class="session-num">3</span><span class="session-title">Ciało jako narzędzie — opis funkcjonalny</span></div>
+    <div class="session-meta">Tydzień 3 · 25 minut</div>
+    <div class="session-content">Pełna postać w ubraniu, ale <strong>opis funkcjonalny</strong>: „ręce, które trzymają szklankę, piszą, gotują obiad. Nogi, które chodzą do pracy, biegają, tańczą." Przesunięcie z <em>wyglądu</em> na <em>funkcję</em>. Dla wielu pacjentów punkt zwrotny.</div>
+    <div class="session-task"><strong>Zadanie domowe</strong>: dziennik funkcji ciała — co robiło dla Ciebie dziś?</div>
+  </div>
+  
+  <div class="session-card">
+    <div class="session-h"><span class="session-num">4</span><span class="session-title">Redukcja warstw — bielizna</span></div>
+    <div class="session-meta">Tydzień 4 · 20 minut</div>
+    <div class="session-content">Pełna postać w bieliźnie albo strój sportowy. SUDS na początku zwykle wysoki (7–9), spadek do 4–5 po 20 minutach. <strong>Habituacja</strong> w działaniu. Opis neutralny i funkcjonalny — to samo, co poprzednio, w mniej okrytych warunkach.</div>
+    <div class="session-task"><strong>Zadanie domowe</strong>: 5 minut codziennie, w bieliźnie, neutralny opis.</div>
+  </div>
+  
+  <div class="session-card">
+    <div class="session-h"><span class="session-num">5</span><span class="session-title">Praca z myślami automatycznymi</span></div>
+    <div class="session-meta">Tydzień 5 · 30 minut</div>
+    <div class="session-content">Powtarzasz ekspozycję z sesji 4. Identyfikujesz <em>automatyczne myśli</em> pojawiające się przy lustrze („mam za grube uda", „brzuch wystaje"). <strong>Restrukturyzacja kognitywna</strong> — dowody za i przeciw, alternatywne interpretacje, sprawdzanie zniekształceń.</div>
+    <div class="session-task"><strong>Zadanie domowe</strong>: dziennik myśli przy lustrze + jedna alternatywna interpretacja.</div>
+  </div>
+  
+  <div class="session-card">
+    <div class="session-h"><span class="session-num">6</span><span class="session-title">Wdzięczność i integracja</span></div>
+    <div class="session-meta">Tydzień 6 · 30 minut</div>
+    <div class="session-content">Rozszerzony opis — „Za co jestem <strong>wdzięczny/a</strong> temu ciału?" Ciało jako <em>narzędzie życia</em>, nie przedmiot oceny. Plan dalszych samodzielnych ćwiczeń. Refleksja nad zmianą w SUDS w ciągu 6 sesji — zwykle widoczne 30–50% spadek wartości startowych.</div>
+    <div class="session-task"><strong>Zadanie domowe</strong>: 2× w tygodniu samodzielna sesja lustra, 10 minut, jako konsolidacja.</div>
+  </div>
+  
+  <div class="examples-h">Z którego protokołu chcesz zacząć?</div>
+  <textarea id="mir-start" class="thought-input" rows="3" placeholder="Sesja 1 jest najczęstszym startem. Jeśli body checking jest silny, możesz potrzebować pracować z nim wcześniej. Co wybierasz dla siebie…"></textarea>
+  
+  <div class="term-note"><strong>Wskazówka</strong> — protokół można <em>zaadaptować</em> do tempa pacjenta. Niektórzy potrzebują 8 sesji zamiast 6, żeby osiągnąć sesję 4 (bielizna). Inni — 4 sesji, bo szybko habituują się. Tempo jest indywidualne. Cel końcowy ten sam — neutralny, zbalansowany kontakt z całym ciałem.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Trening języka</div>
+  <h1 class="card-prompt">Opisowo, <em>nie</em> oceniająco</h1>
+  <p class="card-detail">Najtrudniejsza umiejętność mirror exposure — <em>neutralny opis</em>. Większość pacjentów z anoreksją ma głęboko zautomatyzowany ocenny język wobec ciała. Praca polega na <em>świadomym wyborze</em> innego rejestru. Trzy pary — pokazują różnicę.</p>
+  
+  <div class="bad-good">
+    <div class="bg-cell bg-warm">
+      <div class="bg-warm-h">🔴 Oceniająco</div>
+      <div class="bg-text">„Mam <strong>grube uda</strong>, brzuch <strong>wystaje</strong>, ramiona <strong>za szerokie</strong>".</div>
+    </div>
+    <div class="bg-cell bg-sage">
+      <div class="bg-sage-h">✅ Opisowo</div>
+      <div class="bg-text">„Uda są krągłe, brzuch zaokrąglony, ramiona <strong>proste</strong>, klatka piersiowa <strong>średnia</strong>".</div>
+    </div>
+  </div>
+  
+  <div class="bad-good">
+    <div class="bg-cell bg-warm">
+      <div class="bg-warm-h">🔴 Oceniająco</div>
+      <div class="bg-text">„Wyglądam <strong>okropnie</strong>, jestem <strong>najgorsza</strong> wśród rówieśniczek".</div>
+    </div>
+    <div class="bg-cell bg-sage">
+      <div class="bg-sage-h">✅ Opisowo</div>
+      <div class="bg-text">„Włosy ciemne do ramion, oczy zielone, skóra blada, postura <strong>swobodna</strong>".</div>
+    </div>
+  </div>
+  
+  <div class="bad-good">
+    <div class="bg-cell bg-warm">
+      <div class="bg-warm-h">🔴 Oceniająco</div>
+      <div class="bg-text">„<strong>Nie znoszę</strong> jak wyglądam, ten <strong>tłuszcz</strong> wszędzie".</div>
+    </div>
+    <div class="bg-cell bg-sage">
+      <div class="bg-sage-h">✅ Funkcjonalnie</div>
+      <div class="bg-text">„Te ręce dziś przygotowywały śniadanie, te nogi <strong>doniosły mnie</strong> do pracy".</div>
+    </div>
+  </div>
+  
+  <div class="examples-h">Spróbuj sam/a — opisz swoje ciało neutralnie, krótko</div>
+  <textarea id="mir-neutr" class="thought-input" rows="4" placeholder="Po prostu fakty. Kolory, kształty, długości, postury. Bez „za", „za bardzo", „nie" lub „okropnie". „Włosy ciemne, średniej długości. Oczy brązowe. Skóra jasna…""></textarea>
+  
+  <div class="examples-h">Spróbuj funkcjonalnie — co Twoje ciało zrobiło dla Ciebie dziś?</div>
+  <textarea id="mir-funkc" class="thought-input" rows="4" placeholder="Funkcje, nie wygląd. „Ręce, które trzymały kubek z kawą", „nogi, które chodziły po schodach", „oczy, które przeczytały książkę"…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — neutralny opis nie jest <em>pozytywnym</em> opisem. Nie chodzi o „kocham swoje uda". Chodzi o „uda są krągłe" — fakt bez wartościowania. To trudniejsze niż się wydaje. Większość ludzi w naszej kulturze automatycznie ocenia ciało (swoje i cudze). Mirror exposure trenuje <em>nową umiejętność</em> patrzenia.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Sesja samodzielna</div>
+  <h1 class="card-prompt">Plan <em>jednej</em> sesji</h1>
+  <p class="card-detail">Jeśli pracujesz z terapeutą — przynieś tę kartę na sesję. Jeśli pracujesz samodzielnie (po wcześniejszych sesjach z terapeutą), to plan dla pierwszej samodzielnej ekspozycji. <strong>20 minut</strong>. Lustro pełnej postaci. Opisowo. SUDS co 5 minut.</p>
+  
+  <div class="suds-card">
+    <div class="suds-h">Krzywa SUDS — co notować</div>
+    <div class="suds-row">
+      <span class="suds-time">Start (0 min)</span>
+      <span class="suds-desc">Pierwsze spojrzenie — szczyt lęku antycypacyjnego</span>
+      <input type="number" id="mir-s0" class="suds-input" min="0" max="10" placeholder="—">
+    </div>
+    <div class="suds-row">
+      <span class="suds-time">5 min</span>
+      <span class="suds-desc">Po pierwszych opisowych komentarzach</span>
+      <input type="number" id="mir-s5" class="suds-input" min="0" max="10" placeholder="—">
+    </div>
+    <div class="suds-row">
+      <span class="suds-time">10 min</span>
+      <span class="suds-desc">Często „środkowa fala" lęku — albo lekki spadek, albo wzrost</span>
+      <input type="number" id="mir-s10" class="suds-input" min="0" max="10" placeholder="—">
+    </div>
+    <div class="suds-row">
+      <span class="suds-time">15 min</span>
+      <span class="suds-desc">Habituacja zaczyna działać u większości pacjentów</span>
+      <input type="number" id="mir-s15" class="suds-input" min="0" max="10" placeholder="—">
+    </div>
+    <div class="suds-row">
+      <span class="suds-time">20 min</span>
+      <span class="suds-desc">Końcowy SUDS — zwykle 30–50% spadek względem startu</span>
+      <input type="number" id="mir-s20" class="suds-input" min="0" max="10" placeholder="—">
+    </div>
+  </div>
+  
+  <div class="examples-h">Co planujesz nazwać podczas sesji? Trzy obszary opisu</div>
+  <textarea id="mir-plan-1" class="thought-input" rows="2" placeholder="① Twarz i głowa — kolory, kształty, długości…"></textarea>
+  <textarea id="mir-plan-2" class="thought-input" rows="2" placeholder="② Tułów i ręce — postura, długości, kolory ubrania…"></textarea>
+  <textarea id="mir-plan-3" class="thought-input" rows="2" placeholder="③ Funkcje — co robi to ciało, do czego służy…"></textarea>
+  
+  <div class="examples-h">Najtrudniejsze obszary — przewidywanie</div>
+  <textarea id="mir-trudne" class="thought-input" rows="3" placeholder="Które części ciała przewidujesz, że będą najtrudniejsze do opisu neutralnego? (Brzuch? Uda? Ramiona?) Plan: jak <em>świadomie</em> użyjesz neutralnego języka wobec nich…"></textarea>
+  
+  <div class="term-note"><strong>Klucz — bez kompensacji po sesji</strong>. Po 20 minutach ekspozycji <em>nie</em> ważysz się, <em>nie</em> sprawdzasz pomiarów, <em>nie</em> ćwiczysz dodatkowo. Wyszedłeś/aś z sesji — zostawiasz to. Tak buduje się habituacja. Mózg uczy się: „byłem 20 minut z ciałem i <em>nic</em> się nie stało, żyję dalej".</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Konsolidacja</div>
+  <h1 class="card-prompt">Co <em>po</em> 6 sesjach</h1>
+  <p class="card-detail">Sześciotygodniowy protokół to <em>start</em>, nie zakończenie. Po nim wchodzisz w fazę <em>konsolidacji</em> — samodzielne sesje 1–2 razy w tygodniu, integracja z codziennością, generalizacja na sytuacje społeczne. Cztery konkretne kroki.</p>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Konsolidacja</strong> — 1–2 razy w tygodniu samodzielna 10-minutowa sesja przed lustrem przez kolejne 8–12 tygodni. To utrzymuje uzyskany efekt. Bez tego habituacja może się odwrócić.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Generalizacja na codzienność</strong> — krótkie spojrzenia na ciało w naturalnych sytuacjach (wychodząc z prysznica, przebierając się). Nie unikasz, nie sprawdzasz obsesyjnie — krótki neutralny kontakt.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>Generalizacja na sytuacje społeczne</strong> — basen, plaża, fitting room, intymność. Te ekspozycje wymagają osobnej hierarchii (patrz narzędzie o unikaniu ciała). Zwykle pracujesz z nimi <em>po</em> mirror exposure.</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Pracuj z terapeutą</strong> — szczególnie sesje 5 (myśli automatyczne) i 6 (wdzięczność, integracja) wymagają wsparcia. Mirror exposure jest narzędziem zaawansowanym; samodzielna praca jest możliwa po wcześniejszej pracy z terapeutą.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Mirror exposure to <strong>strukturowany 6-sesyjny protokół</strong> — duże lustro, pełna postać, 30–45 minut, opisowo (nie oceniająco), cała postać (nie selektywnie), bez kompensacji po. Trening <em>neutralnej percepcji</em> — opis bez wartościowania, funkcje zamiast wyglądu, fakty zamiast ocen. Cel <em>nie</em> jest „kochać ciało" — cel jest <em>neutralny zbalansowany kontakt</em>. Pierwsze sesje wywołują silne emocje; każda kolejna jest łatwiejsza.</div>
+  </div>
+  
+  <div class="final-msg"><strong>Skuteczność mirror exposure</strong> — Alleva i in. (2015, <em>Body Image</em>, meta-analiza): mirror exposure konsekwentnie redukuje niezadowolenie z ciała u osób z zaburzeniami odżywiania. Efekty utrzymują się 3–6 miesięcy po zakończeniu protokołu. Hildebrandt i in. (2012, <em>Behav Res Ther</em>): w randomizowanym badaniu mirror exposure dawało 35–45% redukcji body image distress.</div>
+  
+  <div class="src"><em>📚 Hildebrandt i in. (2012, Behav Res Ther — protokół 6-sesyjny); Vocks i in. (2007, Eur Eat Disord Rev — guided mirror exposure); Alleva i in. (2015, Body Image — meta-analiza); Morgan i in. (2014); Cash (2008, The Body Image Workbook).</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Brak interaktywnego JS — inputs SUDS, persystencja zapisuje. */
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_mirror — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_mirror";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

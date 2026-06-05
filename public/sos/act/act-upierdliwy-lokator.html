@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Upierdliwy współlokator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --rust: #8a4a40; --rust-deep: #5a3535;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(138,74,64,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--rust); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--rust); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rust); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--rust); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--rust); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(138,74,64,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--rust); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--rust); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — tenement rust === */
+.frame-card { 
+  background: linear-gradient(180deg, #5a3535 0%, #2e1a1a 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ ANNOYING ROOMMATE"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "🏠"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.12; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.react-list {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.react-row {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 9px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.react-name { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--warm); }
+.react-cost { font-size: 11.5px; color: rgba(244,241,234,0.78); line-height: 1.4; font-style: italic; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === KIT (categories of speech) === */
+.kit-list { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.kit-row {
+  display: grid; grid-template-columns: 26px 1fr;
+  gap: 10px; align-items: center;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.kit-row:hover { background: rgba(138,74,64,0.06); }
+.kit-row.active { background: rgba(138,74,64,0.14); border-color: var(--rust); border-left: 3px solid var(--rust); padding-left: 9px; }
+.kit-icon { font-size: 16px; text-align: center; }
+.kit-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
+.kit-row.active .kit-text { color: var(--ink); }
+.kit-text strong { font-style: normal; font-weight: 700; }
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rust); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+.proto-list { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 12px; }
+.proto-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--rust);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.proto-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.proto-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--rust); line-height: 1; }
+.proto-name { font-size: 13px; font-weight: 700; flex: 1; }
+.proto-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 6px; }
+.proto-howto strong { color: var(--ink); font-weight: 700; }
+.proto-mech {
+  font-size: 11px; color: var(--ink-mute);
+  font-style: italic;
+  padding: 6px 10px;
+  background: rgba(138,74,64,0.06);
+  border-radius: 6px;
+}
+.proto-mech::before { content: "💸 "; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--rust);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rust); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rust); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(138,74,64,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rust); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--rust); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Upierdliwy współlokator</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Umysł — <em>współlokator</em> na życie</h1>
+    <p class="card-detail">Klasyczna metafora <strong>ACT</strong> (terapia akceptacji i zaangażowania) Russa Harrisa. Twój <em>umysł to współlokator</em>, którego nie możesz wyrzucić. Wynajmuje pokój w twojej głowie do końca życia. Gada głośno, 24/7, często bezsensownie i negatywnie. Jeśli się z nim kłócisz — twoje życie staje się kłótnią. Jeśli walczysz o ciszę — nie będzie i nie zamierza być cicho.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">4 nieskuteczne reakcje + 1 skuteczna</div>
+      
+      <div class="react-list">
+        <div class="react-row">
+          <span class="react-name">Kłótnia</span>
+          <span class="react-cost">koszt: cały dzień na dyskusji, nic swojego</span>
+        </div>
+        <div class="react-row">
+          <span class="react-name">Zgoda smutna</span>
+          <span class="react-cost">koszt: depresja, poddanie się</span>
+        </div>
+        <div class="react-row">
+          <span class="react-name">Zamknięcie</span>
+          <span class="react-cost">koszt: izolacja, uzależnienia, pustka</span>
+        </div>
+        <div class="react-row">
+          <span class="react-name">Ucieczka z domu</span>
+          <span class="react-cost">koszt: nigdy nie ma cię we własnym życiu</span>
+        </div>
+        <div class="react-row" style="background: rgba(122,146,112,0.18); border: 1px solid rgba(122,146,112,0.4);">
+          <span class="react-name" style="color: var(--sage-soft);">Obecność + ignorowanie</span>
+          <span class="react-cost" style="color: rgba(244,241,234,0.95);">zysk: wracasz do swojego życia, on dalej gada</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Współlokator-umysł nie odejdzie. Pytanie nie brzmi: <em>jak go uciszyć</em>. Pytanie brzmi: <em>jak żyć swoim życiem, gdy on dalej gada</em>?"
+      <span class="frame-quote-attr">— Russ Harris (2009)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: większość ludzi przez całe życie próbuje albo udowodnić współlokatorowi, że nie ma racji (kłótnia), albo akceptuje wszystko co mówi (zgoda smutna). Obie strategie wyczerpują twoje życiowe zasoby. Skuteczna trzecia droga: <em>uprzejma dystansująca obecność</em> — „tak tak, jasne", i wracasz do swoich spraw.</div>
+    
+    <div class="src">Harris (2009, ACT Made Simple)</div>
+  </section>
+
+  <!-- 2: DIAGNOSIS -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Profil współlokatora</div>
+    <h1 class="card-prompt">Co <em>najczęściej</em> gada?</h1>
+    <p class="card-detail">Pierwszy krok — <strong>poznanie typowych wypowiedzi</strong>. Im lepiej znasz repertuar, tym mniej cię zaskakują. Większość ludzi ma 5-10 powracających wypowiedzi. Zaznacz typowe i opisz własne.</p>
+    
+    <div class="day-h">Kategorie wypowiedzi mojego współlokatora (zaznacz)</div>
+    
+    <div class="kit-list">
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🔮</span>
+        <span class="kit-text"><strong>Prognozy / katastrofy</strong> — „nie wyjdzie", „skończysz sam/a"</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">⚖</span>
+        <span class="kit-text"><strong>Porównania</strong> — „oni są lepsi", „ty jesteś gorszy/a"</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🎯</span>
+        <span class="kit-text"><strong>Samokrytyka</strong> — „głupi/a, leniwy/a, bezwartościowy/a"</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🪞</span>
+        <span class="kit-text"><strong>Meta-ocena emocji</strong> — „dlaczego tak źle się czujesz, powinieneś być szczęśliwszy"</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">⛔</span>
+        <span class="kit-text"><strong>Porzucanie / poddawanie</strong> — „daj sobie spokój", „to nie ma sensu"</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">😤</span>
+        <span class="kit-text"><strong>Zazdrość / niesprawiedliwość</strong> — „dlaczego oni mają lepiej"</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Imię mojego współlokatora (nadaj kreatywnie)</div>
+    <textarea class="thought-input" id="name" placeholder='np. „Gadała", „Krytyk", „Prorok Zagłady", „Pani Doskonałość", „Stary Karol"...' rows="2"></textarea>
+    
+    <div class="examples-h">3 najczęstsze wypowiedzi tego tygodnia</div>
+    <textarea class="thought-input" id="topQuotes" placeholder='np. 1) „Zepsujesz to spotkanie" — codziennie. 2) „Inni już dawno by skończyli ten projekt" — co rano. 3) „Nie zasługujesz na odpoczynek" — w weekendy.' rows="3"></textarea>
+    
+    <div class="scale-card">
+      <div class="scale-h">Ile godzin dziennie poświęcam mu uwagę? (kłótnie, zgoda, zamknięcie)</div>
+      <div class="scale-label"><span>0h — wolność</span><span>10h+ — okupacja</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="hours" oninput="updateHours()">
+      <div class="scale-readout"><span id="hoursVal">5</span><span class="unit"> godz/dobę</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="hoursVerdict">
+      <span class="num">5h/dobę</span> — <strong>znacząca okupacja</strong>. Ponad 1/3 świadomego czasu. To stała opłata za wynajem — nawet gdy współlokator gada w tle. Cel: zmniejszyć do 1-2h.
+    </div>
+  </section>
+
+  <!-- 3: PROTOCOL — TAK TAK JASNE -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">Technika</div>
+    <h1 class="card-prompt">„Tak tak, <em>jasne</em>"</h1>
+    <p class="card-detail">Sygnaturowa technika tej metafory. <strong>3 kroki, 5 sekund każdy</strong>. Celem nie jest „uciszenie" współlokatora — celem jest: <em>słyszysz, ale nie reagujesz</em>. Wracasz do swoich spraw, on dalej tam jest.</p>
+    
+    <div class="proto-list">
+      <div class="proto-card">
+        <div class="proto-h-row">
+          <span class="proto-num">1</span>
+          <span class="proto-name">Zauważ — bez oceny</span>
+        </div>
+        <div class="proto-howto"><strong>Po prostu zarejestruj</strong>: „a, znowu gada". Bez analizy, bez kłótni, bez „o czym tym razem". Sama rejestracja jest pierwszym wyjściem z fuzji.</div>
+        <div class="proto-mech">Czysta obserwacja — rejestracja bez treści przerywa nawyk angażowania</div>
+      </div>
+      
+      <div class="proto-card">
+        <div class="proto-h-row">
+          <span class="proto-num">2</span>
+          <span class="proto-name">Powiedz: „tak tak, jasne"</span>
+        </div>
+        <div class="proto-howto"><strong>Cicho lub w głowie — uprzejmie i krótko</strong>. Jak do gadającego sąsiada w kuchni, gdy chcesz się zająć śniadaniem. Nie jesteś nieuprzejmy/a — po prostu nie wciągasz się w rozmowę.</div>
+        <div class="proto-mech">Werbalna formuła kotwiczy decyzję — łatwiej powtórzyć niż wymyślać</div>
+      </div>
+      
+      <div class="proto-card">
+        <div class="proto-h-row">
+          <span class="proto-num">3</span>
+          <span class="proto-name">Wróć do tego, co robisz</span>
+        </div>
+        <div class="proto-howto"><strong>Skieruj uwagę z powrotem na działanie</strong>. Telefon, papier, oddech, otoczenie. Współlokator dalej gada — ale ty już piszesz raport. Sukces: <em>czynność wykonana mimo gadania</em>.</div>
+        <div class="proto-mech">Działanie ponad ruminacją — defuzja ma sens tylko wtedy, gdy prowadzi do działania</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Czym to NIE jest</strong>: ignorowanie ≠ tłumienie (słyszysz, nie walczysz). Ignorowanie ≠ zaprzeczanie („nie bądź głupi" — to kłótnia). Ignorowanie ≠ pozytywne myślenie („jesteś świetny!" — to znów kłótnia). Ignorowanie ≠ dysocjacja (nie „wyjeżdżasz"). To <strong>uprzejma dystansująca obecność</strong> — jak ze współlokatorem w spokoju.</div>
+  </section>
+
+  <!-- 4: PRACTICE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Wartościowe życie z gadułą</div>
+    <h1 class="card-prompt">Jedno działanie <em>mimo</em></h1>
+    <p class="card-detail">Wybierz <strong>jedno wartościowe działanie</strong>, którego od dawna unikasz, bo „współlokator gada". Mała czynność wystarczy. Cel: <em>doświadczyć, że można działać równolegle z gadaniem</em> — nie potrzebujesz ciszy, by ruszyć.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój trening</div>
+      
+      <div class="commit-prompt-label">Wartościowe działanie (które unikam)</div>
+      <textarea class="thought-input" id="action" placeholder='np. „Zadzwonię do mamy" / „Zapiszę się na kurs" / „Pójdę do lekarza" / „Wyślę CV" / „Zacznę raport"' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co gada współlokator na tę myśl?</div>
+      <textarea class="thought-input" id="opposition" placeholder='np. 1) „Wyjdziesz na przykrego/przykrą". 2) „Nikt cię nie weźmie po takiej przerwie". 3) „Po co ci to teraz".' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Plan: kiedy, gdzie, ile</div>
+      <textarea class="thought-input" id="plan" placeholder='np. „Jutro 18:00, w kuchni, 10-minutowa rozmowa. Współlokator może gadać przez całą drogę telefonu — ja rozmawiam"' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Szablon zdania go!</div>
+      <textarea class="thought-input" id="phrase" placeholder='np. „Słyszę cię, dziękuję. A ja teraz dzwonię do mamy". Krótko, uprzejmie, dystansująco.' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Po wykonaniu — co zauważyłem/am?</div>
+      <textarea class="thought-input" id="after" placeholder='np. „Współlokator gadał całą rozmowę. Słyszałem »robisz to źle« 5 razy. Zadzwoniłem mimo to. Mama się ucieszyła."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Pułapka „on mówi prawdę"</strong>: częsta — „ale on MÓWI PRAWDĘ!". Odpowiedź: może tak, może nie. <em>To nie jest pytaniem</em>. Pytanie brzmi: <strong>czy walka z nim daje ci więcej czasu na życie, czy mniej</strong>? Rok kłótni nie zmienił treści gadania. Spróbuj tygodnia „tak tak, jasne".</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Codzienna higiena</div>
+    <h1 class="card-prompt">3 razy <em>dziennie</em></h1>
+    <p class="card-detail">Praktyka działa, gdy jest <em>nawykowa</em>, nie heroiczna. Zacznij od 3 zauważeń dziennie. To się sumuje. <strong>Nie chodzi o perfekcyjne ignorowanie</strong> — chodzi o rozpoznawanie i niewchodzenie w dyskusję.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój plan tygodniowy</div>
+      
+      <div class="commit-prompt-label">3 codzienne sytuacje, w których ćwiczę „tak tak, jasne"</div>
+      <textarea class="thought-input" id="dailyTriggers" placeholder='np. „1) Rano przy kawie — gdy współlokator zaczyna planować katastrofy. 2) W południe — gdy pojawia się porównanie z kimś. 3) Wieczorem — gdy zaczyna meta-ocenę dnia."' rows="4" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Sytuacje wymagające odróżnienia (przypomnienie vs gadanie)</div>
+      <textarea class="thought-input" id="filter" placeholder='np. „»Musisz zapłacić rachunek« — to przypomnienie, działam. »Jesteś beznadziejny w finansach« — to gadanie, »tak tak, jasne«."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Tygodniowy przegląd (5 min w niedzielę)</div>
+      <textarea class="thought-input" id="weekly" placeholder='np. „Niedziela 19:00 — które wypowiedzi były dominujące? Ile razy udało się »tak tak, jasne« vs ile razy wciągałem się w kłótnię? Co poprawić?"' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Reguła praktyki</div>
+    <div class="term-note">
+      <strong>Codziennie</strong> — 3× zauważenie wypowiedzi + „tak tak, jasne"<br>
+      <strong>W ciągu dnia</strong> — odróżniaj: przypomnienia (działam) vs gadanie („jasne")<br>
+      <strong>Co tydzień</strong> — przegląd kłótni vs ignorowania (proporcja)<br>
+      <strong>W kryzysie</strong> — pytanie: <em>czy współlokator rządzi, czy tylko gada?</em>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Harrisa</div>
+      <div class="repeat-body">Współlokator <em>nie ucichnie</em> — i to jest OK. Cel: <strong>słyszysz, ale nie żyjesz pod jego dyktando</strong>. Praktyka 2-4 tygodni przesuwa proporcję od „kłótni" do „ignorowania". Współlokator dalej tam jest. Ty już masz swoje życie.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateHours();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.kit-row.active').forEach(b => b.classList.remove('active'));
+    ['name','topQuotes','action','opposition','plan','phrase','after','dailyTriggers','filter','weekly'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('hours').value = 5;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleKit(el) { el.classList.toggle('active'); }
+
+function updateHours() {
+  const v = parseInt(document.getElementById('hours').value);
+  document.getElementById('hoursVal').textContent = v;
+  
+  const verdict = document.getElementById('hoursVerdict');
+  if (v >= 8) {
+    verdict.innerHTML = `<span class="num">${v}h/dobę</span> — <strong>okupacja totalna</strong>. Większość świadomego czasu spędzasz w dyskusji ze współlokatorem. Praktyka małymi dawkami: 3 zauważenia dziennie wystarczą na początek.`;
+  } else if (v >= 5) {
+    verdict.innerHTML = `<span class="num">${v}h/dobę</span> — <strong>znacząca okupacja</strong>. Ponad 1/3 świadomego czasu. To stała opłata za wynajem — nawet gdy współlokator gada w tle. Cel: zmniejszyć do 1-2h.`;
+  } else if (v >= 3) {
+    verdict.innerHTML = `<span class="num">${v}h/dobę</span> — <strong>średni poziom</strong>. Spora część dnia z głową w kłótni. Praktyka „tak tak, jasne" w 4 tygodnie zwykle obniża to do 1h.`;
+  } else if (v >= 1) {
+    verdict.innerHTML = `<span class="num">${v}h/dobę</span> — <strong>niski poziom</strong>. Już potrafisz wracać do życia mimo gadania. Pogłęb praktykę przy najtrudniejszych typach wypowiedzi.`;
+  } else {
+    verdict.innerHTML = `<span class="num">${v}h/dobę</span> — <strong>wolność</strong>. Sprawdź czy oszacowanie jest realne — czasem mylimy „nie zauważam, że mu odpowiadam" z „nie wciągam się". Tygodniowa obserwacja pokaże prawdę.`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_act_upierdliwy_lokator";
+  var clickSel0 = '.kit-row';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.kit-row')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

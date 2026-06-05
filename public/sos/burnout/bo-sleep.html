@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Sen a wypalenie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.sleep-h { font-weight: 600; font-size: 14px; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+.sleep-row { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+.sleep-row strong { color: var(--ink-deep); }
+.sleep-warn { background: rgba(212,168,168,0.2); border-left: 3px solid #b86060; padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: 13px; line-height: 1.5; }
+.sleep-warn strong { color: #7a3030; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Sen a wypalenie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Sen jest <em>pierwszą ofiarą</em> wypalenia — i kluczem do regeneracji</h1>
+  <p class="card-detail">Matthew Walker — neurobiolog z UC Berkeley, autor książki „Why We Sleep" (2017) — pokazał na danych z dziesiątek lat badań: jedna noc skróconego snu (poniżej 6 godz.) obniża funkcje wykonawcze o około 30%, a regulację emocji nawet o 60%. Po dwóch tygodniach niedosypiania wydolność poznawcza odpowiada poziomowi po 24 godz. bez snu — choć subiektywnie nie czujesz tego jak deprywację. Adaptacja do braku snu jest <em>iluzoryczna</em>: ciało i umysł pracują na stratach, ale rozpoznanie tego stanu jest tłumione.</p>
+  <p class="card-detail">Söderström i in. (2012, w czasopiśmie Sleep) pokazali na danych szwedzkich: wypalenie zaburza <strong>architekturę snu</strong>. Mniej fazy SWS (głębokiego snu wolnofalowego) — fazy odpowiedzialnej za regenerację fizyczną. Więcej wybudzeń. Krótszy sen REM — fazy odpowiedzialnej za regulację emocji i konsolidację pamięci. To nie tylko „mniej snu" — to <em>gorszy</em> sen, nawet przy podobnej liczbie godzin w łóżku. Stąd uczucie, że „spałam/em 8 godzin a wstaję wykończona/y".</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Pętla sen ↔ wypalenie (Walker 2017, Söderström 2012)</div>
+    <div class="element-row">
+      <span class="element-icon">🔄</span>
+      <span class="element-text"><strong>Wypalenie zaburza sen</strong> — wysoki kortyzol wieczorem, ruminacja o pracy, trudność z zaśnięciem, częste wybudzenia 3:00–5:00 rano.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⚙️</span>
+      <span class="element-text"><strong>Zaburzony sen pogłębia wypalenie</strong> — niedosypianie obniża regulację emocji (kora przedczołowa), zwiększa drażliwość, blokuje regenerację HPA.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🚪</span>
+      <span class="element-text"><strong>Sen jako punkt wejścia</strong> — fakt, że sen reaguje stosunkowo szybko (3–14 dni przy interwencji), czyni go najczęściej najlepszym pierwszym krokiem.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📉</span>
+      <span class="element-text"><strong>„Odsypianie w weekend" nie działa</strong> — przewlekły deficyt snu (sleep debt) nie zostaje pokryty przez 1–2 dłuższe noce. Architektura odbudowuje się tygodniami.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Sen nie jest opcjonalnym dodatkiem do dobrego życia. Sen jest fundamentem, na którym opierają się wszystkie inne zdolności mózgu — pamięć, regulacja emocji, decyzje, kreatywność. Wypalenie bez snu nie ustąpi."
+    <span class="frame-quote-attr">— Matthew Walker (2017, „Why We Sleep")</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: terapia poznawczo-behawioralna bezsenności (CBT-I) ma metaanalitycznie silne dane (Trauer i in., 2015, Annals of Internal Medicine — wielkość efektu d ≈ 0,98 dla latencji zasypiania). To <em>pierwsza linia</em> leczenia bezsenności — przed lekami nasennymi. Główne komponenty: higiena snu, restrykcja czasu w łóżku, kontrola bodźca, restrukturyzacja przekonań o śnie.</div>
+
+  <div class="src">Walker (2017, „Why We Sleep") · Söderström i in. (2012, Sleep, architektura snu w wypaleniu) · Trauer i in. (2015, Ann Intern Med, meta-analiza CBT-I) · Edinger &amp; Carney (2014, CBT-I manual) · AASM (American Academy of Sleep Medicine, rekomendacje 7+ godz. dla dorosłych)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Audyt twojego snu</div>
+  <h1 class="card-prompt">Jak <em>realnie</em> wygląda twój sen w ostatnim tygodniu?</h1>
+  <p class="card-detail">Cztery wymiary snu mają znaczenie kliniczne, nie tylko liczba godzin. Oceń je — najlepiej przypomnij sobie ostatnie 7 dni i odpowiedz na średnią, nie najlepszą noc. Ten audyt pokaże, gdzie jest największy deficyt.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>4 godz.</span><span>9+ godz.</span></div>
+    <input type="range" class="scale-input" id="slpHr" min="4" max="9" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>⏰ Średnia długość snu</span><span id="slpHrVal">6</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bardzo trudno</span><span>10 — łatwo</span></div>
+    <input type="range" class="scale-input" id="slpAsleep" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>😴 Łatwość zasypiania</span><span id="slpAsleepVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — częste</span><span>10 — bez wybudzeń</span></div>
+    <input type="range" class="scale-input" id="slpWake" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>🌙 Ciągłość snu (brak wybudzeń)</span><span id="slpWakeVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — brak regeneracji</span><span>10 — pełna regeneracja</span></div>
+    <input type="range" class="scale-input" id="slpRegen" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>☀️ Poczucie wypoczęcia rano</span><span id="slpRegenVal">5</span></div>
+  </div>
+
+  <div class="term-note"><strong>Reguła odczytu</strong>: długość snu &lt; 7 godz. + niski wynik regeneracji rano = sygnał alarmowy, nawet jeśli „śpisz w nocy". Wybudzenia 3:00–5:00 z powracającymi myślami o pracy są klasycznym wzorcem wypalenia. Trudność z zasypianiem &gt; 30 min — najczęściej ruminacja, nie „bezsenność". Architektura snu wymaga interwencji, gdy ≥ 2 wymiary są poniżej 5/10.</div>
+
+  <div class="sleep-warn"><strong>⚠️ Sygnały do konsultacji</strong>: chrapanie z bezdechami, senność wieczorem mimo zmęczenia w dzień, wybudzenia z dusznościami / kołataniem serca, przewlekła bezsenność &gt; 6 tygodni mimo prób — wymagają konsultacji u lekarza rodzinnego (poligrafii / polisomnografii). Wypalenie samo w sobie nie powoduje bezdechu.</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Pięć zasad CBT-I</div>
+  <h1 class="card-prompt">Które zasady CBT-I <em>realnie</em> wprowadzisz?</h1>
+  <p class="card-detail">CBT-I składa się z pięciu komponentów. Nie wszystkie naraz — wybierz <em>dwa</em>, które wprowadzisz w ciągu 14 dni. Pełny program wymaga zwykle 4–6 tygodni; wprowadzanie wszystkiego od razu prowadzi do porzucenia.</p>
+
+  <div class="sleep-row">
+    <strong>1. Stała pora wstawania</strong> — nawet w weekend ± 30 min. Regularność rytmu okołodobowego jest <em>ważniejsza</em> od długości snu. Mózg uczy się przewidywać sen.
+  </div>
+
+  <div class="sleep-row">
+    <strong>2. Restrykcja czasu w łóżku</strong> — łóżko tylko do snu (i seksu). Jeśli nie zasypiasz w 20 min — wstań, czytaj w słabym świetle, wróć gdy poczujesz sen. Łóżko nie kojarzy się z byciem przytomną/ym.
+  </div>
+
+  <div class="sleep-row">
+    <strong>3. Higiena wieczorna</strong> — godzina przed snem bez ekranów (niebieskie światło hamuje melatoninę), bez intensywnej rozmowy, bez pracy, bez kawy/alkoholu (alkohol zaburza REM).
+  </div>
+
+  <div class="sleep-row">
+    <strong>4. Worry journal</strong> — 10 min wieczorem na spisanie myśli o pracy / jutrze. Notatnik na biurku, nie w sypialni. Cel: „przekazanie" zmartwień papierowi, mózg może odpuścić.
+  </div>
+
+  <div class="sleep-row">
+    <strong>5. Świadome przebudzenie</strong> — przy wybudzeniu o 3:00–5:00: <em>nie</em> sięgaj po telefon, <em>nie</em> sprawdzaj godziny. Spokojny oddech 4–7–8 (4 wdech, 7 zatrzymanie, 8 wydech). Jeśli po 20 min nie zasypiasz — wstań, słabe światło, czytanie do senności.
+  </div>
+
+  <div class="examples-h">Wybierz 2 zasady na ten tydzień</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="rule1" onclick="pickRule('1')">1️⃣ Stała pora wstawania</button>
+    <button type="button" class="example-chip" id="rule2" onclick="pickRule('2')">2️⃣ Restrykcja łóżka</button>
+    <button type="button" class="example-chip" id="rule3" onclick="pickRule('3')">3️⃣ Godzina bez ekranów przed snem</button>
+    <button type="button" class="example-chip" id="rule4" onclick="pickRule('4')">4️⃣ Worry journal</button>
+    <button type="button" class="example-chip" id="rule5" onclick="pickRule('5')">5️⃣ Świadome przebudzenie nocne</button>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: pierwsza wybierana zasada to najczęściej <em>stała pora wstawania</em> — bo działa na rytm okołodobowy, który jest podstawą wszystkich pozostałych mechanizmów snu. Druga zazwyczaj: godzina bez ekranów (najtwardsza, ale daje największy efekt na latencję zasypiania).</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan na 14 dni</div>
+  <h1 class="card-prompt">Jak <em>konkretnie</em> wygląda twój wieczór i poranek?</h1>
+  <p class="card-detail">Plan musi być konkretny — godzina, miejsce, działanie. Bez tego mózg nie nauczy się rytmu. 14 dni jest minimalnym czasem, by rytm okołodobowy się ustabilizował. Pierwsze 3–5 dni mogą być trudniejsze (ciało protestuje przeciwko zmianie) — to normalne.</p>
+
+  <textarea class="thought-input" id="slpPlan" rows="6" placeholder="Plan na 14 dni: np. „Wybór: stała pora wstawania + godzina bez ekranów. Wieczór: 22:00 telefon na ładowarkę poza sypialnią. 22:00–22:30 czytanie / kąpiel. 22:30 światło off. Poranek: 6:30 budzik (sobota i niedziela też), światło dzienne / spacer 5 min. Bez drzemek dłuższych niż 20 min.""></textarea>
+
+  <div class="examples-h">Najczęstsze wzorce „pułapki snu" w wypaleniu</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="trap1" onclick="pickTrap('1')">📱 Sprawdzanie maila wieczorem</button>
+    <button type="button" class="example-chip" id="trap2" onclick="pickTrap('2')">☕ Kawa po 14:00</button>
+    <button type="button" class="example-chip" id="trap3" onclick="pickTrap('3')">🍷 Alkohol jako „pomoc na sen"</button>
+    <button type="button" class="example-chip" id="trap4" onclick="pickTrap('4')">😴 Drzemki dłuższe niż 25 min</button>
+    <button type="button" class="example-chip" id="trap5" onclick="pickTrap('5')">📺 Netflix / scrollowanie w łóżku</button>
+    <button type="button" class="example-chip" id="trap6" onclick="pickTrap('6')">⏰ Sprawdzanie godziny w nocy</button>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „leki nasenne na początek"</strong>: benzodiazepiny i tzw. „Z-leki" (zolpidem, zopiklon) skracają zasypianie, ale nie odbudowują architektury snu — często ją dalej psują (mniej SWS, mniej REM). Po 4 tygodniach pojawia się tolerancja i zależność. CBT-I daje trwalsze efekty bez tego ryzyka. Leki tylko po konsultacji z lekarzem, krótkoterminowo, nigdy bez równoległej pracy nad nawykami.</div>
+
+  <div class="term-note"><strong>Reguła pierwszych 3 dni</strong>: po wprowadzeniu nowego rytmu pierwsze 2–3 doby mogą być <em>gorsze</em> niż przed planem — to ciało protestuje przeciwko zmianie. Nie traktuj tego jako „plan nie działa" — daj 14 dni, dopiero wtedy oceniaj. Architektura snu odbudowuje się tygodniami, nie nocami.</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po dwóch tygodniach</div>
+  <h1 class="card-prompt">Czy sen <em>się odbudowuje</em>?</h1>
+  <p class="card-detail">Po 14 dniach realizacji planu wróć tu i powtórz audyt. Cel: zobaczyć, czy zmiany w długości, łatwości zasypiania, ciągłości lub regeneracji rano są zauważalne. Niektóre wymiary reagują szybciej (latencja zasypiania — 1–2 tygodnie), inne wolniej (głębokie sny, regeneracja rano — 4–6 tygodni).</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez zmian / gorzej</span><span>10 — wyraźna poprawa</span></div>
+    <input type="range" class="scale-input" id="slpImprove" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Subiektywna poprawa snu</span><span id="slpImproveVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — plan nie wykonany</span><span>10 — pełna realizacja</span></div>
+    <input type="range" class="scale-input" id="slpExec" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Realizacja planu</span><span id="slpExecVal">5</span></div>
+  </div>
+
+  <textarea class="thought-input" id="slpReflect" rows="3" placeholder="Co się zmieniło w czterech wymiarach snu? np. „Długość snu 6h → 7h (12 nocy z 14). Zasypianie 4 → 7 (już bez ekranu w łóżku). Ciągłość 5 → 6 (jeszcze wybudzenia 4:00). Regeneracja 4 → 6. Plan na kolejne 2 tygodnie: dodaję worry journal o 21:30.""></textarea>
+
+  <div class="final-msg" id="finalMsg">Wpisz oba pomiary, by zobaczyć podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła ciągłości</strong>: jeśli długość i łatwość zasypiania poprawiły się, ale wybudzenia o 3:00–5:00 nadal występują — najczęściej to objaw <em>ruminacji o pracy</em>, nie zaburzenia snu jako takiego. Rozwiązanie: worry journal wieczorem + interwencja na poziomie pracy (granice, godziny, decyzje), nie kolejne techniki snu.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Sen jest <strong>pierwszą ofiarą</strong> wypalenia i <strong>kluczem do regeneracji</strong>. CBT-I (terapia poznawczo-behawioralna bezsenności) ma silne dane (d ≈ 0,98). Wprowadzaj <em>dwie</em> zasady naraz, 14 dni. Stała pora wstawania + godzina bez ekranów to najczęstszy duet startowy. „Odsypianie w weekend" nie działa. Architektura snu odbudowuje się tygodniami.</div>
+  </div>
+
+  <div class="src">Walker (2017, „Why We Sleep") · Söderström i in. (2012, Sleep, architektura snu w wypaleniu) · Trauer i in. (2015, Ann Intern Med, CBT-I d=0,98) · Edinger &amp; Carney (2014, CBT-I manual) · AASM (rekomendacje 7+ godz. dla dorosłych)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['slpHr','slpAsleep','slpWake','slpRegen','slpImprove','slpExec'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; if (id === 'slpImprove' || id === 'slpExec') updateFinalMsg(); });
+    }
+  });
+}
+
+function pickRule(n) {
+  var el = document.getElementById('rule' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickTrap(n) {
+  var el = document.getElementById('trap' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function updateFinalMsg() {
+  var imp = parseInt(document.getElementById('slpImprove').value, 10);
+  var exec = parseInt(document.getElementById('slpExec').value, 10);
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  if (imp === 5 && exec === 5) {
+    fm.innerHTML = 'Wpisz oba pomiary, by zobaczyć podsumowanie.';
+    return;
+  }
+  var msg = '';
+  if (exec >= 7 && imp >= 6) msg = '<strong>Plan działa, sen się odbudowuje</strong> — kontynuuj 2 kolejne tygodnie. Następnie dodaj 3. zasadę CBT-I (najczęściej worry journal lub kontrola wybudzeń).';
+  else if (exec >= 7 && imp < 4) msg = '<strong>Plan wykonany, ale sen bez zmian</strong> — możliwe somatyczne tło (bezdech, niedoczynność tarczycy, anemia). Konsultacja u lekarza rodzinnego — pakiet podstawowych badań.';
+  else if (exec < 4) msg = '<strong>Plan w większości niewykonany</strong> — w wypaleniu siła woli wieczorem jest ograniczona przez kortyzol. Zmień strategię: telefon poza sypialnią od 18:00 (nie 22:00), automatyzacja zamiast decyzji.';
+  else msg = 'Częściowy ruch — kontynuuj. Cel kolejnych 2 tygodni: realizacja ≥7/10 i potwierdzenie poprawy w przynajmniej 2 wymiarach snu.';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateFinalMsg();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bo_sleep — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bo_sleep";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

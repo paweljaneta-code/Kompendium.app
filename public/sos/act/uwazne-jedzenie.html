@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SOS · Uważne jedzenie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+  --cinnamon: #8a553a; --cinnamon-deep: #5c3525;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(138,85,58,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(122,146,112,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--cinnamon); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--cinnamon); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cinnamon); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--cinnamon); vertical-align: middle; margin-right: 10px; margin-bottom: 3px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--cinnamon); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; }
+
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(138,85,58,0.08); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--cinnamon); font-weight: 700; }
+
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--cinnamon); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME — autumn cinnamon === */
+.frame-card { 
+  background: linear-gradient(180deg, #5c3525 0%, #3a2218 100%);
+  color: var(--bg); padding: 38px 22px 22px; border-radius: 18px; margin: 8px 0 14px; position: relative;
+  overflow: hidden;
+}
+.frame-card::before { content: "✦ MINDFUL EATING"; position: absolute; top: 12px; left: 20px; background: var(--warm); color: var(--bg); font-size: 9px; letter-spacing: 0.2em; padding: 4px 10px; font-weight: 700; border-radius: 4px; z-index: 2; }
+.frame-card::after {
+  content: "🍇"; position: absolute; bottom: 8px; right: 18px;
+  font-size: 56px; opacity: 0.12; pointer-events: none;
+}
+.frame-h { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; position: relative; z-index: 1; }
+.sense-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+.sense-cell {
+  background: rgba(244,241,234,0.06); border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sense-icon { font-size: 18px; margin-bottom: 2px; }
+.sense-name { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--warm); }
+.sense-desc { font-size: 11.5px; color: rgba(244,241,234,0.78); line-height: 1.35; }
+.frame-quote { margin-top: 12px; padding: 10px 14px; background: rgba(244,241,234,0.06); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); position: relative; z-index: 1; }
+.frame-quote-attr { display: block; margin-top: 8px; font-style: normal; font-size: 11px; color: var(--sage); font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+.scale-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cinnamon); font-weight: 700; margin-bottom: 10px; }
+.scale-input { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; cursor: grab; }
+.scale-input::-webkit-slider-runnable-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; margin-top: -10px; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-track { height: 5px; background: linear-gradient(to right, var(--sage), var(--warm), #c4493a); border-radius: 3px; }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--ink); border: 3px solid var(--bg); border-radius: 50%; cursor: grab; }
+.scale-readout { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; text-align: center; margin-top: 4px; color: var(--ink); font-feature-settings: 'tnum' 1; }
+.scale-readout span.unit { color: var(--ink-mute); font-size: 13px; font-weight: 400; }
+.scale-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.verdict-summary { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 14px 18px; margin-top: 12px; font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; line-height: 1.5; }
+.verdict-summary strong { color: var(--sage); font-style: normal; font-weight: 700; }
+.verdict-summary .num { color: var(--warm); font-weight: 700; font-style: normal; }
+
+/* === STEP CARDS — 7 steps === */
+.step-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+.step-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--cinnamon);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.step-h-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.step-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--cinnamon); line-height: 1; min-width: 24px; }
+.step-name { font-size: 13px; font-weight: 700; flex: 1; letter-spacing: 0.04em; }
+.step-time { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+.step-howto { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; }
+.step-howto strong { color: var(--ink); font-weight: 700; }
+
+/* === KIT === */
+.kit-list { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.kit-row {
+  display: grid; grid-template-columns: 26px 1fr;
+  gap: 10px; align-items: center;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.kit-row:hover { background: rgba(138,85,58,0.06); }
+.kit-row.active { background: rgba(138,85,58,0.14); border-color: var(--cinnamon); border-left: 3px solid var(--cinnamon); padding-left: 9px; }
+.kit-icon { font-size: 16px; text-align: center; }
+.kit-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
+.kit-row.active .kit-text { color: var(--ink); }
+.kit-text strong { font-style: normal; font-weight: 700; }
+
+.commit-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--cinnamon);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.commit-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cinnamon); font-weight: 700; margin-bottom: 8px; }
+.commit-prompt-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+
+.day-h { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cinnamon); font-weight: 700; margin: 14px 0 8px; }
+
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(138,85,58,0.10); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cinnamon); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+.repeat-body strong { color: var(--ink); font-weight: 700; }
+
+.src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); margin-top: 14px; }
+.src::before { content: "◆"; margin-right: 6px; color: var(--cinnamon); }
+
+.foot { padding: 16px 24px 28px; display: flex; gap: 10px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.35); }
+.foot-btn { flex: 1; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; cursor: pointer; border: 1px solid var(--line); background: rgba(255,255,255,0.6); color: var(--ink); transition: all 0.2s; }
+.foot-btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 2; }
+.foot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.foot-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">SOS · <em>Uważne jedzenie</em></div>
+  <div class="hdr-step">Krok <span id="stepNum">1</span>/5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- 1: FRAME -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">Wprowadzenie</div>
+    <h1 class="card-prompt">Rodzynka jak <em>obiekt z innej planety</em></h1>
+    <p class="card-detail">Klasyczne otwarcie programu <strong>MBSR</strong> (mindfulness-based stress reduction) Jona Kabat-Zinna (1979) — jedzenie jednej rodzynki przez 5-7 minut, z pełną uwagą każdego ze zmysłów. Nie jest o jedzeniu. Jest o <em>tym, ile gubisz w autopilocie</em>. Większość ludzi po pierwszej rodzynce mówi: „nie wiedziałem, że tyle jest w jednym kęsie".</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">5 zmysłów — pełna uwaga</div>
+      
+      <div class="sense-grid">
+        <div class="sense-cell">
+          <span class="sense-icon">👁</span>
+          <span class="sense-name">Wzrok</span>
+          <span class="sense-desc">kolor, kształt, fałdki, połysk</span>
+        </div>
+        <div class="sense-cell">
+          <span class="sense-icon">✋</span>
+          <span class="sense-name">Dotyk</span>
+          <span class="sense-desc">tekstura, waga, temperatura</span>
+        </div>
+        <div class="sense-cell">
+          <span class="sense-icon">👃</span>
+          <span class="sense-name">Węch</span>
+          <span class="sense-desc">aromaty na każdym oddechu</span>
+        </div>
+        <div class="sense-cell">
+          <span class="sense-icon">👂</span>
+          <span class="sense-name">Słuch</span>
+          <span class="sense-desc">cichy dźwięk przy ściśnięciu</span>
+        </div>
+        <div class="sense-cell">
+          <span class="sense-icon">👅</span>
+          <span class="sense-name">Smak</span>
+          <span class="sense-desc">słodycz, kwas, zmiany w czasie</span>
+        </div>
+        <div class="sense-cell">
+          <span class="sense-icon">🌬</span>
+          <span class="sense-name">Ciało</span>
+          <span class="sense-desc">ruch języka, ślina, połknięcie</span>
+        </div>
+      </div>
+      
+      <div class="frame-quote">„Mindfulness <em>nie polega</em> na byciu kimś innym. To po prostu obecność <em>tu, teraz</em> — z tym, co jest. Jedzenie rodzynki uważnie pokazuje, ile dzieje się w pojedynczym oddechu."
+      <span class="frame-quote-attr">— Jon Kabat-Zinn (1990)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Mit do obalenia</strong>: „muszę medytować godzinami". <em>Ten</em> trening trwa 5-7 minut z jednym małym kęsem. Cała formalna praktyka uważności w MBSR zaczyna się tutaj. Po jednej rodzynce ludzie zauważają, jak <strong>automatycznie żyją</strong> — i dostają pierwsze narzędzie, żeby zwolnić.</div>
+    
+    <div class="src">Kabat-Zinn (1990, Full Catastrophe Living) · MBSR Workbook (1979)</div>
+  </section>
+
+  <!-- 2: PREPARATION -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">Przygotowanie</div>
+    <h1 class="card-prompt">Co mam <em>pod ręką</em>?</h1>
+    <p class="card-detail">Klasyk to rodzynka — ale można <strong>każdy mały kęs</strong>. Wybierz coś, czego zwykle nie jadasz uważnie. Coś małego, by można było je studiować, nie pochłaniać.</p>
+    
+    <div class="day-h">Co wybiorę do uważnego jedzenia (zaznacz)</div>
+    
+    <div class="kit-list">
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🍇</span>
+        <span class="kit-text"><strong>Rodzynka</strong> — klasyk Kabat-Zinna, najbogatszy w teksturę</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🍫</span>
+        <span class="kit-text"><strong>Mały kawałek czekolady</strong> — zmieniający się smak w czasie</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🌰</span>
+        <span class="kit-text"><strong>Migdał lub orzech</strong> — twardy, długo żuty, wyraźny dźwięk</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🍓</span>
+        <span class="kit-text"><strong>Połówka truskawki</strong> — kwas, słodycz, soczystość</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🍪</span>
+        <span class="kit-text"><strong>Kawałek herbatnika</strong> — kruszący się, zmiana tekstury w ustach</span>
+      </div>
+      <div class="kit-row" onclick="toggleKit(this)">
+        <span class="kit-icon">🫐</span>
+        <span class="kit-text"><strong>Borówka lub jagoda</strong> — pęka, eksplozja smaku</span>
+      </div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Ile mojego jedzenia codziennie jem na autopilocie?</div>
+      <div class="scale-label"><span>0% — uważnie</span><span>100% — autopilot</span></div>
+      <input type="range" min="0" max="100" step="10" value="70" class="scale-input" id="autopilot" oninput="updateAuto()">
+      <div class="scale-readout"><span id="autoVal">70</span><span class="unit"> %</span></div>
+    </div>
+    
+    <div class="verdict-summary" id="autoVerdict">
+      <span class="num">70%</span> — <strong>typowe dla pracujących dorosłych</strong>. Większość posiłków przy ekranie/rozmowie. Ten trening robi największą różnicę właśnie tobie.
+    </div>
+    
+    <div class="examples-h">Kiedy zwykle jem na autopilocie? (typowe sytuacje)</div>
+    <textarea class="thought-input" id="autoSit" placeholder='np. „Śniadanie przy laptopie, obiad ze scrollowaniem, kolacja przed Netflixem, przekąski stojąc przy lodówce..."' rows="3"></textarea>
+  </section>
+
+  <!-- 3: PROTOCOL — 7 STEPS -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">7-krokowa instrukcja</div>
+    <h1 class="card-prompt">Jeden kęs, <em>5 minut</em></h1>
+    <p class="card-detail">Pełen protokół Kabat-Zinna. Zarezerwuj <strong>5-7 minut bez przerywania</strong>. Wyłącz telefon. Usiądź wygodnie. Każdy krok 30-60 sekund. Jeśli umysł odpływa — wracasz do zmysłu, którym się aktualnie zajmujesz.</p>
+    
+    <div class="step-list">
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">1</span>
+          <span class="step-name">Zobacz</span>
+          <span class="step-time">~ 60s</span>
+        </div>
+        <div class="step-howto"><strong>Obejrzyj kęs jak obiekt z innej planety</strong> — kolor, kształt, fałdki, połysk, cienie. Obracaj go w palcach. Jakbyś widział to po raz pierwszy w życiu.</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">2</span>
+          <span class="step-name">Dotknij</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Poczuj teksturę między palcami</strong> — chropowatość, gładkość, klejkość. Jaka jest waga? Temperatura? Czy ciepło dłoni zmienia obiekt?</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">3</span>
+          <span class="step-name">Powąchaj</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Zbliż do nosa, powolne wdechy</strong>. Czy zapach zmienia się od pierwszego do trzeciego oddechu? Jakie skojarzenia się pojawiają — wspomnienia, miejsca?</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">4</span>
+          <span class="step-name">Posłuchaj</span>
+          <span class="step-time">~ 20s</span>
+        </div>
+        <div class="step-howto"><strong>Ściśnij delikatnie przy uchu</strong>. Czy obiekt wydaje dźwięk? Większość ludzi pierwszy raz słyszy „cichy chrzęst rodzynki". To zaskoczenie.</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">5</span>
+          <span class="step-name">Włóż do ust — nie gryź</span>
+          <span class="step-time">~ 60s</span>
+        </div>
+        <div class="step-howto"><strong>Połóż na języku, badaj językiem</strong>. Smak na powierzchni, ślina, faktura. Powstrzymanie odruchu gryzienia jest częścią ćwiczenia — pokazuje automatyzm jedzenia.</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">6</span>
+          <span class="step-name">Gryź powoli</span>
+          <span class="step-time">~ 60s</span>
+        </div>
+        <div class="step-howto"><strong>Jeden gryz — eksplozja smaku</strong>. Co się zmienia? Słodycz, kwas, gorycz? Jak smak ewoluuje przez 30 sekund? Większość smaków znika po 4-5 sekundach przeżuwania.</div>
+      </div>
+      
+      <div class="step-card">
+        <div class="step-h-row">
+          <span class="step-num">7</span>
+          <span class="step-name">Połknij — śledź</span>
+          <span class="step-time">~ 30s</span>
+        </div>
+        <div class="step-howto"><strong>Świadome przełknięcie</strong>. Kiedy <em>decyduję</em> przełknąć? Czy potrafię śledzić ruch w gardle? Co zostaje — smak, doznania w ciele, pustka po obiekcie?</div>
+      </div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: gdy umysł odpływa do planów/wspomnień/oceniania (<em>„to dziwne ćwiczenie", „kiedy się skończy?"</em>), <strong>łagodnie wracaj do zmysłu</strong>, którym się aktualnie zajmujesz. Nie walcz z myślami — nie próbuj „dobrze medytować". Wracasz — to cała technika.</div>
+  </section>
+
+  <!-- 4: PRACTICE -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">Moje obserwacje</div>
+    <h1 class="card-prompt">Co <em>zauważyłem/am</em>?</h1>
+    <p class="card-detail">Wykonałeś/aś ćwiczenie? Zapisz, co zauważyłeś/aś. Konkretnie. <strong>Nie ma „dobrych" lub „złych" odpowiedzi</strong> — interesuje cię to, co <em>było</em>, nie co „powinno być".</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Notatki z mojej rodzynki</div>
+      
+      <div class="commit-prompt-label">Co zauważyłem/am, czego normalnie nie zauważam?</div>
+      <textarea class="thought-input" id="noticed" placeholder='np. „Rodzynka ma zaskakująco wiele tekstur — chropowatą skórkę i gładkie wnętrze. Smak najpierw słodki, potem lekko kwaśny."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Jak się czułem/am, jedząc tak wolno?</div>
+      <textarea class="thought-input" id="feeling" placeholder='np. „Pierwsze 30s niecierpliwie — »kiedy będzie można normalnie zjeść?«. Potem ciekawość. Potem zaskakujący spokój."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Dokąd uciekał umysł? (myśli, plany, oceny)</div>
+      <textarea class="thought-input" id="mindWander" placeholder='np. „Do listy zakupów. Do oceny »czy robię to dobrze«. Do ranka i kawy. Wracałem do smaku 3-4 razy."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Co to mówi o moim zwykłym jedzeniu?</div>
+      <textarea class="thought-input" id="insight" placeholder='np. „Tracę większość doświadczenia jedzenia. Połykam zanim posmakuję. Czytam telefon zamiast czuć."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="term-note"><strong>Powtórzenie</strong>: w drugim, trzecim, dziesiątym razie ćwiczenie się <em>pogłębia</em>. Pierwsza rodzynka — odkrycie. Setna — utrwalony nawyk obecności. Wartość rośnie z czasem, nie spada. Mistrzostwo w tym ćwiczeniu nie istnieje — istnieje <strong>codzienne wracanie</strong>.</div>
+  </section>
+
+  <!-- 5: PLAN + RULE -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">Plan tygodnia</div>
+    <h1 class="card-prompt">Mostek do <em>codzienności</em></h1>
+    <p class="card-detail">Rodzynka to dopiero początek. Praktyka <strong>uważnego jedzenia w codzienności</strong> — pierwszy kęs każdego posiłku, jeden posiłek dziennie bez ekranu — buduje fundament dla całej formalnej praktyki uważności.</p>
+    
+    <div class="commit-card">
+      <div class="commit-h">Mój plan na ten tydzień</div>
+      
+      <div class="commit-prompt-label">Pierwszy kęs każdego posiłku — uważnie (30-60 sekund)</div>
+      <textarea class="thought-input" id="firstBite" placeholder='np. „Każdego śniadania zatrzymam się przy pierwszym kęsie. Dwa oddechy, smak, tekstura. Potem normalnie."' rows="3" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Jeden posiłek tygodniowo bez telefonu/TV/laptopa</div>
+      <textarea class="thought-input" id="screenless" placeholder='np. „Niedzielny obiad bez ekranu. Możliwa rozmowa z partnerem, ale nic nie skroluję."' rows="2" style="margin-bottom:10px"></textarea>
+      
+      <div class="commit-prompt-label">Sygnał autopilota — kiedy zauważam, jak reaguję</div>
+      <textarea class="thought-input" id="autoSignal" placeholder='np. „Gdy łapię się, że nie wiem, jaki smak miał ostatni kęs — pauza, jeden uważny kęs, potem dalej."' rows="3" style="margin-bottom:0"></textarea>
+    </div>
+    
+    <div class="day-h">Codzienna higiena</div>
+    <div class="term-note">
+      <strong>Codziennie</strong> — pierwszy kęs każdego posiłku uważnie<br>
+      <strong>Co tydzień</strong> — jeden posiłek bez ekranu<br>
+      <strong>Co miesiąc</strong> — pełne ćwiczenie z rodzynką (powtórka)<br>
+      <strong>W kryzysie</strong> — pytanie: <em>czy w ogóle smakuję to, co jem?</em>
+    </div>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Reguła Kabat-Zinna</div>
+      <div class="repeat-body">Mindfulness to <em>nie technika do osiągania spokoju</em>. To <strong>sposób bycia obecnym z tym, co jest</strong>. Rodzynka uczy: w jednym kęsie jest więcej, niż zwykle zauważasz w całym dniu. <em>Wszędzie tak jest</em>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <button class="foot-btn" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn primary" id="nextBtn" onclick="nextStep()">Dalej</button>
+</footer>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  nextBtn.disabled = false;
+  
+  if (curStep === 2) updateAuto();
+  
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    curStep = 1;
+    document.querySelectorAll('.kit-row.active').forEach(b => b.classList.remove('active'));
+    ['autoSit','noticed','feeling','mindWander','insight','firstBite','screenless','autoSignal'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('autopilot').value = 70;
+    updateUI();
+  }
+}
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function toggleKit(el) { el.classList.toggle('active'); }
+
+function updateAuto() {
+  const v = parseInt(document.getElementById('autopilot').value);
+  document.getElementById('autoVal').textContent = v;
+  
+  const verdict = document.getElementById('autoVerdict');
+  if (v >= 90) {
+    verdict.innerHTML = `<span class="num">${v}%</span> — <strong>niemal pełen autopilot</strong>. Większość posiłków bez świadomości smaku. To znak: zacznij od <em>jednego uważnego kęsa dziennie</em>. Mała zmiana, duży efekt.`;
+  } else if (v >= 70) {
+    verdict.innerHTML = `<span class="num">${v}%</span> — <strong>typowe dla pracujących dorosłych</strong>. Większość posiłków przy ekranie/rozmowie. Ten trening robi największą różnicę właśnie tobie.`;
+  } else if (v >= 40) {
+    verdict.innerHTML = `<span class="num">${v}%</span> — <strong>średnia świadomość</strong>. Część posiłków uważnie, część automatycznie. Zwiększenie o 20% zmieni jakość dnia.`;
+  } else if (v >= 20) {
+    verdict.innerHTML = `<span class="num">${v}%</span> — <strong>wysoka świadomość</strong>. Dobry fundament. Praktyka pogłębi to, co już robisz — pójdziesz od „obecność" do <em>„zachwyt"</em>.`;
+  } else {
+    verdict.innerHTML = `<span class="num">${v}%</span> — <strong>niezwykle uważne jedzenie</strong>. Rzadko spotykane. Sprawdź czy oszacowanie jest prawdziwe — czasem mylimy „lubię jeść" z „jem uważnie".`;
+  }
+}
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var KEY = "sos_uwazne_jedzenie";
+  var clickSel0 = '.kit-row';
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("active")) {
+          rows0[i].classList.add("active");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("active")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.kit-row')) {
+      setTimeout(save, 0);
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.example-chip, .example-row, .ex-inline')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() {
+      var r = origUpdateUI.apply(this, arguments);
+      setTimeout(applyRestore, 0);
+      return r;
+    };
+  }
+
+  var origNextStep = window.nextStep;
+  window.nextStep = function() {
+    var wasLast = (curStep === TOTAL_STEPS);
+    if (wasLast) {
+      if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+        return;
+      }
+    }
+    origNextStep.apply(this, arguments);
+    if (wasLast) save();
+  };
+
+  var badge = document.createElement("div");
+  badge.style.cssText = "position:fixed;bottom:96px;right:16px;background:#4a6347;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;z-index:100;pointer-events:none;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(28,38,32,0.18)";
+  badge.textContent = "Zapisano";
+  document.body.appendChild(badge);
+
+  var timer;
+  function showSaved() {
+    badge.style.opacity = "1";
+    clearTimeout(timer);
+    timer = setTimeout(function() { badge.style.opacity = "0"; }, 1200);
+  }
+})();
+
+</script>
+
+</body>
+</html>

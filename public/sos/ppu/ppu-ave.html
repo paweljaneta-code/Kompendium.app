@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · AVE — efekt złamania abstynencji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.reaction-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.reaction-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.reaction-icon { font-size: 22px; line-height: 1; }
+.reaction-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.reaction-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 6px; }
+
+.attribution-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.attribution-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.attribution-row {
+  display: grid; grid-template-columns: 1fr 24px 1fr; gap: 10px;
+  align-items: flex-start; padding: 8px 0;
+  border-bottom: 1px dashed rgba(184,197,168,0.25);
+  font-size: 12.5px; line-height: 1.5;
+}
+.attribution-row:last-child { border-bottom: none; }
+.attribution-bad { color: rgba(244,241,234,0.7); font-style: italic; }
+.attribution-arrow { color: var(--sage); text-align: center; font-family: 'Fraunces', serif; }
+.attribution-good { color: var(--bg); font-weight: 500; }
+
+.fuckit-card {
+  background: rgba(166,74,58,0.15); border-left: 3px solid #a64a3a;
+  border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0;
+}
+.fuckit-h { font-family: 'Fraunces', serif; font-size: 12.5px; font-weight: 600; color: #a64a3a; margin-bottom: 4px; }
+.fuckit-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.fuckit-body strong { color: var(--ink); font-weight: 600; }
+.fuckit-body em { color: #a64a3a; font-style: italic; }
+
+.action-card {
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin: 10px 0;
+}
+.action-h {
+  font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600;
+  color: var(--sage-deep); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.action-step {
+  display: grid; grid-template-columns: 24px 1fr; gap: 10px;
+  padding: 4px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft);
+}
+.action-num {
+  font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px;
+  color: var(--sage-deep);
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>AVE — efekt złamania abstynencji</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">"Skoro już raz, to wszystko stracone" — <em>błąd poznawczy</em></h1>
+    <p class="card-detail">G. Alan Marlatt opisał w 1985 roku <strong>Abstinence Violation Effect (AVE)</strong> — efekt złamania abstynencji — jako jeden z głównych mechanizmów, który zamienia <em>jeden lapse</em> w <em>wielodniowy relaps</em>. Mechanizm jest poznawczy: po pojedynczym epizodzie pojawia się myśl <em>"skoro raz złamałem/am, to wszystko stracone"</em> → kontynuacja zachowania → pełen relaps. AVE to nie słabość woli ani charakteru — to <strong>specyficzny błąd poznawczy</strong>, który można rozpoznać i przerwać. Świadomość mechanizmu jest najsilniejszą obroną przed nim.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Czym jest AVE — anatomia mechanizmu</div>
+      <div class="element-row"><span class="element-icon">⚡</span><span class="element-text"><strong>Wyzwalacz</strong> — pojedynczy lapse (epizod PPU). Sam w sobie <em>nie</em> jest klęską — 80% lapsów nie eskaluje, jeśli są dobrze obsłużone (Marlatt).</span></div>
+      <div class="element-row"><span class="element-icon">🧠</span><span class="element-text"><strong>Reakcja 1: Dysonans poznawczy</strong> — "jestem osobą, która tego nie robi — a właśnie zrobiłem/am. Coś tu nie pasuje". Niezgodność tożsamości i zachowania = silny dyskomfort psychiczny.</span></div>
+      <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Reakcja 2: Atrybucja</strong> — przypisywanie przyczyn lapsu do <em>siebie</em> ("to moja wina"), <em>stabilnie</em> ("zawsze tak będzie"), <em>globalnie</em> ("jestem taki we wszystkim"). Klasyczna depresjogenna atrybucja.</span></div>
+      <div class="element-row"><span class="element-icon">🌪️</span><span class="element-text"><strong>Wynik: "fuck it" effect</strong> — "skoro i tak już złamałem/am, to teraz już wszystko jedno" → kontynuacja, eskalacja, relaps. Mechanizm udokumentowany dla diet, abstynencji od alkoholu, PPU.</span></div>
+    </div>
+
+    <div class="frame-quote">„Jeden lapse nie jest klęską. Klęska jest dopiero wtedy, gdy lapse zostaje zinterpretowany jako klęska. Sam akt interpretacji decyduje, czy lapse stanie się informacją, czy początkiem relapsu."
+      <span class="frame-quote-attr">— parafraza po G. Alan Marlatcie, „Relapse Prevention" (1985)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: AVE jest <em>najsilniej działającym</em> błędem poznawczym w pierwszych godzinach po lapsie. Bez świadomości tego mechanizmu — niemal wszyscy w niego wpadają. Z świadomością — można go zatrzymać. Karta wsparcia daje narzędzia: rozpoznanie mechanizmu, reframing, plan na pierwszą godzinę. Działa szczególnie silnie w połączeniu z Kartami "Samowspółczucie" (Neff) i "Samopołączenie po lapsie" (NVC).</div>
+
+    <div class="src">Marlatt &amp; Gordon (1985, „Relapse Prevention"); Marlatt (1985, „Lifestyle modification" — rozdział o AVE); Collins &amp; Lapp (1991, „Restraint and the AVE"); Carney &amp; Kivlahan (1995, „AVE and substance abuse"); Witkiewitz &amp; Marlatt (2007, „Therapist's Guide to Evidence-Based Relapse Prevention"); Hendershot i in. (2011, „Relapse prevention for addictive behaviors", Substance Abuse Treatment, Prevention, and Policy); zastosowanie do PPU: Hall (2013).</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoje typowe AVE</div>
+    <h1 class="card-prompt">Sprawdź <em>swój wzorzec</em> AVE</h1>
+    <p class="card-detail">AVE u różnych osób ma różny "kostium". Sprawdź, jakie myśli i zachowania pojawiają się u <em>ciebie</em> po lapsie. Świadomość konkretnego wzorca jest pierwszym krokiem do jego przerwania.</p>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">💭</span>
+        <span class="reaction-name">A. Typowe myśli AVE — zaznacz, które rozpoznajesz</span>
+      </div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="m1" onclick="this.classList.toggle('picked')">"Skoro już dziś zacząłem/am, to..."</button>
+        <button type="button" class="example-chip" id="m2" onclick="this.classList.toggle('picked')">"I tak już ten tydzień stracony"</button>
+        <button type="button" class="example-chip" id="m3" onclick="this.classList.toggle('picked')">"Nigdy się nie zmienię"</button>
+        <button type="button" class="example-chip" id="m4" onclick="this.classList.toggle('picked')">"Cała praca poszła na marne"</button>
+        <button type="button" class="example-chip" id="m5" onclick="this.classList.toggle('picked')">"Nie jestem w stanie tego kontrolować"</button>
+        <button type="button" class="example-chip" id="m6" onclick="this.classList.toggle('picked')">"Jestem słaby/a charakterowo"</button>
+        <button type="button" class="example-chip" id="m7" onclick="this.classList.toggle('picked')">"Pewnie tak będzie zawsze"</button>
+        <button type="button" class="example-chip" id="m8" onclick="this.classList.toggle('picked')">"Po co próbować dalej"</button>
+      </div>
+    </div>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">🎬</span>
+        <span class="reaction-name">B. Typowe zachowania po lapsie</span>
+      </div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="z1" onclick="this.classList.toggle('picked')">Kolejny epizod tej samej nocy</button>
+        <button type="button" class="example-chip" id="z2" onclick="this.classList.toggle('picked')">Wielodniowa eskalacja</button>
+        <button type="button" class="example-chip" id="z3" onclick="this.classList.toggle('picked')">Pomijanie zaplanowanych aktywności</button>
+        <button type="button" class="example-chip" id="z4" onclick="this.classList.toggle('picked')">Pomijanie sesji terapii</button>
+        <button type="button" class="example-chip" id="z5" onclick="this.classList.toggle('picked')">Izolacja od osób wsparcia</button>
+        <button type="button" class="example-chip" id="z6" onclick="this.classList.toggle('picked')">Dystrakcja: alkohol, jedzenie, scrolling</button>
+        <button type="button" class="example-chip" id="z7" onclick="this.classList.toggle('picked')">Karzenie się fizycznie (głód, brak snu)</button>
+        <button type="button" class="example-chip" id="z8" onclick="this.classList.toggle('picked')">Obietnice "od jutra nigdy więcej"</button>
+      </div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Jak silnie pojawia się AVE po lapsie? (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="aveStrength" min="0" max="10" step="1" value="7" data-default="7">
+      <div class="scale-readout"><span>0 = nie ma</span><span id="aveStrengthval">7</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Jak często ostatni lapse eskalował w relaps? (z 10 ostatnich)</span><span></span></div>
+      <input type="range" class="scale-input" id="escalation" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nigdy</span><span id="escalationval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Jak długo trwa AVE typowo? (godziny / dni)</span><span></span></div>
+      <input type="range" class="scale-input" id="duration" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = minuty</span><span id="durationval">5</span></div>
+    </div>
+
+    <div class="examples-h">Twój ostatni lapse — jak rozegrał się AVE?</div>
+    <textarea class="thought-input" id="lastAVE" placeholder='Opisz konkretnie. np. „Wtorek 22:30 — lapse 30 min PPU. Natychmiast po: »znowu mi nie wyszło, beznadziejny jestem«. Środa: nie poszedłem na trening (»i tak już strata«). Czwartek wieczór: kolejny epizod 1h. Piątek: nie poszedłem na sesję terapii (»wstyd, terapeutka pomyśli, że nie pracuję«). Sobota: trzeci epizod. Niedziela: wreszcie SMS do brata, przerwałem. Cykl trwał 5 dni — lapse był jeden, AVE zamieniło go w relapse.”' rows="6"></textarea>
+
+    <div class="fuckit-card">
+      <div class="fuckit-h">⚠️ "Fuck it" effect — najczęstsza forma AVE</div>
+      <div class="fuckit-body"><em>"Już raz, więc teraz wszystko jedno"</em> — to jest dokładnie ten moment, w którym AVE zwycięża. Od pojedynczego lapsu do relapsu jest dosłownie jedna myśl. Świadomość tej myśli — gdy się pojawia — daje moment, w którym możesz wybrać inaczej.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła rozpoznania</strong>: AVE pojawia się <strong>w pierwszych minutach po lapsie</strong>, nie godzinach. Świadomość, że <em>w tym momencie</em> aktywuje się błąd poznawczy, jest fundamentem obrony. Bez niej — myśl wydaje się "uczciwą oceną sytuacji". Z nią — myśl staje się sygnałem do interwencji.</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — reframing atrybucji</div>
+    <h1 class="card-prompt">Trzy <em>przekształcenia</em> atrybucji</h1>
+    <p class="card-detail">Sercem AVE jest <strong>depresjogenna atrybucja</strong> (Seligman, Abramson) — wewnętrzna, stabilna, globalna. Reframing polega na <em>przesunięciu atrybucji</em> w trzech wymiarach: na zewnętrzną/sytuacyjną, zmienną, specyficzną. To nie samowyznanie ani usprawiedliwianie — to <strong>realistyczny obraz</strong>, w którym lapse staje się informacją.</p>
+
+    <div class="attribution-card">
+      <div class="attribution-h">Atrybucja AVE → Atrybucja realistyczna</div>
+      <div class="attribution-row">
+        <div class="attribution-bad">"To moja wina, jestem słaby/a"<br><em>(wewnętrzna, dyspozycyjna)</em></div>
+        <div class="attribution-arrow">→</div>
+        <div class="attribution-good">"Była trudna sytuacja: niespane noce, samotność, telefon w sypialni"<br><em>(zewnętrzna, sytuacyjna)</em></div>
+      </div>
+      <div class="attribution-row">
+        <div class="attribution-bad">"Zawsze tak będzie"<br><em>(stabilna w czasie)</em></div>
+        <div class="attribution-arrow">→</div>
+        <div class="attribution-good">"Dziś było trudno; nie zawsze jest tak"<br><em>(zmienna w czasie)</em></div>
+      </div>
+      <div class="attribution-row">
+        <div class="attribution-bad">"Jestem taki/a we wszystkim"<br><em>(globalna)</em></div>
+        <div class="attribution-arrow">→</div>
+        <div class="attribution-good">"To jeden obszar mojego życia, nie cała moja tożsamość"<br><em>(specyficzna)</em></div>
+      </div>
+    </div>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">📝</span>
+        <span class="reaction-name">A. Twoje typowe AVE-myśli — i ich reframing</span>
+      </div>
+      <textarea class="thought-input" id="reframing" placeholder='Weź 2—3 typowe AVE-myśli z kroku 2 i przeformułuj. np. „1. AVE: »Jestem beznadziejny, znowu mi nie wyszło«. Reframing: »Dziś o 22:00 byłem zmęczony, sam, telefon w sypialni — był splot okoliczności, nie mój charakter«. 2. AVE: »Cała praca poszła na marne«. Reframing: »6 mies. pracy nie znika przez 1 lapse — wciąż mam terapię, grupę, narzędzia«. 3. AVE: »I tak już ten tydzień stracony«. Reframing: »Lapse był wczoraj, dziś jest osobnym dniem; mogę wybrać inaczej teraz«.”' rows="6"></textarea>
+    </div>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">🌱</span>
+        <span class="reaction-name">B. Reframing tożsamości (kluczowy)</span>
+      </div>
+      <div class="reaction-desc">Najgłębszy reframing dotyczy <em>tożsamości</em>. AVE: "jestem osobą, która tego nie robi — ale zrobiłem/am, więc tak naprawdę jestem osobą, która to robi". Reframing: <strong>"jestem osobą w procesie zmiany — i ta zmiana zawiera lapsy"</strong>.</div>
+      <div class="example-chips">
+        <button type="button" class="example-chip" id="t1" onclick="this.classList.toggle('picked')">"Jestem w procesie zmiany"</button>
+        <button type="button" class="example-chip" id="t2" onclick="this.classList.toggle('picked')">"Lapsy są częścią procesu, nie zaprzeczeniem"</button>
+        <button type="button" class="example-chip" id="t3" onclick="this.classList.toggle('picked')">"To, kim chcę być, jest większe niż jeden epizod"</button>
+        <button type="button" class="example-chip" id="t4" onclick="this.classList.toggle('picked')">"Mam narzędzia i wsparcie — wciąż mam"</button>
+        <button type="button" class="example-chip" id="t5" onclick="this.classList.toggle('picked')">"Lapse jest informacją, nie definicją mnie"</button>
+      </div>
+    </div>
+
+    <div class="fuckit-card">
+      <div class="fuckit-h">⚠️ Reframing ≠ usprawiedliwianie</div>
+      <div class="fuckit-body">Reframing nie polega na "to nic złego" ani "to nie moja wina". <em>Bierzesz odpowiedzialność</em> za swoje wybory — ale przypisujesz przyczyny <em>realistycznie</em>, nie globalnie. <strong>"Tak, miałem/am lapse. Tak, to nie pasuje do moich wartości. Tak, była konkretna trudna sytuacja. I tak — wciąż mogę wybrać inaczej teraz"</strong>. Cztery zdania współistnieją.</div>
+    </div>
+
+    <div class="term-note"><strong>Reguła reframingu</strong>: <em>nie czekaj</em>, aż AVE-myśl pojawi się i przejdzie — <strong>aktywnie ją przekształcaj</strong>. Pisemnie, jeśli możliwe — dłoń wymusza świadome przetwarzanie. Trzy pytania: (1) czy ta przyczyna jest naprawdę wewnętrzna, czy też sytuacyjna?; (2) czy naprawdę zawsze, czy też w określonej sytuacji?; (3) czy naprawdę wszystkie obszary, czy też ten konkretny?. Świadome odpowiadanie na te pytania <em>w kryzysie</em> jest umiejętnością do trenowania.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — plan przerwania AVE</div>
+    <h1 class="card-prompt">Pięć kroków <em>w pierwszej godzinie</em></h1>
+    <p class="card-detail">AVE pojawia się <em>natychmiast</em> po lapsie — w pierwszych minutach. Konkretny plan na pierwszą godzinę jest najsilniejszą obroną. Bez planu — improwizacja w stanie wstydu, gdy AVE wygrywa. Z planem — interwencja, zanim AVE zdąży się rozwinąć.</p>
+
+    <div class="action-card">
+      <div class="action-h">📋 Plan przerwania AVE — 5 kroków w pierwszej godzinie</div>
+      <div class="action-step">
+        <span class="action-num">1.</span>
+        <span><strong>Rozpoznaj AVE-myśl</strong> w czasie rzeczywistym. Pojawia się myśl typu "skoro już...", "nigdy się nie zmienię", "i tak stracone"? <em>To jest AVE</em>. Nazwij ją głośno (lub w głowie): "to jest AVE, a nie prawda".</span>
+      </div>
+      <div class="action-step">
+        <span class="action-num">2.</span>
+        <span><strong>Zatrzymanie eskalacji fizycznie</strong>. Wyłącz urządzenie, zmień lokalizację, umyj twarz wodą. Cel: <em>fizyczne wycofanie z sytuacji</em>, zanim AVE doprowadzi do "fuck it".</span>
+      </div>
+      <div class="action-step">
+        <span class="action-num">3.</span>
+        <span><strong>Reframing atrybucji na piśmie</strong> (kartka, notatnik, telefon). Trzy zdania: (a) sytuacyjne przyczyny; (b) "to dziś, nie zawsze"; (c) "to jeden obszar, nie ja cały/a". Pisemnie — zwalnia tempo.</span>
+      </div>
+      <div class="action-step">
+        <span class="action-num">4.</span>
+        <span><strong>Kontakt z osobą wsparcia</strong> w pierwszej godzinie. SMS jest ok: "miałem/am trudny moment, dam radę, ale piszę". Cel: rozbicie izolacji.</span>
+      </div>
+      <div class="action-step">
+        <span class="action-num">5.</span>
+        <span><strong>Powrót do podstawowej rutyny</strong>. Sen, jedzenie, jutrzejszy trening, sesja terapii — <em>nie pomijaj</em>. Pomijanie = "i tak stracone" = AVE wygrywa.</span>
+      </div>
+    </div>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">📝</span>
+        <span class="reaction-name">A. Twój konkretny plan</span>
+      </div>
+      <textarea class="thought-input" id="myPlan" placeholder='Wypełnij szczegółowo — przygotowane wcześniej, dostępne w kryzysie. np. „Krok 1: rozpoznam AVE głośno, »to jest AVE, nie prawda«. Krok 2: telefon do kuchni, prysznic 30 sek zimna woda, spacer 15 min. Krok 3: 3 zdania reframingu w notatniku telefonu (mam szablon zapisany). Krok 4: SMS do brata Krzysztofa »miałem trudny moment, mam plan, jutro zadzwonię«. Krok 5: niedziela trening 8:00 + niedziela 18:00 grupa wsparcia — niezależnie.”' rows="6"></textarea>
+    </div>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">📜</span>
+        <span class="reaction-name">B. Twoja "lista zwycięstw" — bank świadectw</span>
+      </div>
+      <div class="reaction-desc">AVE atakuje przez "nigdy się nie zmienię" / "cała praca na marne". Lista zwycięstw — 15+ konkretnych momentów, w których pracowałeś/aś, zauważyłeś/aś urge, zatrzymałeś/aś go — jest <em>bankiem świadectw</em> przeciwko AVE. Czytasz ją w kryzysie.</div>
+      <textarea class="thought-input" id="wins" placeholder='Wypisz 10—15 konkretnych zwycięstw z ostatnich miesięcy (małych i większych). np. „1. 4 mies. temu — zauważyłem urge w piątek wieczór, wyszedłem na spacer zamiast PPU. 2. 3 mies. temu — pierwsza otwarta rozmowa o PPU z bratem. 3. 2 mies. temu — 30 dni bez PPU. 4. Tydzień temu — partnerka wpadła na lapse w historii, rozmowa była trudna ale nie eskalowała w kłótnię. 5. Dziś rano — zaplanowałem dzień bez PPU jako konkretny cel...” itd.' rows="8"></textarea>
+    </div>
+
+    <div class="reaction-card">
+      <div class="reaction-h">
+        <span class="reaction-icon">🎓</span>
+        <span class="reaction-name">C. Lapse jako informacja — "czego się nauczyłem/am"</span>
+      </div>
+      <div class="reaction-desc">Marlatt: lapse, który nie został przeanalizowany, jest stracony. Po pierwszej godzinie (gdy AVE jest już pod kontrolą, 24—72h po), wykonaj <em>analizę lapsu jako informacji</em>. Co się wydarzyło? Co etap z 7 ogniw był słaby? Co wzmocnić?</div>
+      <textarea class="thought-input" id="lessons" placeholder='Konkretna analiza po lapsie. np. „Lapse: wtorek 22:30. Słabe ogniwo: lifestyle imbalance — 4 noce niespane + samotność po wyjeździe partnerki. SIDs: telefon w sypialni 3 dni z rzędu — nie zauważyłem, że to SIDs. Wzmocnienie: telefon w kuchni nocą + trening rano niezależnie od wieczoru + cotygodniowy kontakt z bratem niedziela 19:00 (rytuał).”' rows="6"></textarea>
+    </div>
+
+    <div class="fuckit-card">
+      <div class="fuckit-h">⚠️ Najczęstszy błąd po przerwaniu AVE</div>
+      <div class="fuckit-body"><strong>Pomijanie analizy</strong>. "Stało się, idę dalej". Bez analizy lapse się powtórzy w tym samym wzorcu — bo nie wiadomo, co go wywołało. Drugi błąd: <em>analiza w stanie wstydu</em> (24h po) — staje się autokrytyką. Optymalny czas: <strong>48—72h po lapsie</strong>, gdy emocje opadły, zanim wspomnienie się rozmyje. Pisemnie. Konkretnie.</div>
+    </div>
+
+    <div class="term-note"><strong>Mechanizm</strong>: 5 kroków planu razem przerywają AVE. Każdy z osobna jest niewystarczający. Kluczowe: <strong>plan przygotowany wcześniej</strong>, nie improwizowany w kryzysie. W spokojnej chwili spisuje się plan; w kryzysie wykonuje się go automatycznie. To nie magia — to <em>preparacja</em>. Lista zwycięstw jest "bronią ciężką" — gdy AVE atakuje przez "nigdy się nie zmienię", lista zwycięstw jest <em>obiektywnym</em> dowodem, że już się zmieniłeś/aś.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>AVE jest pod kontrolą</em>?</h1>
+    <p class="card-detail">Wróć tu po kilku tygodniach pracy z AVE (lub po pierwszym lapsie, w którym zastosowałeś/aś plan). Praca z AVE jest <em>najszybciej działającą</em> z technik RP — efekty już po 1—2 lapsach z planem.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy rozpoznajesz AVE-myśli w czasie rzeczywistym?</span><span></span></div>
+      <input type="range" class="scale-input" id="postRecog" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = nie</span><span id="postRecogval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy stosujesz reframing atrybucji?</span><span></span></div>
+      <input type="range" class="scale-input" id="postReframe" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postReframeval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy masz przygotowany plan na pierwszą godzinę?</span><span></span></div>
+      <input type="range" class="scale-input" id="postPlan" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postPlanval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Częstotliwość lapse → relapse — teraz</span><span></span></div>
+      <input type="range" class="scale-input" id="postEscalation" min="0" max="10" step="1" value="4" data-default="4">
+      <div class="scale-readout"><span>0 = nie</span><span id="postEscalationval">4</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: skuteczna praca z AVE = <em>rozpoznawanie AVE-myśli</em> ≥7 + <em>reframing stosowany</em> ≥6 + <em>plan na pierwszą godzinę gotowy</em> ≥6 + <em>spadek częstotliwości eskalacji lapse → relapse</em> ≥−3 punkty. Najsilniejszy wskaźnik to <em>spadek eskalacji</em> — jeśli pojedyncze lapsy zostają pojedynczymi, AVE jest pod kontrolą. Liczba samych lapsów może spadać wolniej — to inny mechanizm.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">AVE (Abstinence Violation Effect) jest <em>najsilniejszym</em> błędem poznawczym po lapsie i — paradoksalnie — <em>najszybciej</em> reagującym na świadomą pracę. Dwa, trzy lapsy z planem na pierwszą godzinę — i AVE traci moc. Klucz: (1) <em>rozpoznawanie myśli AVE w czasie rzeczywistym</em> ("to jest AVE, nie prawda"); (2) <em>reframing atrybucji</em> (sytuacyjna, zmienna, specyficzna); (3) <em>plan na pierwszą godzinę</em> przygotowany w spokoju; (4) <em>lista zwycięstw</em> jako bank świadectw przeciwko "nigdy się nie zmienię"; (5) <em>analiza lapsu jako informacji</em> 48—72h po. Praca z AVE wzmacnia się przy łączeniu z Kartami "Samowspółczucie" (Neff) i "Samopołączenie po lapsie" (NVC). Razem dają niemal niezniszczalną obronę przed eskalacją lapse → relapse. <strong>Bez świadomości AVE — niemal wszyscy w niego wpadają. Z świadomością — można go zatrzymać</strong>.</div>
+    </div>
+
+    <div class="src">Marlatt &amp; Gordon (1985, „Relapse Prevention"); Marlatt (1985, „Lifestyle modification"); Collins &amp; Lapp (1991); Carney &amp; Kivlahan (1995); Witkiewitz &amp; Marlatt (2007); Hendershot i in. (2011); Seligman &amp; Abramson (1979, „Helplessness and depression" — depresjogenna atrybucja); zastosowanie do PPU: Hall (2013); Twohig &amp; Crosby (2010).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['aveStrength','escalation','duration','postRecog','postReframe','postPlan','postEscalation'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var rec = parseInt(document.getElementById('postRecog').value, 10);
+  var rf = parseInt(document.getElementById('postReframe').value, 10);
+  var plan = parseInt(document.getElementById('postPlan').value, 10);
+  var preE = parseInt(document.getElementById('escalation').value, 10);
+  var postE = parseInt(document.getElementById('postEscalation').value, 10);
+
+  var rows = [];
+  var rW = rec <= 3 ? 'nie' : (rec <= 6 ? 'czasem' : 'tak');
+  rows.push('<div class="diff-row"><strong>Rozpoznawanie AVE</strong><span class="diff-delta">' + rec + '/10 — ' + rW + '</span></div>');
+  var rfW = rf <= 3 ? 'nie' : (rf <= 6 ? 'czasem' : 'tak');
+  rows.push('<div class="diff-row"><strong>Reframing</strong><span class="diff-delta">' + rf + '/10 — ' + rfW + '</span></div>');
+  var pW = plan <= 3 ? 'brak' : (plan <= 6 ? 'częściowy' : 'pełny');
+  rows.push('<div class="diff-row"><strong>Plan na pierwszą godzinę</strong><span class="diff-delta">' + plan + '/10 — ' + pW + '</span></div>');
+  var dE = postE - preE;
+  var sign = dE > 0 ? '+' : '';
+  rows.push('<div class="diff-row"><strong>Eskalacja lapse → relapse</strong><span class="diff-delta">' + preE + ' → ' + postE + ' (' + sign + dE + ')</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (rec >= 7 && rf >= 6 && plan >= 6 && dE <= -3) {
+      msg = '<strong>AVE pod kontrolą.</strong> Rozpoznajesz, reframujesz, masz plan, eskalacja spada. <em>Kontynuuj — to fundamentalna obrona przed relapsem</em>. Aktualizuj plan po każdym lapsie.';
+    } else if (rec >= 6 && plan >= 5) {
+      msg = '<strong>Pierwsze ruchy.</strong> Wzmocnij <em>reframing atrybucji</em> — najczęstsza luka. Codziennie wieczorem 1 minuta: 3 zdania reframingu na typową AVE-myśl. Buduje umiejętność na realny kryzys.';
+    } else if (rec <= 3) {
+      msg = '<strong>Brak rozpoznawania AVE — krytyczne.</strong> Bez tego nie da się go zatrzymać. <em>Wydrukuj listę 8 typowych AVE-myśli</em> z kroku 2A. Trzymaj na ekranie blokady. Po każdym lapsie — pierwsze pytanie: "która AVE-myśl pojawia się?".';
+    } else if (plan <= 3) {
+      msg = '<strong>Brak planu na pierwszą godzinę.</strong> Druga najczęstsza luka. Plan przygotowany w spokoju jest dostępny w kryzysie; bez niego improwizujesz w stanie wstydu (najgorszy moment do decyzji). <em>W tym tygodniu</em>: spisz 5 kroków z kroku 4. Trzymaj w portfelu.';
+    } else if (dE >= 0) {
+      msg = '<strong>Eskalacja nie spada.</strong> Sygnał, że plan nie działa lub nie jest stosowany. Sprawdź: czy w ostatnim lapsie zastosowałeś/aś wszystkie 5 kroków? Jeden zazwyczaj nie wystarcza. Wzmocnij <em>kontakt z osobą wsparcia</em> (krok 4) — najsilniejsze ogniwo.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Praca z AVE jest najszybciej działającą z technik RP — efekty po 1—2 lapsach z planem.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {
+  ['m1','m2','m3','m4','m5','m6','m7','m8','z1','z2','z3','z4','z5','z6','z7','z8','t1','t2','t3','t4','t5'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+}
+
+['postRecog','postReframe','postPlan','postEscalation'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_ave — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_ave";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

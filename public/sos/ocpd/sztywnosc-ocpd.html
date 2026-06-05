@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · elastyczność zamiast kontroli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.cont-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.cont-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.cont-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cont-cell { background: rgba(244,241,234,0.06); border: 1px solid rgba(244,241,234,0.18); border-radius: 8px; padding: 11px 13px; }
+.cont-cell.bad { background: rgba(245,180,180,0.12); border-color: rgba(245,180,180,0.35); }
+.cont-cell.good { background: rgba(184,197,168,0.18); border-color: var(--sage); }
+.cont-h2 { font-family: 'Fraunces', serif; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage); margin-bottom: 6px; font-weight: 700; }
+.cont-cont { font-size: 11.5px; line-height: 1.4; color: rgba(244,241,234,0.85); }
+
+.rule-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.rule-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.rule-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rule-row.picked .rule-d { color: rgba(244,241,234,0.85) !important; }
+.rule-h { font-weight: 600; font-size: 13.5px; }
+.rule-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-step { padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 10px; }
+.proto-step:first-of-type { border-top: none; }
+.proto-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; flex-shrink: 0; min-width: 18px; }
+.proto-body { font-size: 13px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.proto-body strong { color: var(--bg); font-weight: 600; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>elastyczność zamiast kontroli</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Sztywność — gdy <em>reguły</em> stają się więzieniem</h1>
+  <p class="card-detail">Psychological flexibility (elastyczność psychologiczna) — Steven Hayes, Kirk Strosahl i Kelly Wilson (1999, „Acceptance and Commitment Therapy: An Experiential Approach to Behavior Change") wprowadzili konstrukt jako CENTRALNY w ACT. Todd Kashdan i Jonathan Rottenberg (2010, „Psychological flexibility as a fundamental aspect of health", Clinical Psychology Review) — meta-analiza 200+ badań pokazała, że elastyczność psychologiczna jest SILNIEJSZYM predyktorem zdrowia psychicznego niż brak objawów. W OCPD jest niska — i jej rozbudowa jest centralnym celem terapii. DEFINICJA: zdolność do (a) bycia świadomym tego, co się dzieje TERAZ, (b) otwartości na trudne emocje BEZ ucieczki w sztywne reguły, (c) działania w kierunku WARTOŚCI mimo dyskomfortu. KLUCZ paradygmatyczny: elastyczność ≠ chaos. Elastyczność = ADAPTACJA do kontekstu zamiast sztywnej reguły. Mechanizm: sztywne reguły działają jako UNIKANIE NIEPEWNOŚCI. Kiedy pacjent łamie regułę — natychmiastowy lęk → powrót do reguły = negatywne wzmocnienie. Z czasem reguł przybywa, tolerancja niepewności spada — schemat nie dostaje korekty.</p>
+
+  <div class="cont-card">
+    <div class="cont-h">Sztywność vs Elastyczność — kontrast paradygmatyczny</div>
+    <div class="cont-grid">
+      <div class="cont-cell bad">
+        <div class="cont-h2">❌ SZTYWNOŚĆ — OCPD</div>
+        <div class="cont-cont">Reguły absolutne („zawsze X, nigdy Y"). Brak zważania na kontekst. Reguła ≥ wartość. Łamanie = wstyd / lęk. Reguły mnożą się z czasem. Niska tolerancja niepewności. Zmęczenie, wypalenie.</div>
+      </div>
+      <div class="cont-cell good">
+        <div class="cont-h2">✅ ELASTYCZNOŚĆ — zdrowie</div>
+        <div class="cont-cont">Reguły kontekstowe („zwykle X, ale jeśli Y to Z"). Adaptacja do sytuacji. Wartość ≥ reguła. Łamanie reguły dla wartości = OK. Tolerancja niepewności rośnie. Mniej wyczerpania.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🛡️</span><span class="element-text"><strong>Reguły jako unikanie niepewności</strong>. Pacjent z OCPD ma podwyższoną nietolerancję niepewności (Carleton 2016 meta-analiza). Sztywne reguły = sposób ZNEUTRALIZOWANIA niepewności. „Jeśli wszystko zaplanowane, nic mnie nie zaskoczy". Bez reguł — wzrost niepokoju do paniki. Stąd: każda nowa reguła daje krótkoterminową ulgę.</span></div>
+    <div class="element-row"><span class="element-icon">🔁</span><span class="element-text"><strong>Pętla negatywnego wzmocnienia</strong>. Łamanie reguły → lęk → powrót do reguły → ulga. Mózg uczy się: „reguła = bezpieczeństwo, łamanie = niebezpieczeństwo". Po latach: reguł 50, 100, 200. Każda dziedzina życia uregulowana. Tolerancja niepewności kurczy się. Schemat nie dostaje korekty, bo łamanie nigdy nie trwa wystarczająco długo, by mózg zauważył: „świat się nie zawalił".</span></div>
+    <div class="element-row"><span class="element-icon">🎯</span><span class="element-text"><strong>Pytanie ACT</strong>. Klucz pracy: „Czy ta reguła SŁUŻY moim wartościom — czy tylko mojemu lękowi?". Niektóre reguły służą wartościom (regularny sen służy zdrowiu). Inne służą TYLKO lękowi (sprzątanie kuchni o 23:00 przed snem służy unikaniu niepokoju, nie wartości czystości). Pytanie pomaga ROZRÓŻNIĆ.</span></div>
+    <div class="element-row"><span class="element-icon">🌊</span><span class="element-text"><strong>Łamanie reguł STOPNIOWO + powiązane z wartościami</strong>. Łamanie „dla samego łamania" nie działa — generuje chaos. Łamanie POWIĄZANE z wartościami daje korygujące doświadczenie. „Reguła: zawsze odpisuję na e-mail w ciągu 4 godzin. Wartość: bycie obecną dla bliskich. Eksperyment: jeśli wieczór z dziećmi → e-maile o 22:00, nie w trakcie kolacji". Reguła ustępuje wartości.</span></div>
+  </div>
+
+  <div class="frame-quote">„Eksperymenty muszą być stopniowane i powiązane z wartościami. Pytanie ACT: „Czy ta reguła służy moim wartościom — czy tylko mojemu lękowi?". Łamanie reguł „dla samego łamania" nie działa. Praca polega na świadomym wyborze KIEDY reguła pomaga, a kiedy blokuje życie. Dla pacjenta z OCPD to fundamentalna zmiana paradygmatu — od „muszę przestrzegać reguł" do „świadomie wybieram, które reguły służą mojemu życiu"."<span class="frame-quote-attr">— Steven Hayes, Kirk Strosahl i Kelly Wilson (1999, Acceptance and Commitment Therapy: An Experiential Approach to Behavior Change)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: elastyczność psychologiczna NIE oznacza chaosu ani porzucenia standardów. Oznacza ŚWIADOMY wybór, kiedy reguła służy wartościom, a kiedy tylko lękowi. Klasyczne narzędzia ACT: Hexaflex (6 procesów elastyczności), Bullseye Worksheet (Lundgren), Defusion (dystans od myśli). Empirycznie wsparte: ACT dla OCPD (badania pilotażowe), Schema Therapy (Bamelis 2014 RCT). Praca długoterminowa (12-24 mies.) — bo każda dziedzina życia wymaga osobnej rewizji reguł.</div>
+
+  <div class="src">Hayes, Strosahl i Wilson (1999, 2012, Acceptance and Commitment Therapy: An Experiential Approach to Behavior Change — wyd. 2.) · Kashdan i Rottenberg (2010, Psychological flexibility as a fundamental aspect of health, Clinical Psychology Review — meta-analiza) · Carleton (2016, Into the unknown: A review and synthesis of contemporary models involving uncertainty, Journal of Anxiety Disorders) · Harris (2009, ACT Made Simple) · Hayes, Luoma, Bond, Masuda i Lillis (2006, Acceptance and Commitment Therapy: Model, processes and outcomes, Behaviour Research and Therapy) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje sztywne reguły</div>
+  <h1 class="card-prompt">Które <em>reguły</em> rozpoznajesz u siebie?</h1>
+  <p class="card-detail">8 typowych obszarów sztywnych reguł w OCPD. Zaznacz te, w których ROZPOZNAJESZ swoje sztywne reguły. Pamiętaj: nie wszystkie reguły są problematyczne. Problem zaczyna się, gdy reguła SŁUŻY TYLKO LĘKOWI, nie wartości.</p>
+
+  <div class="rule-grid">
+    <div class="rule-row" id="r1" onclick="pickRule('r1')">
+      <div class="rule-h">⏰ Sztywne ramy czasowe — wszystko o określonej porze</div>
+      <div class="rule-d">Posiłek o 12:00, sport o 18:00, kawa rano o 7:30. Brak elastyczności wobec sytuacji. Łamanie ramy = niepokój. Klasyczne dla OCPD — czas jako narzędzie kontroli.</div>
+    </div>
+    <div class="rule-row" id="r2" onclick="pickRule('r2')">
+      <div class="rule-h">🏠 Reguły porządku — „każda rzecz ma swoje miejsce"</div>
+      <div class="rule-d">Pojedyncze rzeczy nie na miejscu = niepokój. Sprzątanie nawet wieczorem przed snem. Niemożność „odpuszczenia bałaganu" mimo zmęczenia. Klasyczne — kontrola przestrzeni jako redukcja niepewności.</div>
+    </div>
+    <div class="rule-row" id="r3" onclick="pickRule('r3')">
+      <div class="rule-h">📋 Listy / plany na każdy dzień — bez planu lęk</div>
+      <div class="rule-d">Każdy dzień zaplanowany. Niezaplanowany czas = niepokój. „Co mam teraz robić?". Klasyczne — niemożność spontaniczności bez listy zadań.</div>
+    </div>
+    <div class="rule-row" id="r4" onclick="pickRule('r4')">
+      <div class="rule-h">💰 Reguły finansowe — sztywne budżety, brak „ekstrawagancji"</div>
+      <div class="rule-d">Stała kwota na zakupy, brak miejsca na spontaniczne wydatki. Wstyd przy „luksusowym" wyborze. Klasyczne dla OCPD — łączy się ze skąpstwem (kryterium DSM-5).</div>
+    </div>
+    <div class="rule-row" id="r5" onclick="pickRule('r5')">
+      <div class="rule-h">🍽️ Reguły jedzenia — co, kiedy, ile</div>
+      <div class="rule-d">Sztywna dieta, brak elastyczności na święta, spotkania, podróże. Klasyczne nakładanie z anoreksją restrykcyjną. Łamanie = silny wstyd.</div>
+    </div>
+    <div class="rule-row" id="r6" onclick="pickRule('r6')">
+      <div class="rule-h">🏃 Reguły ćwiczeń — niedopuszczalne odstępstwa</div>
+      <div class="rule-d">Trening codziennie / co drugi dzień, niezależnie od stanu (zmęczenie, choroba, święto). „Nie mogę odpuścić, bo wypadnę z formy". Klasyczna nadmierna kontrola ciała.</div>
+    </div>
+    <div class="rule-row" id="r7" onclick="pickRule('r7')">
+      <div class="rule-h">📧 Reguły komunikacji — odpowiedzi w określonym czasie</div>
+      <div class="rule-d">E-maile w ciągu 4 godzin. Telefony oddzwonione w ten sam dzień. Wiadomości — natychmiast. „Inaczej jestem nieprofesjonalna". Klasyczne — niemożność zatrzymania komunikacji.</div>
+    </div>
+    <div class="rule-row" id="r8" onclick="pickRule('r8')">
+      <div class="rule-h">😶 Reguły emocjonalne — niedopuszczalne emocje</div>
+      <div class="rule-d">„Nie wolno się denerwować", „nie wolno płakać przy ludziach", „muszę być profesjonalna w pracy". Sztywne tłumienie emocji jako reguła. Klasyczne dla OCPD — emocje jako zagrożenie kontroli.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myObs" placeholder="Konkretnie: ile reguł rozpoznajesz? Najsilniejsze? Zastosuj pytanie ACT do każdej: 'czy ta reguła służy moim WARTOŚCIOM — czy tylko mojemu LĘKOWI?'" style="min-height: 110px;"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Elastyczność psychologiczna — TERAZ</div>
+    <div class="scale-bounds"><span>0 — sztywne reguły</span><span>10 — pełna elastyczność</span></div>
+    <input type="range" class="scale-input" id="bFlex" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bFlexv">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: 4-8 obszarów sztywnych reguł = klasyczny obraz OCPD. Pierwsza praca: NAZWANIE reguł (są zwykle nieuświadomione). Następnie: pytanie ACT „służy wartościom czy lękowi?". Klucz: NIE chodzi o porzucenie wszystkich reguł — chodzi o ŚWIADOMOŚĆ, które służą wartościom (zostają), które tylko lękowi (do rozważenia eksperymentu).</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Pytanie ACT — twój audyt</div>
+  <h1 class="card-prompt">Wpisz <em>3 swoje reguły</em> i sprawdź pytaniem ACT</h1>
+  <p class="card-detail">Wybierz 3 swoje sztywne reguły (z listy w punkcie 2 lub własne). Dla każdej zastosuj pytanie ACT. Konkret pomaga zobaczyć — które reguły rzeczywiście służą Ci, które tylko lękowi.</p>
+
+  <textarea class="thought-input" id="rule1" placeholder="① REGUŁA 1 — sformułuj konkretnie. (np.: „Każdy e-mail służbowy odpisuję w ciągu 4 godzin, nawet wieczorem")." style="min-height: 80px;"></textarea>
+
+  <textarea class="thought-input" id="value1" placeholder="② TEST — czy ta reguła służy mojej WARTOŚCI, czy LĘKOWI? Konkretnie. (np.: „Wartość: profesjonalność i rzetelność. Ale: lęk: 'inni pomyślą, że jestem leniwa, jeśli odpiszę następnego dnia'. ANALIZA: w 80% przypadków — lęk dominuje. Wartość rzetelności byłaby zachowana przy odpisywaniu w ciągu 24h, nie 4h. Reguła 4h to LĘK, nie wartość")." style="min-height: 130px;"></textarea>
+
+  <textarea class="thought-input" id="rule2" placeholder="③ REGUŁA 2 — kolejna sztywna reguła." style="min-height: 80px;"></textarea>
+
+  <textarea class="thought-input" id="value2" placeholder="④ TEST — wartość czy lęk?" style="min-height: 110px;"></textarea>
+
+  <textarea class="thought-input" id="rule3" placeholder="⑤ REGUŁA 3 — kolejna." style="min-height: 80px;"></textarea>
+
+  <textarea class="thought-input" id="value3" placeholder="⑥ TEST — wartość czy lęk?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch w OCPD przy tym ćwiczeniu — uznawanie KAŻDEJ reguły za „służącą wartości". Schemat broni reguł. Test pomocniczy: wyobraź sobie, że NIE przestrzegasz reguły — jaki jest pierwszy odruch (lęk wstyd) czy świadoma decyzja („chcę inaczej, ale to OK")? Jeśli pierwszy odruch to lęk — reguła służy LĘKOWI, nie wartości.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — eksperymenty elastyczności</div>
+  <h1 class="card-prompt">Cztery <em>kroki</em> systematycznej rozbudowy elastyczności</h1>
+  <p class="card-detail">Praca z elastycznością w OCPD wymaga długoterminowych eksperymentów (12-24 miesięcy). Te cztery kroki tworzą strukturę. Klucz: stopniowo + powiązane z wartościami + cierpliwość wobec dyskomfortu.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Cztery kroki — pierwsze 12 tygodni</div>
+    <div class="proto-step"><span class="proto-num">1.</span><span class="proto-body"><strong>TYDZIEŃ 1-2: HIERARCHIA REGUŁ + AUDYT WARTOŚCI</strong>. Wypisz 10-15 swoich sztywnych reguł. Dla każdej zastosuj pytanie ACT. Uszereguj od „TYLKO LĘK" (na dół hierarchii — START eksperymentów) do „SŁUŻY WARTOŚCI" (na górę — zostaje). Klasyczne odkrycie: 60-80% reguł służy lękowi, nie wartości.</span></div>
+    <div class="proto-step"><span class="proto-num">2.</span><span class="proto-body"><strong>TYDZIEŃ 3-5: PIERWSZY EKSPERYMENT — drobna reguła z dna hierarchii</strong>. Wybierz JEDNĄ regułę z dna („tylko lęk"). Złam ją ŚWIADOMIE w nadchodzącym tygodniu. Z prognozą („katastrofa") + ewaluacją po („świat się nie zawalił"). Pierwsze tygodnie: silny lęk i dyskomfort. Cierpienie z faktu, że NIE wiesz, czy „dobrze". Wytrzymaj.</span></div>
+    <div class="proto-step"><span class="proto-num">3.</span><span class="proto-body"><strong>TYDZIEŃ 6-9: WIĘCEJ REGUŁ + REGUŁY KONTEKSTOWE</strong>. Po 4-6 tyg. eksperymentów — przesunięcie wyżej. Reguły o większym znaczeniu. Klucz: zamiana reguł ABSOLUTNYCH na KONTEKSTOWE. „Zawsze sprzątam wieczorem" → „zwykle sprzątam wieczorem, ale jeśli zmęczona — rano". Reguła kontekstowa = elastyczna.</span></div>
+    <div class="proto-step"><span class="proto-num">4.</span><span class="proto-body"><strong>TYDZIEŃ 10-12+: WARTOŚCI ZAMIAST REGUŁ</strong>. Najgłębsza zmiana. Zamiast pytać „co mówi reguła?" → pytasz „co służy mojej wartości w tej sytuacji?". Reguły stają się NARZĘDZIAMI w służbie wartości, nie celem same w sobie. Wymaga miesięcy/lat. Klasyczna praca ACT — Bullseye Worksheet, committed action codziennie.</span></div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: który eksperyment łamania drobnej reguły wykonujesz w nadchodzącym tygodniu? Konkret: która reguła? Co robisz inaczej? Jaka prognoza? Jaką wartość chcesz zrealizować przez to złamanie?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: po 12 tyg. systematycznej pracy z elastycznością pacjenci raportują (Bamelis 2014 RCT, Kashdan & Rottenberg 2010 meta-analiza): redukcja sztywności o 30-40%, wzrost tolerancji niepewności, redukcja zmęczenia (mniej energii na utrzymanie reguł), pierwsze chwile spontaniczności. Trwała zmiana w OCPD: 12-24 mies. terapii ACT lub ST. Klucz: każda dziedzina życia wymaga osobnej rewizji reguł — to długi proces.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>elastyczność</em> wzrosła?</h1>
+  <p class="card-detail">Wróć tu po audycie reguł (punkt 2) i pytaniu ACT (punkt 3). Mierzymy elastyczność psychologiczną — czy widzisz teraz, że niektóre reguły służą lękowi, nie wartości. Pierwsza refleksja zwykle daje wzrost o 1-2 punkty. Trwała zmiana wymaga miesięcy.</p>
+
+  <div class="scale">
+    <div class="scale-title">Elastyczność psychologiczna — po refleksji</div>
+    <div class="scale-bounds"><span>0 — sztywne reguły</span><span>10 — pełna elastyczność</span></div>
+    <input type="range" class="scale-input" id="aFlex" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aFlexv">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz, że ELASTYCZNOŚĆ ≠ chaos? Czy widzisz, że niektóre Twoje reguły służą lękowi, a nie wartościom? Co byłoby Twoim pierwszym konkretnym eksperymentem łamania reguły w nadchodzącym tygodniu?"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: elastyczność psychologiczna jest centralnym celem terapii OCPD. NIE oznacza chaosu — oznacza świadomy wybór reguł, które służą wartościom. Klasyczne narzędzia: pytanie ACT „wartość czy lęk?", hierarchia reguł, eksperymenty stopniowane. Empirycznie wsparte: ACT (Hayes 1999, Kashdan & Rottenberg 2010 meta-analiza), ST (Bamelis 2014 RCT). 12-24 mies. systematycznej pracy = mierzalne zmiany.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Elastyczność psychologiczna w OCPD: <em>centralny cel terapii — NIE chaos, lecz adaptacja do kontekstu</em>. Mechanizm: sztywne reguły jako unikanie niepewności + negatywne wzmocnienie. <strong>Pytanie ACT: „Czy ta reguła SŁUŻY moim wartościom — czy tylko mojemu lękowi?"</strong>. Łamanie reguł STOPNIOWO + powiązane z wartościami. Klasyczne odkrycie: 60-80% reguł służy lękowi. Reguły kontekstowe zamiast absolutnych. Wartości > reguły.</div>
+  </div>
+
+  <div class="src">Hayes, Strosahl i Wilson (1999, 2012, Acceptance and Commitment Therapy: An Experiential Approach to Behavior Change — wyd. 2.) · Kashdan i Rottenberg (2010, Psychological flexibility as a fundamental aspect of health, Clinical Psychology Review — meta-analiza) · Carleton (2016, Into the unknown: A review and synthesis of contemporary models involving uncertainty, Journal of Anxiety Disorders) · Harris (2009, ACT Made Simple) · Hayes, Luoma, Bond, Masuda i Lillis (2006, Acceptance and Commitment Therapy: Model, processes and outcomes, Behaviour Research and Therapy) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickRule(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bFlex').value || 0, 10);
+    var aU = parseInt(document.getElementById('aFlex').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Elastyczność wzrosła o ' + dU + ' — masz mapę sztywnych reguł i konkretny eksperyment. Klucz: pytanie ACT „czy reguła SŁUŻY moim wartościom — czy tylko mojemu lękowi?". To zmiana paradygmatu.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszym kontakcie. Praca nad elastycznością wymaga miesięcy eksperymentów. Pierwsze doświadczenia łamania reguł aktywują silny lęk — to NORMALNE.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że reguły są jeszcze nieuświadomione lub łamanie wydaje się „niemoralne". To NORMALNE w OCPD. Klucz: zauważyć, że reguły to ZASADY MOJE, nie prawa natury. Pierwsze drobne łamanie.';
+    else msg = 'Wzrost — czasem rozważanie złamania reguły aktywuje silny lęk antycypacyjny. To DOWÓD, że reguły działają jako kontrola lęku. NIE jest to porażka — to klasyczny etap. Praca: stopniowo, od mniej zagrażających reguł.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.rule-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_sztywnosc_ocpd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_sztywnosc_ocpd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bFlex','aFlex'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Ściana wokół zadania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === Cegły ściany === */
+.wall { background: rgba(184,197,168,0.12); padding: 14px; border-radius: 10px; margin: 8px 0 14px; border: 1px solid var(--sage-soft); }
+.wall-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin-bottom: 10px; }
+.brick-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.brick-emoji { width: 28px; height: 28px; background: var(--ink); color: var(--bg); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.brick-input { flex: 1; padding: 9px 12px; border: 1px solid var(--sage); border-radius: 8px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px; color: var(--ink); }
+.brick-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+/* === Strategy-card === */
+.strat-card { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.strat-card:hover, .strat-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.strat-h { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13.5px; }
+.strat-d { font-size: 12px; line-height: 1.45; color: var(--ink-mute); }
+.strat-card.picked .strat-d { color: rgba(244,241,234,0.85); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Ściana wokół zadania</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============== KROK 1 ============== -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Ściana <em>emocji</em> wokół zadania</h1>
+    <p class="card-detail">„Wall of Awful" to kliniczna metafora opisana przez Brendana Mahana (2019) — wyjaśnia, dlaczego pozornie proste zadanie (odebrać telefon, wysłać krótką wiadomość, opłacić rachunek) staje się dla osoby z <strong>ADHD</strong> (zespół nadpobudliwości psychoruchowej z deficytem uwagi) praktycznie niewykonalne, mimo że intelektualnie wie, że zajmie 5 minut. Wokół każdego zadania związanego z dotychczasowymi porażkami narastają „cegły" emocji: wstyd, lęk, wina, frustracja. Cegły układają się w ścianę. By dotrzeć do zadania, trzeba <em>najpierw</em> ją pokonać. Im starsze zadanie, tym wyższa ściana.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Skąd biorą się cegły (Mahan 2019, Ramsay 2021)</div>
+      <div class="element-row">
+        <span class="element-icon">🧱</span>
+        <span class="element-text"><strong>Cegła wstydu</strong> — „już raz nie odpisałem, znowu zawiodę". Każdy dzień opóźnienia dokłada nową cegłę.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🪨</span>
+        <span class="element-text"><strong>Cegła lęku</strong> — „a jeśli druga osoba się obrazi/zerwie/skrytykuje". Lęk przed reakcją odbiorcy.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚖️</span>
+        <span class="element-text"><strong>Cegła winy</strong> — „obiecałem/zawiodłem/widziałem to 20 razy w skrzynce". Wina dokłada ciężar bez konkretu.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌀</span>
+        <span class="element-text"><strong>Cegła paraliżu</strong> — „nie wiem, co teraz w ogóle napisać po tylu tygodniach". Niepewność co do treści blokuje start.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Pomodoro i mikro-kroki działają, kiedy problem to inercja. Kiedy problem to ściana — pomagają dopiero <em>po</em> jej rozmontowaniu."
+      <span class="frame-quote-attr">— Mahan (2019, „The Wall of Awful")</span>
+    </div>
+
+    <div class="term-note"><strong>🔑 Klucz</strong>: techniki antyprokrastynacyjne („zacznij na 5 minut") <em>nie zadziałają</em>, dopóki ściana nie zostanie rozmontowana. Najpierw nazwij cegły, potem dopiero próbuj pierwszego kroku zadania.</div>
+
+    <div class="src">Mahan (2019, ADHD Essentials, „Wall of Awful") · Ramsay (2021, „Rethinking Adult ADHD") · Gilbert (2010, CFT) · Allen (2015, „Getting Things Done")</div>
+  </section>
+
+  <!-- ============== KROK 2 — Zadanie i historia ============== -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoje zadanie</div>
+    <h1 class="card-prompt">Co <em>konkretnie</em> odkładasz?</h1>
+    <p class="card-detail">Wybierz jedno zadanie, do którego nie potrafisz podejść — najlepiej takie, które trwa 5–30 minut, ale Ty mówisz mu „później" od tygodni albo miesięcy. Opisz konkret: co masz zrobić i od jak dawna.</p>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Zadanie</strong>:</p>
+    <textarea class="thought-input" id="zadanie" placeholder="np. „Odpisać na maila od kuzynki, która zaprosiła mnie 3 tygodnie temu na chrzest jej dziecka."" rows="3"></textarea>
+
+    <p class="card-detail" style="margin-top:8px"><strong>Od jak dawna</strong> odkładasz?</p>
+    <div class="example-chips">
+      <button id="d1" class="example-chip" onclick="this.classList.toggle('picked')">Kilka dni</button>
+      <button id="d2" class="example-chip" onclick="this.classList.toggle('picked')">2–4 tygodnie</button>
+      <button id="d3" class="example-chip" onclick="this.classList.toggle('picked')">1–3 miesiące</button>
+      <button id="d4" class="example-chip" onclick="this.classList.toggle('picked')">Pół roku+</button>
+      <button id="d5" class="example-chip" onclick="this.classList.toggle('picked')">Lata</button>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Co realnie</strong> zajęłoby zadanie, gdyby ściany nie było? (Ty wiesz, ile)</p>
+    <textarea class="thought-input" id="czasReal" placeholder="np. „2–3 minuty. Albo nawet 1: «Dzięki, niestety nie dam rady, ale przesyłam buziaki»."" rows="2"></textarea>
+
+    <div class="scale">
+      <div class="scale-title">Wysokość ściany teraz (0 brak → 10 niewyobrażalna)</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="wys" class="scale-input" min="0" max="10" value="7" data-default="7">
+      <div class="scale-readout"><span>Twoja ściana:</span><span id="wysV">7</span></div>
+    </div>
+
+    <div class="term-note"><strong>📌 Reguła</strong>: ściana rośnie z każdym dniem odkładania, ale <em>nie liniowo</em> — pierwsze 24 godziny dokładają jedną cegłę, kolejny tydzień dziesięć. Im dłużej, tym trudniej zacząć — to nie wada charakteru, to mechanika.</div>
+  </section>
+
+  <!-- ============== KROK 3 — Mapowanie cegieł ============== -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Mapowanie ściany</div>
+    <h1 class="card-prompt">Zobacz <em>cegły</em>, z których jest zbudowana</h1>
+    <p class="card-detail">Wpisz po jednym zdaniu na każdą cegłę. Nie filtruj — zapisuj dokładnie to, co przychodzi. Nazywanie cegieł obniża ich ciężar (Lieberman i wsp. 2007) — to ekspozycja przez słowa.</p>
+
+    <div class="wall">
+      <div class="wall-h">Cegły Twojej ściany</div>
+      <div class="brick-row">
+        <div class="brick-emoji">🧱</div>
+        <input type="text" class="brick-input" id="b1" placeholder="np. „Wstyd — 3 tygodnie nie odpisałam, znowu zawiodłam"">
+      </div>
+      <div class="brick-row">
+        <div class="brick-emoji">🪨</div>
+        <input type="text" class="brick-input" id="b2" placeholder="np. „Lęk — pewnie się obraziła, mówi o mnie z mamą"">
+      </div>
+      <div class="brick-row">
+        <div class="brick-emoji">⚖️</div>
+        <input type="text" class="brick-input" id="b3" placeholder="np. „Wina — 6 miesięcy temu obiecałam, że wpadnę"">
+      </div>
+      <div class="brick-row">
+        <div class="brick-emoji">🌀</div>
+        <input type="text" class="brick-input" id="b4" placeholder="np. „Paraliż — co teraz w ogóle napisać po tylu tygodniach?"">
+      </div>
+      <div class="brick-row">
+        <div class="brick-emoji">😩</div>
+        <input type="text" class="brick-input" id="b5" placeholder="np. „Frustracja — dlaczego ja zawsze tak"">
+      </div>
+      <div class="brick-row">
+        <div class="brick-emoji">🥶</div>
+        <input type="text" class="brick-input" id="b6" placeholder="np. „Wstyd metapoziomowy — wstydzę się, że się wstydzę i nie potrafię tego ogarnąć"">
+      </div>
+    </div>
+
+    <p class="card-detail" style="margin-top:8px">Która cegła <em>najmocniej</em> trzyma ścianę? (kliknij)</p>
+    <div class="example-chips">
+      <button id="cw1" class="example-chip" onclick="onlyOne('cw', this)">🧱 Wstyd</button>
+      <button id="cw2" class="example-chip" onclick="onlyOne('cw', this)">🪨 Lęk</button>
+      <button id="cw3" class="example-chip" onclick="onlyOne('cw', this)">⚖️ Wina</button>
+      <button id="cw4" class="example-chip" onclick="onlyOne('cw', this)">🌀 Paraliż</button>
+      <button id="cw5" class="example-chip" onclick="onlyOne('cw', this)">😩 Frustracja</button>
+      <button id="cw6" class="example-chip" onclick="onlyOne('cw', this)">🥶 Metawstyd</button>
+    </div>
+
+    <div class="term-note"><strong>⚙️ Mechanizm</strong>: ulga, jaką czujesz nazywając ściany, jest terapeutyczna sama w sobie. „To nie lenistwo — to mechanizm" zdejmuje wtórny wstyd (wstyd z nieradzenia sobie), który był osobną cegłą. Jedno trafne nazwanie obniża ścianę o jedną–dwie cegły.</div>
+  </section>
+
+  <!-- ============== KROK 4 — Strategia "climb, don't break" ============== -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Strategia wspinania</div>
+    <h1 class="card-prompt">Wspinaj się — <em>nie</em> próbuj rozbić</h1>
+    <p class="card-detail">Mahan radzi „climb, don't break" — wspinaj się, nie rozbijaj. Próba „przełamania" siłą zwykle kończy się odbiciem. Zamiast tego: wybierasz strategię, która osłabia ścianę albo daje pierwszy krok pomimo niej.</p>
+
+    <button id="strA" class="strat-card" onclick="pickStrat('A')">
+      <span class="strat-h">A · Nazwij na głos / spisz</span>
+      <span class="strat-d">Powiedz lub napisz: „Czuję wstyd, że 3 tygodnie nie odpisałam. To boli. To jest trudne." Sama nazwa obniża ciężar 30–50%.</span>
+    </button>
+
+    <button id="strB" class="strat-card" onclick="pickStrat('B')">
+      <span class="strat-h">B · Body double</span>
+      <span class="strat-d">Druga osoba obok (na żywo, telefonicznie, video) podczas wykonywania. Sama obecność obniża ciężar emocjonalny ściany.</span>
+    </button>
+
+    <button id="strC" class="strat-card" onclick="pickStrat('C')">
+      <span class="strat-h">C · Najgorsza możliwa wersja</span>
+      <span class="strat-d">Zrób zadanie tak źle, jak się da. „3 tygodnie cisza, sorry, mam nadzieję że OK, pozdr." 2 zdania. Cel: wysłać, nie napisać dobrze.</span>
+    </button>
+
+    <button id="strD" class="strat-card" onclick="pickStrat('D')">
+      <span class="strat-h">D · Współczucie wobec siebie</span>
+      <span class="strat-d">List do siebie z perspektywy mądrego przyjaciela. „Drogi Ja, wiem że jest trudno…". CFT: życzliwy ton hamuje system zagrożenia.</span>
+    </button>
+
+    <button id="strE" class="strat-card" onclick="pickStrat('E')">
+      <span class="strat-h">E · Scaffolding — pierwsze 2 zdania</span>
+      <span class="strat-d">Poproś kogoś (przyjaciela, terapeutę, partnera) o sformułowanie 2 pierwszych zdań. Ty dokończysz. Stopniowe przekazanie odpowiedzialności.</span>
+    </button>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja najgorsza możliwa wersja</strong> — wpisz tu zadanie, jakby wykonać je „byle jak":</p>
+    <textarea class="thought-input" id="ugly" placeholder="np. „Cześć, sorry że tak długo, w głowie jest mętlik ostatnio. Niestety nie dam rady na chrzcie, ale myślę o Was. Trzymaj się, buziaki."" rows="4"></textarea>
+
+    <p class="card-detail" style="margin-top:8px">Konkretne <em>kiedy</em> to wysyłasz/wykonujesz:</p>
+    <textarea class="thought-input" id="kiedy" placeholder="np. „Dzisiaj o 16:00, po kawie, przy biurku. Body double: Magda na video-call. Wysyłam bez czytania ponownie."" rows="3"></textarea>
+
+    <div class="term-note"><strong>⚙️ Reguła „done is better than perfect"</strong>: wysłanie wiadomości, którą uważasz za 6/10, kończy ścianę. Wstrzymanie się na „lepszą wersję" karmi ścianę dalej. W ADHD: lepsza zła wersja wysłana niż idealna nigdy.</div>
+  </section>
+
+  <!-- ============== KROK 5 — Po wspinaniu ============== -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po pokonaniu</div>
+    <h1 class="card-prompt">Co <em>zostało</em> ze ściany?</h1>
+    <p class="card-detail">Po wykonaniu zadania wracaj tu i sprawdź. Niemal zawsze ulga jest większa niż przewidywany koszt — to dane, które buduje zaufanie do <em>tej samej</em> strategii w kolejnym zadaniu.</p>
+
+    <div class="scale">
+      <div class="scale-title">Wysokość ściany po wykonaniu</div>
+      <div class="scale-bounds"><span>0</span><span>10</span></div>
+      <input type="range" id="wysPo" class="scale-input" min="0" max="10" value="2" data-default="2">
+      <div class="scale-readout"><span>Po wykonaniu:</span><span id="wysPoV">2</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Reakcja drugiej strony — przewidywana 0–10</div>
+      <div class="scale-bounds"><span>0 — katastrofa</span><span>10 — neutralnie/pozytywnie</span></div>
+      <input type="range" id="reakcja" class="scale-input" min="0" max="10" value="6" data-default="6">
+      <div class="scale-readout"><span>Reakcja:</span><span id="reakcjaV">6</span></div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px">Co rzeczywiście zaszło — co się stało po wysłaniu/wykonaniu?</p>
+    <textarea class="thought-input" id="rezultat" placeholder="np. „Kuzynka odpisała 5 minut później: «O super, że dałaś znać, jasne, trzymaj się!». Żadnej obrazy, jak myślałam. Trzy tygodnie ściany — pięć minut realizacji."" rows="4"></textarea>
+
+    <p class="card-detail" style="margin-top:8px">Co bierzesz z tego do następnej ściany?</p>
+    <textarea class="thought-input" id="lekcja" placeholder="np. „Mój mózg buduje ściany większe niż realne konsekwencje. Najgorsza wersja wystarczy w 90% spraw. Nie czekam, aż ściana sama opadnie — ona rośnie."" rows="3"></textarea>
+
+    <div class="final-msg" id="finalMsg">Ustaw skale powyżej (przed/po) — tu pojawi się Twoja konkretna obserwacja kosztu vs realnego rezultatu.</div>
+
+    <div class="term-note"><strong>📌 Reguła profilaktyki</strong>: ściana rośnie szybciej, niż się ją buduje przy świeżej sprawie. Nowy mail, nowa wiadomość — odpowiadasz <em>w dniu otrzymania</em>, jednym zdaniem jeśli trzeba. To nie produktywność, to zapobieganie nowym ścianom.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Wokół zadania jest <strong>ściana emocji</strong> — nie samego zadania. Najpierw <em>nazwij cegły</em>, potem wybierz strategię (nazwij, body double, najgorsza wersja, list do siebie). Zadanie 5-minutowe blokuje ściana 4-metrowa. Pokonujesz nie zadanie — pokonujesz ścianę.</div>
+    </div>
+
+    <div class="src">Mahan (2019, „Wall of Awful") · Ramsay (2021, „Rethinking Adult ADHD") · Gilbert (2010, „The Compassionate Mind") · Lieberman i wsp. (2007) · Allen (2015, „Getting Things Done") · Safren i wsp. (2017)</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickStrat(letter) {
+  ['A','B','C','D','E'].forEach(function(L){
+    var el = document.getElementById('str'+L);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('str'+letter);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function onlyOne(prefix, btn) {
+  document.querySelectorAll('[id^="' + prefix + '"]').forEach(function(el){
+    if (el !== btn) el.classList.remove('picked');
+  });
+  btn.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function refreshScales() {
+  ['wys','wysPo','reakcja'].forEach(function(id){
+    var s = document.getElementById(id);
+    var v = document.getElementById(id+'V');
+    if (s && v) v.textContent = s.value;
+  });
+  buildFinalMsg();
+}
+
+function buildFinalMsg() {
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var p = document.getElementById('wys');
+  var q = document.getElementById('wysPo');
+  var r = document.getElementById('reakcja');
+  if (!p || !q || !r) return;
+  var pre = parseInt(p.value, 10);
+  var post = parseInt(q.value, 10);
+  var rea = parseInt(r.value, 10);
+  var diff = pre - post;
+
+  var msg = '<strong>Ściana przed → po:</strong> ' + pre + ' → ' + post + ' (różnica ' + (diff > 0 ? '−' : (diff < 0 ? '+' : '')) + Math.abs(diff) + '). ';
+  msg += '<strong>Reakcja drugiej strony:</strong> ' + rea + '/10. ';
+  if (diff >= 5 && rea >= 6) msg += '<em>Ściana była dużo wyższa niż realne konsekwencje. To wzór, który warto zapamiętać — następnym razem wracaj tu wcześniej.</em>';
+  else if (diff >= 3) msg += '<em>Ściana opadła. Strategia działa — używaj tej samej w kolejnym zadaniu.</em>';
+  else if (post >= pre) msg += '<em>Ściana trzyma — sprawdź, czy nazwałeś/aś wszystkie cegły. Jedna nieuznana cegła trzyma całą resztę.</em>';
+  else msg += '<em>Drobny ruch w dół — drobne też się liczy. Wracaj jutro do tego samego zadania, albo do następnej ściany.</em>';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5 || step === 2) refreshScales();
+}
+
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches && e.target.matches('input[type="range"]')) refreshScales();
+});
+
+setTimeout(refreshScales, 60);
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_adhd_wall_of_awful — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_adhd_wall_of_awful";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

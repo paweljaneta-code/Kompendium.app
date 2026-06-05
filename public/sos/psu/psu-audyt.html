@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Audyt cyfrowy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.proto-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.proto-rule { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.proto-rule:first-of-type { border-top: none; }
+.proto-num { color: var(--warm); font-weight: 700; font-family: 'Fraunces', serif; font-size: 14px; flex-shrink: 0; line-height: 1.4; }
+.proto-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.proto-text strong { color: var(--bg); font-weight: 600; }
+
+.audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.audit-cell { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 10px 12px; border-radius: 10px; }
+.audit-cell-h { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 4px; }
+.audit-cell-body { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.audit-cell-body strong { color: var(--ink); font-weight: 600; }
+
+.kpi-row { display: flex; gap: 8px; margin: 8px 0; }
+.kpi-cell { flex: 1; background: rgba(184,197,168,0.12); border: 1px solid var(--sage); padding: 10px 8px; border-radius: 10px; text-align: center; }
+.kpi-num { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--sage-deep); line-height: 1.1; }
+.kpi-label { font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-mute); text-transform: uppercase; margin-top: 4px; }
+.kpi-input { width: 100%; border: none; background: transparent; font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--sage-deep); text-align: center; padding: 0; }
+.kpi-input:focus { outline: none; background: rgba(255,255,255,0.5); border-radius: 4px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Audyt cyfrowy</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Audyt cyfrowy — <em>fakty</em> kontra wrażenie</h1>
+  <p class="card-detail">Większość ludzi szacuje swoje używanie telefonu o połowę za nisko (Andrews i in., 2015 — porównanie deklaracji z danymi z aplikacji). Ten audyt nie wymaga decyzji o zmianie — wymaga <strong>obserwacji</strong>. Przez 7 dni mierzysz, jak NAPRAWDĘ używasz telefonu (nie jak Ci się wydaje). Sama świadomość liczb często zmienia zachowanie — Hawthorne efekt opisany u Wilcockson i in. (2019).</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery wymiary audytu (Andrews 2015; Apple Screen Time, Google Digital Wellbeing)</div>
+    <div class="element-row">
+      <span class="element-icon">⏱️</span>
+      <span class="element-text"><strong>Czas całkowity</strong> — ile godzin dziennie aktywnie używasz telefonu. Średnia dorosłych: 3–4 h/dzień; nastolatki: 5–7 h/dzień (Sohn i in., 2019).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔓</span>
+      <span class="element-text"><strong>Liczba odblokowań</strong> — ile razy dziennie podnosisz telefon. Średnia: 80–100 razy. Każde odblokowanie to przerwanie zadania, które aktualnie wykonujesz.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📱</span>
+      <span class="element-text"><strong>TOP 5 aplikacji</strong> — które aplikacje pochłaniają najwięcej czasu. Zwykle 80% czasu pochłania 3–4 aplikacji (zasada Pareto).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌅</span>
+      <span class="element-text"><strong>Pora dnia</strong> — kiedy używasz najintensywniej. Pierwsza godzina po przebudzeniu i ostatnia przed snem to dwa najczęstsze klastry kompulsywnego użycia.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Nie mierzysz — nie zarządzasz. Wbudowane statystyki telefonu są jedyną obiektywną informacją zwrotną o własnym używaniu — większość deklaracji rozjeżdża się o 50% z danymi.”
+    <span class="frame-quote-attr">— Andrews i in. (2015, parafraza, PLoS ONE)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: cel audytu to nie <em>ocena moralna</em> („jestem zły/a, że tyle używam”). Cel to <strong>baseline</strong>: obiektywny punkt wyjścia, do którego wracasz za miesiąc, by zobaczyć zmianę.</div>
+
+  <div class="src">Andrews i in. (2015, PLoS ONE — porównanie deklaracji z faktycznym użyciem); Wilcockson i in. (2019, Computers in Human Behavior); Ellis i in. (2019, Computers in Human Behavior); Sohn i in. (2019, BMC Psychiatry — meta-analiza nastolatków); Apple Screen Time documentation; Google Digital Wellbeing documentation</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Pomiar</div>
+  <h1 class="card-prompt">Wpisz <em>fakty</em> z ostatnich 7 dni</h1>
+  <p class="card-detail">Otwórz wbudowany tracker: iPhone → Ustawienia → Czas przed ekranem → Zobacz całą aktywność. Android → Ustawienia → Cyfrowa równowaga (Digital Wellbeing). Wpisz średnie z ostatniego tygodnia. Jeśli nie używałaś/eś trackera wcześniej — włącz go teraz i wróć za 7 dni.</p>
+
+  <div class="kpi-row">
+    <div class="kpi-cell">
+      <input type="number" class="kpi-input" id="kpiCzas" min="0" max="24" step="0.5" placeholder="0">
+      <div class="kpi-label">godz. / dzień</div>
+    </div>
+    <div class="kpi-cell">
+      <input type="number" class="kpi-input" id="kpiOdbl" min="0" max="500" step="1" placeholder="0">
+      <div class="kpi-label">odblokowań / dzień</div>
+    </div>
+  </div>
+
+  <p class="card-detail" style="font-size:13px;margin-top:10px;">TOP 3 aplikacje (najwięcej czasu w skali tygodnia):</p>
+  <textarea class="thought-input" id="topApps" placeholder="np.&#10;1. Instagram — 14 h/tydz&#10;2. YouTube — 9 h/tydz&#10;3. WhatsApp — 6 h/tydz" rows="4"></textarea>
+
+  <p class="card-detail" style="font-size:13px;">Pora dnia o najwyższym użyciu (np. „22:00–24:00” lub „pierwsza godzina po przebudzeniu”):</p>
+  <textarea class="thought-input" id="poraDnia" placeholder="np. „Wieczorem 21:00–24:00 plus poranek 7:00–8:00, przed pracą.”" rows="2"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła pomiaru</strong>: nie korygujaj zachowania w trakcie audytu. „Tylko ten tydzień nie będę scrollować” zafałszuje baseline. Mierzysz, <em>jak naprawdę żyjesz</em>, a nie jak chciałabyś/chciałbyś żyć — bo to drugie i tak wróci po tygodniu.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Refleksja</div>
+  <h1 class="card-prompt">Co Cię w tych liczbach <em>zaskoczyło</em>?</h1>
+  <p class="card-detail">Surowe dane bez interpretacji są tylko tłem. Trzy pytania pomagają wyciągnąć z audytu wnioski, które przekładają się na decyzje.</p>
+
+  <div class="audit-grid">
+    <div class="audit-cell">
+      <div class="audit-cell-h">Wartość vs koszt</div>
+      <div class="audit-cell-body">Które aplikacje dają Ci <strong>realną wartość</strong> (rozmowy z bliskimi, mapy, nauka)?</div>
+    </div>
+    <div class="audit-cell">
+      <div class="audit-cell-h">Intencja vs odruch</div>
+      <div class="audit-cell-body">Ile czasu było <strong>świadome</strong> (otworzyłaś/eś z konkretnym celem)?</div>
+    </div>
+    <div class="audit-cell">
+      <div class="audit-cell-h">Co kradnie czas</div>
+      <div class="audit-cell-body">Które aplikacje pochłaniają najwięcej, choć NIC z nich nie wynosisz?</div>
+    </div>
+    <div class="audit-cell">
+      <div class="audit-cell-h">Alternatywa</div>
+      <div class="audit-cell-body">Co byś zrobiła/zrobił, gdybyś miała/miał te 2 godziny więcej dziennie?</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="refZask" placeholder="Co Cię najbardziej zaskoczyło? np. „Myślałem, że używam 2 h, a 5 h. Instagram zjadł 1.5 h dziennie, a po nim czuję się gorzej, nie lepiej.”" rows="4"></textarea>
+
+  <textarea class="thought-input" id="refKraz" placeholder="Która aplikacja kradnie najwięcej czasu — bez wyraźnej wartości w zamian?" rows="2"></textarea>
+
+  <textarea class="thought-input" id="refAlt" placeholder="Co realnie zrobiłabyś/zrobiłbyś z tymi 2 dodatkowymi godzinami dziennie?" rows="2"></textarea>
+
+  <div class="term-note"><strong>💡 Klucz refleksji</strong>: nie wszystkie godziny są równe. 2 godziny z bliskimi to nie to samo co 2 godziny scrollowania. Audyt różnicuje <em>jakość</em> czasu, nie tylko ilość. Często okazuje się, że 80% problemu to 1–2 aplikacje — i tylko ich dotyczy decyzja.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Cele konkretne</div>
+  <h1 class="card-prompt">Ustaw <em>jeden</em> realny cel</h1>
+  <p class="card-detail">Mglista intencja („będę mniej”) nie działa. Konkretny limit, ustawiony w aplikacji, działa. Wybierz JEDEN cel na 30 dni — nie pięć. Małe, mierzalne, w aplikacji.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">Kryteria dobrego celu</div>
+    <div class="proto-rule">
+      <span class="proto-num">1</span>
+      <span class="proto-text"><strong>Konkret</strong> — „Instagram ≤ 30 min/dzień”, nie „mniej social mediów”.</span>
+    </div>
+    <div class="proto-rule">
+      <span class="proto-num">2</span>
+      <span class="proto-text"><strong>Mierzalność</strong> — sprawdzalne w Screen Time / Digital Wellbeing pod koniec dnia.</span>
+    </div>
+    <div class="proto-rule">
+      <span class="proto-num">3</span>
+      <span class="proto-text"><strong>Realność</strong> — z 5 h dziennie do 2 h to nie 30 dni, to 3 miesiące. Cel: redukcja o 25–30% na pierwsze 30 dni.</span>
+    </div>
+    <div class="proto-rule">
+      <span class="proto-num">4</span>
+      <span class="proto-text"><strong>Wbudowanie w środowisko</strong> — ustaw limit aplikacji. Włącz powiadomienie po przekroczeniu. Cel bez wsparcia środowiska to życzenie.</span>
+    </div>
+  </div>
+
+  <p class="card-detail" style="font-size:13px;margin-top:10px;">Mój cel na 30 dni:</p>
+  <textarea class="thought-input" id="celApp" placeholder="Aplikacja + nowy limit dzienny — np. „Instagram: maks. 30 min/dzień, ustawiony w Screen Time od dziś.”" rows="2"></textarea>
+
+  <p class="card-detail" style="font-size:13px;">Co konkretnie zaczniesz robić w tym czasie zamiast scrollować?</p>
+  <textarea class="thought-input" id="celAlt" placeholder="np. „Po pracy — spacer 30 min ZAMIAST scrollowania. Wieczorem — czytanie książki na 1h przed snem.”" rows="2"></textarea>
+
+  <div class="examples-h">Typowe cele 30-dniowe (kliknij swoje)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="celSocial" onclick="this.classList.toggle('picked');save();">Social ≤ 30 min/dzień</button>
+    <button class="example-chip" id="celRano" onclick="this.classList.toggle('picked');save();">Pierwsza godzina rano BEZ telefonu</button>
+    <button class="example-chip" id="celSypia" onclick="this.classList.toggle('picked');save();">Sypialnia bez telefonu</button>
+    <button class="example-chip" id="celPow" onclick="this.classList.toggle('picked');save();">Wszystkie powiadomienia OFF</button>
+    <button class="example-chip" id="celSrod" onclick="this.classList.toggle('picked');save();">1 dzień/tydz. tryb samolotowy 8 h</button>
+    <button class="example-chip" id="celSzar" onclick="this.classList.toggle('picked');save();">Tryb skali szarości na cały miesiąc</button>
+  </div>
+
+  <div class="term-note"><strong>🔧 Mechanizm wdrożenia</strong>: cel bez ustawionego limitu w aplikacji ma 80% szans na porzucenie po 7 dniach (Wilcockson i in., 2019). Cel wpisany do Screen Time / Digital Wellbeing ma 60% szans na utrzymanie po 30 dniach. Różnica to nie motywacja — to <em>środowisko</em>.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Audyt po 30 dniach</div>
+  <h1 class="card-prompt">Wróć tu i porównaj <em>różnicę</em></h1>
+  <p class="card-detail">Wpisz dane z 7-dniowej średniej PO 30 dniach pracy z celem. Różnica pokaże się sama. Nawet niewielka redukcja (15–20%) jest realnym sukcesem — to ~1 godzina dziennie odzyskanego czasu, ~365 godzin w roku.</p>
+
+  <div class="kpi-row">
+    <div class="kpi-cell">
+      <input type="number" class="kpi-input" id="postCzas" min="0" max="24" step="0.5" placeholder="0" oninput="updateAuditDelta();">
+      <div class="kpi-label">godz./dzień PO</div>
+    </div>
+    <div class="kpi-cell">
+      <input type="number" class="kpi-input" id="postOdbl" min="0" max="500" step="1" placeholder="0" oninput="updateAuditDelta();">
+      <div class="kpi-label">odblok./dzień PO</div>
+    </div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+
+  <div class="final-msg" id="finalMsg">
+    Liczy się <em>kierunek</em>, nie tempo. Każda godzina odzyskana to godzina, która wraca do Twojego życia: rozmowy, sen, ciało, spokój. Audyt powtórz raz w miesiącu — to najprostsza praktyka długoterminowa.
+  </div>
+
+  <div class="term-note"><strong>🔁 Reguła kalibracji</strong>: jeśli redukcja jest mniejsza niż cel — sprawdź, gdzie limit się sypie. Najczęściej: weekend (limity dzienne nie działają na całodzienne nudy), wieczór (zmęczenie znosi siłę woli), trudne emocje (cykl wyzwalacza). Przedłuż cel o kolejne 30 dni — jedno powtórzenie nie wystarczy do utrwalenia (Lally i in., 2010 — habit formation ~66 dni mediana).</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Audyt cyfrowy to nie <em>jednorazowa akcja</em> — to <strong>nawyk pomiarowy</strong>. Raz w miesiącu otwórz Screen Time, zapisz średnią, porównaj z poprzednim. Nie pytasz „ile?”, pytasz <em>„czy mi to służy?”</em>. To podstawowa higiena cyfrowa — krótsza niż ważenie się na wadze.</div>
+  </div>
+
+  <div class="src">Andrews i in. (2015, PLoS ONE — beyond self-report); Wilcockson i in. (2019, Computers in Human Behavior); Ellis i in. (2019, Computers in Human Behavior); Lally, van Jaarsveld, Potts, Wardle (2010, European Journal of Social Psychology — formowanie nawyku); Newport (2019, Digital Minimalism — Penguin); Alter (2017, Irresistible — Penguin Press); Sohn i in. (2019, BMC Psychiatry); Apple Screen Time, Google Digital Wellbeing — dokumentacja</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateAuditDelta() {
+  var preC = parseFloat(document.getElementById('kpiCzas').value);
+  var preO = parseFloat(document.getElementById('kpiOdbl').value);
+  var postC = parseFloat(document.getElementById('postCzas').value);
+  var postO = parseFloat(document.getElementById('postOdbl').value);
+  var html = '';
+  if (!isNaN(preC) && !isNaN(postC)) {
+    var dC = preC - postC;
+    var pctC = preC > 0 ? Math.round((dC / preC) * 100) : 0;
+    html += '<div class="diff-row"><strong>Czas dzienny</strong> <span class="diff-delta' + (dC >= 0 ? '' : ' neg') + '">' + (dC > 0 ? '↓ ' + dC.toFixed(1) + ' h (' + pctC + '%)' : (dC < 0 ? '↑ ' + Math.abs(dC).toFixed(1) + ' h' : 'bez zmian')) + '</span></div>';
+  }
+  if (!isNaN(preO) && !isNaN(postO)) {
+    var dO = preO - postO;
+    var pctO = preO > 0 ? Math.round((dO / preO) * 100) : 0;
+    html += '<div class="diff-row"><strong>Liczba odblokowań</strong> <span class="diff-delta' + (dO >= 0 ? '' : ' neg') + '">' + (dO > 0 ? '↓ ' + dO + ' (' + pctO + '%)' : (dO < 0 ? '↑ ' + Math.abs(dO) : 'bez zmian')) + '</span></div>';
+  }
+  if (html === '') {
+    html = '<div class="diff-row" style="color:var(--ink-mute);font-style:italic;">Wpisz wartości w obu kolumnach (przed i po), żeby zobaczyć różnicę.</div>';
+  }
+  document.getElementById('diffList').innerHTML = html;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_psu_audyt — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_psu_audyt";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+function onStepChange(s) { if (s === 5) updateAuditDelta(); }
+function onReset() { updateAuditDelta(); }
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

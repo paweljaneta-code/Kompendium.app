@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · FBT Maudsley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.phase-card { background: rgba(255,255,255,0.55); border: 1.5px solid var(--sage); border-radius: 12px; padding: 13px 15px; margin: 8px 0; }
+.phase-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; display: flex; align-items: center; gap: 10px; }
+.phase-num { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--sage-deep); color: var(--bg); font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.phase-meta { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; margin-bottom: 6px; }
+.phase-text { font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 6px; }
+.phase-text strong { color: var(--ink); font-weight: 600; }
+.phase-cel { background: rgba(184,197,168,0.18); border-left: 2px solid var(--sage-deep); padding: 6px 10px; border-radius: 0 6px 6px 0; font-size: 12px; color: var(--ink); line-height: 1.5; margin-top: 6px; }
+.phase-cel strong { color: var(--sage-deep); font-weight: 700; }
+
+.crit-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 8px 0 12px; }
+.crit-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.crit-row { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); align-items: flex-start; }
+.crit-row:first-of-type { border-top: none; }
+.crit-icon { font-size: 14px; line-height: 1.4; color: var(--sage); }
+.crit-text { font-size: 13px; color: rgba(244,241,234,0.92); line-height: 1.55; }
+.crit-text strong { color: var(--bg); font-weight: 600; }
+
+.fam-meal { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 8px 0; }
+.fam-h { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; line-height: 1.3; }
+.fam-text { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+.fam-text strong { color: var(--ink); font-weight: 600; }
+
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; }
+.role-cell { background: rgba(255,255,255,0.55); border: 1px solid var(--sage); border-radius: 10px; padding: 10px 12px; }
+.role-h { font-family: 'Fraunces', serif; font-size: 12px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; }
+.role-h.warm { color: #8a4a18; }
+.role-h.sage { color: var(--sage-deep); }
+.role-text { font-size: 12px; color: var(--ink-soft); line-height: 1.5; font-style: italic; }
+.role-text strong { color: var(--ink); font-weight: 600; font-style: normal; }
+
+.trail-list { margin: 6px 0 10px; }
+.trail-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(184,197,168,0.3); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.trail-row:first-of-type { border-top: none; }
+.trail-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 32px; font-size: 14px; }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 10px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>FBT Maudsley</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">FBT — <em>złoty standard</em> dla adolescentów</h1>
+  <p class="card-detail">Family-Based Treatment (Lock i Le Grange, 2013, <em>Treatment Manual for Anorexia Nervosa: A Family-Based Approach</em>) jest <strong>pierwszą linią leczenia adolescentów z anoreksją</strong> według wszystkich aktualnych wytycznych — NICE NG69 (2017), APA (2023), AED. Bazuje na podejściu Maudsley Hospital z lat 80. (Dare, Eisler), strukturalizowane przez Locka i Le Grange'a w latach 2000. <strong>Kluczowa zasada</strong>: rodzice są <em>partnerami w leczeniu</em>, nie obserwatorami. Przejmują kontrolę nad jedzeniem chorego dziecka — w pierwszej fazie pełną, później stopniowo oddają. RCT Lock i in. (2010, <em>Archives of General Psychiatry</em>): FBT 49% remisji vs indywidualna CBT 23% — <em>dwukrotnie</em> skuteczniejsza.</p>
+  
+  <div class="frame-card">
+    <div class="frame-h">Cztery zasady FBT</div>
+    <div class="element-row">
+      <span class="element-icon">👨‍👩‍👧</span>
+      <span class="element-text"><strong>Rodzice jako agenci zmiany</strong> — nie „pomocnicy", nie „obserwatorzy"; <em>kompetentni partnerzy</em> w leczeniu, którzy przejmują kontrolę nad jedzeniem</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👁️</span>
+      <span class="element-text"><strong>Eksternalizacja AN</strong> — rodzina walczy z chorobą córki/syna, nie z córką/synem; ta językowa zmiana zmienia całą dynamikę domową</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🏠</span>
+      <span class="element-text"><strong>Refeeding w domu</strong> — przywrócenie wagi przy stole rodzinnym, nie w szpitalu; dom jako miejsce leczenia</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎓</span>
+      <span class="element-text"><strong>Brak winnych</strong> — rodzice nie są przyczyną AN; Lock i Le Grange wyraźnie odrzucają „obwinianie rodziny" — wręcz przeciwnie, rodzina jest <em>rozwiązaniem</em></span>
+    </div>
+  </div>
+  
+  <div class="frame-quote">„AN nie jest świadomym wyborem nastolatka. Jest chorobą. Rodzice są <em>kompetentni</em> do walki z chorobą dziecka — tak jak walczyli z każdą inną. Naszą rolą jest ich trenować i wspierać."
+    <span class="frame-quote-attr">— James Lock i Daniel Le Grange (2013, <em>Treatment Manual for Anorexia Nervosa</em>)</span>
+  </div>
+  
+  <div class="term-note"><strong>Klucz</strong> — FBT działa, bo adolescent jest <em>za młody</em> na samodzielne podejmowanie decyzji o jedzeniu w warunkach choroby. AN ego-syntoniczna w wieku 13–16 lat to choroba, która wyłącza krytyczną ocenę. Rodzice — z trenerem terapeutą — przejmują tę funkcję, dopóki dziecko nie odzyska zdolności do samodzielności.</div>
+  
+  <div class="term-note"><strong>Walidacja</strong> — niektórzy rodzice <em>boją się</em> „przejęcia kontroli" — wydaje się autorytarne, „staromodne". Lock i Le Grange odpowiadają: bez tej kontroli choroba postępuje. Po fazie 1, gdy waga wraca, kontrola jest <em>oddawana</em> stopniowo. To nie jest „nadopiekuńczość na zawsze" — to <em>tymczasowe</em> przejęcie funkcji, której dziecko nie może obecnie wykonać.</div>
+  
+  <div class="src"><em>📚 Lock i Le Grange (2013, Treatment Manual for Anorexia Nervosa: A Family-Based Approach); Lock i in. (2010, Archives of General Psychiatry — RCT); Eisler i in. (2016, follow-up); NICE NG69 (2017); Stanford Training in Children's And Adolescents' Eating Disorders (TICAED).</em></div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Kwalifikacja</div>
+  <h1 class="card-prompt">Czy <em>FBT jest dla nas</em></h1>
+  <p class="card-detail">FBT nie jest wskazana <em>dla każdej</em> rodziny i każdego adolescenta. Pierwsza faza (refeeding pod kontrolą rodziców) wymaga konkretnych warunków. Sześć kryteriów — sprawdź uczciwie. Brak któregoś nie znaczy „FBT niemożliwa", ale wymaga modyfikacji albo alternatywy (np. AFT — Adolescent-Focused Therapy).</p>
+  
+  <div class="crit-card">
+    <div class="crit-h">Sześć kryteriów kwalifikacji</div>
+    <div class="crit-row">
+      <span class="crit-icon">①</span>
+      <span class="crit-text"><strong>Wiek adolescenta 12–18 lat</strong>. Dla młodszych (10–11) FBT też możliwa, dla starszych (19+) — ograniczona skuteczność. „Złotym wiekiem" jest 13–17.</span>
+    </div>
+    <div class="crit-row">
+      <span class="crit-icon">②</span>
+      <span class="crit-text"><strong>Choroba krócej niż 3 lata</strong>. FBT działa najlepiej w pierwszych 1–2 latach AN. Przewlekła AN (&gt;3 lata) zwykle wymaga innego podejścia.</span>
+    </div>
+    <div class="crit-row">
+      <span class="crit-icon">③</span>
+      <span class="crit-text"><strong>Stabilność medyczna</strong>. BMI nie krytycznie niskie (zwykle &gt;14), bez bezpośredniego zagrożenia życia (puls &lt;40, zaburzenia rytmu serca, ciężka hipotermia, omdlenia). Inaczej — najpierw stabilizacja w szpitalu.</span>
+    </div>
+    <div class="crit-row">
+      <span class="crit-icon">④</span>
+      <span class="crit-text"><strong>Oboje rodzice (lub opiekunowie) zaangażowani</strong>. FBT wymaga jedności rodziców. Rozwiedzeni — jeśli komunikują się, możliwe; jeśli konflikt głęboki — bardzo trudne.</span>
+    </div>
+    <div class="crit-row">
+      <span class="crit-icon">⑤</span>
+      <span class="crit-text"><strong>Brak przemocy w rodzinie</strong>. Przemoc fizyczna, seksualna, ciężka emocjonalna — FBT przeciwwskazana. Rodzina nie może być „terapeutą", jeśli sama jest źródłem traumy.</span>
+    </div>
+    <div class="crit-row">
+      <span class="crit-icon">⑥</span>
+      <span class="crit-text"><strong>Dostęp do certyfikowanego terapeuty FBT</strong>. „Niby-FBT" bez szkolenia może zaszkodzić. W Polsce: oddział IPiN Warszawa, kliniki UJ Kraków, niektóre CZP mają protokoły zbliżone.</span>
+    </div>
+  </div>
+  
+  <div class="examples-h">Czy spełniasz wszystkie sześć kryteriów?</div>
+  <textarea id="fbt-kryt" class="thought-input" rows="4" placeholder="Numer kryterium + tak/nie + krótki komentarz. Np. „① 15 lat — tak". „② 8 miesięcy AN — tak". „⑥ Nie wiem, czy mamy dostęp". To pomoże rozeznać sytuację…"></textarea>
+  
+  <div class="examples-h">Co jest u Was <em>najtrudniejszą</em> przeszkodą?</div>
+  <textarea id="fbt-przesz" class="thought-input" rows="3" placeholder="Czasem brak terapeuty, czasem konflikt rodzicielski, czasem sytuacja medyczna. Konkretnie — co Was obecnie blokuje?…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — jeśli kryteria 1–5 są spełnione, ale brak certyfikowanego terapeuty FBT, warto <em>szukać</em> — Polska ma kilka ośrodków (IPiN, Kraków, niektóre CZP). Można też rozważyć terapię online z polsko-języcznym specjalistą za granicą. FBT jest na tyle skuteczna, że warto włożyć wysiłek w znalezienie dostępu.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Trzy fazy</div>
+  <h1 class="card-prompt">Mapa <em>całego protokołu</em></h1>
+  <p class="card-detail">Drugi etap — <strong>zrozumienie struktury</strong>. FBT to 15–20 sesji w ciągu 6–12 miesięcy, podzielone na trzy bardzo różne fazy. Każda ma inny cel, inną dynamikę, inne role rodziny. Mapa pomaga rodzicom <em>wiedzieć, czego się spodziewać</em> w kolejnych miesiącach.</p>
+  
+  <div class="phase-card">
+    <div class="phase-h"><span class="phase-num">1</span>Refeeding</div>
+    <div class="phase-meta">Sesje 1–10 · 3–6 miesięcy · waga rośnie 0,5–1 kg/tydz.</div>
+    <div class="phase-text">Rodzice <strong>przejmują pełną kontrolę</strong> nad jedzeniem nastolatka. Przygotowują wszystkie posiłki. Adolescent <em>nie ma wyboru</em>. Sesja 1: <strong>Family Meal</strong> — rodzina przyjeżdża z posiłkiem, je go na sesji, terapeuta na żywo trenuje rodziców („Pobudzajcie, nie negocjujcie, nie dyskutujcie"). Cel: <em>przywrócenie wagi do 95+ percentyla albo BMI &gt;19</em>.</div>
+    <div class="phase-cel"><strong>Cel fazy 1</strong>: stabilna waga w zdrowym zakresie. Bez tego dalsze fazy nie są możliwe — głodny mózg nie ma zasobów do pracy poznawczej.</div>
+  </div>
+  
+  <div class="phase-card">
+    <div class="phase-h"><span class="phase-num">2</span>Stopniowe oddanie kontroli</div>
+    <div class="phase-meta">Sesje 11–15 · 3 miesiące · stopniowy wzrost autonomii</div>
+    <div class="phase-text">Gdy waga się ustabilizuje, adolescent <strong>stopniowo odzyskuje wybór</strong> nad jedzeniem. Najpierw 1 posiłek dziennie samodzielnie → 2 → cały dzień. Rodzice <em>nadzorują</em>, ale nie kontrolują. Pomagają, ale nie wymuszają. To delikatna faza — równowaga między autonomią a wsparciem.</div>
+    <div class="phase-cel"><strong>Cel fazy 2</strong>: adolescent samodzielnie utrzymuje zdrową wagę. Rodzice wracają do roli „rodziców", nie „kontrolerów jedzenia".</div>
+  </div>
+  
+  <div class="phase-card">
+    <div class="phase-h"><span class="phase-num">3</span>Tożsamość adolescenta</div>
+    <div class="phase-meta">Sesje 16–20 · 2–3 miesiące · skupienie na rozwoju</div>
+    <div class="phase-text">Gdy jedzenie jest stabilne, terapia skupia się na <strong>normalnym dorastaniu</strong> — autonomia, relacje rówieśnicze, tożsamość, plany przyszłości. AN przesuwa się z centrum uwagi na peryferia. Rodzina mniej dominująca, adolescent pracuje nad „kim chcę być".</div>
+    <div class="phase-cel"><strong>Cel fazy 3</strong>: adolescent funkcjonuje wiekowo — z normalnym rozwojem psychospołecznym, AN jako epizod przeszłości.</div>
+  </div>
+  
+  <div class="examples-h">Która faza wydaje Wam się <em>najtrudniejsza</em>?</div>
+  <textarea id="fbt-trudna" class="thought-input" rows="3" placeholder="Większość rodzin obawia się fazy 1 (przejęcie kontroli). Niektórzy boją się fazy 2 (oddanie kontroli, „a co jeśli wróci"). Co Was niepokoi najbardziej?…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — przełomy w FBT są <em>obserwowalne</em>. Po 6–10 sesjach fazy 1 rodzina widzi, że <em>to działa</em>. Adolescent staje się mniej oporny w miarę przyrostu wagi i powolnego powrotu witalności. To <em>doświadczenie</em> przekonuje rodziców znacznie bardziej niż argumenty teoretyczne. Pierwsze tygodnie są najtrudniejsze.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Faza 1</div>
+  <h1 class="card-prompt">Co robić, czego <em>nie robić</em> przy stole</h1>
+  <p class="card-detail">Trzeci etap — <strong>konkretne wskazówki</strong> dla rodziców w fazie 1 (refeeding). Pierwsze tygodnie są najtrudniejsze. Rodzice często nie wiedzą, co robić, gdy dziecko płacze przy stole, odmawia jedzenia, krzyczy. Konkretne porady Locka i Le Grange'a.</p>
+  
+  <div class="fam-meal">
+    <div class="fam-h">Sesja „Family Meal" — Twój pierwszy trening</div>
+    <div class="fam-text">W sesji 2 FBT rodzina przyjeżdża z <em>realnym posiłkiem</em> i je go na sesji. Terapeuta obserwuje i <em>na żywo</em> trenuje rodziców: kiedy i jak komunikować, jak reagować na opór, jak nie dać się wciągnąć w argumentację o kaloriach. To intensywna, czasem trudna sesja — ale daje rodzicom <strong>żywe doświadczenie</strong>, jak prowadzić jedzenie w domu. Po niej większość rodziców mówi: „nie wiedziałam/em, że to mogę".</div>
+  </div>
+  
+  <div class="role-grid">
+    <div class="role-cell">
+      <div class="role-h sage">✅ Co robić</div>
+      <div class="role-text">
+        Gotuj <strong>konkretne</strong> porcje (nie „weź ile chcesz")<br>
+        Mów <strong>krótko, stanowczo</strong>: „Zjedz to"<br>
+        Bądź <strong>obecna/y</strong> — nie wychodź<br>
+        Walidacja: „Wiem, że to trudne"<br>
+        <strong>Jedność</strong> rodziców — wspólny front<br>
+        Rozmowa o <em>czymś innym</em>, nie o jedzeniu
+      </div>
+    </div>
+    <div class="role-cell">
+      <div class="role-h warm">🔴 Czego nie robić</div>
+      <div class="role-text">
+        <strong>Nie dyskutuj</strong> o kcal, składzie, „dlaczego"<br>
+        <strong>Nie negocjuj</strong> ilości („może mniej?")<br>
+        <strong>Nie krzycz</strong> — zachowaj spokój<br>
+        <strong>Nie panikuj</strong> przy łzach<br>
+        <strong>Nie oferuj</strong> alternatyw („zjedz tylko jajko")<br>
+        <strong>Nie wychodź</strong> w trakcie posiłku
+      </div>
+    </div>
+  </div>
+  
+  <div class="examples-h">Konkretna trudna sytuacja — co byście zrobili?</div>
+  <textarea id="fbt-syt" class="thought-input" rows="4" placeholder="Wybierzcie sytuację, która Was niepokoi. „Co jeśli rzuci talerzem?". „Co jeśli będzie płakać godzinę?". „Co jeśli odmówi mówiąc 'nie zmusisz mnie'?". Plan na nią — jak zareagować zgodnie z FBT?…"></textarea>
+  
+  <div class="examples-h">Wsparcie dla rodzeństwa — jak je zorganizujecie?</div>
+  <textarea id="fbt-rodz" class="thought-input" rows="3" placeholder="FBT zaleca osobne sesje dla rodzeństwa — wsparcie, nie obciążanie odpowiedzialnością. Rodzeństwo NIE jest odpowiedzialne za jedzenie chorej/go. Jak zaplanujecie ich rolę?…"></textarea>
+  
+  <div class="term-note"><strong>Klucz</strong> — najczęstszy błąd rodziców na początku fazy 1: <em>negocjowanie</em>. „No dobrze, ale tylko trzy łyżki". Adolescent uczy się: można negocjować = AN się utrzymuje. FBT jest stanowcza: <em>brak negocjacji</em>. To trudne, ale konieczne. Po 2–3 tygodniach negocjacje zwykle ustają — adolescent uczy się, że jedzenie nie jest opcjonalne.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Kontynuacja</div>
+  <h1 class="card-prompt">Co <em>robić</em> teraz</h1>
+  <p class="card-detail">FBT jest <em>specjalistycznym</em> protokołem. Cztery konkretne kroki, jak go uruchomić — albo, jeśli nie jest dostępna, jak zbudować podejście zbliżone do FBT.</p>
+  
+  <div class="trail-list">
+    <div class="trail-row"><span class="trail-num">①</span><span><strong>Znajdź certyfikowanego terapeutę FBT</strong> — w Polsce: oddział IPiN Warszawa, kliniki UJ Kraków, niektóre CZP. Możesz też rozważyć online z polsko-języcznym specjalistą za granicą (UK, USA). „Niby-FBT" bez szkolenia może zaszkodzić.</span></div>
+    <div class="trail-row"><span class="trail-num">②</span><span><strong>Przygotuj rodzinę</strong> — przeczytajcie razem książkę Locka i Le Grange'a <em>„Leczenie anoreksji metodą Maudsley"</em> (polskie tłumaczenie). To pierwszy krok wspólnego rozumienia, na czym polega FBT. Bardzo praktyczna.</span></div>
+    <div class="trail-row"><span class="trail-num">③</span><span><strong>Skoordynuj zespół</strong> — terapeuta FBT + lekarz rodzinny / pediatra / psychiatra dziecięcy + dietetyk specjalistyczny. FBT nie zastępuje opieki medycznej; działa <em>razem</em> z nią.</span></div>
+    <div class="trail-row"><span class="trail-num">④</span><span><strong>Jeśli FBT nie działa po 6 sesjach</strong> — modyfikacja: intensyfikacja (2× w tygodniu), FBT + day program, lub przejście na AFT (<em>Adolescent-Focused Therapy</em>, Lock i Agras) jako alternatywa. Badania Lock i in. (2010) pokazują, że dla niektórych adolescentów AFT działa lepiej.</span></div>
+  </div>
+  
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">FBT to <strong>złoty standard</strong> leczenia anoreksji u adolescentów (12–18 lat) wedle wszystkich aktualnych wytycznych. Trzy fazy: <em>refeeding pod kontrolą rodziców (sesje 1–10), stopniowe oddawanie kontroli (sesje 11–15), praca nad tożsamością adolescenta (sesje 16–20)</em>. Kluczowe zasady: <em>rodzice jako agenci zmiany, eksternalizacja AN, refeeding w domu, brak winnych</em>. Sześć kryteriów kwalifikacji. „Family Meal" jako sesja przełomowa. Wymaga certyfikowanego terapeuty.</div>
+  </div>
+  
+  <div class="final-msg"><strong>Skuteczność FBT</strong> — Lock i in. (2010, <em>Archives of General Psychiatry</em>): w randomizowanym badaniu 121 adolescentów FBT dawała <em>49% pełnej remisji</em>, indywidualna CBT — <em>23%</em>. Eisler i in. (2016): w 5-letnim follow-up 40–50% adolescentów leczonych FBT pozostaje w pełnej remisji. To są jedne z <em>najwyższych</em> wskaźników skuteczności w psychiatrii dziecięcej. Dla adolescentów z anoreksją FBT jest <em>najlepszą</em> dostępną opcją.</div>
+  
+  <div class="src"><em>📚 Lock i Le Grange (2013, Treatment Manual for Anorexia Nervosa: A Family-Based Approach); Lock i in. (2010, Archives of General Psychiatry — RCT); Eisler i in. (2016, follow-up); NICE NG69 (2017); Stanford TICAED training protocol.</em></div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+/* Brak interaktywnego JS — textareas, persystencja zapisuje. */
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_an_fbt — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_an_fbt";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

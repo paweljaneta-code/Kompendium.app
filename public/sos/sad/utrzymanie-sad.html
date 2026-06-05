@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Utrzymanie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === ELEM-LIST (krok 2) === */
+.elem-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.elem-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.elem-item:hover, .elem-item:active { background: rgba(122,146,112,0.06); }
+.elem-item.checked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-left: 3px solid var(--sage-deep); }
+.elem-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.elem-item.checked .elem-tick { background: var(--sage-deep); border-color: var(--sage-deep); }
+.elem-item.checked .elem-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.elem-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.elem-text strong { color: var(--ink); font-weight: 700; }
+.elem-mech { display: block; font-size: 11px; color: var(--ink-mute); margin-top: 3px; font-style: italic; }
+.elem-icon { font-size: 18px; flex-shrink: 0; }
+
+/* === SYGNAL-LIST (krok 3) === */
+.sygnal-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.sygnal-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.sygnal-item:hover, .sygnal-item:active { background: rgba(201,122,82,0.06); }
+.sygnal-item.checked { background: rgba(201,122,82,0.12); border-color: var(--warm); border-left: 3px solid var(--warm); }
+.sygnal-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.sygnal-item.checked .sygnal-tick { background: var(--warm); border-color: var(--warm); }
+.sygnal-item.checked .sygnal-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.sygnal-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.sygnal-text strong { color: var(--ink); font-weight: 700; }
+
+/* === ACTION-CARD (krok 4) === */
+.action-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.action-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.action-row { display: flex; gap: 12px; padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; align-items: flex-start; }
+.action-row:last-child { margin-bottom: 0; }
+.action-num { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--warm); flex-shrink: 0; min-width: 22px; line-height: 1.4; }
+.action-text { font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); flex: 1; }
+.action-text strong { color: var(--bg); }
+
+/* === KONTAKT-CARD (krok 5) === */
+.kontakt-card { background: linear-gradient(135deg, rgba(122,146,112,0.10), rgba(216,225,205,0.5)); border: 1.5px solid var(--sage-deep); border-radius: 14px; padding: 16px 18px; margin: 6px 0 12px; }
+.kontakt-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+.kontakt-row { display: flex; gap: 12px; padding: 10px 12px; background: rgba(255,255,255,0.6); border-radius: 8px; border-left: 3px solid var(--sage-deep); margin-bottom: 6px; align-items: flex-start; font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+.kontakt-row:last-child { margin-bottom: 0; }
+.kontakt-row strong { color: var(--ink); }
+.kontakt-num { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: var(--sage-deep); flex-shrink: 0; min-width: 22px; }
+
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Utrzymanie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Higiena, <em>nie wyleczenie</em></h1>
+    <p class="card-detail"><strong>Faza utrzymania</strong> (maintenance phase, Marlatt i Gordon 1985; Hofmann i Otto 2008) — etap <em>po</em> osiągnięciu poprawy. To <strong>nie</strong> jest „kontynuacja terapii”. To <em>nowy styl życia</em>, w którym narzędzia z terapii stają się <strong>codzienną higieną</strong>. Osoby, które traktują utrzymanie jako „już mi nie potrzebne”, mają <em>40-50% szansy na pełny nawrót</em> w 12 miesięcy. Ci, którzy traktują utrzymanie jako <strong>codzienną praktykę</strong> — tylko 10-15% (Hofmann i Otto 2008). Różnica jest fundamentalna. Lęk społeczny <em>nie znika</em> — <strong>żyjesz z nim mądrze</strong>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy systemu utrzymania</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🌱</span>
+          <span class="element-text"><strong>Codzienna higiena</strong> = 4-6 nawyków dziennie (krótkie, regularne)</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🚦</span>
+          <span class="element-text"><strong>System ostrzegania</strong> = TOP 3 sygnały, których pilnujesz</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📋</span>
+          <span class="element-text"><strong>Karta wsparcia</strong> = TOP 3 działania na wypadek aktywacji</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🤝</span>
+          <span class="element-text"><strong>Sieć wsparcia</strong> = 3 osoby + numery awaryjne, gotowe pod ręką</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Maintenance to <em>nie</em> kontynuacja terapii — to <em>nowy styl życia</em>, w którym narzędzia są codzienne.”
+        <span class="frame-quote-attr">— G. Alan Marlatt (1985, Profilaktyka nawrotów)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: utrzymanie <em>nie</em> wymaga 2 godzin dziennie. Wymaga <strong>15-30 minut</strong> codziennie + automatycznych check-inów co tydzień. Większość osób po 6-12 miesiącach utrzymania <em>internalizuje</em> nawyki — stają się one tak naturalne, jak mycie zębów. Wcześniej — to świadoma praktyka.</div>
+    
+    <div class="src">Marlatt i Gordon (1985, Profilaktyka nawrotów) · Clark i Wells (1995) · Hofmann i Otto (2008) · Beck (2011)</div>
+  </section>
+  <!-- 2: PLAN UTRZYMANIA -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Plan utrzymania</div>
+    <h1 class="card-prompt">6 filarów <em>higieny</em></h1>
+    <p class="card-detail">6 codziennych elementów udokumentowanych empirycznie jako <strong>chroniące przed nawrotem</strong> SAD. Zaznacz <em>te, które już robisz</em>, i te, które chcesz wprowadzić. Cel: 4-5 z 6 codziennie.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: <em>4 z 6 codziennie</em> przez 30 dni = nawyk. <em>5-6 z 6</em> = silna ochrona. Mniej niż 3 = ryzyko regresji wzrasta. Najważniejszy z 6: <strong>wieczorny rejestr</strong> — bez niego nie zauważasz sygnałów wczesnych.</div>
+    
+    <div class="elem-list">
+      <div class="elem-item" onclick="toggleElem(this)">
+        <div class="elem-tick"></div>
+        <span class="elem-icon">🎯</span>
+        <div class="elem-text">
+          <strong>1 świadoma ekspozycja dziennie</strong>
+          <span class="elem-mech">Małe wystawienie się: zadanie pytania, rozmowa z obcym, propozycja czegoś. Bez tego mózg cofa się do strefy komfortu.</span>
+        </div>
+      </div>
+      <div class="elem-item" onclick="toggleElem(this)">
+        <div class="elem-tick"></div>
+        <span class="elem-icon">👁</span>
+        <div class="elem-text">
+          <strong>Uwaga skierowana na zewnątrz 5 minut dziennie</strong>
+          <span class="elem-mech">W jednej rozmowie świadomie kierujesz uwagę na rozmówcę. Zauważ kolory, gesty, treść. Trening nawyku.</span>
+        </div>
+      </div>
+      <div class="elem-item" onclick="toggleElem(this)">
+        <div class="elem-tick"></div>
+        <span class="elem-icon">📓</span>
+        <div class="elem-text">
+          <strong>Wieczorny rejestr 3 zdań</strong>
+          <span class="elem-mech">Co dziś poszło dobrze? Były sygnały? Jak się czuję? Aplikacja notatek lub kalendarz — 2 minuty.</span>
+        </div>
+      </div>
+      <div class="elem-item" onclick="toggleElem(this)">
+        <div class="elem-tick"></div>
+        <span class="elem-icon">🌬</span>
+        <div class="elem-text">
+          <strong>Oddech 4-7-8 — 1 cykl rano</strong>
+          <span class="elem-mech">Aktywuje nerw błędny (Porges). 1 minuta. Buduje rezerwę autonomiczną na cały dzień.</span>
+        </div>
+      </div>
+      <div class="elem-item" onclick="toggleElem(this)">
+        <div class="elem-tick"></div>
+        <span class="elem-icon">🤝</span>
+        <div class="elem-text">
+          <strong>1 kontakt społeczny inicjowany przez ciebie</strong>
+          <span class="elem-mech">SMS, telefon, propozycja kawy. Inicjatywa = aktywna praktyka. Bez niej cofasz się do pasywności.</span>
+        </div>
+      </div>
+      <div class="elem-item" onclick="toggleElem(this)">
+        <div class="elem-tick"></div>
+        <span class="elem-icon">🛏</span>
+        <div class="elem-text">
+          <strong>7+ godzin snu</strong>
+          <span class="elem-mech">Krytyczny dla regulacji emocji. Sen &lt;6h podnosi reaktywność lękową o 30% następnego dnia (badania Walker 2017).</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Twoje wybrane filary — które robisz codziennie?</div>
+    <textarea class="thought-input" id="filaryInput" placeholder="np. „Codziennie: ekspozycja, uwaga skierowana na zewnątrz, rejestr 3 zdań, oddech rano. Cel: dodać kontakt społeczny do wieczora — wysyłać 1 SMS dziennie do kogoś z bliskich”"..." rows="3"></textarea>
+  </section>
+  <!-- 3: KARTA WSPARCIA — SYGNAŁY -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Karta wsparcia — sygnały</div>
+    <h1 class="card-prompt">Twoje TOP 3 <em>sygnały</em></h1>
+    <p class="card-detail">Z całej listy sygnałów ostrzegawczych SAD wybierz <strong>3 najbardziej osobiste</strong> — te, które rozpoznajesz <em>najszybciej u siebie</em>. To twoja <strong>karta wsparcia</strong> — 3 wskaźniki, których pilnujesz codziennie.</p>
+    
+    <div class="term-note"><strong>Reguła wyboru TOP 3</strong>: <em>nie</em> wszystkie — tylko 3 <strong>najbardziej osobiste</strong>. Wybierz te, które wystąpiły u ciebie w okresach gorszego SAD. Zapamiętasz 3 — nie zapamiętasz 8. <em>3 wystarczy</em>, żeby zauważyć regresję wcześnie.</div>
+    
+    <div class="examples-h">Wybierz 3 sygnały — TWOJE osobiste wskaźniki</div>
+    <div class="sygnal-list">
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Wracają zachowania zabezpieczające</strong> — chowanie rąk, cichy głos, unikanie wzroku</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Odraczanie kontaktów</strong> — niewysłany SMS, niezadzwoniony telefon</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Ruminacja po sytuacji</strong> — godziny analizowania spotkań po fakcie</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Uwaga skierowana na siebie</strong> — monitoruję siebie zamiast słuchać</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Wzrost objawów fizjologicznych</strong> — rumieniec, drżenie, kołatanie</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Problemy ze snem</strong> — zasypianie, wybudzenia o 3-4 rano</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Spadek inicjatywy</strong> — nie proponuję, czekam, aż inni zaproponują</div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text"><strong>Wzrost katastrofizacji</strong> — „pewnie pomyśleli, że…”"</div>
+      </div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Twoje TOP 3 — wpisz dosłownie</div>
+    <textarea class="thought-input" id="top3SygInput" placeholder="np. „1. Odraczam telefony do mamy / brata
+2. Wracam do chowania rąk pod stołem
+3. Po każdym spotkaniu 1+ godzina ruminacji”"..." rows="4"></textarea>
+  </section>
+  <!-- 4: KARTA WSPARCIA — DZIAŁANIA -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Karta wsparcia — działania</div>
+    <h1 class="card-prompt">Twoje TOP 3 <em>działania</em></h1>
+    <p class="card-detail">Dla każdego sygnału z kroku 3 — <strong>konkretne działanie</strong>. Karta wsparcia musi być <em>natychmiastowo wykonalna</em>. <strong>Bez zastanawiania się</strong>: sygnał → działanie. Trening reakcji automatycznej.</p>
+    
+    <div class="term-note"><strong>Pułapka</strong>: karta zapisana <em>tylko w głowie</em> = nie istnieje w momencie sygnału. Mózg w SAD <em>zniekształca</em> dostęp do pamięci pod stresem. Karta <strong>wpisana</strong> (telefon, kartka, lodówka) = działa. Trzymaj ją <em>w 2-3 miejscach</em>, by była zawsze pod ręką.</div>
+    
+    <div class="action-card">
+      <div class="action-h">Przykładowa karta wsparcia — 3 działania</div>
+      <div class="action-row">
+        <span class="action-num">1.</span>
+        <span class="action-text"><strong>Sygnał: Odraczam kontakt</strong> → Akcja: <em>natychmiast wysyłam SMS, choćby 1 zdanie</em>. Nie czekam aż „będę gotowy”".</span>
+      </div>
+      <div class="action-row">
+        <span class="action-num">2.</span>
+        <span class="action-text"><strong>Sygnał: Chowanie rąk</strong> → Akcja: <em>otwarcie ćwiczenia „zachowania-sad”</em>, rezygnujesz z jednego zachowania zabezpieczającego w bieżącej sytuacji.</span>
+      </div>
+      <div class="action-row">
+        <span class="action-num">3.</span>
+        <span class="action-text"><strong>Sygnał: Ruminacja po spotkaniu</strong> → Akcja: <em>otwarcie ćwiczenia „ruminacja-sad”</em>, technika przerywania pętli (zimna woda, ruch, telefon).</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoje TOP 3 działania — odpowiednio do twoich sygnałów</div>
+    <textarea class="thought-input" id="top3AkcInput" placeholder="np. „1. Sygnał ”"odraczam kontakt„ → wysyłam SMS w ciągu 30 min, nie czekam
+2. Sygnał ”wracają zachowania zabezpieczające" → praca z zachowaniami zabezpieczającymi, rezygnacja z jednego w ciągu 24h
+3. Sygnał "ruminacja po spotkaniu" → praca z ruminacją + 5 min spaceru"..." rows="5"></textarea>
+    
+    <div class="examples-h">Gdzie nosisz tę kartę wsparcia?</div>
+    <textarea class="thought-input" id="cardLocation" placeholder="np. „Aplikacja notatek na pierwszej stronie, nazwa ”"KARTA WSPARCIA - SAD„. Plus na lodówce wydruk. Plus w portfelu mała karteczka”..." rows="3"></textarea>
+  </section>
+  <!-- 5: KARTA WSPARCIA — KONTAKTY -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Karta wsparcia — kontakty</div>
+    <h1 class="card-prompt">Numery <em>awaryjne</em></h1>
+    <p class="card-detail">Ostatni element karty wsparcia: <strong>3 osoby + numery awaryjne</strong>. Gotowe pod ręką, by w momencie regresji <em>nie szukać</em>. Plus: lista zwycięstw — przypomnienie o sukcesach z ostatnich miesięcy.</p>
+    
+    <div class="term-note"><strong>Reguła aktualizacji</strong>: kartę wsparcia przeglądasz <em>co 3 miesiące</em>. Czy 3 sygnały nadal te same? Czy 3 osoby dalej dostępne? Czy lista zwycięstw rośnie? Karta to <em>żywy dokument</em>. Co kwartał: 15 minut review = silniejsza ochrona. <strong>Profilaktyka to praktyka, nie deklaracja</strong>.</div>
+    
+    <div class="kontakt-card">
+      <div class="kontakt-h">3 zaufane osoby — kontakt natychmiastowy</div>
+      <div class="kontakt-row">
+        <span class="kontakt-num">1.</span>
+        <span><strong>Najbliższa osoba</strong>: imię, telefon, kiedy kontakt OK (np. „Anna, 555-123-456, każdy czas”)</span>
+      </div>
+      <div class="kontakt-row">
+        <span class="kontakt-num">2.</span>
+        <span><strong>Druga zaufana</strong>: imię, telefon, ograniczenia (np. „Brat Marek, 555-789-012, po 18:00”)</span>
+      </div>
+      <div class="kontakt-row">
+        <span class="kontakt-num">3.</span>
+        <span><strong>Profesjonalna</strong>: terapeuta / psycholog / lekarz (imię + telefon + email)</span>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoje 3 osoby — wpisz konkretnie</div>
+    <textarea class="thought-input" id="kontaktyInput" placeholder="np. „1. Anna (partnerka): 555-123-456, każdy czas
+2. Mama: 555-789-012, dni robocze 18:00-22:00
+3. dr Kowalski (terapeuta): 555-345-678, dr.kowalski@klinika.pl”"..." rows="4"></textarea>
+    
+    <div class="examples-h" style="margin-top:14px">Numery awaryjne — Polska</div>
+    <textarea class="thought-input" id="awaryjne" placeholder="📞 116 123 — Telefon Zaufania dla Dorosłych (24/7, bezpłatny)
+📞 116 111 — Telefon Zaufania dla Dzieci i Młodzieży (24/7, bezpłatny)  
+📞 800 70 22 22 — Centrum Wsparcia dla Osób w Stanie Kryzysu Psychicznego (24/7)
+📞 22 484 88 01 — Antydepresyjny Telefon Forum Przeciw Depresji" rows="4" readonly style="background:rgba(122,146,112,0.05);font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:13px"></textarea>
+    
+    <div class="examples-h" style="margin-top:14px">Lista zwycięstw — przypominka o postępie</div>
+    <textarea class="thought-input" id="winsInput" placeholder="np. „1. Wystąpienie w pracy w marcu — przeżyłem, dostałem feedback ”dobre wystąpienie„
+2. Pierwsze randki w kwietniu — 3 spotkania, 1 druga randka
+3. Lunch z kolegami zamiast jedzenia samotnie — od maja codziennie”"..." rows="5"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Karta wsparcia to <strong>twoje narzędzie pierwszej pomocy</strong>. Trzymasz ją <em>gotową, zaktualizowaną, dostępną</em>. Kompendium nie wystarczy — w stresie nie otworzysz 99 ćwiczeń. Karta wsparcia = <strong>3 sygnały + 3 działania + 3 osoby</strong>. To minimum, które ratuje. Maksimum jest dodatkiem.</div>
+    </div>
+    
+    <div class="src">Marlatt i Gordon (1985) · Marlatt i Donovan (2005) · Clark i Wells (1995) · Hofmann i Otto (2008) · Beck (2011)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('filaryInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('top3SygInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('top3AkcInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('cardLocation'); if (el) el.value = ''; }
+    { const el = document.getElementById('kontaktyInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('winsInput'); if (el) el.value = ''; }
+    document.querySelectorAll('.elem-item').forEach(b => b.classList.remove('checked'));
+    document.querySelectorAll('.sygnal-item').forEach(b => b.classList.remove('checked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {}
+function toggleElem(el) { el.classList.toggle('checked'); }
+function toggleSygnal(el) { el.classList.toggle('checked'); }
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.elem-item, .sygnal-item';
+  var KEY = "sos-utrzymanie-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.elem-item, .sygnal-item')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

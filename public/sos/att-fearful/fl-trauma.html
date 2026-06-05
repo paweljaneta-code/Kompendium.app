@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Faza 2 - przetwarzanie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.path-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+.path-h { display: flex; align-items: center; gap: 10px; font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px; }
+.path-icon { font-size: 22px; }
+.path-card p { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 5px 0; }
+.path-card strong { color: var(--ink); }
+
+.rule-card { background: var(--ink); color: var(--bg); border-radius: 10px; padding: 11px 14px; margin: 8px 0; }
+.rule-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 6px; }
+.rule-row { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); margin-bottom: 5px; padding: 7px 10px; background: rgba(184,197,168,0.08); border-radius: 6px; }
+.rule-row strong { color: var(--bg); }
+.rule-row em { color: var(--sage); font-style: italic; }
+
+.warn-card { background: rgba(201,165,114,0.15); border: 1px solid var(--warm); border-radius: 10px; padding: 12px 14px; margin: 10px 0; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.warn-card strong { color: var(--warm); font-weight: 600; }
+.warn-card em { color: var(--ink); font-style: italic; }
+
+.crit-row { display: flex; flex-direction: column; padding: 9px 12px; background: rgba(184,197,168,0.18); border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+.crit-label { color: var(--ink-soft); margin-bottom: 6px; }
+.crit-label strong { color: var(--ink); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Faza 2 - przetwarzanie</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Faza 2 — <em>przetwarzanie</em>, gdy stabilizacja stoi</h1>
+    <p class="card-detail">Herman (1992) opisała trzy fazy pracy z traumą złożoną. Faza 2 to <strong>przetwarzanie</strong> — bezpośrednia praca z wspomnieniami, częściami, ciałem. Liotti (2004): u stylu zdezorganizowanego przywiązanie i trauma są <em>splecione</em> — leczysz oba <em>jednocześnie</em>, nie po kolei. Praca w fazie 2 trwa <strong>1–3 lata</strong> i wymaga: ukończonej fazy 1 (6–12+ mc), wyspecjalizowanego terapeuty, gotowości do tytrowania (małe dawki, nie cała trauma na raz), stabilności między sesjami, możliwości pauzy gdy zbyt intensywne.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery filary fazy 2 (Herman + Cloitre + Shapiro + Ogden)</div>
+      <div class="element-row">
+        <span class="element-icon">🧱</span>
+        <span class="element-text"><strong>Stabilizacja jest warunkiem</strong> — bez niej nie ma sensu. Próba przetwarzania bez fazy 1 = retraumatyzacja.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⏳</span>
+        <span class="element-text"><strong>Tempo klienta, nie protokołu</strong> — okno tolerancji, krótkie dawki, możliwość pauzy. Forsowanie kończy źle.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛤️</span>
+        <span class="element-text"><strong>Wybór ścieżki</strong> — EMDR, IFS, Sensorimotor, Schema, STAIR. <em>Nie</em> ma „najlepszej” — wybór wedle preferencji.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🤝</span>
+        <span class="element-text"><strong>Bezpieczna relacja</strong> jako kontekst — z terapeutą wyspecjalizowanym, którego znasz minimum 6 miesięcy.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Każdy krok <em>liczy się</em>. Nie musisz „uleczyć” się — musisz <strong>żyć lepiej</strong> z każdym rokiem. Trauma nie znika, ale traci moc paraliżującą. Ślad zostaje, ale nie jest już miejscem, w którym się żyje.”
+      <span class="frame-quote-attr">— synteza Herman (1992); van der Kolk (2014)</span>
+    </div>
+
+    <div class="warn-card">
+      <strong>⚠️ Krytyczne</strong>: praca w fazie 2 <strong>nie jest</strong> pracą do wykonania samodzielnie ani z ogólnym CBT terapeutą. Wymaga osoby z <em>certyfikatem</em> i <em>doświadczeniem</em> w traumie rozwojowej. Próba samodzielnej ekspozycji na wspomnienia traumatyczne (czytanie, oglądanie, „przepracowanie samej siebie”) <em>nie</em> daje efektów leczniczych — daje retraumatyzację.
+    </div>
+
+    <div class="src">Herman (1992, <em>Trauma and Recovery</em>); Cloitre i in. (2010, 2011, STAIR-NST RCT); Shapiro (2018, <em>Eye Movement Desensitization and Reprocessing</em>); Ogden i in. (2006, Sensorimotor); Schwartz (1995, IFS); Young i in. (2003, Schema); Wytyczne: ISTSS (2019), NICE (2018), APA (2017).</div>
+  </section>
+
+  
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt gotowości</div>
+    <h1 class="card-prompt">Pięć <em>kryteriów</em> wejścia w fazę 2</h1>
+    <p class="card-detail">Cloitre i in. (2011) — kryteria gotowości do przetwarzania traumy. Oceń każde uczciwie. Niskie wyniki <em>nie</em> są porażką — są mapą tego, co jeszcze do dopracowania w fazie 1.</p>
+
+    <div class="crit-row">
+      <div class="crit-label"><strong>1. Bezpieczeństwo zewnętrzne</strong> — brak aktualnej przemocy, stabilne mieszkanie, podstawowe potrzeby zaspokojone.</div>
+      <div class="scale">
+        <div class="scale-label"><span></span><span><span id="c1v">5</span>/10</span></div>
+        <input type="range" min="0" max="10" value="5" class="scale-input" id="c1" data-default="5" oninput="document.getElementById('c1v').textContent=this.value">
+      </div>
+    </div>
+
+    <div class="crit-row">
+      <div class="crit-label"><strong>2. Samoregulacja</strong> — masz <em>działające</em> narzędzia w aktywacji (oddech, grounding, mapa okna tolerancji), używasz ich rutynowo.</div>
+      <div class="scale">
+        <div class="scale-label"><span></span><span><span id="c2v">5</span>/10</span></div>
+        <input type="range" min="0" max="10" value="5" class="scale-input" id="c2" data-default="5" oninput="document.getElementById('c2v').textContent=this.value">
+      </div>
+    </div>
+
+    <div class="crit-row">
+      <div class="crit-label"><strong>3. Stabilna relacja terapeutyczna</strong> — terapeuta wyspecjalizowany w traumie, regularne sesje od minimum 6 miesięcy, bezpieczeństwo i zaufanie.</div>
+      <div class="scale">
+        <div class="scale-label"><span></span><span><span id="c3v">5</span>/10</span></div>
+        <input type="range" min="0" max="10" value="5" class="scale-input" id="c3" data-default="5" oninput="document.getElementById('c3v').textContent=this.value">
+      </div>
+    </div>
+
+    <div class="crit-row">
+      <div class="crit-label"><strong>4. Brak czynnego kryzysu</strong> — brak aktualnych myśli samobójczych, samouszkodzeń, czynnego nadużywania substancji, ostrego epizodu.</div>
+      <div class="scale">
+        <div class="scale-label"><span></span><span><span id="c4v">5</span>/10</span></div>
+        <input type="range" min="0" max="10" value="5" class="scale-input" id="c4" data-default="5" oninput="document.getElementById('c4v').textContent=this.value">
+      </div>
+    </div>
+
+    <div class="crit-row">
+      <div class="crit-label"><strong>5. Życie wspierające stabilizację</strong> — sen 7–9h, regularne posiłki, ruch, ograniczenie używek, minimum 1 bezpieczna relacja w codzienności.</div>
+      <div class="scale">
+        <div class="scale-label"><span></span><span><span id="c5v">5</span>/10</span></div>
+        <input type="range" min="0" max="10" value="5" class="scale-input" id="c5" data-default="5" oninput="document.getElementById('c5v').textContent=this.value">
+      </div>
+    </div>
+
+    <div class="term-note"><strong>Reguła odczytu</strong>: średnia ≥ 7 = solidna gotowość, można rozważać fazę 2 z terapeutą. Średnia 5–7 = ostrożne wchodzenie z mocnym wsparciem. Średnia &lt; 5 = wskazana kontynuacja fazy 1 — to nie porażka, to <em>warunek</em> skuteczności. Najsłabsze kryterium = obszar pracy na najbliższe miesiące.</div>
+  </section>
+
+  
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór ścieżki — co dla Ciebie</div>
+    <h1 class="card-prompt">Pięć <em>protokołów</em> fazy 2</h1>
+    <p class="card-detail">Każdy z protokołów ma dowody skuteczności przy traumie rozwojowej i przywiązaniu zdezorganizowanym. Wybór zależy od preferencji, dostępności terapeuty i Twojego komfortu z formą pracy.</p>
+
+    <div class="path-card">
+      <div class="path-h"><span class="path-icon">👁️</span> EMDR (Shapiro)</div>
+      <p><strong>Eye Movement Desensitization and Reprocessing</strong>. Bilateralne ruchy oczu (lub dźwięki, dotknięcia) podczas wracania do wspomnienia. Dowody: silne dla PTSD; dla C-PTSD — w fazach. Tempo: <em>średnie</em>. Plus: szybkość. Minus: wymaga gotowości do bezpośredniej pracy z traumą.</p>
+    </div>
+
+    <div class="path-card">
+      <div class="path-h"><span class="path-icon">👥</span> IFS (Schwartz)</div>
+      <p><strong>Internal Family Systems</strong>. Praca z częściami — Self, Manager, Firefighter, Exile. Healing Exile (zranionego dziecka) z miejsca Self. Dowody: rosnące. Tempo: <em>łagodne</em>. Plus: nie eksponuje wprost na trauma; pracuje przez metaforę. Minus: wymaga zdolności wewnętrznej refleksji.</p>
+    </div>
+
+    <div class="path-card">
+      <div class="path-h"><span class="path-icon">🌿</span> Sensorimotor (Ogden) / SE (Levine)</div>
+      <p><strong>Praca przez ciało</strong> — orientacja sensoryczna, ruch, oddech, „rozmrażanie” zamrożonej energii obronnej. Dowody: dobre dla traumy somatycznej. Tempo: <em>powolne</em>. Plus: omija opór poznawczy; trafia tam, gdzie pamięć implicytna. Minus: trudniejsze wyjaśnienie, niewielu wyspecjalizowanych terapeutów.</p>
+    </div>
+
+    <div class="path-card">
+      <div class="path-h"><span class="path-icon">🎭</span> Schema Therapy (Young)</div>
+      <p><strong>Praca ze schematami i trybami</strong>. Korekcyjne doświadczenie emocjonalne w relacji terapeutycznej. „Limited reparenting” — terapeuta jako bezpieczna figura przywiązania. Dowody: silne dla BPD. Tempo: <em>średnie</em>. Plus: integruje przywiązanie i trauma. Minus: długa, wymagająca jako relacja.</p>
+    </div>
+
+    <div class="path-card">
+      <div class="path-h"><span class="path-icon">📚</span> STAIR-NST (Cloitre)</div>
+      <p><strong>Skills Training in Affective and Interpersonal Regulation + Narrative Story Telling</strong>. Najpierw 8 sesji umiejętności, potem narracyjna ekspozycja. Dowody: silne dla C-PTSD (RCT). Tempo: <em>strukturyzowane</em>. Plus: jasna struktura, najbezpieczniejsze przy niskiej gotowości. Minus: mniej dostępne w Polsce.</p>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja intuicja</strong> — który protokół brzmi „<em>dla mnie</em>”? Co Cię w nim przyciąga? Co odpycha?</p>
+    <textarea class="thought-input" id="pathChoice" placeholder="np. „Najbliżej mi do IFS — bo lubię metaforyczne myślenie, dialog z częściami brzmi jak coś, czego mogę próbować. Boję się EMDR — bezpośredniej ekspozycji. Sensorimotor brzmi ciekawie, ale w moim mieście nie ma terapeuty. Schema rozważam, bo cierpię na BPD. STAIR-NST — chciałabym, ale niedostępne.”" rows="6"></textarea>
+
+    <div class="term-note"><strong>Klucz wyboru</strong>: nie ma „najlepszej” ścieżki — jest <em>dostępna</em>, w której masz <em>terapeutę</em> i <em>komfort</em>. Lepiej dobrze wykonana terapia w mniej preferowanym podejściu niż słabo wykonana w idealnym. Ostatecznie wszystkie protokoły dochodzą do podobnych wyników — bo <em>wspólny mianownik</em> to bezpieczna relacja terapeutyczna i fazy.</div>
+
+    <div class="term-note"><strong>Łączenie ścieżek</strong>: w praktyce większość terapeutów <em>integruje</em> elementy różnych podejść. Sensorimotor terapeuta używa IFS dla pracy z częściami. EMDR terapeuta używa SE dla regulacji somatycznej. Schema terapeuta wprowadza techniki uważności. To <em>norma</em>, nie eklektyzm — sprawia, że dobrze prowadzona terapia traumy <em>nie</em> jest jednowymiarowa.</div>
+  </section>
+
+  
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Pięć zasad fazy 2</div>
+    <h1 class="card-prompt">Niepomijalne <em>warunki</em> bezpieczeństwa</h1>
+    <p class="card-detail">Cloitre i in. (2010, 2011) — zasady, które obowiązują niezależnie od wybranego protokołu. Naruszenie którejkolwiek = ryzyko retraumatyzacji.</p>
+
+    <div class="rule-card">
+      <div class="rule-h">5 zasad fazy 2</div>
+      <div class="rule-row"><strong>1. Wybór metody</strong> — z terapeutą, na podstawie preferencji, dostępności, charakteru objawów. <em>Nie</em> protokół „dla wszystkich”.</div>
+      <div class="rule-row"><strong>2. Pacing klienta</strong> — tempo wyznacza klient i okno tolerancji, nie podręcznik. Krótsze sesje, jeśli potrzeba. Pauzy między sesjami.</div>
+      <div class="rule-row"><strong>3. Dawkowanie</strong> — <em>nie cała trauma na raz</em>. Mała część, integracja, kolejna mała część. Tytrowanie.</div>
+      <div class="rule-row"><strong>4. Stabilizacja między sesjami</strong> — codzienna praktyka grounding, oddech, rutyna. Nie „odbierzesz sesji” w środę i czekasz do następnej.</div>
+      <div class="rule-row"><strong>5. Możliwość pauzy</strong> — jeśli zbyt intensywne, wracasz do fazy 1 na 1–3 miesiące. To <em>nie</em> regres — to mądrość.</div>
+    </div>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Twoja kalibracja</strong> — co byś chciał/a, by terapeuta z Tobą uzgodnił przed startem fazy 2?</p>
+    <textarea class="thought-input" id="agreementText" placeholder="np. „1. Sesje 50 min, ale z opcją skrócenia do 30, jeśli źle. &#10;2. Po każdej sesji 30 min na grounding zanim wyjdę. &#10;3. SMS-em zgłaszam, jeśli między sesjami źle. &#10;4. Plan: 6 tygodni intensywnej pracy, potem 2 tygodnie pauzy z fazą 1. &#10;5. Sygnał »stop« mogę dać w każdej chwili — zatrzymujemy temat.”" rows="7"></textarea>
+
+    <p class="card-detail" style="margin-top:14px"><strong>Plan stabilizacji między sesjami</strong> — co konkretnie będziesz robić codziennie?</p>
+    <textarea class="thought-input" id="dailyText" placeholder="np. „Codziennie: 10 min grounding rano, 10 min oddech wieczorem, mapa okna tolerancji 1× tygodniowo. Sen 8h, posiłki 3×, ruch 30 min. Spotkanie z Martą raz w tygodniu (bezpieczna obecność).”" rows="6"></textarea>
+
+    <div class="warn-card">
+      <strong>Sygnały do wstrzymania fazy 2</strong>: nasilenie samouszkodzeń, częstsze dysocjacje, myśli samobójcze, niemożność funkcjonowania w pracy/relacjach, kryzys aktualny. Wtedy: powrót do fazy 1, ewentualnie konsultacja psychiatryczna. <em>Nie</em> jest to porażka — jest to mądry pivot.
+    </div>
+
+    <div class="term-note"><strong>Reguła wykonania</strong>: faza 2 jest jak długodystansowy bieg. Trener (terapeuta) podaje rytm, ale to <em>Ty</em> masz oddech. Wsłuchuj się — gdy coś jest „za dużo”, sygnalizuj. Dobrzy terapeuci traumy <em>cenią</em> takie sygnały, nie ich się boją.</div>
+  </section>
+
+  
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Realność oczekiwań</div>
+    <h1 class="card-prompt">To praca <em>na lata</em></h1>
+    <p class="card-detail">Faza 2 trwa 1–3 lata. Faza 3 (integracja) — wieloletnia. Pełne uleczenie traumy rozwojowej + dezorganizacji to typowo <em>3–7 lat</em>. To <em>nie</em> jest „za długo” — to realny czas, jakiego potrzebuje system nerwowy zbudowany przez 18 lat dzieciństwa.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Twoje oczekiwania co do tempa zmiany (0–10)</span><span><span id="expVal">5</span>/10</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="expScale" data-default="5" oninput="document.getElementById('expVal').textContent=this.value;updateFinal();">
+      <div class="scale-bounds"><span>0 — to zajmie lata</span><span>10 — chcę szybko</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsg"></div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: po <em>roku</em> dobrej fazy 2 typowo: zmniejszenie reaktywności (mniej epizodów dezorganizacji), poszerzenie okna tolerancji, wzrost dostępu do Self, mniej dysocjacji. Po <em>2–3 latach</em>: integracja narracji, earned secure w niektórych relacjach. Po <em>5+ latach</em>: pełniejsze życie, ale ślad zostaje. Trauma <em>nie znika</em> — traci moc.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Faza 2 nie jest „leczeniem traumy” w sensie usuwania — jest <strong>integracją</strong>. Trauma traci moc paraliżującą, ślad zostaje, ale nie jest już miejscem, w którym się żyje. Wymaga: ukończonej fazy 1, terapeuty wyspecjalizowanego, tempa klienta, dawkowania, stabilizacji między sesjami, możliwości pauzy. Wybór protokołu (EMDR, IFS, Sensorimotor, Schema, STAIR) — z terapeutą wedle preferencji. <em>Każdy mały krok liczy się — szybkich zmian nie ma</em>.</div>
+    </div>
+
+    <div class="src">Herman (1992); Cloitre i in. (2010, 2011); Shapiro (2018, EMDR); Ogden i in. (2006); Schwartz (1995); Young i in. (2003); Levine (1997, SE); Wytyczne: ISTSS (2019), NICE (2018), APA (2017).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function onStepChange(s) {
+  if (s === 5) updateFinal();
+}
+
+function updateFinal() {
+  var c1 = parseInt(document.getElementById('c1').value, 10);
+  var c2 = parseInt(document.getElementById('c2').value, 10);
+  var c3 = parseInt(document.getElementById('c3').value, 10);
+  var c4 = parseInt(document.getElementById('c4').value, 10);
+  var c5 = parseInt(document.getElementById('c5').value, 10);
+  var avg = ((c1+c2+c3+c4+c5)/5);
+  var sc = document.getElementById('expScale');
+  var sv = sc ? parseInt(sc.value, 10) : 5;
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var lvl;
+  if (avg < 5) lvl = '<strong>Gotowość do fazy 2: ' + avg.toFixed(1) + '/10 — niska.</strong> Wskazana <em>kontynuacja</em> fazy 1 (stabilizacja). Próba przetwarzania traumy teraz = ryzyko retraumatyzacji. Pracuj nad najsłabszym kryterium 6–12 miesięcy.';
+  else if (avg < 7) lvl = '<strong>Gotowość: ' + avg.toFixed(1) + '/10 — średnia.</strong> Możesz <em>z terapeutą</em> rozważyć stopniowe wchodzenie w fazę 2 — ostrożnie, krótkie sesje, z planem powrotu do stabilizacji. <em>Nie</em> samodzielnie.';
+  else lvl = '<strong>Gotowość: ' + avg.toFixed(1) + '/10 — solidna.</strong> Solidna baza. Faza 2 z trauma-informed terapeutą. Wybór protokołu (EMDR, IFS, Sensorimotor, Schema, STAIR) — z terapeutą wedle preferencji.';
+  fm.innerHTML = lvl;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_fl_trauma — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_fl_trauma";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

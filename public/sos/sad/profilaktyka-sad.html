@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Profilaktyka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+/* === SYGNAL-LIST (krok 2) === */
+.sygnal-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.sygnal-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.sygnal-item:hover, .sygnal-item:active { background: rgba(201,122,82,0.06); }
+.sygnal-item.checked { background: rgba(201,122,82,0.12); border-color: var(--warm); border-left: 3px solid var(--warm); }
+.sygnal-tick { width: 22px; height: 22px; border-radius: 5px; border: 1.5px solid var(--ink-mute); flex-shrink: 0; transition: all 0.2s; }
+.sygnal-item.checked .sygnal-tick { background: var(--warm); border-color: var(--warm); }
+.sygnal-item.checked .sygnal-tick::after { content: "✓"; color: white; font-weight: 700; display: flex; justify-content: center; align-items: center; height: 100%; line-height: 1; }
+.sygnal-text { flex: 1; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.sygnal-text strong { color: var(--ink); font-weight: 700; }
+.sygnal-cat { display: inline-block; padding: 1px 6px; background: rgba(122,146,112,0.15); color: var(--sage-deep); font-size: 10px; font-weight: 700; border-radius: 4px; margin-right: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* === SCALE === */
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === LEVEL-CARD (krok 4) === */
+.level-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin-bottom: 8px; }
+.level-card:last-child { margin-bottom: 0; }
+.level-h { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.level-num { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--warm); flex-shrink: 0; }
+.level-title { font-size: 13px; font-weight: 700; color: var(--bg); }
+.level-trigger { font-size: 11px; color: var(--sage); margin-left: auto; padding: 2px 8px; background: rgba(122,146,112,0.2); border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.level-desc { font-size: 12px; color: rgba(244,241,234,0.85); line-height: 1.5; margin-bottom: 8px; padding-left: 28px; }
+.level-input { width: 100%; padding: 10px; background: rgba(244,241,234,0.06); border: 1px solid rgba(244,241,234,0.15); border-radius: 6px; color: var(--bg); font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; resize: none; }
+.level-input::placeholder { color: rgba(244,241,234,0.4); }
+
+/* === PERSON-CARD (krok 5) === */
+.person-card { background: linear-gradient(135deg, rgba(122,146,112,0.10), rgba(216,225,205,0.5)); border: 1.5px solid var(--sage-deep); border-radius: 14px; padding: 16px 18px; margin: 6px 0 14px; }
+.person-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 10px; }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Profilaktyka</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Profilaktyka <em>nawrotów</em></h1>
+    <p class="card-detail"><strong>Profilaktyka nawrotów</strong> (relapse prevention) (Marlatt i Gordon 1985, Marlatt i Donovan 2005) — kluczowy etap leczenia SAD <em>po</em> osiągnięciu poprawy. Większość osób po 6 miesiącach terapii doświadcza spadku objawów o 60-70%. Bez planu profilaktycznego — w ciągu kolejnych 12 miesięcy <strong>40-50% wraca do wyjściowego poziomu</strong> (Hofmann i Otto 2008). Z planem — tylko 10-15%. Profilaktyka to <em>system wczesnego ostrzegania</em>: rozpoznawanie sygnałów, próg aktywacji, plan poziomowy. <strong>Plan jest twoim ubezpieczeniem</strong>.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy systemu profilaktycznego</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">🚦</span>
+          <span class="element-text"><strong>Sygnały</strong> = behawioralne, poznawcze, fizyczne, społeczne ostrzeżenia</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📐</span>
+          <span class="element-text"><strong>Próg</strong> = ile sygnałów + jak długo = aktywacja planu</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">📋</span>
+          <span class="element-text"><strong>Plan</strong> = 4 poziomy eskalacji od samodzielnych technik do terapii</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">👥</span>
+          <span class="element-text"><strong>Czujnik</strong> = osoba zewnętrzna, która ostrzeże, gdy sam nie zauważasz</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Nawrót nie jest <em>porażką</em> — jest <em>częścią</em> procesu zdrowienia. Plan zamienia go z <em>katastrofy</em> w <em>zadanie</em>.”
+        <span class="frame-quote-attr">— G. Alan Marlatt (1985, Profilaktyka nawrotów)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: profilaktyka <em>nie</em> ma na celu „nigdy więcej lęku”. Lęk wróci — to normalne. Plan ma na celu <strong>wykrycie nawrotu wcześnie</strong> i <strong>zatrzymanie regresji</strong> zanim się rozwinie. Lapse (lekkie pogorszenie) → zatrzymane → nie staje się relapse (pełny nawrót).</div>
+    
+    <div class="src">Marlatt i Gordon (1985, Profilaktyka nawrotów) · Marlatt i Donovan (2005, 2nd ed.) · Beck (2011, Cognitive Behavior Therapy) · Hofmann i Otto (2008)</div>
+  </section>
+  <!-- 2: SYGNAŁY OSTRZEGAWCZE -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Sygnały ostrzegawcze</div>
+    <h1 class="card-prompt">Co cię <em>ostrzeże</em>?</h1>
+    <p class="card-detail">Wczesne sygnały nawrotu w SAD są <em>specyficzne</em> dla każdej osoby — ale typowo wpadają w 4 kategorie: behawioralne, poznawcze, fizjologiczne, społeczne. <strong>Zaznacz wszystkie</strong>, które rozpoznajesz <em>z czasów gorszego SAD</em> — to twoje osobiste wskaźniki ostrzegawcze.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: zaznaczone sygnały to <em>twój osobisty system wczesnego ostrzegania</em>. <strong>3+ sygnały utrzymujące się przez 2 tygodnie</strong> = aktywacja planu (krok 3-4). 1-2 sygnały lub krócej = obserwacja, ale jeszcze nie alarm. Reguła <em>twardego progu</em> chroni przed paniką (<em>„wszystko wraca!”</em>) i przed zaprzeczaniem (<em>„nic się nie dzieje”</em>).</div>
+    
+    <div class="sygnal-list">
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Behawior</span>
+          <strong>Zaczynam szukać wymówek</strong>, by nie iść na wcześniej zaplanowane spotkanie
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Pierwszy lub drugi raz w tygodniu — wczesny sygnał</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Behawior</span>
+          <strong>Wracają zachowania zabezpieczające</strong> — chowanie rąk, wzrok w dół, ciche mówienie
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Były wycofane → wracają = bezpośredni sygnał regresji</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Behawior</span>
+          <strong>Odraczanie kontaktów</strong> — niewysłany SMS, nieodebrany telefon
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">3+ odraczania w tygodniu = wzorzec, nie przypadek</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Poznawczy</span>
+          <strong>Wraca ruminacja po sytuacji</strong> — godziny analizowania spotkań po fakcie
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Każda runda ruminacji = przypomnienie, że samokontrola słabnie</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Poznawczy</span>
+          <strong>Pojawia się katastrofizacja</strong> — „pewnie pomyśleli, że…”
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Były wytłumione → wracają = warto zaktywować plan</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Poznawczy</span>
+          <strong>Uwaga skierowana na siebie</strong> wraca silnie — monitoruję siebie zamiast słuchać
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Klasyczny mechanizm utrzymujący SAD wraca w pełnej sile</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Fizyczny</span>
+          <strong>Wzrost objawów fizjologicznych</strong> — rumieniec, drżenie, kołatanie po ekspozycji
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Były niskie → znowu silne = sygnał aktywacji systemu autonomicznego</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Fizyczny</span>
+          <strong>Problemy ze snem</strong> — zasypianie, wybudzanie się o 3-4 rano
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Lęk przekłada się na sen — często WCZEŚNIEJ niż na zachowania</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Społeczny</span>
+          <strong>Zwiększone unikanie</strong> — odwołanie 2+ spotkań w 2 tygodnie
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Twardy wskaźnik mierzalny — sprawdza się empirycznie</span>
+        </div>
+      </div>
+      <div class="sygnal-item" onclick="toggleSygnal(this)">
+        <div class="sygnal-tick"></div>
+        <div class="sygnal-text">
+          <span class="sygnal-cat">Społeczny</span>
+          <strong>Spadek inicjatywy</strong> — nie proponuję, czekam, aż inni zaproponują
+          <span style="display:block;font-size:11px;color:var(--ink-mute);margin-top:3px;font-style:italic">Cofanie się do roli pasywnej = sygnał regresji</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- 3: PRÓG AKTYWACJI -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Próg aktywacji</div>
+    <h1 class="card-prompt">Kiedy <em>uruchamiasz</em> plan?</h1>
+    <p class="card-detail">Konkretny <strong>próg liczbowy i czasowy</strong>, który aktywuje twój plan. Bez tego mózg w SAD <em>znajdzie sposób</em> na zwlekanie („to chwilowe, samo przejdzie”). <strong>Twardy próg</strong> = automatyczna decyzja, nie negocjacja.</p>
+    
+    <div class="term-note"><strong>Reguła twardego progu</strong>: próg <em>jest decyzją podjętą TERAZ</em>, w stanie zdrowia. Nie wtedy, gdy zaczynasz wracać do SAD — bo wtedy mózg pisze racjonalizacje. <em>3 sygnały, 14 dni</em> = próg standardowy z literatury (Marlatt i Donovan). Możesz dostosować, ale <strong>raz ustal</strong> i trzymaj się.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Liczba sygnałów aktywująca plan</div>
+      <div class="scale-label"><span>1 sygnał</span><span>5+ sygnałów</span></div>
+      <input type="range" min="1" max="5" value="3" class="scale-input" id="numSig" oninput="updateSig(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="numSigVal">3</span><span> sygnałów</span></div>
+    </div>
+    
+    <div class="scale-card">
+      <div class="scale-h">Czas trwania (utrzymywanie się sygnałów)</div>
+      <div class="scale-label"><span>3 dni</span><span>21 dni</span></div>
+      <input type="range" min="3" max="21" value="14" class="scale-input" id="numDays" oninput="updateDays(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="numDaysVal">14</span><span> dni</span></div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Twój próg aktywacji</div>
+    <textarea class="thought-input" id="thresholdInput" placeholder="np. „Aktywuję plan, gdy: 3+ sygnały utrzymują się przez 14 dni LUB 1 sygnał ”rezygnacja z 2+ spotkań w tygodniu„ utrzymuje się 7 dni”..." rows="3"></textarea>
+    
+    <div class="examples-h" style="margin-top:14px">Reguła rejestru — gdzie zapisujesz sygnały?</div>
+    <textarea class="thought-input" id="registerInput" placeholder="np. „Codziennie wieczorem, w aplikacji notatek (”SAD-rejestr„), wpisuję 3 zdania: jak było dziś, czy wystąpiły sygnały, ile sygnałów dotychczas utrzymuje się”..." rows="3"></textarea>
+  </section>
+  <!-- 4: PLAN POZIOMOWY -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Plan poziomowy</div>
+    <h1 class="card-prompt">4 poziomy <em>eskalacji</em></h1>
+    <p class="card-detail">Plan ma <strong>4 poziomy</strong> — dopasowane do nasilenia regresji. Każdy poziom dodaje <em>nowe narzędzia</em>, nie zastępuje poprzednich. Im wyżej, tym <strong>więcej zasobów</strong> i <em>mniej samodzielności</em>.</p>
+    
+    <div class="term-note"><strong>Reguła eskalacji</strong>: <em>nie pomijaj poziomów</em>. Z poziomu 1 do 3 = paniczna reakcja na fakt regresji. Z 1 do 2 do 3 = mądrze. Każdy poziom <em>daje szansę</em> zatrzymania regresji. Jednocześnie: <em>nie zostawaj na poziomie 1</em> dłużej niż 4 tygodnie, jeśli sygnały się nasilają. Eskalacja <strong>w odpowiednim tempie</strong> chroni przed pełnym nawrotem.</div>
+    
+    <div class="level-card">
+      <div class="level-h">
+        <span class="level-num">1.</span>
+        <span class="level-title">Samodzielne narzędzia</span>
+        <span class="level-trigger">3 sygnały / 14 dni</span>
+      </div>
+      <div class="level-desc">Wracam do <strong>technik z kompendium</strong>: defuzja, fizjologia, ruminacja, eksperymenty. Codzienna praktyka, 15-30 minut. Notuję progres co 7 dni.</div>
+      <textarea class="level-input" id="p1text" placeholder="np. „Codziennie 9:00 — ćwiczenie defuzji od myśli rezydualnych. Wieczorem — sprawdzenie SUDS dnia. Eksperyment behawioralny min. 1× w tygodniu”" rows="3"></textarea>
+    </div>
+    
+    <div class="level-card">
+      <div class="level-h">
+        <span class="level-num">2.</span>
+        <span class="level-title">Zasoby społeczne</span>
+        <span class="level-trigger">5 sygnałów / 14 dni</span>
+      </div>
+      <div class="level-desc">Aktywuję <strong>czujnik zewnętrzny</strong> (krok 5). Mówię partnerowi/ce / bliskiemu, że uruchamiam plan. Cotygodniowy <em>kontakt sprawdzający</em>: jak idzie?</div>
+      <textarea class="level-input" id="p2text" placeholder="np. „Mówię Annie: ”wracam do narzędzi, sprawdzaj mnie raz w tygodniu w niedzielę„. Wracam do grupy wsparcia online (jeśli była)”" rows="3"></textarea>
+    </div>
+    
+    <div class="level-card">
+      <div class="level-h">
+        <span class="level-num">3.</span>
+        <span class="level-title">Sesje przypominające</span>
+        <span class="level-trigger">7 sygnałów / 21 dni</span>
+      </div>
+      <div class="level-desc">Kontaktuję <strong>byłego terapeutę</strong> — propozycja 2-3 sesje przypominające. Cel: <em>kalibracja narzędzi</em>, nie pełna terapia. 30-60 minut, 2 spotkania w odstępie 2 tygodni.</div>
+      <textarea class="level-input" id="p3text" placeholder="np. „Dzwonię do dr. Kowalskiego, zapytuję o 2 sesje przypominające w czerwcu. Wcześniej przegląd ostatnich 3 miesięcy”" rows="3"></textarea>
+    </div>
+    
+    <div class="level-card">
+      <div class="level-h">
+        <span class="level-num">4.</span>
+        <span class="level-title">Pełna terapia + ewentualnie farmakologia</span>
+        <span class="level-trigger">Pełny nawrót</span>
+      </div>
+      <div class="level-desc"><strong>Pełna terapia</strong> 6-12 sesji ± rozważenie konsultacji psychiatrycznej. <em>Bez wstydu</em> — to jest <strong>standardowa procedura</strong>, nie porażka. Nawrót w SAD bywa cykliczny.</div>
+      <textarea class="level-input" id="p4text" placeholder="np. „Wracam do terapii — 12 sesji weekly. Konsultacja u psychiatry, jeśli sen i objawy fizjologiczne nasilone 3+ tygodnie”" rows="3"></textarea>
+    </div>
+  </section>
+  <!-- 5: CZUJNIK ZEWNĘTRZNY -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Czujnik zewnętrzny</div>
+    <h1 class="card-prompt">Kto cię <em>ostrzeże</em>?</h1>
+    <p class="card-detail">Sam możesz <em>nie zauważyć</em> regresji — mózg w SAD ma świetne mechanizmy racjonalizacji („to chwilowe”, „wszyscy mają gorsze tygodnie”). <strong>Czujnik zewnętrzny</strong> to konkretna osoba, której mówisz: <em>„zauważ, gdy zaczynam się wycofywać”</em>. To kluczowy element profilaktyki — udokumentowany jako jeden z najsilniejszych predyktorów utrzymania efektów (Marlatt i Donovan 2005).</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: plan napisany dziś = <em>plan zapomniany za 3 miesiące</em>. <strong>Review co 3 miesiące</strong>: czy próg nadal pasuje? Czy sygnały się zmieniły? Czy czujnik dalej działa? Plan to <em>żywy dokument</em>, nie kontrakt na zawsze. Modyfikuj, ulepszaj. Każda zmiana czyni go <strong>silniejszym</strong>.</div>
+    
+    <div class="examples-h">Kto może być twoim czujnikiem? — stuknij, by dopisać</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="usePerson(this)">Partner/ka</div>
+      <div class="example-chip" onclick="usePerson(this)">Rodzic / brat / siostra</div>
+      <div class="example-chip" onclick="usePerson(this)">Najbliższy przyjaciel/przyjaciółka</div>
+      <div class="example-chip" onclick="usePerson(this)">Zaufany kolega z pracy</div>
+      <div class="example-chip" onclick="usePerson(this)">Były terapeuta (cotygodniowy mail)</div>
+      <div class="example-chip" onclick="usePerson(this)">Grupa wsparcia online (rówieśnicza)</div>
+    </div>
+    
+    <div class="person-card" style="margin-top:14px">
+      <div class="person-h">Instrukcja dla czujnika — co konkretnie ma robić</div>
+      <textarea class="thought-input" id="briefInput" placeholder="np. „Anna, proszę cię o 2 rzeczy: 1) Raz w tygodniu (niedziela wieczór) zapytaj mnie: ”Jak ten tydzień? Były sygnały?„. 2) Jeśli zauważysz, że odwołuję 2+ spotkania w tygodniu albo wracam do chowania się — powiedz wprost ”widzę sygnały, sprawdź plan„. Twoje uwagi nie są krytyką, są wsparciem”..." rows="6" style="background:rgba(255,255,255,0.7)"></textarea>
+    </div>
+    
+    <div class="examples-h">Twój wybór — kto i kiedy mu/jej powiesz?</div>
+    <textarea class="thought-input" id="commitInput" placeholder="np. „Anna — w niedzielę wieczorem przy kolacji. Pokażę jej tę listę i zapytam, czy się zgodzi. Jeśli tak — codziennie zapisuję sygnały, w niedziele rozmawiamy o tygodniu”..." rows="3"></textarea>
+    
+    <div class="examples-h">Pierwszy review planu — kiedy?</div>
+    <input type="text" class="thought-input" id="firstReview" placeholder="np. „Za 30 dni — sprawdzam, czy plan jest realistyczny. Czy próg pasuje? Czy sygnały są właściwe?”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Plan profilaktyczny <em>nie</em> jest sygnałem słabości — jest <strong>standardową procedurą</strong> po skutecznej terapii SAD. Osoby z planem mają o <em>30-40% wyższą szansę utrzymania efektów</em> (Hofmann i Otto 2008). <strong>Lapse jest normalny — relapse jest opcjonalny</strong>. Plan zamienia tę różnicę z przypadku w decyzję. <em>Trzymaj plan</em> — to twoje ubezpieczenie.</div>
+    </div>
+    
+    <div class="src">Marlatt i Gordon (1985) · Marlatt i Donovan (2005) · Beck (2011) · Hofmann i Otto (2008) · Hope, Heimberg, Turk (2010)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('thresholdInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('registerInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('p1text'); if (el) el.value = ''; }
+    { const el = document.getElementById('p2text'); if (el) el.value = ''; }
+    { const el = document.getElementById('p3text'); if (el) el.value = ''; }
+    { const el = document.getElementById('p4text'); if (el) el.value = ''; }
+    { const el = document.getElementById('briefInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('commitInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('firstReview'); if (el) el.value = ''; }
+    { const el = document.getElementById('numSig'); if (el) el.value = 3; }
+    { const el = document.getElementById('numDays'); if (el) el.value = 14; }
+    document.querySelectorAll('.sygnal-item').forEach(b => b.classList.remove('checked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {}
+
+function toggleSygnal(el) { el.classList.toggle('checked'); }
+
+function usePerson(el) {
+  const t = document.getElementById('briefInput');
+  if (t.value.trim()) t.value += '\n';
+  t.value += el.textContent + ': ';
+}
+
+function updateSig(v) { document.getElementById('numSigVal').textContent = v; }
+function updateDays(v) { document.getElementById('numDaysVal').textContent = v; }
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel0 = '.sygnal-item';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-profilaktyka-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c0) {
+      var rows0 = document.querySelectorAll(clickSel0);
+      for (var i = 0; i < rows0.length; i++) {
+        if (saved.c0[i] && !rows0[i].classList.contains("checked")) {
+          rows0[i].classList.add("checked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c0: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows0 = document.querySelectorAll(clickSel0);
+    for (var i = 0; i < rows0.length; i++) {
+      if (rows0[i].classList.contains("checked")) d.c0[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.sygnal-item, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wariacja w ekspozycji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wariacja w ekspozycji</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Pięć wymiarów wariacji <em>wzmacnia</em> uczenie hamujące</h1>
+  <p class="card-detail">Klasyczny model habituacji (Foa & Kozak, 1986) zakładał: powtarzaj tę samą ekspozycję, aż lęk opadnie. Nowy model uczenia hamującego (Craske i in., 2014) pokazuje coś przeciwnego: <em>variability principle</em> — uczenie jest najsilniejsze, gdy systematycznie zmieniasz parametry ekspozycji. Powtórzenie identycznej ekspozycji 10 razy daje habituację do jednego scenariusza i kruche, kontekst-zależne uczenie. Ekspozycja w różnych warunkach buduje uczenie odporne na nowe sytuacje.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Pięć wymiarów wariacji w modelu Craske</div>
+    <div class="element-row">
+      <span class="element-icon">🕐</span>
+      <span class="element-text"><strong>Pora dnia</strong> — rano, w południe, wieczorem. Każda pora to inny kontekst sensoryczny i fizjologiczny.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🎭</span>
+      <span class="element-text"><strong>Stan emocjonalny</strong> — po dobrym dniu, po stresującym, po kłótni, po dobrej wiadomości.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👤</span>
+      <span class="element-text"><strong>Towarzystwo</strong> — sam/a, z bliską osobą, z osobą obcą. Brak osoby asekurującej to osobny kontekst do nauki.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🛡️</span>
+      <span class="element-text"><strong>Zachowania zabezpieczające</strong> — z telefonem i bez, z lekiem w torebce i bez, z relaksacją i bez.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Wariacja jest niewygodna, ale lecznicza. Pacjent, który przepracował tę samą ekspozycję 20 razy w tym samym pokoju, jest przygotowany tylko na ten pokój. Pacjent, który przepracował ją 5 razy, ale w 5 różnych warunkach, jest przygotowany na życie.\"
+    <span class="frame-quote-attr">— Craske i in. (2014, principles of optimal exposure)</span>
+  </div>
+
+  <div class="term-note"><strong>Niespodzianka jako narzędzie</strong>: Craske i in. (2014) wprowadzają zasadę „elementu niespodzianki\" — czasem dodatkowe wyzwanie pojawia się bez zapowiedzi (np. większy pies niż planowany, większa wysokość, dłuższy czas). Przewidywalna ekspozycja daje przewidywalne uczenie. Element niespodzianki uogólnia uczenie na nieprzewidywalne sytuacje życiowe.</div>
+
+  <div class="src">Craske i in. (2014, inhibitory learning) · Craske i in. (2022, optimizing exposure) · Bouton (2002) · Telch (safety signals) · Foa & Kozak (1986)</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Audyt monotonii</div>
+  <h1 class="card-prompt">Sprawdź, czy twoja ekspozycja jest <em>za jednolita</em></h1>
+  <p class="card-detail">Wielu pacjentów wpada w pułapkę „ulubionej ekspozycji\" — jednej, którą wykonują wielokrotnie, bo dała kiedyś sukces. To jest komfort, ale też hamulec. Mózg habituuje się do warunków, ale uczenie hamujące nie generalizuje. Audyt: w ilu różnych warunkach wykonałeś/aś dotychczas swoje ekspozycje?</p>
+
+  <div class="examples-h">Wymiary, które warto sprawdzić (zaznacz każdy, który już zróżnicowałeś/aś)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="a-pora" onclick="this.classList.toggle('picked')">Pora dnia (≥3 różne)</button>
+    <button class="example-chip" id="a-mie" onclick="this.classList.toggle('picked')">Lokalizacja (≥3 różne miejsca)</button>
+    <button class="example-chip" id="a-emo" onclick="this.classList.toggle('picked')">Stan emocjonalny (≥2 różne)</button>
+    <button class="example-chip" id="a-tow" onclick="this.classList.toggle('picked')">Towarzystwo (sam/a i z kimś)</button>
+    <button class="example-chip" id="a-tel" onclick="this.classList.toggle('picked')">Z telefonem i bez telefonu</button>
+    <button class="example-chip" id="a-tab" onclick="this.classList.toggle('picked')">Z lekiem w torebce i bez</button>
+    <button class="example-chip" id="a-rel" onclick="this.classList.toggle('picked')">Z technikami relaksacyjnymi i bez</button>
+    <button class="example-chip" id="a-zas" onclick="this.classList.toggle('picked')">Z zaskoczeniem (większy bodziec niż planowany)</button>
+  </div>
+
+  <div class="card-detail" style="margin-top:14px"><strong>Opisz krótko, jak typowa ekspozycja u ciebie wygląda</strong>:</div>
+  <textarea class="thought-input" id="typ" placeholder="np. „Robię ekspozycję 3 razy w tygodniu, zawsze w sobotę i niedzielę rano, w gabinecie u terapeuty, z telefonem w kieszeni i razem z mężem. Zawsze ten sam pies. Postęp był do pewnego momentu, ostatnie 3 tygodnie — plateau.\"" rows="4"></textarea>
+
+  <div class="term-note"><strong>Sygnał plateau</strong>: jeśli ekspozycja przestała przynosić postęp, najczęstsza przyczyna to brak wariacji. Habituacja do scenariusza nastąpiła, ale uczenie hamujące się nie uogólnia. Zamiast „więcej tego samego\" — wprowadź jeden nowy wymiar wariacji.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Plan wariacji</div>
+  <h1 class="card-prompt">Zaplanuj <em>wprowadzenie wariacji</em> w pięciu wymiarach</h1>
+  <p class="card-detail">Pracujesz w pięciu wymiarach jednocześnie, ale nie wszystkie naraz. Strategia: jednorazowo wprowadź zmianę w jednym wymiarze, utrzymaj inne stałe, obserwuj wynik. Po 2–3 ekspozycjach z nową zmianą, wprowadź drugi wymiar. Tempo: jedna nowa zmienna co 4–7 dni.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Twój plan na najbliższe tygodnie</div>
+    <div class="element-row">
+      <span class="element-icon">1️⃣</span>
+      <span class="element-text"><strong>Tydzień 1</strong> — zmień porę dnia. Jeśli zwykle robisz rano, dodaj jedną sesję wieczorem.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">2️⃣</span>
+      <span class="element-text"><strong>Tydzień 2</strong> — zmień lokalizację. Tę samą ekspozycję wykonujesz w nowym miejscu.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">3️⃣</span>
+      <span class="element-text"><strong>Tydzień 3</strong> — usuń jedno zachowanie zabezpieczające. Najczęściej telefon lub osobę towarzyszącą.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">4️⃣</span>
+      <span class="element-text"><strong>Tydzień 4</strong> — dodaj element niespodzianki. Większy bodziec, dłuższy czas, niezapowiedziana zmiana.</span>
+    </div>
+  </div>
+
+  <div class="examples-h" style="margin-top:14px">Twoja pierwsza wariacja w tym tygodniu (zaznacz JEDNĄ)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="w1-p" onclick="document.querySelectorAll('#w1-p,#w1-l,#w1-e,#w1-t,#w1-z,#w1-n').forEach(b=&gt;b.classList.remove('picked'));this.classList.add('picked');">Zmienię porę dnia (np. wieczór zamiast rano)</button>
+    <button class="example-chip" id="w1-l" onclick="document.querySelectorAll('#w1-p,#w1-l,#w1-e,#w1-t,#w1-z,#w1-n').forEach(b=&gt;b.classList.remove('picked'));this.classList.add('picked');">Zmienię lokalizację (nowe miejsce)</button>
+    <button class="example-chip" id="w1-e" onclick="document.querySelectorAll('#w1-p,#w1-l,#w1-e,#w1-t,#w1-z,#w1-n').forEach(b=&gt;b.classList.remove('picked'));this.classList.add('picked');">Zmienię stan emocjonalny (po stresie)</button>
+    <button class="example-chip" id="w1-t" onclick="document.querySelectorAll('#w1-p,#w1-l,#w1-e,#w1-t,#w1-z,#w1-n').forEach(b=&gt;b.classList.remove('picked'));this.classList.add('picked');">Zrobię sam/a (bez osoby towarzyszącej)</button>
+    <button class="example-chip" id="w1-z" onclick="document.querySelectorAll('#w1-p,#w1-l,#w1-e,#w1-t,#w1-z,#w1-n').forEach(b=&gt;b.classList.remove('picked'));this.classList.add('picked');">Usunę zachowanie zabezpieczające</button>
+    <button class="example-chip" id="w1-n" onclick="document.querySelectorAll('#w1-p,#w1-l,#w1-e,#w1-t,#w1-z,#w1-n').forEach(b=&gt;b.classList.remove('picked'));this.classList.add('picked');">Dodam element niespodzianki</button>
+  </div>
+
+  <div class="card-detail" style="margin-top:14px"><strong>Konkretny plan tej wariacji</strong> (kiedy, co, jak):</div>
+  <textarea class="thought-input" id="plan-w" placeholder="np. „Wieczorem we czwartek (po 20:00) wykonam tę samą ekspozycję z psem co w sobotę rano. Lokalizacja ta sama, towarzystwo to samo, jedyna zmienna: pora i wynikające z niej oświetlenie/zmęczenie. Spodziewam się wyższego startowego SUDS.\"" rows="4"></textarea>
+
+  <div class="term-note"><strong>Reguła pojedynczej zmiennej</strong>: jeśli zmienisz wszystko naraz (pora, miejsce, brak osoby), nie będziesz wiedzieć, co konkretnie wpłynęło na wynik. Trzymaj się zasady „jedna zmienna na raz\" przez pierwsze 4 tygodnie. Później, gdy uczenie się ugruntuje, możesz łączyć dwa lub trzy wymiary jednocześnie.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Deepened extinction</div>
+  <h1 class="card-prompt">Łącz wyzwalacze — <em>silniejsze</em> uczenie</h1>
+  <p class="card-detail">Po opanowaniu wariacji w pojedynczych wymiarach (4–6 tygodni pracy) przechodzisz do tzw. deepened extinction (Bouton, 2002): celowo łączysz dwa lub trzy wyzwalacze jednocześnie. Pająk + ciemność + sam/a. Pies + zmęczenie + nieznane miejsce. Burza + sam w domu + wieczór. Mózg uczy się, że nawet w trudnych warunkach katastrofa nie nastąpi — i to uczenie najlepiej generalizuje na życie codzienne, które rzadko podsuwa „czyste\" warunki.</p>
+
+  <div class="examples-h">Typowe kombinacje deepened extinction (zaznacz, które chcesz przepracować)</div>
+  <div class="example-chips">
+    <button class="example-chip" id="d-paj" onclick="this.classList.toggle('picked')">Pająk + ciemność + sam/a</button>
+    <button class="example-chip" id="d-pies" onclick="this.classList.toggle('picked')">Pies + nieznane miejsce + bez osoby asekurującej</button>
+    <button class="example-chip" id="d-wys" onclick="this.classList.toggle('picked')">Wysokość + wiatr + sam/a</button>
+    <button class="example-chip" id="d-win" onclick="this.classList.toggle('picked')">Winda + dłuższy czas + bez telefonu</button>
+    <button class="example-chip" id="d-bur" onclick="this.classList.toggle('picked')">Burza + sam/a w domu + bez świateł</button>
+    <button class="example-chip" id="d-ig" onclick="this.classList.toggle('picked')">Pobranie krwi + brak wsparcia + dłuższe oczekiwanie</button>
+    <button class="example-chip" id="d-jaz" onclick="this.classList.toggle('picked')">Jazda samochodem + autostrada + zmęczenie</button>
+  </div>
+
+  <div class="card-detail" style="margin-top:14px"><strong>Twoja pierwsza kombinacja</strong> (dwa lub trzy wyzwalacze, kontekst, plan):</div>
+  <textarea class="thought-input" id="kom" placeholder="np. „Sobota wieczór (21:00), w piwnicy własnego domu (zwykle unikam), światło słabe, sam/a (mąż wyjeżdża na noc do rodziców). Pająk w słoiku na półce — mam przejść obok 5 razy, otworzyć i zamknąć słoik raz. Trzy zmienne łącznie: pora, miejsce, brak wsparcia.\"" rows="5"></textarea>
+
+  <div class="card-detail" style="margin-top:10px"><strong>Trudność tej kombinacji w skali (1–10)</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="trud" min="1" max="10" step="1" value="7" data-default="7" oninput="document.getElementById('trud-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Trudność:</span><span id="trud-val">7</span></div>
+  </div>
+
+  <div class="term-note"><strong>Granica realizmu</strong>: deepened extinction nie oznacza ekspozycji ekstremalnych. Trudność w okolicach 7–8/10 jest optymalna; powyżej 9 ryzykujesz przerwanie ekspozycji w trakcie, co osłabia uczenie. Jeśli planowana kombinacja daje 9–10, rozłóż ją na dwie kombinacje po 7.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Konsolidacja</div>
+  <h1 class="card-prompt">Sprawdź, jak <em>uczenie się ugruntowało</em></h1>
+  <p class="card-detail">Po 4–8 tygodniach pracy z wariacją wymiarów i deepened extinction sprawdzasz, czy uczenie hamujące jest na tyle silne, że odpowiada na różne warunki życiowe. Przejdź do liczbowego pomiaru: ile wymiarów wariacji, jak stabilne wyniki, ile zachowań zabezpieczających usuniętych.</p>
+
+  <div class="card-detail"><strong>Liczba wymiarów wariacji, w których pracowałeś/aś (1–5)</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="wym" min="1" max="5" step="1" value="3" data-default="3" oninput="document.getElementById('wym-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Wymiary:</span><span id="wym-val">3</span></div>
+  </div>
+
+  <div class="card-detail"><strong>Liczba usuniętych zachowań zabezpieczających</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="zach" min="0" max="8" step="1" value="2" data-default="2" oninput="document.getElementById('zach-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Usunięte:</span><span id="zach-val">2</span></div>
+  </div>
+
+  <div class="card-detail"><strong>Stabilność wyników (1=duże wahania, 10=podobne wszędzie)</strong>:</div>
+  <div class="scale">
+    <input type="range" class="scale-input" id="stab" min="1" max="10" step="1" value="6" data-default="6" oninput="document.getElementById('stab-val').textContent = this.value; updateLearning();">
+    <div class="scale-readout"><span>Stabilność:</span><span id="stab-val">6</span></div>
+  </div>
+
+  <div class="card-detail"><strong>Co odkryłeś/aś o sobie i o swoim lęku w trakcie pracy z wariacją</strong>:</div>
+  <textarea class="thought-input" id="odk" placeholder="np. „Lęk wieczorem jest wyższy o 1–2 punkty, ale to nie zmienia tego, co naprawdę się dzieje — pies wciąż nie jest groźny. Sam/a daję sobie radę, mąż nie był potrzebny. Telefon w kieszeni był tylko placebo — bez niego ekspozycja przebiegła tak samo.\"" rows="4"></textarea>
+
+  <div class="final-msg" id="finalMsg">
+    <strong>Wprowadź dane</strong> — pojawi się tu ocena konsolidacji.
+  </div>
+
+  <div class="term-note"><strong>Kryterium ukończenia fazy konsolidacji</strong>: cztery lub pięć wymiarów wariacji przepracowanych, większość zachowań zabezpieczających usunięta, stabilność wyników ≥7/10. Po jego osiągnięciu prawdopodobieństwo nawrotu spada o około 50% w stosunku do ekspozycji bez wariacji (Craske i in., 2014). Jest to też moment przejścia do fazy profilaktyki — utrzymywania efektów przez bookery sessions co 3 miesiące przez rok.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Mózg uczy się <strong>warunkowo</strong> — uczenie wiąże się z konkretnym kontekstem. Bez wariacji wymiarów uczenie wraca w nowych sytuacjach. Pięć wymiarów (pora, miejsce, stan, towarzystwo, asekuracja) plus deepened extinction tworzą uczenie odporne na nieprzewidywalność życia codziennego.</div>
+  </div>
+
+  <div class="src">Craske i in. (2014, inhibitory learning) · Craske i in. (2022) · Bouton (2002, deepened extinction) · Telch (safety signals) · Foa & Kozak (1986)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateLearning() {
+  var w = parseInt(document.getElementById('wym').value, 10);
+  var z = parseInt(document.getElementById('zach').value, 10);
+  var s = parseInt(document.getElementById('stab').value, 10);
+  var msg = document.getElementById('finalMsg');
+  if (isNaN(w) || isNaN(z) || isNaN(s)) return;
+  var ocena, em;
+  if (w >= 4 && z >= 4 && s >= 7) {
+    ocena = 'Konsolidacja silna: ' + w + '/5 wymiarów, ' + z + ' zachowań usuniętych, stabilność ' + s + '/10';
+    em = 'uczenie hamujące jest mocno ugruntowane. Faza konsolidacji ukończona. Przejdź do profilaktyki: booster sessions co 3 miesiące przez rok.';
+  } else if (w >= 3 && s >= 5) {
+    ocena = 'Konsolidacja częściowa: ' + w + '/5 wymiarów, stabilność ' + s + '/10';
+    em = 'dobry postęp. Dodaj 1–2 brakujące wymiary wariacji i usuń kolejne zachowanie zabezpieczające. Cel: ≥4 wymiary i stabilność ≥7.';
+  } else if (z === 0 && w >= 2) {
+    ocena = 'Wariacja jest, ale zachowania zabezpieczające pozostały';
+    em = 'uczenie wiąże się z asekuracją. Wybierz jedno zachowanie (najczęściej telefon lub osobę towarzyszącą) i wykonaj 3 ekspozycje bez niego. To powinno odblokować postęp.';
+  } else if (w <= 1) {
+    ocena = 'Faza wczesna: ' + w + '/5 wymiarów';
+    em = 'pracujesz głównie w jednym wymiarze. Wprowadź pierwszą wariację (najłatwiej: pora dnia) w tym tygodniu. Tempo: jeden nowy wymiar co 4–7 dni.';
+  } else if (s <= 4) {
+    ocena = 'Niestabilność wyników: ' + s + '/10';
+    em = 'mózg jeszcze nie uogólnił uczenia. Powtórz ekspozycje w wymiarach, gdzie wyniki były słabsze, 2–3 razy dodatkowo.';
+  } else {
+    ocena = 'Faza pośrednia: ' + w + '/5 wymiarów, ' + z + ' zachowań usuniętych';
+    em = 'kontynuuj plan. Dodawaj jeden wymiar i usuwaj jedno zachowanie zabezpieczające w każdym tygodniu.';
+  }
+  msg.innerHTML = '<strong>' + ocena + '</strong>: ' + em;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateLearning();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_fb_be_inhibitory — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_fb_be_inhibitory";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+updateLearning();
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

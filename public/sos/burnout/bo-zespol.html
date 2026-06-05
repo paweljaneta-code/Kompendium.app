@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wypalenie zespołowe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.te-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.te-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.te-card.picked .te-d, .te-card.picked .te-mark { color: rgba(244,241,234,0.85); }
+.te-h { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
+.te-d { font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; margin-bottom: 5px; }
+.te-mark { font-size: 11.5px; color: var(--ink-mute); font-style: italic; }
+.lvl-row { background: rgba(184,197,168,0.12); border-left: 3px solid var(--sage-deep); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; }
+.lvl-row strong { color: var(--ink-deep); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wypalenie zespołowe</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Wypalenie jest <em>zaraźliwe</em></h1>
+  <p class="card-detail">Elaine Hatfield, John Cacioppo i Richard Rapson — psycholodzy społeczni — w 1994 roku w pracy „Emotional Contagion" pokazali, że emocje przenoszą się między ludźmi automatycznie, na poziomie neuronowym. Mechanizm: lustrzane neurony plus podświadoma mimika twarzy plus dynamika grupowa. Słuchacz wyczerpanej osoby aktywuje sieci współczucia / wyczerpania w swoim mózgu — pojawia się <em>fizjologiczna</em> reakcja, nie tylko poznawcza. Arnold Bakker, Pascale Le Blanc i Wilmar Schaufeli w 2005 roku w „Academy of Management Journal" opisali zjawisko <strong>crossover effect</strong>: <em>wypalenie jednej osoby w zespole przenosi się na pozostałych członków</em>. Badanie 90 zespołów oddziałów intensywnej terapii: poziom wypalenia w zespole był silnym predyktorem indywidualnego wypalenia każdego pracownika, niezależnie od jego osobistych cech.</p>
+  <p class="card-detail">Teresa Gonzalez-Morales i in. (2012, J Occup Health Psychol) w meta-analizie 73 badań pokazali, że <strong>interwencje zespołowe są silniej skuteczne niż indywidualne</strong> w redukcji wypalenia w grupach pracowniczych: d = 0,52 dla interwencji team-level vs d = 0,29 dla indywidualnych. Mechanizm: w toksycznym zespole indywidualnie skutecznie wyleczona osoba <em>wraca do tej samej dynamiki</em> i ponownie wypala się w 3–6 miesięcy. Zespół jako system wymaga interwencji systemowej — restrukturyzacji obciążenia, zmiany norm grupowych, czasem zmiany lidera. Christopher West i in. (2018) w meta-analizie 52 RCT u lekarzy potwierdzili: kombinacja interwencji indywidualnej i zespołowej daje d = 0,75, podczas gdy sama indywidualna d = 0,29. To <em>czterokrotnie większy</em> efekt przy dodaniu komponentu zespołowego.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Trzy mechanizmy wypalenia zespołowego</div>
+    <div class="element-row">
+      <span class="element-icon">🧠</span>
+      <span class="element-text"><strong>Crossover emocjonalny</strong> — automatyczna transmisja wyczerpania, cynizmu, frustracji między członkami zespołu. Lustrzane neurony plus mimika plus mowa ciała. Niezależne od woli i świadomości. Bakker 2005: efekt mierzalny w ciągu 4 tygodni.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📜</span>
+      <span class="element-text"><strong>Toksyczne normy grupowe</strong> — niepisane reguły zespołu eskalujące obciążenie. „Wszyscy zostajemy do 19:00", „nikt nie bierze pełnego urlopu", „kto bierze chorobowe, jest słaby". Normy nie są decyzją lidera — są emergentnym wzorcem grupowym, trudnym do zmiany pojedynczej osoby.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👤</span>
+      <span class="element-text"><strong>Modelowanie lidera</strong> — lider modeluje wzorce zachowań. Jeśli lider odpisuje na maile w sobotę, zespół czuje obowiązek robić to samo. Jeśli lider nie bierze przerw, przerwy w zespole są „wstydliwe". Wypalony lider <em>kaskaduje</em> wypalenie na cały zespół.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🌐</span>
+      <span class="element-text"><strong>Strukturalne obciążenie systemowe</strong> — za mało osób na obowiązki, biurokracja, niespójne procesy. Indywidualne radzenie sobie nie zmieni faktu, że 5 osób ma do zrobienia robotę dla 8.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Wypalenie nie jest problemem <em>jednostki</em> — jest <em>chorobą systemu</em>. Leczenie jednostki w chorym systemie to jak leczenie żelu na otwarte złamanie. Czasami konieczne, ale niewystarczające. Praca z systemem jest podstawą."
+    <span class="frame-quote-attr">— Christina Maslach &amp; Michael Leiter (2016, World Psychiatry)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: w zespole z poziomem wypalenia ≥ 50% interwencja indywidualna nie zadziała. Pacjent — choćby najlepiej wyleczony w terapii — wraca do toksycznej dynamiki i wypala się ponownie. Pierwsza interwencja w pracy z takim pacjentem: <em>diagnoza zespołowa</em>. Pytanie do pacjenta: „Czy 50% twojego zespołu wykazuje objawy wypalenia? Jeśli tak — pracujemy nie tylko z tobą, ale planujemy interwencję systemową lub plan opuszczenia zespołu". Bez tego rozpoznania terapia zawodzi.</div>
+
+  <div class="src">Hatfield, Cacioppo, Rapson (1994, „Emotional Contagion") · Bakker, Le Blanc, Schaufeli (2005, Acad Manag J) · Gonzalez-Morales i in. (2012, meta-analiza) · West i in. (2018, meta-analiza 52 RCT) · Maslach &amp; Leiter (2016, World Psychiatry) · Schaufeli &amp; Bakker (2004)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Diagnoza zespołu</div>
+  <h1 class="card-prompt">Czy twój <em>cały zespół</em> się wypala?</h1>
+  <p class="card-detail">Diagnoza zespołowa: cztery wskaźniki, których analiza pokazuje, czy problem leży w jednostce, czy w systemie. To pierwsze pytanie strategiczne — interwencje zależą od poziomu, na którym leży problem.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — &lt; 10%</span><span>10 — &gt; 80%</span></div>
+    <input type="range" class="scale-input" id="teProc" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>👥 Procent zespołu z objawami wypalenia</span><span id="teProcVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez objawów</span><span>10 — silne wypalenie</span></div>
+    <input type="range" class="scale-input" id="teLider" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>👔 Stan lidera (twój przełożony)</span><span id="teLiderVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — zdrowe</span><span>10 — silnie toksyczne</span></div>
+    <input type="range" class="scale-input" id="teNorm" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>📜 Toksyczność norm grupowych</span><span id="teNormVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — wystarczające</span><span>10 — silny deficyt</span></div>
+    <input type="range" class="scale-input" id="teObc" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>📊 Strukturalne obciążenie zespołu</span><span id="teObcVal">5</span></div>
+  </div>
+
+  <div class="examples-h">Sygnały wypalenia zespołowego (zaznacz)</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="syg1" onclick="pickSyg('1')">😴 Większość zespołu wykazuje wyczerpanie</button>
+    <button type="button" class="example-chip" id="syg2" onclick="pickSyg('2')">💢 Cynizm zespołowy („oni nas mają w nosie")</button>
+    <button type="button" class="example-chip" id="syg3" onclick="pickSyg('3')">🌀 Wysoka rotacja kadry (&gt; 20% rocznie)</button>
+    <button type="button" class="example-chip" id="syg4" onclick="pickSyg('4')">📈 Wzrost L4 / nieobecności</button>
+    <button type="button" class="example-chip" id="syg5" onclick="pickSyg('5')">⏰ Wszyscy zostają po godzinach (norma)</button>
+    <button type="button" class="example-chip" id="syg6" onclick="pickSyg('6')">📵 Wszyscy odpisują na maile w weekend</button>
+    <button type="button" class="example-chip" id="syg7" onclick="pickSyg('7')">😡 Konflikty / mikroagresje w zespole</button>
+    <button type="button" class="example-chip" id="syg8" onclick="pickSyg('8')">🥀 Obniżona jakość pracy / wzrost błędów</button>
+    <button type="button" class="example-chip" id="syg9" onclick="pickSyg('9')">🤐 Brak otwartych rozmów o trudnościach</button>
+    <button type="button" class="example-chip" id="syg10" onclick="pickSyg('10')">🚪 Częste rozmowy o odejściu z pracy</button>
+  </div>
+
+  <textarea class="thought-input" id="teObs" rows="3" placeholder="Twoja diagnoza: np. „Procent: 7/10 (~70% zespołu wypaleni). Lider: 7/10 (sama wypalona). Normy: 8/10 (wszyscy do 19:00, weekendowe maile, pełny urlop wstydliwy). Obciążenie: 8/10 (5 osób, robota dla 8). Sygnały 1, 3, 4, 5, 6, 8, 10 — silne. Wniosek: silne wypalenie zespołowe. Indywidualna interwencja nie wystarczy.""></textarea>
+
+  <div class="term-note"><strong>Reguła interpretacji</strong>: trzy lub cztery wskaźniki ≥ 6/10 = wypalenie zespołowe wymagające interwencji systemowej. Procent ≥ 50% i lider ≥ 6 = krytyczna sytuacja. W tej konstelacji indywidualna terapia nie wystarczy — pacjent po 6 tyg. terapii wraca do tej samej dynamiki. Pytanie strategiczne: czy mam wpływ na zespół (lider / wpływowy członek), czy nie (szeregowy pracownik). To zmienia plan.</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Twoja pozycja w zespole</div>
+  <h1 class="card-prompt">Jaki <em>masz wpływ</em>?</h1>
+  <p class="card-detail">Strategia interwencji zależy od twojej pozycji. Lider zespołu ma narzędzia restrukturyzacji. Wpływowy członek może inicjować zmiany. Szeregowy pracownik może działać w skali własnej + przygotować strategię osobistą (zmiana zespołu / pracy). Brak rozpoznania pozycji prowadzi do iluzji wpływu lub iluzji bezsilności.</p>
+
+  <div class="te-card" id="pozLider" onclick="pickPoz('Lider')">
+    <div class="te-h">👔 Lider zespołu (manager, kierownik)</div>
+    <div class="te-d">Masz narzędzia restrukturyzacji: zatrudnianie, zwalnianie, podział obowiązków, normy grupowe, modelowanie zachowań. <em>Główna odpowiedzialność i główny wpływ</em>. Pytanie: czy widzisz wypalenie zespołu i jakie kroki podjęłaś/eś? Nieprzedstawienie problemu wyższemu kierownictwu jest pasywnym przyczynianiem się do wypalenia.</div>
+    <div class="te-mark">Nawet wypalony lider nadal modeluje — pierwsza interwencja: dba o własne zasoby.</div>
+  </div>
+
+  <div class="te-card" id="pozInf" onclick="pickPoz('Inf')">
+    <div class="te-h">⭐ Wpływowy członek (senior, lider nieformalny)</div>
+    <div class="te-d">Masz wpływ przez relacje i autorytet, choć nie formalną władzę. Możesz inicjować rozmowy zespołowe, peer support, eskalację problemu do kierownictwa. Możesz proponować rozwiązania (audit obciążenia, redystrybucja zadań). Ryzyko: branie odpowiedzialności za zespół przy braku władzy.</div>
+    <div class="te-mark">Klucz: ścisłe granice własnego wpływu — nie ratujesz wszystkich.</div>
+  </div>
+
+  <div class="te-card" id="pozSzer" onclick="pickPoz('Szer')">
+    <div class="te-h">👤 Szeregowy członek zespołu</div>
+    <div class="te-d">Masz wpływ głównie na siebie. Możesz: chronić własne granice, mówić otwarcie o swoim wyczerpaniu (jeśli kultura pozwala), obserwować, czy są sygnały zmian, planować strategię osobistą (zmiana zespołu w organizacji, zmiana pracy). <em>Nie bierz odpowiedzialności za naprawienie zespołu</em> — to nie twoja rola.</div>
+    <div class="te-mark">Główne pytanie: czy zespół jest naprawialny? Jeśli nie — plan opuszczenia.</div>
+  </div>
+
+  <div class="te-card" id="pozHr" onclick="pickPoz('Hr')">
+    <div class="te-h">🏢 HR / zewnętrzny doradca / coach</div>
+    <div class="te-d">Diagnostyka, fasilitacja, narzędzia (peer support, debriefingi, redesign procesów). Nie rozwiążesz strukturalnego problemu obciążenia, ale dasz zespołowi narzędzia rozmowy o nim. Praca z liderem nad zmianą stylu zarządzania.</div>
+    <div class="te-mark">Często niewykorzystany zasób — wiele organizacji ma dostępne narzędzia, których zespoły nie znają.</div>
+  </div>
+
+  <div class="lvl-row">
+    <strong>Mapa interwencji per pozycja</strong><br>
+    • <strong>Lider</strong>: audit obciążenia → plan zmiany norm → modelowanie nowych zachowań → eskalacja do wyższego kierownictwa<br>
+    • <strong>Wpływowy</strong>: inicjowanie rozmów zespołowych → propozycja interwencji do lidera → peer support<br>
+    • <strong>Szeregowy</strong>: ochrona granic + diagnoza naprawialności + plan strategii osobistej<br>
+    • <strong>HR / coach</strong>: diagnostyka → narzędzia → praca z liderem
+  </div>
+
+  <textarea class="thought-input" id="tePoz" rows="3" placeholder="Twoja pozycja: np. „Wpływowy członek (senior, 8 lat w zespole, lider nieformalny). Mam autorytet, nie władzę. Plan: 1) Pierwsza rozmowa z liderem o wypaleniu zespołu (oparta na danych: 70% wykazuje objawy, 4 osoby na L4 w ciągu pół roku). 2) Propozycja zespołowych debriefingów co 2 tyg. 3) Granice osobiste: nie zostaję po 17:30, weekendy bez maila — modeluję dla młodszych. Nie biorę odpowiedzialności za rozwiązanie systemu — to rola lidera i HR.""></textarea>
+
+  <div class="term-note"><strong>Reguła „nie bierz odpowiedzialności za zespół poza twoją władzą"</strong>: częsty błąd wpływowych członków — branie odpowiedzialności za naprawienie zespołu, mimo braku formalnej władzy. Skutek: wypalenie wpływowego członka, frustracja, w końcu odejście. Reguła: <em>twoja odpowiedzialność = twoja władza</em>. Lider ma odpowiedzialność za zespół. Ty masz odpowiedzialność za siebie + sygnalizację problemu. To wystarczy.</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Plan na 4 tygodnie</div>
+  <h1 class="card-prompt">Co <em>konkretnie</em> zrobisz?</h1>
+  <p class="card-detail">Plan zależy od pozycji. Lider: pierwsze restrukturyzacyjne rozmowy. Wpływowy: rozmowa z liderem + ochrona własna. Szeregowy: ochrona własnych granic + diagnoza naprawialności + ewentualnie plan strategii. Cel pierwszych 4 tygodni: zlokalizować, czy zespół jest naprawialny, czy nie.</p>
+
+  <textarea class="thought-input" id="tePlan" rows="6" placeholder="Plan na 4 tygodnie: np. „Pozycja: szeregowy. Plan: 1) Tydzień 1–2: ochrona granic — alarm 17:30, weekend bez maila, lunch poza biurkiem. Pomiar: ile dni utrzymanych. 2) Tydzień 2: rozmowa 1:1 z liderem — zgłoszenie własnego wyczerpania (skrypt 3-częściowy z 'Komunikacja'). 3) Tydzień 3–4: obserwacja reakcji. Czy lider weźmie sprawę na poważnie? Czy zaproponuje zmiany? 4) Decyzja po 4 tyg.: zostaję i ufam zmianom (jeśli realne) / aktywnie szukam innego zespołu w organizacji / planuję odejście (poduszka finansowa, networking, CV).""></textarea>
+
+  <div class="examples-h">Konkretne pierwsze elementy</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="el1" onclick="pickEl('1')">⏰ Twarda granica godzin (alarm końca pracy)</button>
+    <button type="button" class="example-chip" id="el2" onclick="pickEl('2')">📵 Weekend bez maili (modelowanie)</button>
+    <button type="button" class="example-chip" id="el3" onclick="pickEl('3')">🤝 Rozmowa 1:1 z liderem (zgłoszenie wyczerpania)</button>
+    <button type="button" class="example-chip" id="el4" onclick="pickEl('4')">📊 Audit obciążenia (zliczenie godzin / zadań)</button>
+    <button type="button" class="example-chip" id="el5" onclick="pickEl('5')">🗣️ Inicjacja zespołowej rozmowy (jeśli wpływowy)</button>
+    <button type="button" class="example-chip" id="el6" onclick="pickEl('6')">📋 Propozycja zmian do lidera (konkretne 2–3)</button>
+    <button type="button" class="example-chip" id="el7" onclick="pickEl('7')">🏢 Zgłoszenie do HR / wyższego kierownictwa</button>
+    <button type="button" class="example-chip" id="el8" onclick="pickEl('8')">🔍 Networking — szukanie alternatyw zewnętrznych</button>
+    <button type="button" class="example-chip" id="el9" onclick="pickEl('9')">📑 Aktualizacja CV / LinkedIn (plan B)</button>
+    <button type="button" class="example-chip" id="el10" onclick="pickEl('10')">💰 Poduszka finansowa (3–6 miesięcy)</button>
+  </div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „naprawię zespół indywidualną zmianą"</strong>: częsty błąd wpływowych członków lub szeregowych pracowników — przekonanie, że własne zmiany (więcej granic, lepsze nastawienie, samoopieka) wystarczą. W zespole z 70% wypalenia indywidualne zmiany pomagają tylko mnie, nie zespołowi. Akceptacja tego ograniczenia jest ulgą, nie porażką — zwalnia z nieadekwatnej odpowiedzialności.</div>
+
+  <div class="term-note"><strong>Pułapka „zespół się naprawi sam"</strong>: wypalenie zespołowe pogłębia się bez aktywnej interwencji. Dynamika typu „przeczekamy" zwykle prowadzi do eskalacji — kolejne osoby odchodzą, obciążenie pozostałych rośnie, kaskada wypalenia przyspiesza. Bez aktywnej pracy z liderem / HR sytuacja zwykle pogarsza się w ciągu 6–12 miesięcy.</div>
+
+  <div class="term-note"><strong>Pułapka „nie odejdę, bo zostawię kolegów"</strong>: solidarność z wypalonymi kolegami często blokuje racjonalną decyzję o odejściu. Realnie: <em>twoje wypalenie nie pomaga im</em>. Kolega z silnymi granicami i zdrowiem jest większym wsparciem niż wypalony solidarny. Czasem najlepsza pomoc dla zespołu to twoje odejście — pokazuje innym, że alternatywa istnieje.</div>
+
+  <div class="term-note"><strong>Rola lidera</strong>: jeśli jesteś liderem zespołu z wypaleniem, twoja własna kondycja jest pierwszorzędna. Wypalony lider <em>kaskaduje</em> wypalenie. Pierwsza interwencja: superwizja własna, granice, ewentualnie L4 lub urlop. Drugie: audit obciążenia zespołu (kto co robi, ile godzin). Trzecie: rozmowa z wyższym kierownictwem o realnym wsparciu. Bez wsparcia z góry — sam(a) nie naprawisz wypalonego systemu.</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po czterech tygodniach</div>
+  <h1 class="card-prompt">Czy zespół jest <em>naprawialny</em>?</h1>
+  <p class="card-detail">Po 4 tygodniach masz odpowiedź na kluczowe pytanie: czy są realne sygnały zmian, czy organizacja udaje, że nie ma problemu. To nie kwestia ostrzeżeń, lecz konkretnych zmian: redystrybucja obciążenia, dodatkowe etaty, zmiana norm, eskalacja problemu wyżej.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — bez sygnałów</span><span>10 — wyraźne zmiany</span></div>
+    <input type="range" class="scale-input" id="teImprove" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Sygnały zmian w zespole / od lidera</span><span id="teImproveVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — porzucone</span><span>10 — wszystkie elementy</span></div>
+    <input type="range" class="scale-input" id="teExec" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Realizacja własnego planu</span><span id="teExecVal">5</span></div>
+  </div>
+
+  <textarea class="thought-input" id="teReflect" rows="3" placeholder="Co się stało? np. „4 tyg. Granice osobiste: 17:30 utrzymane 18 z 20 dni. Weekend bez maila: 4 z 4. Rozmowa z liderem: pierwsza po 2 latach. Reakcja: lider sama wypalona, mówi 'nie mam mocy zmienić systemu'. Brak konkretnych zmian. Dwie kolejne osoby z zespołu na L4. Wniosek: zespół niemożliwy do naprawy z poziomu lidera. Plan: aktywnie szukam zewnętrznej alternatywy. CV zaktualizowane, 3 spotkania w innych firmach.""></textarea>
+
+  <div class="final-msg" id="finalMsg">Wpisz oba pomiary, by zobaczyć podsumowanie.</div>
+
+  <div class="term-note"><strong>Reguła „4 tyg. = decyzja"</strong>: jeśli po 4 tygodniach widać konkretne sygnały zmian (rozmowy w zespole, podział obowiązków, eskalacja problemu wyżej) — zostań, kontynuuj 8–12 tyg. obserwacji. Jeśli reakcja zerowa lub lider mówi „nie mogę nic zrobić" — zespół niemożliwy do naprawy z twojego poziomu. Wniosek nie musi być natychmiastowy odejście, ale aktywne szukanie alternatyw (zmiana zespołu w organizacji, plan zewnętrznej zmiany).</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Wypalenie jest <strong>zaraźliwe</strong> (Hatfield 1994 emotional contagion, Bakker 2005 crossover). W zespole z ≥ 50% wypalenia <em>interwencja indywidualna nie wystarczy</em>. Trzy mechanizmy: <em>crossover emocjonalny, toksyczne normy grupowe, modelowanie lidera</em>. Interwencje zespołowe są 4× silniejsze niż indywidualne (West 2018). Cztery pozycje, cztery strategie: <em>lider, wpływowy, szeregowy, HR</em>. Reguła „nie bierz odpowiedzialności za zespół poza twoją władzą". Po 4 tygodniach decyzja: naprawialne czy nie.</div>
+  </div>
+
+  <div class="src">Hatfield, Cacioppo, Rapson (1994) · Bakker i in. (2005, Acad Manag J) · Gonzalez-Morales i in. (2012) · West i in. (2018, meta-analiza) · Maslach &amp; Leiter (2016) · Schaufeli &amp; Bakker (2004)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['teProc','teLider','teNorm','teObc','teImprove','teExec'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; if (id === 'teImprove' || id === 'teExec') updateFinalMsg(); });
+    }
+  });
+}
+
+function pickSyg(n) {
+  var el = document.getElementById('syg' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickPoz(code) {
+  ['Lider','Inf','Szer','Hr'].forEach(function(c){
+    var el = document.getElementById('poz' + c);
+    if (el) el.classList.remove('picked');
+  });
+  var sel = document.getElementById('poz' + code);
+  if (sel) sel.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function pickEl(n) {
+  var el = document.getElementById('el' + n);
+  if (el) el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+
+function updateFinalMsg() {
+  var imp = parseInt(document.getElementById('teImprove').value, 10);
+  var exec = parseInt(document.getElementById('teExec').value, 10);
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  if (imp === 5 && exec === 5) {
+    fm.innerHTML = 'Wpisz oba pomiary, by zobaczyć podsumowanie.';
+    return;
+  }
+  var msg = '';
+  if (exec >= 7 && imp >= 6) msg = '<strong>Zespół wykazuje sygnały naprawialności</strong> — kontynuuj kolejne 8 tygodni. Cel: realne zmiany strukturalne (redystrybucja, dodatkowe etaty, zmiana norm). Jeśli po 12 tyg. nadal brak strukturalnych zmian — czas na decyzję strategiczną (zmiana zespołu / pracy).';
+  else if (exec >= 7 && imp < 4) msg = '<strong>Plan własny wykonany, zespół bez zmian</strong> — typowy obraz zespołu nieprzeprowadzającego naprawy. Twoja indywidualna praca pomaga tylko tobie. Aktywuj plan strategii zewnętrznej: networking, CV, 3–6 miesięcy poduszki finansowej, alternatywy w innych zespołach.';
+  else if (exec < 4) msg = '<strong>Plan głównie nie wykonany</strong> — w wypaleniu zespołowym typowo: solidarność blokuje granice własne. Skróć plan do <em>jednego</em> elementu (np. tylko alarm końca pracy). Nie tworzy się kultury zmiany przez perfekcyjną realizację — przez konsekwentne małe akty.';
+  else msg = 'Częściowy ruch — kontynuuj. Cel: realizacja ≥7/10 + jasna ocena, czy zespół jest naprawialny. Decyzja strategiczna po 8–12 tyg. obserwacji.';
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) updateFinalMsg();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_bo_zespol — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_bo_zespol";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

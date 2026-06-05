@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Mindfulness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f4f1ea; --bg-deep: #ebe6da;
+  --ink: #1c2620; --ink-soft: #4a554d; --ink-mute: #8a9089;
+  --sage: #7a9270; --sage-deep: #4a6347; --sage-soft: #d8e1cd;
+  --line: #c9c2b0;
+  --warm: #c97a52; --warm-soft: #f0d6c4;
+}
+html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; max-width: 540px; margin: 0 auto; position: relative; background: radial-gradient(ellipse at top, rgba(122,146,112,0.06), transparent 60%), radial-gradient(ellipse at bottom, rgba(201,122,82,0.04), transparent 60%), var(--bg); }
+.hdr { padding: 18px 24px 14px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+.hdr-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
+.hdr-title em { font-style: italic; color: var(--sage-deep); font-weight: 400; }
+.hdr-step { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-mute); text-transform: uppercase; font-feature-settings: 'tnum' 1; }
+.dots { display: flex; gap: 6px; padding: 14px 24px 0; justify-content: center; }
+.dot { width: 28px; height: 3px; background: var(--line); border-radius: 2px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.done { background: var(--sage); }
+.dot.active { background: var(--ink); width: 44px; }
+.stage { flex: 1; display: flex; flex-direction: column; padding: 24px 28px 16px; position: relative; overflow-y: auto; }
+.card { flex: 1; display: none; flex-direction: column; animation: cardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.card.active { display: flex; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 16px; font-weight: 500; }
+.card-eyebrow::before { display: none; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px; }
+.card-prompt em { font-style: italic; color: var(--sage-deep); font-weight: 500; }
+.card-detail { font-size: 16px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 22px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note { font-size: 13px; color: var(--ink-soft); padding: 11px 14px; background: rgba(122,146,112,0.1); border-radius: 8px; margin: -8px 0 18px; line-height: 1.5; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.term-note strong { color: var(--ink); font-weight: 700; }
+.term-note::before { content: "ⓘ "; color: var(--sage-deep); font-weight: 700; }
+.thought-input { width: 100%; min-height: 50px; padding: 12px 14px; border: 1.5px solid var(--line); background: rgba(255,255,255,0.6); border-radius: 12px; font-family: 'Fraunces', serif; font-size: 15px; line-height: 1.45; resize: none; color: var(--ink); margin-bottom: 12px; font-style: italic; }
+.thought-input:focus { outline: 2px solid var(--sage-deep); outline-offset: -2px; background: rgba(255,255,255,0.9); }
+.thought-input::placeholder { color: var(--ink-mute); font-style: italic; }
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+
+/* === FRAME (wprowadzenie metafory w kroku 1) === */
+.frame-card { background: var(--ink); color: var(--bg); padding: 22px; border-radius: 14px; margin: 8px 0 14px; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; line-height: 1.3; color: var(--bg); }
+.elements-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.element-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 12px; background: rgba(244,241,234,0.06); border-radius: 8px; }
+.element-icon { font-size: 18px; flex-shrink: 0; line-height: 1.3; }
+.element-text { flex: 1; font-size: 13px; line-height: 1.45; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.element-text strong { color: var(--bg); font-weight: 700; }
+.frame-quote { margin-top: 8px; padding: 10px 14px; background: rgba(244,241,234,0.05); border-left: 3px solid var(--warm); border-radius: 6px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,234,0.95); text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.frame-quote-attr { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: var(--sage-soft); letter-spacing: 0.04em; }
+
+/* === REPEAT-REMINDER (zapamiętaj na końcu) === */
+.repeat-reminder { margin-top: 14px; padding: 14px 18px; background: rgba(122,146,112,0.12); border-radius: 12px; text-align: center; }
+.repeat-h { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 6px; }
+.repeat-body { font-size: 13.5px; line-height: 1.5; color: var(--ink-soft); }
+
+/* === SRC (bibliografia) === */
+.src { font-size: 10.5px; color: var(--ink-mute); font-style: italic; margin: 8px 0 0; padding: 8px 12px; background: rgba(122,146,112,0.05); border-radius: 6px; line-height: 1.5; letter-spacing: 0.02em; }
+
+/* === FOOT (nawigacja) === */
+.foot { display: flex; gap: 12px; padding: 16px 28px 26px; border-top: 1px solid var(--line); }
+.foot-btn { flex: 1; padding: 14px; font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.foot-btn.back { background: transparent; color: var(--ink-mute); border: 1px solid var(--line); }
+.foot-btn.back:hover, .foot-btn.back:active { background: var(--bg-deep); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.3; cursor: not-allowed; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); }
+.foot-btn.next:hover, .foot-btn.next:active { background: var(--ink); }
+
+
+.scale-card { background: rgba(255,255,255,0.55); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 12px; }
+.scale-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--line); border-radius: 2px; outline: none; cursor: pointer; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; box-shadow: 0 2px 6px rgba(28,38,32,0.2); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--sage-deep); border-radius: 50%; cursor: grab; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-top: 4px; letter-spacing: 0.04em; }
+.scale-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--sage-deep); }
+.scale-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-mute); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+/* === ANCHOR-LIST === */
+.anchor-list { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.anchor-card { padding: 14px; background: rgba(255,255,255,0.55); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.anchor-card:hover, .anchor-card:active { background: rgba(122,146,112,0.06); }
+.anchor-card.picked { background: rgba(122,146,112,0.12); border-color: var(--sage-deep); border-width: 2.5px; }
+.anchor-h { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.anchor-icon { font-size: 20px; flex-shrink: 0; }
+.anchor-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--ink); }
+.anchor-tick { font-size: 16px; color: var(--sage-deep); flex-shrink: 0; opacity: 0; font-weight: 700; }
+.anchor-card.picked .anchor-tick { opacity: 1; }
+.anchor-howto { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); padding-left: 30px; }
+.anchor-howto strong { color: var(--ink); }
+
+/* === PRACTICE-CARD === */
+.practice-card { background: var(--ink); color: var(--bg); padding: 18px 20px; border-radius: 14px; margin: 6px 0 14px; }
+.practice-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.practice-row { padding: 11px 12px; background: rgba(244,241,234,0.06); border-radius: 6px; border-left: 3px solid var(--warm); margin-bottom: 8px; font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.95); }
+.practice-row:last-child { margin-bottom: 0; }
+.practice-row strong { color: var(--bg); }
+.practice-time { display: inline-block; padding: 2px 8px; background: var(--warm); color: var(--bg); font-family: 'Fraunces', serif; font-weight: 700; border-radius: 4px; margin-right: 8px; font-size: 11px; }
+
+/* === DIFF === */
+.diff-block { display: flex; gap: 12px; align-items: center; justify-content: center; padding: 14px; background: rgba(122,146,112,0.06); border-radius: 12px; margin: 8px 0 10px; }
+.diff-side { text-align: center; flex: 1; }
+.diff-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum' 1; }
+.diff-num.warm { color: var(--warm); }
+.diff-num.sage { color: var(--sage-deep); }
+.diff-lbl { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; font-weight: 600; }
+.diff-arrow { font-size: 22px; color: var(--ink-mute); }
+
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 14px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.example-chip { background: rgba(255,255,255,0.55); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+.example-chip:hover, .example-chip:active { background: var(--bg-deep); border-color: var(--ink-mute); color: var(--ink); }
+.example-chip.picked { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+/* ===== v578: dopamina drobne ===== */
+.foot-btn { transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.next:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.dot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dot.active { transform: scale(1.15); }
+.card { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card:not(.active) { transform: translateY(8px); }
+.card.active { transform: translateY(0); }
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+    /* R58 fix v609: frame-quote w frame-card (ciemne tło) — jasny kolor tekstu */
+    .frame-card .frame-quote { color: var(--bg) !important; background: rgba(244,241,234,0.08) !important; border-left-color: var(--sage) !important; }
+    .frame-card .frame-quote-attr { color: rgba(244,241,234,0.7) !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Mindfulness</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<div class="stage">
+
+  <!-- 1: WPROWADZENIE -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Mindfulness <em>w SAD</em></h1>
+    <p class="card-detail"><strong>Redukcja stresu oparta na uważności</strong> (Mindfulness-Based Stress Reduction, MBSR, Kabat-Zinn 1990) i <strong>MBSR w fobii społecznej</strong> (Goldin i Gross 2010, RCT) — udokumentowane jako <em>uzupełniający element</em> CBT w fobii społecznej. Goldin i Gross: 8 tygodni MBSR redukuje SAD średnio o 30-35% (efekt mniejszy niż pełna CBT, ale dodaje się do niej). Kluczowy mechanizm: <strong>kotwica sensoryczna</strong> w sytuacji społecznej + <strong>uwaga na treść</strong> rozmowy, gdy umysł zawraca do siebie. To <em>nie</em> jest „spokojem przed sytuacją” — to <strong>aktywna obecność</strong> w sytuacji. Hayes (1999, <strong>ACT</strong> — Acceptance and Commitment Therapy, terapia akceptacji i zaangażowania): <em>defuzja</em> + <em>kontakt z teraźniejszością</em>. To narzędzie opisuje <strong>krótką praktykę</strong> (5-10 min) do użycia <em>w sytuacji</em>, nie jako codziennej medytacji.</p>
+    
+    <div class="frame-card">
+      <div class="frame-h">Cztery elementy mindfulness w SAD</div>
+      <div class="elements-list">
+        <div class="element-row">
+          <span class="element-icon">⚓</span>
+          <span class="element-text"><strong>Kotwica</strong> = sensoryczne / oddechowe / dźwiękowe ugruntowanie w teraźniejszości</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🔁</span>
+          <span class="element-text"><strong>Powrót</strong> = umysł zawraca do siebie — zauważasz, wracasz do kotwicy</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">💬</span>
+          <span class="element-text"><strong>Treść</strong> = uwaga na to, co rzeczywiście mówi rozmówca</span>
+        </div>
+        <div class="element-row">
+          <span class="element-icon">🌊</span>
+          <span class="element-text"><strong>Akceptacja</strong> = lęk pojawia się i mija — nie walczysz, nie sterujesz</span>
+        </div>
+      </div>
+      <div class="frame-quote">„Mindfulness w SAD to <em>nie</em> uciszanie umysłu. To <em>kotwica w teraźniejszości</em>, gdy umysł chce iść w przeszłość lub przyszłość.”
+        <span class="frame-quote-attr">— Philippe R. Goldin i James J. Gross (2010, JAMA Psychiatry)</span></div>
+    </div>
+    
+    <div class="term-note"><strong>Klucz</strong>: to narzędzie NIE jest substytutem ekspozycji ani CBT. Mindfulness <em>uzupełnia</em> te metody. Goldin i Gross (2010) jasno: MBSR sam jest słabszy niż CBT (efekt 30 vs 50%). MBSR + CBT = silniejsze niż każdy z osobna. Jeśli <em>nie</em> robisz CBT — zacznij od CBT (defuzja, ekspozycja). Mindfulness dodaj jako uzupełnienie.</div>
+    
+    <div class="src">Kabat-Zinn (1990, MBSR) · Goldin i Gross (2010, JAMA Psychiatry) · Segal/Williams/Teasdale (2002, MBCT) · Hayes (1999, ACT)</div>
+  </section>
+  <!-- 2: TWOJA SYTUACJA I POMIAR -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoja sytuacja i pomiar</div>
+    <h1 class="card-prompt">Gdzie <em>kotwiczysz</em>?</h1>
+    <p class="card-detail">Wybierz <strong>realną sytuację społeczną</strong>, w której zastosujesz mindfulness. Nie hipotetyczną — taką, którą masz <em>dziś, jutro, w tym tygodniu</em>. Zmierz <em>SUDS przed</em> (subiektywna skala dyskomfortu) — pomóż mózgowi zarejestrować punkt startowy.</p>
+    
+    <div class="term-note"><strong>Wskazówka</strong>: zacznij od sytuacji <em>średniej trudności</em> (SUDS prognoza 5-7). Niżej — za łatwe, brak treningu. Wyżej — za trudne, mindfulness się zawali. Średnia daje <em>realną szansę praktyki</em> — i sukces w niej buduje pewność dla trudniejszych sytuacji.</div>
+    
+    <div class="examples-h">Twoja konkretna sytuacja</div>
+    <textarea class="thought-input" id="situationInput" placeholder="np. „Sobota 18:00 — kolacja u przyjaciół, 6 osób, znam 3. Trwa około 2 godziny” / „Poniedziałek 10:00 — spotkanie zespołu, prezentuję 5 minut”..." rows="3"></textarea>
+    
+    <div class="examples-h">Najczęstsze konteksty mindfulness w SAD — stuknij, jeśli pasuje</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="useSit(this)">Kolacja w gronie znajomych</div>
+      <div class="example-chip" onclick="useSit(this)">Prezentacja / spotkanie zespołu</div>
+      <div class="example-chip" onclick="useSit(this)">Pierwsza randka</div>
+      <div class="example-chip" onclick="useSit(this)">Telefon do bliskiego</div>
+      <div class="example-chip" onclick="useSit(this)">Codzienna rozmowa z partnerem/ką</div>
+      <div class="example-chip" onclick="useSit(this)">Lunch z kolegami</div>
+    </div>
+    
+    <div class="scale-card" style="margin-top:14px">
+      <div class="scale-h">SUDS prognoza — przewidywany lęk w sytuacji</div>
+      <div class="scale-label"><span>Spokój</span><span>Maksimum</span></div>
+      <input type="range" min="0" max="10" value="6" class="scale-input" id="sudsBefore" oninput="document.getElementById('sudsBeforeVal').textContent=this.value">
+      <div class="scale-readout"><span class="scale-val" id="sudsBeforeVal">6</span><span> / 10</span></div>
+    </div>
+    
+    <div class="examples-h" style="margin-top:14px">Co mózg robi w tej sytuacji bez mindfulness?</div>
+    <textarea class="thought-input" id="defaultInput" placeholder="np. „Skupia się na sobie — ”jak wyglądam?, czy się czerwienię?, czy mówię mądrze?„. Albo na przeszłości — ”dlaczego ostatnim razem powiedziałem to głupio„. Albo przyszłości — ”co jeśli zaraz wpadnę w panikę„”..." rows="3"></textarea>
+  </section>
+  <!-- 3: WYBÓR KOTWICY -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór kotwicy</div>
+    <h1 class="card-prompt">Cztery <em>kotwice</em></h1>
+    <p class="card-detail">Wybierz <strong>jedną kotwicę</strong> sensoryczną — najprostszą do utrzymania w twojej sytuacji. Kotwica to <em>punkt powrotu</em>, gdy umysł zawraca do siebie. Im prostsza, tym łatwiejsza w stresie.</p>
+    
+    <div class="term-note"><strong>Reguła wyboru</strong>: <em>jedna kotwica</em> w jednej sytuacji. Nie próbuj wszystkich naraz — to przeciwskuteczne (zamieni się w kolejny skupienie na sobie, „czy dobrze robię mindfulness”). Najczęściej skuteczne: <em>kotwica 4 (treść)</em> w rozmowach 1:1 i grupach; <em>kotwica 2 (ciało)</em> w prezentacjach.</div>
+    
+    <div class="anchor-list">
+      <div class="anchor-card" onclick="pickAnchor(this)">
+        <div class="anchor-h">
+          <span class="anchor-icon">🌬</span>
+          <span class="anchor-name">Kotwica 1: Oddech</span>
+          <span class="anchor-tick">✓</span>
+        </div>
+        <div class="anchor-howto"><strong>Jak</strong>: zauważ <em>3 cykle oddechu</em> bez sterowania (sam wpływ-wypływ). Skup się na <em>jednym punkcie</em>: wlot powietrza w nozdrzach LUB ruch brzucha. <strong>Najszybsza kotwica</strong>, działa w 30 sekund.</div>
+      </div>
+      
+      <div class="anchor-card" onclick="pickAnchor(this)">
+        <div class="anchor-h">
+          <span class="anchor-icon">🦶</span>
+          <span class="anchor-name">Kotwica 2: Stopy / ciało</span>
+          <span class="anchor-tick">✓</span>
+        </div>
+        <div class="anchor-howto"><strong>Jak</strong>: zauważ <em>kontakt stóp z podłogą</em> (siedząc) lub <em>cały ruch mięśni</em> (idąc). Sygnał ciała = niezawodne ugruntowanie w teraźniejszości. <strong>Niewidoczne dla innych</strong>, więc bezpieczne społecznie.</div>
+      </div>
+      
+      <div class="anchor-card" onclick="pickAnchor(this)">
+        <div class="anchor-h">
+          <span class="anchor-icon">👂</span>
+          <span class="anchor-name">Kotwica 3: Dźwięki w tle</span>
+          <span class="anchor-tick">✓</span>
+        </div>
+        <div class="anchor-howto"><strong>Jak</strong>: na 10 sekund zauważ <em>3 dźwięki</em> w otoczeniu (rozmowy, muzyka, klimatyzacja, naczynia). Bez oceny „przyjemny / nieprzyjemny”. Po prostu <em>zauważasz</em>. Działa świetnie w restauracjach, kawiarniach.</div>
+      </div>
+      
+      <div class="anchor-card" onclick="pickAnchor(this)">
+        <div class="anchor-h">
+          <span class="anchor-icon">💬</span>
+          <span class="anchor-name">Kotwica 4: Słuchanie treści rozmowy</span>
+          <span class="anchor-tick">✓</span>
+        </div>
+        <div class="anchor-howto"><strong>Jak</strong>: skup się na <em>konkretnych słowach</em> rozmówcy. Mentalnie powtarzaj kluczowe słowa. <strong>Najsilniejsza kotwica społeczna</strong> — łączy mindfulness z uwaga skierowana na zewnątrz.</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Twoja wybrana kotwica + dlaczego ta?</div>
+    <textarea class="thought-input" id="anchorInput" placeholder="np. „Kotwica 4 (treść) — bo będę w grupie 6 osób, dużo rozmów. Słuchanie treści zatrzymuje mnie w teraźniejszości i uniemożliwia skupienie na sobie”..." rows="3"></textarea>
+  </section>
+  <!-- 4: PRAKTYKA — PROTOKÓŁ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — protokół</div>
+    <h1 class="card-prompt">5-minutowa <em>praktyka</em></h1>
+    <p class="card-detail">Konkretny protokół 5-minutowej praktyki <em>w sytuacji</em>, nie przed nią. Mindfulness w SAD nie działa jako „uspokajacz przed wejściem” — działa jako <strong>aktywne zakotwiczenie podczas</strong> sytuacji.</p>
+    
+    <div class="term-note"><strong>Pułapka „mindfulness jako kontrola”</strong>: w SAD często mózg próbuje użyć mindfulness <em>jako narzędzia kontroli</em> lęku („medytuję, żeby lęk znikł”). To <strong>przeciwskuteczne</strong> — wzmacnia walkę z doświadczeniem (Hayes 1999, unikanie doświadczeniowe). Mindfulness to <em>akceptacja obecności</em>, nie kontrola intensywności.</div>
+    
+    <div class="practice-card">
+      <div class="practice-h">Protokół 5-minutowej praktyki</div>
+      <div class="practice-row"><span class="practice-time">0:00</span><strong>Kotwica</strong> — 30 sek na świadomy kontakt z wybraną kotwicą (oddech / stopy / dźwięki / treść). Mózg „rejestruje” punkt powrotu.</div>
+      <div class="practice-row"><span class="practice-time">0:30</span><strong>Wejście</strong> w sytuację (rozmowa, prezentacja). Kotwica w tle — sprawdzana co 30-60 sekund mentalnie.</div>
+      <div class="practice-row"><span class="practice-time">+0:30</span><strong>Powrót</strong> — gdy umysł zawraca (a będzie 5-15 razy w 5 min!), zauważasz „tu jest myśl o sobie” → wracasz do kotwicy. <em>Bez oceny</em>.</div>
+      <div class="practice-row"><span class="practice-time">+0:30</span><strong>Akceptacja</strong> — lęk się pojawia, intensywność rośnie. Zauważasz: „lęk jest tu”. Nie walczysz, nie sterujesz. Jest jak chmura.</div>
+      <div class="practice-row"><span class="practice-time">5:00</span><strong>Zakończenie</strong> — naturalny koniec praktyki. Kotwica zostaje dostępna, ale już nie aktywnie monitorowana.</div>
+    </div>
+    
+    <div class="examples-h">Twoja modyfikacja protokołu — dopasowana do sytuacji</div>
+    <textarea class="thought-input" id="protocolInput" placeholder="np. „Kolacja: kotwica 4 (treść) przez pierwsze 5 minut. Co 30 sek mentalnie sprawdzam: ”czy słyszę słowa?„. Gdy lęk skoczy — kotwica 1 (oddech) na 30 sek, potem powrót do treści”..." rows="4"></textarea>
+    
+    <div class="examples-h">Co zrobisz, gdy umysł zawraca silnie do siebie?</div>
+    <textarea class="thought-input" id="returnInput" placeholder="np. „Zauważam: ”witam, skupienie na sobie, znam cię„. Bez frustracji. Wracam do treści. Każdy taki powrót = trening, nie porażka. Ważne: zauważyłem”..." rows="3"></textarea>
+    
+    <div class="examples-h">Co zrobisz, gdy lęk skoczy do 8/10?</div>
+    <textarea class="thought-input" id="spikeInput" placeholder="np. „Zauważam: ”lęk jest tutaj, intensywny„. Akceptuję obecność. Nie walczę, nie wychodzę. Krótka kotwica oddechu (3 cykle), potem wracam do treści. Lęk przejdzie sam”..." rows="3"></textarea>
+  </section>
+  <!-- 5: PO SYTUACJI -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po sytuacji</div>
+    <h1 class="card-prompt">Co <em>zauważyłeś</em>?</h1>
+    <p class="card-detail">Po sytuacji — <strong>krótka refleksja</strong>. Zmierz SUDS po, zauważ liczbę powrotów do kotwicy, zapisz, co się sprawdziło. Mindfulness <em>uczy się przez doświadczenie</em>, nie przez teorię.</p>
+    
+    <div class="term-note"><strong>Reguła konsekwencji</strong>: <em>mindfulness w sytuacji</em> wymaga <strong>codziennej bazowej praktyki</strong> 10-15 min poza sytuacjami. Mózg uczy się kotwicy w spokoju, używa jej w stresie. Bez codziennej praktyki <em>nic nie zadziała w sytuacji</em> — kotwica będzie pusta. To inwestycja: 8 tygodni × 15 min/dzień = trwała umiejętność.</div>
+    
+    <div class="scale-card">
+      <div class="scale-h">SUDS faktyczny — w trakcie sytuacji (szczyt)</div>
+      <div class="scale-label"><span>Spokój</span><span>Maksimum</span></div>
+      <input type="range" min="0" max="10" value="5" class="scale-input" id="sudsAfter" oninput="updateAfter(this.value)">
+      <div class="scale-readout"><span class="scale-val" id="sudsAfterVal">5</span><span> / 10</span></div>
+    </div>
+    
+    <div class="diff-block">
+      <div class="diff-side">
+        <div class="diff-num warm" id="diffBefore">—</div>
+        <div class="diff-lbl">Prognoza</div>
+      </div>
+      <div class="diff-arrow">→</div>
+      <div class="diff-side">
+        <div class="diff-num sage" id="diffAfter">—</div>
+        <div class="diff-lbl">Faktycznie</div>
+      </div>
+    </div>
+    
+    <div class="examples-h">Ile razy umysł zawrócił do siebie? (zliczyłeś?)</div>
+    <input type="text" class="thought-input" id="returnCount" placeholder="np. „Około 12-15 razy w 60 minut. Pierwsze 20 minut najwięcej (8 razy), potem rzadziej”" style="font-style:normal;font-family:'DM Sans',system-ui,sans-serif;font-size:14px">
+    
+    <div class="examples-h" style="margin-top:10px">Co się sprawdziło? Co było trudne?</div>
+    <textarea class="thought-input" id="reflectInput" placeholder="np. „Sprawdziło się: kotwica 4 w rozmowie z Anną, pamiętam o czym mówiła (jej projekt malarski). Trudne: gdy zaczęły się rozmowy o pracy, zaktywował się skupienie na sobie i straciłem kotwicę na 5 min. Wróciłem przez oddech”..." rows="4"></textarea>
+    
+    <div class="examples-h">Plan kolejnej praktyki</div>
+    <textarea class="thought-input" id="nextPracticeInput" placeholder="np. „Wtorek 10:00 — spotkanie zespołu. Ta sama kotwica (4 - treść). Cel: 3-4 powroty świadome zamiast walczenia z skupienie na sobie”..." rows="3"></textarea>
+    
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Mindfulness w SAD <em>nie</em> redukuje lęku <strong>w trakcie</strong> sytuacji znacząco — różnica między prognozą a faktem to często tylko 1-2 punkty SUDS. Ale <strong>długofalowo</strong> (8 tygodni codziennej praktyki + integracji w sytuacjach) — Goldin i Gross (2010): redukcja SAD o 30-35%. To <em>powolne</em> narzędzie. Działa przez <strong>tysiące małych powrotów</strong>, które uczą mózg, że <em>można obserwować lęk bez walki z nim</em>.</div>
+    </div>
+    
+    <div class="src">Kabat-Zinn (1990) · Goldin i Gross (2010, RCT) · Segal/Williams/Teasdale (2002, MBCT) · Hayes (1999) · Khoury i in. (2013, meta-analiza)</div>
+  </section>
+</div>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+updateUI();
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.card[data-step="${curStep}"]`).classList.add('active');
+  document.getElementById('stepNum').textContent = curStep;
+  
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i + 1 < curStep) d.classList.add('done');
+    else if (i + 1 === curStep) d.classList.add('active');
+  });
+  
+  document.getElementById('backBtn').disabled = curStep === 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = curStep === TOTAL_STEPS ? 'Zacznij od nowa' : 'Dalej';
+  
+  onStepChange();
+  document.querySelector('.stage').scrollTop = 0;
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) { curStep++; updateUI(); }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }curStep = 1;
+    { const el = document.getElementById('situationInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('defaultInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('anchorInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('protocolInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('returnInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('spikeInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('returnCount'); if (el) el.value = ''; }
+    { const el = document.getElementById('reflectInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('nextPracticeInput'); if (el) el.value = ''; }
+    { const el = document.getElementById('sudsBefore'); if (el) el.value = 6; }
+    { const el = document.getElementById('sudsAfter'); if (el) el.value = 5; }
+    document.querySelectorAll('.anchor-card').forEach(b => b.classList.remove('picked'));
+    updateUI();
+  }
+}
+
+function prevStep() { if (curStep > 1) { curStep--; updateUI(); } }
+
+function onStepChange() {
+  if (curStep === 5) {
+    document.getElementById('diffBefore').textContent = document.getElementById('sudsBefore').value + '/10';
+    document.getElementById('diffAfter').textContent = document.getElementById('sudsAfter').value + '/10';
+  }
+}
+
+function useSit(el) {
+  const t = document.getElementById('situationInput');
+  if (t.value.trim()) t.value += '\n';
+  t.value += el.textContent;
+
+  el.classList.add('picked');
+}
+
+function pickAnchor(el) {
+  document.querySelectorAll('.anchor-card').forEach(c => c.classList.remove('picked'));
+  el.classList.add('picked');
+}
+
+function updateAfter(v) {
+  document.getElementById('sudsAfterVal').textContent = v;
+  document.getElementById('diffBefore').textContent = document.getElementById('sudsBefore').value + '/10';
+  document.getElementById('diffAfter').textContent = v + '/10';
+}
+
+
+
+/* ===== AUTO-ZAPIS ===== */
+/* Wzór: sos_act_ruchome_piaski.html + delegacja zdarzeń.
+   Działa też dla DYNAMICZNIE tworzonych elementów (renderActionList, buildTraps, itp.). */
+(function(){
+  var clickSel1 = '.anchor-card';
+  var clickSel2 = '.example-chip';
+  var KEY = "sos-mindfulness-sad-v1";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    if (saved.c1) {
+      var rows1 = document.querySelectorAll(clickSel1);
+      for (var i = 0; i < rows1.length; i++) {
+        if (saved.c1[i] && !rows1[i].classList.contains("picked")) {
+          rows1[i].classList.add("picked");
+        }
+      }
+    }
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, c1: {}, c2: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    var rows1 = document.querySelectorAll(clickSel1);
+    for (var i = 0; i < rows1.length; i++) {
+      if (rows1[i].classList.contains("picked")) d.c1[i] = 1;
+    }
+    var rows2 = document.querySelectorAll(clickSel2);
+    for (var i = 0; i < rows2.length; i++) {
+      if (rows2[i].classList.contains("picked")) d.c2[i] = 1;
+    }
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.anchor-card, .example-chip')) {
+      setTimeout(save, 10);
+    }
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+</script>
+
+<script>
+/* ===== v578: dopamina ===== */
+(function(){
+  // Pulse ostatniego buttona
+  function updateNextPulse() {
+    var btn = document.getElementById('nextBtn');
+    if (!btn) return;
+    if (typeof curStep !== 'undefined' && curStep === TOTAL_STEPS) {
+      btn.setAttribute('data-final', 'true');
+    } else {
+      btn.removeAttribute('data-final');
+    }
+  }
+  
+  // Toast po ukończeniu kroku
+  function showStepToast(stepCompleted) {
+    var existing = document.querySelector('.v578-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'v578-toast';
+    if (stepCompleted >= TOTAL_STEPS) {
+      t.textContent = '🎉 Wszystkie kroki ukończone';
+    } else {
+      t.textContent = '✨ Krok ' + stepCompleted + ' ukończony';
+    }
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+      t.classList.add('show');
+    });
+    setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    }, 1600);
+  }
+  
+  // Hook na nextStep
+  if (typeof window.nextStep === 'function') {
+    var origNext = window.nextStep;
+    window.nextStep = function() {
+      var prevStep = (typeof curStep !== 'undefined') ? curStep : 0;
+      var wasFinal = (prevStep === TOTAL_STEPS);
+      var ret = origNext.apply(this, arguments);
+      // Toast tylko jeśli rzeczywiście przeszliśmy dalej (nie reset)
+      if (typeof curStep !== 'undefined') {
+        if (!wasFinal && curStep === prevStep + 1) {
+          showStepToast(prevStep);
+        }
+      }
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Hook na updateUI
+  if (typeof window.updateUI === 'function') {
+    var origUpdate = window.updateUI;
+    window.updateUI = function() {
+      var ret = origUpdate.apply(this, arguments);
+      updateNextPulse();
+      return ret;
+    };
+  }
+  
+  // Initial state
+  setTimeout(updateNextPulse, 50);
+})();
+</script>
+</body>
+</html>

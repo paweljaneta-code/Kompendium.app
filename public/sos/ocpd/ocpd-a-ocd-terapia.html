@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · OCPD + OCD — gdy współwystępują</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.diff-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.diff-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.diff-cell { background: rgba(244,241,234,0.06); border: 1px solid rgba(244,241,234,0.18); border-radius: 8px; padding: 11px 13px; }
+.diff-h2 { font-family: 'Fraunces', serif; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage); margin-bottom: 6px; font-weight: 700; }
+.diff-cont { font-size: 11.5px; line-height: 1.4; color: rgba(244,241,234,0.85); }
+
+.seq-card { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.seq-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 10px; }
+.seq-row { padding: 9px 0; border-top: 1px solid rgba(244,241,234,0.12); display: flex; gap: 12px; align-items: flex-start; }
+.seq-row:first-of-type { border-top: none; }
+.seq-num { font-family: 'Fraunces', serif; color: var(--sage); font-weight: 700; font-size: 18px; flex-shrink: 0; min-width: 28px; }
+.seq-body { flex: 1; }
+.seq-name { font-weight: 600; color: var(--bg); font-size: 13px; margin-bottom: 4px; }
+.seq-cont { font-size: 12px; line-height: 1.45; color: rgba(244,241,234,0.85); }
+
+.bel-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 10px 0 14px; }
+.bel-row { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); padding: 11px 14px; border-radius: 10px; cursor: pointer; transition: all 0.18s; }
+.bel-row.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.bel-row.picked .bel-d { color: rgba(244,241,234,0.85) !important; }
+.bel-h { font-weight: 600; font-size: 13.5px; }
+.bel-d { font-size: 12px; color: var(--ink-mute); margin-top: 3px; line-height: 1.4; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>OCPD + OCD — gdy współwystępują</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Współwystępowanie — gdy <em>OCPD i OCD</em> wzmacniają się nawzajem</h1>
+  <p class="card-detail">Komorbidność OCPD + OCD — empirycznie udokumentowana konfiguracja kliniczna. Anthony Pinto i wsp. (2008, „Distinguishing OCPD hoarding from hoarding disorder", Behaviour Research and Therapy; 2014, „OCPD as a predictor of exposure and ritual prevention outcome for OCD", Behaviour Research and Therapy) - badania pokazują, że to REALNA konfiguracja, NIE artefakt diagnostyczny. Częstość: ~25-30% pacjentów z OCD ma także OCPD; ~30-40% pacjentów z OCPD ma OCD lub objawy OCD-spectrum. Jane Eisen, Maria Mancebo i wsp. (2006, „Impact of obsessive-compulsive personality disorder on the course of obsessive-compulsive disorder", Comprehensive Psychiatry) - empirycznie: OCD z komorbidnym OCPD ma GORSZE rokowanie i wymaga DŁUŻSZEJ terapii. Mechanizmy są RÓŻNE, ale wzmacniają się nawzajem. OCD generuje natręctwa (np. „brudny"), OCPD generuje regułę („więc trzeba dokładnie umyć"). Rytuał ulgi wzmacnia OCD, a jego dokładność wzmacnia OCPD. Bez rozdzielenia tych dwóch mechanizmów - klasyczna terapia OCD (ERP) GRZĘŹNIE. Klucz pracy: ERP wymaga CELOWEJ NIEDOSKONAŁOŚCI - niedomyte ręce, niesprawdzony zamek, „nieskończone" zadanie. To FUNDAMENTALNIE sprzeczne ze schematem OCPD. Wymaga wcześniejszej pracy nad ego-syntonią OCPD (pacjent musi zacząć widzieć perfekcjonizm jako PROBLEM, nie cnotę). Bez tego ERP zostaje racjonalizowane („tym razem to faktycznie ważne, żeby sprawdzić").</p>
+
+  <div class="diff-card">
+    <div class="diff-h">OCD vs OCPD — kluczowe różnice</div>
+    <div class="diff-grid">
+      <div class="diff-cell">
+        <div class="diff-h2">OCD — ego-DYSTONIA</div>
+        <div class="diff-cont">Natręctwa: niechciane myśli/obrazy. Pacjent uważa je za absurdalne („wiem, że to bezsensowne, ale..."). Lęk silny. Rytuał ulgi natychmiastowej. Cel terapii: ekspozycja z prevencją reakcji (ERP). Pacjent ROZUMIE, że to problem. Motywacja do zmiany: wysoka.</div>
+      </div>
+      <div class="diff-cell">
+        <div class="diff-h2">OCPD — ego-SYNTONIA</div>
+        <div class="diff-cont">Reguły, schematy, perfekcjonizm. Pacjent uważa je za „rozsądne" („tak się powinno"). Lęk subtelny. Brak natychmiastowych rytuałów - chroniczne wzorce. Cel terapii: zmiana schematów, elastyczność, walidacja innych. Pacjent NIE rozumie, że to problem. Motywacja do zmiany: niska.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="seq-card">
+    <div class="seq-h">Pętla wzmacniająca OCPD + OCD (Pinto 2014)</div>
+    <div class="seq-row">
+      <span class="seq-num">1.</span>
+      <div class="seq-body">
+        <div class="seq-name">OCD generuje NATRĘCTWO — np. „brudny"</div>
+        <div class="seq-cont">Niechciany impuls / myśl pojawia się w głowie. „A co jeśli moje ręce są brudne?". Lęk silny, bo to ego-dystoniczne („nie powinnam tak myśleć"). Klasyczny mechanizm OCD.</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">2.</span>
+      <div class="seq-body">
+        <div class="seq-name">OCPD generuje REGUŁĘ — „więc trzeba dokładnie umyć"</div>
+        <div class="seq-cont">Schemat Wygórowanych Standardów aktywuje regułę: „jeśli ma być umyte - to PERFEKCYJNIE". Reguła OCPD nadaje strukturę rytuałowi OCD. Bez OCPD - pacjent z OCD myłby ręce, ale „byle jak". Z OCPD - precyzyjnie, długo, dokładnie.</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">3.</span>
+      <div class="seq-body">
+        <div class="seq-name">RYTUAŁ — mycie 5 minut wg dokładnej reguły</div>
+        <div class="seq-cont">Mycie rąk 5-10 minut, w określonej kolejności (palce, dłoń, kciuk, mankiet), z określonym mydłem, w określonej temperaturze. Lęk redukuje się natychmiast. Klasyczna ulga OCD + ego-syntonia OCPD („dobrze umyłam").</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">4.</span>
+      <div class="seq-body">
+        <div class="seq-name">PODWÓJNE WZMOCNIENIE</div>
+        <div class="seq-cont">Rytuał ulgi WZMACNIA OCD (negatywne wzmocnienie - nigdy więcej nie chcę tego lęku). Jego DOKŁADNOŚĆ wzmacnia OCPD (pozytywne wzmocnienie - „dobrze wykonałam, jestem dokładna"). Po latach: oba zaburzenia narastają.</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">5.</span>
+      <div class="seq-body">
+        <div class="seq-name">PROBLEM ERP — nie działa, bo OCPD je racjonalizuje</div>
+        <div class="seq-cont">Klasyczna ekspozycja z prevencją reakcji wymaga: NIE umyć po dotknięciu klamki, czekać aż lęk sam opadnie. OCPD racjonalizuje: „tym razem to FAKTYCZNIE ważne - klamka była brudna" / „to nie jest dobry moment na ekspozycję, jestem zmęczona". ERP grzęźnie.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-card">
+    <div class="frame-h">Mapa mechanizmu</div>
+    <div class="element-row"><span class="element-icon">🔬</span><span class="element-text"><strong>Mechanizmy są RÓŻNE</strong>. OCD = lęk z natrętnych myśli + rytuały redukujące lęk. OCPD = sztywne reguły, perfekcjonizm, kontrola. Nakładają się, ale to dwa odrębne mechanizmy. Klasyczne odkrycie kliniczne: pacjent z OCPD bez OCD - myśli sztywne ale nie obsesyjne. Pacjent z OCD bez OCPD - obsesje, ale po terapii ERP wraca do elastyczności.</span></div>
+    <div class="element-row"><span class="element-icon">🔄</span><span class="element-text"><strong>Wzmacniają się nawzajem</strong>. OCD generuje natręctwo, OCPD nadaje rytuałowi STRUKTURĘ I PRECYZJĘ. Rezultat: rytuały dłuższe, bardziej szczegółowe, harder do przerwania. Pacjent z OCPD + OCD myje ręce 10 minut precyzyjnie - pacjent z samym OCD myłby 30 sekund „byle jak". Klasyczne wzmocnienie.</span></div>
+    <div class="element-row"><span class="element-icon">📅</span><span class="element-text"><strong>Sekwencja terapeutyczna: NAJPIERW OCD, POTEM OCPD</strong>. Eisen 2006, Pinto 2014. Klasyczne odkrycie kliniczne. Najpierw zaadresować OCD (ekspozycja z prevencją reakcji ERP), potem OCPD (zmiana schematów, elastyczność). Bo: OCD jest bardziej dotkliwe akutalnie, ego-dystoniczne, motywacja wysoka. OCPD jest tłem - ego-syntoniczne, motywacja niska. Praca z OCPD przed OCD = nieefektywna.</span></div>
+    <div class="element-row"><span class="element-icon">⚠️</span><span class="element-text"><strong>ERP wymaga CELOWEJ NIEDOSKONAŁOŚCI - sprzeczne z OCPD</strong>. Klasyczny problem terapeutyczny. ERP: niedomyte ręce, niesprawdzony zamek, „nieskończone" zadanie. To FUNDAMENTALNIE sprzeczne ze schematem Wygórowanych Standardów OCPD. Wymaga wcześniejszej pracy nad ego-syntonią OCPD - pacjent musi zacząć widzieć perfekcjonizm jako PROBLEM, nie cnotę. Bez tego ERP racjonalizowane („tym razem to faktycznie ważne").</span></div>
+  </div>
+
+  <div class="frame-quote">„Pacjent musi rozumieć, że ERP wymaga CELOWEJ NIEDOSKONAŁOŚCI — niedomyte ręce, niesprawdzony zamek, „nieskończone" zadanie. To wymaga wcześniejszej pracy nad EGO-SYNTONIĄ OCPD: pacjent musi zacząć widzieć perfekcjonizm jako PROBLEM, a nie CNOTĘ. Bez tego ERP zostaje racjonalizowane („tym razem to faktycznie ważne, żeby sprawdzić"). Pacjenci z OCPD + OCD mają gorsze rokowanie niż z samym OCD - ale skuteczna terapia jest możliwa, jeśli sekwencja interwencji jest właściwa."<span class="frame-quote-attr">— Anthony Pinto, Michael Liebowitz, Edna Foa, Bruce Simpson (2014, OCPD as a predictor of exposure and ritual prevention outcome for OCD, Behaviour Research and Therapy)</span></div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: praca z komorbidnością OCPD + OCD wymaga SEKWENCYJNEJ strategii. Klasyczny porządek: (1) psychoedukacja o obu mechanizmach + diagnoza różnicowa, (2) ATAK NA EGO-SYNTONIĘ OCPD (perfekcjonizm jako problem, NIE cnota - 4-8 sesji), (3) ERP dla OCD z świadomym łamaniem reguł OCPD, (4) długoterminowa praca z OCPD (ST, ACT). Empirycznie wsparte: Pinto 2008/2014, Eisen 2006, Foa OCD ERP. Wymaga terapeuty znającego OBA zaburzenia. Gorsze rokowanie niż samo OCD - ale zmiana możliwa.</div>
+
+  <div class="src">Pinto, Mancebo, Eisen, Pagano i Rasmussen (2008, OCPD as a predictor of exposure and ritual prevention outcome for OCD, Behaviour Research and Therapy) · Pinto, Liebowitz, Foa i Simpson (2014, OCPD as a predictor of exposure and ritual prevention outcome for OCD, Behaviour Research and Therapy) · Eisen, Coles, Shea, Pagano, Stout, Yen, Grilo i Rasmussen (2006, Impact of obsessive-compulsive personality disorder on the course of obsessive-compulsive disorder, Comprehensive Psychiatry) · Abramowitz (2008, Cognitive-behavioral therapy for obsessive-compulsive disorder) · Foa i Yadin (2012, Exposure and Response Prevention for OCD) · Beck, Davis i Freeman (2015, Cognitive Therapy of Personality Disorders, 3rd ed.) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry)</div>
+</section>
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoje obszary - OCD, OCPD czy oba?</div>
+  <h1 class="card-prompt">Które <em>wzorce</em> rozpoznajesz u siebie?</h1>
+  <p class="card-detail">8 typowych wzorców. Niektóre to OCPD, niektóre OCD, niektóre wskazują na komorbidność. Zaznacz te, które ROZPOZNAJESZ u siebie. Mapa pomoże w rozmowie z terapeutą o właściwej diagnozie i sekwencji terapeutycznej.</p>
+
+  <div class="bel-grid">
+    <div class="bel-row" id="b1" onclick="pickBel('b1')">
+      <div class="bel-h">🦠 Mycie rąk znacznie dłużej niż inni - 5+ minut</div>
+      <div class="bel-d">Z lękiem przed brudem / chorobą - wskazuje OCD. Bez wyraźnego lęku, „bo tak trzeba" - OCPD. Połączenie: OCPD + OCD comorbid. Klasyczny obszar sprawdzeń.</div>
+    </div>
+    <div class="bel-row" id="b2" onclick="pickBel('b2')">
+      <div class="bel-h">🚪 Sprawdzanie zamków, kuchenek, gniazdek 3+ razy</div>
+      <div class="bel-d">Z lękiem „a co jeśli pożar" - OCD. Bez lęku, „bo trzeba pewności" - OCPD. Combination: OCPD + OCD. Klasyczny obszar sprawdzeń checking.</div>
+    </div>
+    <div class="bel-row" id="b3" onclick="pickBel('b3')">
+      <div class="bel-h">📐 Symetria / porządek - rzeczy MUSZĄ być na swoim miejscu</div>
+      <div class="bel-d">Klasycznie OCPD (perfekcjonizm). Ale jeśli z lękiem - „a jeśli nie ułożone, coś złego się stanie" - to OCD (just right). Czysta przyjemność z porządku - OCPD.</div>
+    </div>
+    <div class="bel-row" id="b4" onclick="pickBel('b4')">
+      <div class="bel-h">🔢 Liczenie rzeczy / kroków / czynności</div>
+      <div class="bel-d">Klasycznie OCD (compulsions). „Muszę zrobić X razy, inaczej coś złego się stanie". Lęk silny. Rzadko czysto OCPD.</div>
+    </div>
+    <div class="bel-row" id="b5" onclick="pickBel('b5')">
+      <div class="bel-h">😨 Niechciane natrętne myśli / obrazy (przemoc, seksualne, religijne)</div>
+      <div class="bel-d">Klasycznie OCD (obsesje). Ego-dystoniczne („nie powinnam tak myśleć, jestem zła osoba"). Lęk silny. NIE jest to OCPD - schematy OCPD są ego-syntoniczne, nie ego-dystoniczne.</div>
+    </div>
+    <div class="bel-row" id="b6" onclick="pickBel('b6')">
+      <div class="bel-h">📋 Sztywne harmonogramy / reguły dnia codziennego</div>
+      <div class="bel-d">Klasycznie OCPD - schemat Wygórowanych Standardów. Bez lęku „a co jeśli", bez rytuałów ulgi. „Tak po prostu trzeba".</div>
+    </div>
+    <div class="bel-row" id="b7" onclick="pickBel('b7')">
+      <div class="bel-h">🧹 Sprzątanie wieczorne 1-2h, choć nie potrzeba obiektywnie</div>
+      <div class="bel-d">Klasycznie OCPD - perfekcjonizm. Bez lęku „a jeśli choroba, brud". „Tak ma być". Ego-syntoniczne. Klasyczne dla OCPD.</div>
+    </div>
+    <div class="bel-row" id="b8" onclick="pickBel('b8')">
+      <div class="bel-h">🤝 Mam OBJAWY z 5+ powyższych — różne mechanizmy</div>
+      <div class="bel-d">Sygnał komorbidności OCPD + OCD. Niektóre objawy z lękiem (OCD), niektóre bez (OCPD). Wymaga konsultacji z psychiatrą / psychologiem znającym oba zaburzenia. Diagnoza różnicowa kluczowa dla planu terapii.</div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myObs" placeholder="Konkretnie: ile wzorców rozpoznajesz? Najsilniejsze? Czy widzisz różnicę: niektóre wzorce z silnym lękiem (OCD), niektóre bez wyraźnego lęku (OCPD)? Czy rozważasz konsultację z terapeutą?" style="min-height: 110px;"></textarea>
+
+  <div class="scale">
+    <div class="scale-title">Czytelność komorbidności OCPD + OCD — TERAZ</div>
+    <div class="scale-bounds"><span>0 — niejasne</span><span>10 — czytelne</span></div>
+    <input type="range" class="scale-input" id="bCo" min="0" max="10" step="1" value="3" data-default="3">
+    <div class="scale-readout"><span>Wartość</span><span id="bCov">3</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła rozpoznania</strong>: 5+ wzorców różnych typów = wskazanie na komorbidność OCPD + OCD. Wymaga konsultacji ze specjalistą znającym oba zaburzenia. Pierwsza praca: rozróżnienie - który wzorzec ma WYRAŹNY LĘK (OCD), który nie (OCPD). Diagnoza różnicowa decyduje o sekwencji terapii: najpierw ERP dla OCD, potem ST/CT-PD dla OCPD.</div>
+</section>
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Pierwszy krok - mapa objawów dla terapeuty</div>
+  <h1 class="card-prompt">Stwórz <em>mapę objawów</em> do rozmowy z terapeutą</h1>
+  <p class="card-detail">Klasyczne narzędzie diagnostyczne. Spisz konkretne wzorce z punktu 2, dla każdego określ: czy jest LĘK (OCD) czy nie (OCPD)? Czy jest rytuał ulgi (OCD)? Czy jest schemat ogólny (OCPD)? Materiał do rozmowy z terapeutą.</p>
+
+  <textarea class="thought-input" id="ocd_symptoms" placeholder="① WZORCE Z WYRAŹNYM LĘKIEM + RYTUAŁEM (sygnały OCD). Wypisz 2-4 wzorce. (np.: „mycie rąk 5 min - wraz z lękiem 'a co jeśli przeniosę chorobę na dziecko'; ulga po dokładnym umyciu"; „3-krotne sprawdzanie kuchenki - lęk 'pożar', ulga po sprawdzeniu")." style="min-height: 130px;"></textarea>
+
+  <textarea class="thought-input" id="ocpd_symptoms" placeholder="② WZORCE BEZ WYRAŹNEGO LĘKU - „bo tak trzeba" (sygnały OCPD). Wypisz 2-4 wzorce. (np.: „sprzątanie wieczorne 2h, choć dom czysty - bez lęku, bez rytualnej ulgi, 'tak musi być'"; „sztywne harmonogramy dni - bez lęku, ale bez nich niepokój nieokreślony"; „perfekcyjne wykonanie raportów - bez lęku 'co jeśli', ale niemożność oddania niedopracowanego")." style="min-height: 150px;"></textarea>
+
+  <textarea class="thought-input" id="overlap" placeholder="③ WZORCE NA STYKU - łączą lęk OCD i strukturę OCPD. (np.: „mycie podłóg każdego dnia w określonej kolejności (kuchnia, łazienka, salon, sypialnia) - lekki lęk przed bakteriami + sztywna reguła kolejności + rytualna ulga po skończeniu = klasyczna komorbidność OCPD + OCD")." style="min-height: 130px;"></textarea>
+
+  <textarea class="thought-input" id="history" placeholder="④ HISTORIA - kiedy zaczęły się objawy? (OCPD typowo od wczesnej dorosłości, OCD często od dzieciństwa lub adolescencji). (np.: „pamiętam mycie rąk od 12 roku życia - jeszcze przed perfekcjonizmem; perfekcjonizm w pracy zaczął się po 22 r.ż.; harmonogramy od 30+ r.ż. - po stresującym okresie życiowym")." style="min-height: 130px;"></textarea>
+
+  <div class="term-note"><strong>⚠️ Pułapka</strong>: typowy odruch w OCPD przy diagnozowaniu siebie - „wszystko się ze sobą miesza, nie umiem rozróżnić". To NORMALNE. Pełna diagnoza wymaga psychiatry / psychologa klinicznego znającego OBA zaburzenia. Twoja praca: ZBIERZ MATERIAŁ. Konkretne przykłady, daty, konkretne wzorce. To DAR dla terapeuty - przyspieszy diagnozę i plan terapii.</div>
+</section>
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Sekwencja terapeutyczna - 12-24 mies.</div>
+  <h1 class="card-prompt">Cztery <em>fazy</em> pracy z komorbidnością</h1>
+  <p class="card-detail">Praca z komorbidnością OCPD + OCD wymaga SEKWENCYJNEJ strategii i WSPÓŁPRACY z terapeutą znającym oba zaburzenia. Klasyczne fazy (Pinto 2014, Eisen 2006, Foa OCD): psychoedukacja → ego-syntonia → ERP → długoterminowa praca z OCPD.</p>
+
+  <div class="seq-card">
+    <div class="seq-h">Cztery fazy — 12-24 miesiące</div>
+    <div class="seq-row">
+      <span class="seq-num">1.</span>
+      <div class="seq-body">
+        <div class="seq-name">FAZA 1 (1-3 mies.): PSYCHOEDUKACJA + DIAGNOZA RÓŻNICOWA</div>
+        <div class="seq-cont">Z terapeutą / psychiatrą - dokładna diagnoza. Y-BOCS dla OCD (Yale-Brown Obsessive-Compulsive Scale), kryteria DSM-5 dla OCPD. Edukacja o RÓŻNYCH mechanizmach. Cel: pacjent ROZUMIE dwa odrębne zaburzenia + wzajemne wzmocnienie. Bez tego dalsze fazy są nieefektywne.</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">2.</span>
+      <div class="seq-body">
+        <div class="seq-name">FAZA 2 (3-6 mies.): ATAK NA EGO-SYNTONIĘ OCPD</div>
+        <div class="seq-cont">Klasyczna praca CT-PD (Beck 2015). Pacjent musi zacząć widzieć PERFEKCJONIZM jako problem, NIE cnotę. Eksperymenty „minimum efektu". Konfrontacja kosztów (chroniczne zmęczenie, problemy w relacjach). Bez tego ERP w fazie 3 jest nieefektywne - pacjent racjonalizuje rytuały.</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">3.</span>
+      <div class="seq-body">
+        <div class="seq-name">FAZA 3 (6-12 mies.): ERP DLA OCD z świadomym łamaniem reguł OCPD</div>
+        <div class="seq-cont">Klasyczna ekspozycja z prevencją reakcji (Foa, Abramowitz). Hierarchia obsesji od najmniej do najbardziej zagrażających. Eksperymenty: niedomyte ręce, niesprawdzony zamek, „nieskończone" zadanie. Z świadomym DOPUSZCZENIEM niedoskonałości - sprzeciw schematowi OCPD. Każda ekspozycja = praca z OBOMA mechanizmami.</div>
+      </div>
+    </div>
+    <div class="seq-row">
+      <span class="seq-num">4.</span>
+      <div class="seq-body">
+        <div class="seq-name">FAZA 4 (12-24+ mies.): DŁUGOTERMINOWA PRACA Z OCPD</div>
+        <div class="seq-cont">Po opanowaniu OCD - praca ze schematami OCPD (Schema Therapy, Bamelis 2014 RCT). Wygórowane Standardy, Karzący Rodzic, Wymagający Rodzic. Imagery rescripting scen z dzieciństwa. Praca nad relacjami (z partnerem, dziećmi). Profilaktyka nawrotów OCD + długoterminowa zmiana wzorca OCPD.</div>
+      </div>
+    </div>
+  </div>
+
+  <textarea class="thought-input" id="myExec" placeholder="Konkretnie: w której fazie obecnie jesteś? Czy masz terapeutę znającego oba zaburzenia? Czy potrzebujesz konsultacji psychiatrycznej dla potwierdzenia diagnozy? Co byłoby Twoim pierwszym krokiem w nadchodzącym tygodniu?" style="min-height: 110px;"></textarea>
+
+  <div class="term-note"><strong>💡 Mechanizm</strong>: po 12-24 mies. systematycznej pracy nad komorbidnością OCPD + OCD pacjenci raportują (Pinto 2014, Eisen 2006, Bamelis 2014 RCT): redukcja objawów OCD o 50-70% po fazie ERP, redukcja sztywności OCPD o 30-50% po fazie ST, lepsza jakość życia, możliwość spontaniczności po latach uśpienia. Klasyczne odkrycie: bez sekwencyjnej strategii (najpierw ego-syntonia, potem ERP, potem ST) - pacjenci często „kuleją" w terapii, bo każdy zaburzenie podtrzymuje drugie.</div>
+</section>
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po refleksji — kalibracja</div>
+  <h1 class="card-prompt">Czy <em>komorbidność</em> staje się czytelna?</h1>
+  <p class="card-detail">Wróć tu po refleksji nad wzorcami (punkt 2) i mapowaniu objawów (punkt 3). Mierzymy czytelność komorbidności jako mechanizmu. Pierwsza refleksja zwykle daje +1 do +2 punkty. Pełna ocena wymaga konsultacji ze specjalistą znającym oba zaburzenia.</p>
+
+  <div class="scale">
+    <div class="scale-title">Czytelność komorbidności OCPD + OCD — po refleksji</div>
+    <div class="scale-bounds"><span>0 — niejasne</span><span>10 — czytelne</span></div>
+    <input type="range" class="scale-input" id="aCo" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Wartość</span><span id="aCov">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg"><strong>Wynik:</strong> kliknij „Dalej" by zobaczyć kalibrację.</div>
+
+  <textarea class="thought-input" id="reflect" placeholder="Co najmocniej zaskoczyło? Czy widzisz różnicę OCD (ego-DYSTONIA, lęk, rytuał ulgi) vs OCPD (ego-SYNTONIA, sztywność, schematy)? Czy widzisz, że terapia OCPD + OCD wymaga SEKWENCYJNEJ strategii? Co byłoby Twoim pierwszym konkretnym krokiem (konsultacja diagnostyczna? zbieranie materiału dla terapeuty?)"></textarea>
+
+  <div class="term-note"><strong>🔑 Reguła kalibracji</strong>: praca z komorbidnością OCPD + OCD wymaga SEKWENCYJNEJ strategii (psychoedukacja → ego-syntonia → ERP → ST) + terapeuty znającego OBA zaburzenia + 12-24 mies. systematycznej pracy. Klasyczne odkrycie: bez sekwencyjnej strategii - terapia grzęźnie. Najpierw atak na ego-syntonię OCPD (perfekcjonizm jako problem), potem ERP dla OCD ze świadomym łamaniem reguł OCPD, potem długoterminowa praca z OCPD (ST, ACT). Empirycznie wsparte: Pinto 2008/2014, Eisen 2006, Foa OCD ERP, Bamelis 2014 RCT.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Komorbidność OCPD + OCD: <em>~25-30% pacjentów (Pinto 2008/2014, Eisen 2006). Realna konfiguracja, NIE artefakt diagnostyczny</em>. Mechanizmy są RÓŻNE, ale wzmacniają się nawzajem: OCD generuje natręctwo, OCPD generuje regułę → rytuał z precyzją → podwójne wzmocnienie. <strong>Klucz: ERP wymaga CELOWEJ NIEDOSKONAŁOŚCI - sprzeczne ze schematem OCPD. Wymaga wcześniejszej pracy nad EGO-SYNTONIĄ OCPD (perfekcjonizm jako problem, nie cnota)</strong>. Sekwencja terapii: psychoedukacja → ego-syntonia → ERP → długoterminowa ST. Gorsze rokowanie niż samo OCD (Eisen 2006), ale zmiana możliwa przy właściwej sekwencji.</div>
+  </div>
+
+  <div class="src">Pinto, Mancebo, Eisen, Pagano i Rasmussen (2008, OCPD as a predictor of exposure and ritual prevention outcome for OCD, Behaviour Research and Therapy) · Pinto, Liebowitz, Foa i Simpson (2014, OCPD as a predictor of exposure and ritual prevention outcome for OCD, Behaviour Research and Therapy) · Eisen, Coles, Shea, Pagano, Stout, Yen, Grilo i Rasmussen (2006, Impact of obsessive-compulsive personality disorder on the course of obsessive-compulsive disorder, Comprehensive Psychiatry) · Abramowitz (2008, Cognitive-behavioral therapy for obsessive-compulsive disorder) · Foa i Yadin (2012, Exposure and Response Prevention for OCD) · Beck, Davis i Freeman (2015, Cognitive Therapy of Personality Disorders, 3rd ed.) · Bamelis, Evers, Spinhoven i Arntz (2014, Results of a multicenter randomized controlled trial of the clinical effectiveness of schema therapy for personality disorders, American Journal of Psychiatry)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickBel(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('picked');
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var bU = parseInt(document.getElementById('bCo').value || 0, 10);
+    var aU = parseInt(document.getElementById('aCo').value || 0, 10);
+    var dU = aU - bU;
+    var msg = '';
+    if (dU >= 2) msg = 'Czytelność komorbidności wzrosła o ' + dU + ' — masz teraz mapę różnic mechanizmów. Klucz: ERP wymaga celowej NIEDOSKONAŁOŚCI - to fundamentalnie sprzeczne ze schematem OCPD. Wymaga wcześniejszej pracy nad ego-syntonią.';
+    else if (dU >= 1) msg = 'Drobny ruch (+' + dU + ') — typowy w pierwszym kontakcie. Praca z komorbidnością OCPD + OCD wymaga współpracy z terapeutą znającym OBA zaburzenia. To zaawansowana konfiguracja kliniczna.';
+    else if (dU === 0) msg = 'Bez zmian — możliwe, że oba zaburzenia są tak głęboko splątane, że trudno rozdzielić mechanizmy. Pierwszy krok: zbierz materiał o objawach (z punktu 2-3) na rozmowę z terapeutą.';
+    else msg = 'Spadek — czasem rozważanie ERP (celowej niedoskonałości) aktywuje silny lęk. To NORMALNE - schemat OCPD się broni. Praca: tylko z terapeutą, stopniowo.';
+    document.getElementById('finalMsg').innerHTML = '<strong>Wynik:</strong> ' + msg;
+  }
+}
+function onReset() {
+  document.querySelectorAll('.bel-row.picked').forEach(function(el){ el.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ocpd_a_ocd_terapia — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ocpd_a_ocd_terapia";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['bCo','aCo'].forEach(function(id){
+  var inp = document.getElementById(id);
+  var ro = document.getElementById(id + 'v');
+  if (inp && ro) {
+    inp.addEventListener('input', function(){ ro.textContent = inp.value; });
+    ro.textContent = inp.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

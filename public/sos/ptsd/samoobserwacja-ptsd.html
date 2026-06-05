@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Dziennik wyzwalaczy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.type-card { border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.type-sens { background: rgba(214,160,140,0.18); border-left: 3px solid #a85a3a; }
+.type-rel { background: rgba(168,184,210,0.18); border-left: 3px solid #5070a8; }
+.type-syt { background: rgba(184,197,168,0.22); border-left: 3px solid var(--sage-deep); }
+.type-int { background: rgba(214,196,168,0.22); border-left: 3px solid #b8954a; }
+.type-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.type-icon { font-size: 16px; }
+.type-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.type-body strong { color: var(--ink); }
+.entry-card { background: rgba(214,196,168,0.18); border: 1px solid rgba(214,196,168,0.5); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.entry-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.entry-row { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin: 3px 0; }
+.entry-row strong { color: var(--ink); }
+.proto-card { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+.proto-h { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.proto-rule { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Dziennik wyzwalaczy</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Mapa wyzwalaczy <em>z chaosu objawów</em></h1>
+  <p class="card-detail">Bez mapy wyzwalaczy ekspozycja i restrukturyzacja są „na oślep" (Foa i wsp., 2007, PE manual). Pacjent doświadcza objawów jako „spadających z nieba" — bez przyczyny, bez kontroli. Brak dostrzegalnego wzorca → poczucie bezradności → unikanie wszystkiego „na wszelki wypadek". Systematyczna obserwacja przez 2–3 tyg. <strong>wyodrębnia wzorzec z chaosu</strong>: konkretne wyzwalacze w czterech kategoriach. Każdy typ wymaga innej strategii — ekspozycji in vivo, restrukturyzacji ocen lub ekspozycji interoceptywnej.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery typy wyzwalaczy</div>
+    <div class="element-row">
+      <span class="element-icon">👃</span>
+      <span class="element-text"><strong>Sensoryczne</strong> — zapach, dźwięk, obraz, dotyk, smak. Najsilniejsze (limbiczne, omijają korę).</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">👥</span>
+      <span class="element-text"><strong>Relacyjne</strong> — ton głosu, bliskość, autorytet, wycofanie partnera, krytyka.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📅</span>
+      <span class="element-text"><strong>Sytuacyjne</strong> — rocznica, pora dnia, sezon, konkretne miejsce, układ przestrzeni.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🫀</span>
+      <span class="element-text"><strong>Interoceptywne</strong> — kołatanie serca, duszność, zawroty głowy, pocenie. Wnętrze ciała aktywuje pamięć traumy.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Wyzwalacz nie jest zagrożeniem — jest <em>przypomnieniem</em>. Mózg reaguje na sygnał, nie na realne niebezpieczeństwo. Identyfikacja sygnału = połowa drogi do <em>kontroli</em> nad reakcją."
+    <span class="frame-quote-attr">— Anke Ehlers (CT-PTSD, 2005)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: dziennik 5 min dziennie + przegląd po 2 tyg. To NIE „kolejne zadanie" — to fundament każdej dalszej pracy w PTSD. Bez mapy wyzwalaczy hierarchia ekspozycji jest losowa, a ekspozycja losowa może wyzwalać zamiast leczyć.</div>
+
+  <div class="src">Foa, E. i wsp. (2007). <em>Prolonged Exposure Therapy for PTSD: Therapist Guide</em>. · Ehlers, A. &amp; Clark, D. M. (2000). A cognitive model of posttraumatic stress disorder. · Rothschild, B. (2010). <em>8 Keys to Safe Trauma Therapy</em>.</div>
+</section>
+
+
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Stan startowy</div>
+  <h1 class="card-prompt">Ile masz <em>kontroli nad swoimi reakcjami</em>?</h1>
+  <p class="card-detail">Skala 0–10. „0" = objawy spadają znikąd, czuję się bezbronny/a. „10" = rozpoznaję każdy wyzwalacz, mam plan reakcji. Punkt startowy potrzebny, żeby zobaczyć efekt mapowania.</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — chaos</span><span>10 — pełna mapa</span></div>
+    <input type="range" id="preKontrl" class="scale-input" min="0" max="10" value="3" data-default="3" oninput="document.getElementById('preKontrlVal').textContent=this.value;">
+    <div class="scale-readout"><span>kontrola teraz:</span><span id="preKontrlVal">3</span></div>
+  </div>
+
+  <p class="card-detail" style="margin-top:10px;">Jakie wyzwalacze już rozpoznajesz u siebie? Zaznacz wszystkie pasujące.</p>
+  <div class="example-chips">
+    <button id="t-zap" class="example-chip" onclick="pickType(this);">👃 zapachy (alkohol, perfumy, dym)</button>
+    <button id="t-dzw" class="example-chip" onclick="pickType(this);">🔊 dźwięki (krzyk, syrena, hamowanie)</button>
+    <button id="t-obraz" class="example-chip" onclick="pickType(this);">👁️ obrazy (osoba podobna, układ ciał)</button>
+    <button id="t-ton" class="example-chip" onclick="pickType(this);">🗣️ ton głosu (krzyk, autorytet, krytyka)</button>
+    <button id="t-blis" class="example-chip" onclick="pickType(this);">🤝 bliskość (dotyk, intymność)</button>
+    <button id="t-pora" class="example-chip" onclick="pickType(this);">🌙 pora (zmierzch, noc, niedziela wieczór)</button>
+    <button id="t-rok" class="example-chip" onclick="pickType(this);">📅 rocznica wydarzenia / sezon</button>
+    <button id="t-msc" class="example-chip" onclick="pickType(this);">📍 konkretne miejsca</button>
+    <button id="t-serce" class="example-chip" onclick="pickType(this);">🫀 kołatanie serca</button>
+    <button id="t-odd" class="example-chip" onclick="pickType(this);">😮‍💨 płytki oddech / duszność</button>
+    <button id="t-pot" class="example-chip" onclick="pickType(this);">💧 pocenie się / gorąco</button>
+    <button id="t-zaw" class="example-chip" onclick="pickType(this);">🌀 zawroty głowy</button>
+  </div>
+
+  <div class="term-note"><strong>Wskazówka</strong>: zaznaczone elementy to <em>punkt startowy</em> mapy. Większość pacjentów zauważa 4–6 wyzwalaczy w pierwszej rundzie; po 2 tyg. dziennika lista zwykle rośnie do 10–15. Dopiero ten poziom granuralności daje rzeczywistą kontrolę.</div>
+</section>
+
+
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Cztery typy szczegółowo</div>
+  <h1 class="card-prompt">Każdy typ — <em>inna ścieżka</em> aktywacji</h1>
+  <p class="card-detail">Cztery typy nie są „etykietami" — reprezentują różne ścieżki neurobiologiczne i wymagają różnych strategii. Granuracja typu kieruje wyborem techniki.</p>
+
+  <div class="type-card type-sens">
+    <div class="type-h"><span class="type-icon">👃</span> Sensoryczne — najsilniejsze</div>
+    <div class="type-body"><strong>Co</strong>: zapach, dźwięk, obraz, dotyk, smak. Najsilniejsze, bo limbiczne — omijają korę przedczołową, idą prosto do amygdali. Stąd „nie zdążyłem nawet pomyśleć, a już panika".<br><strong>Strategia</strong>: <em>wtedy vs teraz</em> (lista 5+ różnic między momentem traumy a aktualnym kontekstem) + ekspozycja stopniowa na bodziec w bezpiecznym otoczeniu.</div>
+  </div>
+
+  <div class="type-card type-rel">
+    <div class="type-h"><span class="type-icon">👥</span> Relacyjne — najtrudniejsze do zauważenia</div>
+    <div class="type-body"><strong>Co</strong>: ton głosu (krzyk, autorytet), bliskość fizyczna, krytyka, wycofanie partnera, „przyłapanie". Często obwinia się partnera („on mnie wyzwala") zamiast sygnał.<br><strong>Strategia</strong>: rozróżnienie <em>ton ↔ treść</em> (szef krzyczy ≠ napastnik krzyczy), komunikacja z bliskimi o sygnałach, czasem terapia par (CBCT).</div>
+  </div>
+
+  <div class="type-card type-syt">
+    <div class="type-h"><span class="type-icon">📅</span> Sytuacyjne — najlepiej przewidywalne</div>
+    <div class="type-body"><strong>Co</strong>: rocznica zdarzenia, pora dnia / nocy, sezon (jesień, zima), konkretne miejsce, układ przestrzeni (windy, korytarze, parkingi).<br><strong>Strategia</strong>: kalendarz wyzwalaczy, planowanie wsparcia w trudne dni, świadome przygotowanie zamiast „bycia zaskoczonym".</div>
+  </div>
+
+  <div class="type-card type-int">
+    <div class="type-h"><span class="type-icon">🫀</span> Interoceptywne — najmniej oczywiste</div>
+    <div class="type-body"><strong>Co</strong>: kołatanie serca po wysiłku, duszność, zawroty głowy, pocenie, gorąco. Ciało reaguje na trauma, korze daje fałszywy alarm „atak panicznego" / „znów się dzieje".<br><strong>Strategia</strong>: ekspozycja interoceptywna (świadome wywoływanie odczuć w bezpiecznych warunkach + interpretacja „to wysiłek, nie zagrożenie") — zwykle z terapeutą. Plus interocepcja w TSY.</div>
+  </div>
+
+  <div class="entry-card">
+    <div class="entry-h">📋 Format wpisu w dzienniku — 5 minut dziennie</div>
+    <div class="entry-row"><strong>Czas + miejsce</strong>: 19:30, w pracy, podczas spotkania zespołu</div>
+    <div class="entry-row"><strong>Bodziec poprzedzający</strong>: szef podniósł głos, czerwony pulower kolegi (zapach jego perfum)</div>
+    <div class="entry-row"><strong>SUDS 0–10</strong>: 7 (panika, chciało mi się uciec)</div>
+    <div class="entry-row"><strong>Reakcja</strong>: poszłam do toalety, grounding 5-4-3-2-1, oddech 4-8 (działało po 5 min)</div>
+    <div class="entry-row"><strong>Skuteczność techniki</strong>: 6/10 — pomogło, ale długo trwało</div>
+    <div class="entry-row"><strong>Typ wyzwalacza</strong>: relacyjny (ton) + sensoryczny (zapach) — kombinacja</div>
+  </div>
+
+  <div class="term-note"><strong>Reguła wpisów</strong>: pisz po WSZYSTKICH epizodach aktywacji, nie tylko po dużych. Mała aktywność (SUDS 4–5) ujawnia ukryte wyzwalacze. Wpisy po dużych są oczywiste, wpisy po małych — odkrywcze.</div>
+</section>
+
+
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Praktyka — pierwszy wpis</div>
+  <h1 class="card-prompt">Wykonaj <em>jeden</em> pełny wpis</h1>
+  <p class="card-detail">Wybierz ostatni epizod aktywacji (z dziś lub z wczoraj). Wykonaj pełny wpis w 6 polach. Następnie zaplanuj rytm prowadzenia dziennika.</p>
+
+  <div class="proto-card">
+    <div class="proto-h">A · Czas + miejsce</div>
+    <p class="proto-rule">Konkretnie: data, godzina, gdzie się znajdowałeś/aś.</p>
+  </div>
+  <textarea id="czas" class="thought-input" placeholder="np. „Dziś, 19:30, w autobusie 145, jadąc z pracy"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">B · Bodziec poprzedzający — co dokładnie zauważyłeś/aś</div>
+    <p class="proto-rule">Co działo się sekundy/minuty przed reakcją? Pisz wszystkie elementy, nawet jeśli wydają się błahe.</p>
+  </div>
+  <textarea id="bodz" class="thought-input" placeholder="np. „Wsiadł mężczyzna w czarnej kurtce, podszedł blisko mnie, poczułam zapach jego papierosów. W tle dźwięk hamowania na zewnątrz"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">C · SUDS 0–10 + co czułeś/aś</div>
+    <p class="proto-rule">Skala napięcia + krótki opis: emocje, ciało, myśli.</p>
+  </div>
+  <textarea id="suds" class="thought-input" placeholder="np. „SUDS 7. Serce wali, pot na czole, w głowie myśl »uciekaj«, wstrzymałam oddech"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">D · Reakcja — co zrobiłeś/aś</div>
+    <p class="proto-rule">Konkretnie: technika, unikanie, nic. Bez oceny — fakty.</p>
+  </div>
+  <textarea id="reak" class="thought-input" placeholder="np. „Wysiadłam dwa przystanki wcześniej, poszłam na pieszo. Po wyjściu z autobusu grounding 5-4-3-2-1"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">E · Skuteczność (0–10) + co warto powtórzyć</div>
+    <p class="proto-rule">Co działało, co nie. Materiał do następnego razu.</p>
+  </div>
+  <textarea id="skut" class="thought-input" placeholder="np. „Skuteczność 6. Wysiadanie pomogło natychmiast, ale spóźniłam się na umówione spotkanie. Następnym razem: spróbuję zostać w autobusie i zrobić grounding bez wysiadania"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">F · Typ wyzwalacza (zaznacz wszystkie)</div>
+    <p class="proto-rule">Sensoryczny (zapach/dźwięk/obraz), relacyjny (ton/bliskość), sytuacyjny (pora/miejsce), interoceptywny (kołatanie/duszność). Często kombinacja.</p>
+  </div>
+  <textarea id="typ" class="thought-input" placeholder="np. „Sensoryczny (zapach papierosów + dźwięk hamowania) + relacyjny (bliskość obcego mężczyzny). Kombinacja sens+rel"..."></textarea>
+
+  <div class="proto-card">
+    <div class="proto-h">📅 Plan dziennika — 14 dni</div>
+    <p class="proto-rule">Konkretnie: kiedy w ciągu dnia zapisujesz (rano przegląd dnia poprzedniego ↔ wieczorem po dniu), gdzie (telefon ↔ zeszyt), o której godzinie. Łatwiej trzymać harmonogram niż „kiedy będzie czas".</p>
+  </div>
+  <textarea id="planDz" class="thought-input" placeholder="np. „Codziennie wieczorem 21:30, notatka w telefonie, aplikacja Notes. Po 14 dniach przegląd z terapeutą w czwartek"..."></textarea>
+
+  <div class="term-note"><strong>Reguła konsekwencji</strong>: 14 dni pisania > 30 dni „od czasu do czasu". Mózg potrzebuje regularności, by ujawnić wzorzec. Pomijaj dni bez epizodów (zapisz tylko „brak"), nie omijaj epizodów.</div>
+</section>
+
+
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Pomiar końcowy</div>
+  <h1 class="card-prompt">Ile <em>kontroli</em> czujesz po pierwszym wpisie?</h1>
+  <p class="card-detail">Ta sama skala 0–10. Cel po pierwszym wpisie: wzrost o 1–2 punkty. Pełny wzorzec — po 10–15 wpisach (czyli 2 tyg. konsekwencji).</p>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>0 — chaos</span><span>10 — pełna mapa</span></div>
+    <input type="range" id="postKontrl" class="scale-input" min="0" max="10" value="5" data-default="5" oninput="document.getElementById('postKontrlVal').textContent=this.value;">
+    <div class="scale-readout"><span>kontrola po:</span><span id="postKontrlVal">5</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Ustaw skalę — pojawi się komentarz dopasowany do twojej zmiany.</div>
+
+  <div class="term-note"><strong>Reguła przeglądu</strong>: po 14 dniach przejrzyj wszystkie wpisy razem. Pytania: które wyzwalacze najczęstsze? Które typy dominują? Które techniki działały najlepiej? Wzorzec ujawni się jako 3–5 powtarzających się elementów. To jest TWOJA mapa.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body"><strong>Wyzwalacz ≠ zagrożenie. Wyzwalacz = przypomnienie.</strong> Cztery typy: sensoryczny, relacyjny, sytuacyjny, interoceptywny. Dziennik 5 min × 14 dni → mapa wzorca → fundament terapii. Bez mapy ekspozycja i restrukturyzacja są na oślep. Identyfikacja = połowa drogi do kontroli.</div>
+  </div>
+
+  <div class="src">Foa, E. i wsp. (2007). <em>Prolonged Exposure Therapy for PTSD: Therapist Guide</em>. · Ehlers, A. &amp; Clark, D. M. (2000). A cognitive model of posttraumatic stress disorder. <em>Behaviour Research and Therapy</em>, 38, 319–345. · Rothschild, B. (2010). <em>8 Keys to Safe Trauma Therapy</em>. · NICE NG116 (2018).</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickType(el) {
+  el.classList.toggle('picked');
+  if (typeof save === 'function') save();
+}
+function onStepChange(step) {
+  if (step === 5) {
+    var pre = parseInt(document.getElementById('preKontrl').value, 10);
+    var post = parseInt(document.getElementById('postKontrl').value, 10);
+    var diff = post - pre;
+    var msg = document.getElementById('finalMsg');
+    if (msg) {
+      if (diff >= 3) msg.innerHTML = '<strong>Wzrost poczucia kontroli o ' + diff + ' punktów.</strong> Mapa wyzwalaczy daje siłę — „objawy z nieba" stają się „reakcją na konkretny sygnał". Prowadź dziennik 5 min dziennie przez 2 tyg., potem przegląd z terapeutą.';
+      else if (diff >= 1) msg.innerHTML = '<strong>Wzrost o ' + diff + '.</strong> Częściowa zmiana — typowa po pierwszym wpisie. Wzorzec ujawnia się po 10–15 wpisach. Konsekwencja jest kluczem.';
+      else if (diff === 0) msg.innerHTML = '<strong>Bez zmiany.</strong> Pojedynczy wpis nie wystarcza — daj sobie 14 dni codziennego dziennika. Po tym czasie wracajcie do tej karty z pełną mapą wzorców.';
+      else msg.innerHTML = '<strong>Spadek poczucia kontroli.</strong> Zauważanie wyzwalaczy może najpierw zwiększyć lęk („widzę, że jest ich tyle"). To zwykle przejściowe — po 2 tyg. lęk się odwraca, gdy mózg widzi MAPĘ zamiast chaosu.';
+    }
+  }
+}
+function onReset() {
+  document.querySelectorAll('.example-chip').forEach(function(c){ c.classList.remove('picked'); });
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_samoobserwacja_ptsd — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_samoobserwacja_ptsd";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

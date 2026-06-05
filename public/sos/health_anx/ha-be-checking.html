@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Eksperyment A–B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.fact-row { background: rgba(201,165,114,0.12); border-left: 3px solid var(--warm); padding: 10px 12px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.fact-row strong { color: var(--ink); }
+.day-grid { display: grid; grid-template-columns: 60px 1fr 80px; gap: 8px; padding: 8px 10px; background: rgba(184,197,168,0.08); border-radius: 6px; margin-bottom: 4px; font-size: 12px; align-items: center; }
+.day-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); text-align: center; }
+.day-lbl { color: var(--ink-soft); }
+.day-tgt { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); padding: 3px 6px; border-radius: 5px; text-align: center; font-weight: 600; color: var(--ink); font-size: 11px; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.cmp-cell { padding: 12px; border-radius: 10px; text-align: center; }
+.cmp-a { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); }
+.cmp-b { background: rgba(201,165,114,0.18); border: 1px solid var(--warm); }
+.cmp-h { font-weight: 700; font-size: 12px; letter-spacing: 0.05em; margin-bottom: 6px; color: var(--ink); }
+.cmp-num { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; color: var(--ink); }
+.cmp-lbl { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Eksperyment A–B</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Eksperyment <em>A–B</em>: sprawdzanie czy nie?</h1>
+    <p class="card-detail">Eksperyment behawioralny (Bennett-Levy i in., 2004, <em>Oxford Guide to Behavioural Experiments in CBT</em>): testowanie przekonania „sprawdzanie obniża mój lęk". Standardowy wzorzec A–B: tydzień normalnego sprawdzania (A) → tydzień bez sprawdzania (B) → porównanie poziomu lęku. Eksperyment >> rozmowa: własne dane przekonują silniej niż argumenty terapeuty.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Dlaczego eksperyment, nie rozmowa</div>
+      <div class="element-row">
+        <span class="element-icon">🔬</span>
+        <span class="element-text"><strong>Własne dane &gt;&gt; cudze argumenty</strong> — Bennett-Levy i in. (2004): eksperyment behawioralny zmienia przekonania 2,5× skuteczniej niż restrukturyzacja werbalna.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Konkretne pomiary</strong> — liczbowe dane wiarygodniej zmieniają subiektywne odczucie „pomaga / nie pomaga". Liczby trudniej zaprzeczyć.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚖️</span>
+        <span class="element-text"><strong>Test paradoksu Salkovskisa</strong> — przewidywanie pacjenta („będzie gorzej bez sprawdzania") jest zwykle obalone w 80% eksperymentów A–B.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📊</span>
+        <span class="element-text"><strong>Standard 7 dni × 2</strong> — krótszy okres (3 dni) jest nieinformatywny (zmienność dnia do dnia). 14 dni jest standardem dowodowym.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Nie mów «przestań sprawdzać». Powiedz «sprawdźmy razem, czy sprawdzanie pomaga, czy szkodzi». Eksperyment to wspólna praca, nie nakaz."
+      <span class="frame-quote-attr">— Salkovskis (1996, behavioural experiments)</span>
+    </div>
+
+    <div class="fact-row">📊 <strong>Olatunji i in. (2011, RCT N=104)</strong>: eksperyment A–B zmienia przekonanie „sprawdzanie pomaga" u 73% pacjentów po jednym cyklu. Bez eksperymentu, sama edukacja zmienia przekonanie u 28%.</div>
+
+    <div class="term-note"><strong>Klucz</strong>: eksperyment ma <em>jeden cel</em>: dostarczyć danych. Nie „zwalczać" sprawdzanie, nie udowadniać niczego pacjentowi. Liczby przekonują same — jeśli pokażą, że sprawdzanie pomaga, to też jest dane do uznania (rzadkie, ale możliwe).</div>
+
+    <div class="src">Bennett-Levy i in. (2004, <em>Oxford Guide</em>); Salkovskis (1996); Salkovskis i Warwick (2001); Olatunji i in. (2011, RCT); Wells (1997, behavioural experiments).</div>
+  </section>
+
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Tydzień A — baseline</div>
+    <h1 class="card-prompt">Sprawdzaj <em>jak zwykle</em>, mierz lęk</h1>
+    <p class="card-detail">Pierwszy tydzień: nie zmieniaj nic w zachowaniach. Sprawdzaj, googluj, pytaj — jak zawsze. Mierz tylko jedno: średni poziom lęku 3 razy dziennie (rano, popołudnie, wieczór), w skali 0–10.</p>
+
+    <div class="day-grid">
+      <div class="day-num">Pn</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.1</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Wt</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.2</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Śr</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.3</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Cz</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.4</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Pt</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.5</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">So</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.6</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Nd</div>
+      <div class="day-lbl">Sprawdzanie normalnie + 3 pomiary lęku</div>
+      <div class="day-tgt">A.7</div>
+    </div>
+
+    <div class="scale" style="margin-top:12px">
+      <div class="scale-title">Średni lęk w tygodniu A (suma 21 pomiarów / 21)</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="aSlider" min="0" max="10" step="1" value="6" data-default="6" oninput="updateA()">
+      <div class="scale-readout"><span>Średnia</span><span id="aVal">6</span></div>
+    </div>
+
+    <div class="term-note"><strong>Reguła pomiaru</strong>: 3 pomiary dziennie × 7 dni = 21 punktów danych. Mediana lub średnia jest miarą tygodnia. Ważne: pomiar musi być spontaniczny, nie „bo wiem, że teraz mierzę".</div>
+  </section>
+
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Tydzień B — bez sprawdzania</div>
+    <h1 class="card-prompt">Reguła <em>30 minut</em>: nie reaguj</h1>
+    <p class="card-detail">Drugi tydzień: gdy pojawia się impuls sprawdzania (macanie, googling, pytanie), opóźnij o 30 minut. Zapisz impuls, ale nie wykonaj. Jeśli po 30 minutach nadal czujesz potrzebę — nadal nie wykonuj. To są te same 21 pomiarów co w tygodniu A.</p>
+
+    <div class="day-grid">
+      <div class="day-num">Pn</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.1</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Wt</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.2</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Śr</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.3</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Cz</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.4</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Pt</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.5</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">So</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.6</div>
+    </div>
+    <div class="day-grid">
+      <div class="day-num">Nd</div>
+      <div class="day-lbl">Reguła 30 min — nie sprawdzam, mierzę lęk</div>
+      <div class="day-tgt">B.7</div>
+    </div>
+
+    <div class="scale" style="margin-top:12px">
+      <div class="scale-title">Średni lęk w tygodniu B (suma 21 pomiarów / 21)</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="bSlider" min="0" max="10" step="1" value="5" data-default="5" oninput="updateB()">
+      <div class="scale-readout"><span>Średnia</span><span id="bVal">5</span></div>
+    </div>
+
+    <div class="fact-row">⚠️ <strong>Ważne</strong>: tydzień B ma zwykle 1–2 trudne dni (impuls antycypacyjny). Po dniu 4–5 lęk wyraźnie opada. Jeden trudny dzień nie jest reprezentatywny — średnia z 7 dni jest miarą rzetelną.</div>
+
+    <div class="term-note"><strong>Reguła stałości</strong>: tygodnie A i B muszą być w miarę porównywalne (oba pracujące, oba z bliskim kontekstem). Tydzień A na wakacjach vs tydzień B w pracy — niereprezentatywne. Jeśli wypadnie nietypowe wydarzenie (śmierć bliskiego, choroba), powtórz cykl.</div>
+  </section>
+
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Wynik eksperymentu</div>
+    <h1 class="card-prompt">Co <em>pokazują</em> dane?</h1>
+    <p class="card-detail">Porównaj średnie z tygodnia A i B. Wynik jest niezależny od Twoich oczekiwań — liczby pokazują, co naprawdę się działo.</p>
+
+    <div class="compare">
+      <div class="cmp-cell cmp-a">
+        <div class="cmp-h">Tydzień A — sprawdzanie normalnie</div>
+        <div class="cmp-num" id="aShow">6</div>
+        <div class="cmp-lbl">średni lęk</div>
+      </div>
+      <div class="cmp-cell cmp-b">
+        <div class="cmp-h">Tydzień B — reguła 30 min</div>
+        <div class="cmp-num" id="bShow">5</div>
+        <div class="cmp-lbl">średni lęk</div>
+      </div>
+    </div>
+
+    <div class="final-msg" id="diffMsg">Przesuń suwaki w krokach 2 i 3, by zobaczyć wynik.</div>
+
+    <textarea class="thought-input" id="wnioski" placeholder="Co Cię zaskoczyło w wynikach?&#10;np. „Spodziewałam/em się, że tydzień bez sprawdzania będzie dramatyczny. Realnie — pierwsze 3 dni były trudne, potem zaskakująco lepsze niż tydzień A. Wniosek: sprawdzanie wzmacniało lęk, nie obniżało."" rows="4"></textarea>
+
+    <div class="fact-row">📊 <strong>Olatunji i in. (2011)</strong>: 73% pacjentów po cyklu A–B raportuje średnią różnicę 1,5–2,5 punktów na korzyść tygodnia B. To jest dane przekonujące, bo własne — nie z literatury, nie z ust terapeuty.</div>
+
+    <div class="term-note"><strong>Reguła interpretacji</strong>: dwa cykle A–B (4 tygodnie) dają najpewniejsze dane. Po pierwszym cyklu wynik jest <em>sugestywny</em>; po drugim — <em>przekonujący</em>. Eksperyment można powtórzyć z innymi formami (sprawdzanie ciała vs googling) dla precyzji.</div>
+  </section>
+
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Kalibracja</div>
+    <h1 class="card-prompt">Lęk po <em>zobaczeniu</em> danych</h1>
+    <p class="card-detail">Pacjenci, którzy widzą własne liczby pokazujące mniejszy lęk w tygodniu B, raportują 2–3-punktowy spadek przekonania „muszę sprawdzać". Spadek subiektywnego lęku idzie z opóźnieniem (1–3 tygodnie), bo mózg potrzebuje czasu, by zintegrować nowe dane.</p>
+
+    <div class="scale">
+      <div class="scale-title">Lęk PRZED otwarciem ćwiczenia</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="preLek" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>Poziom</span><span id="preLekDis">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-title">Lęk PO przejściu wszystkich kroków</div>
+      <div class="scale-bounds"><span>0 — brak</span><span>10 — maksymalny</span></div>
+      <input type="range" class="scale-input" id="postLek" min="0" max="10" step="1" value="5" data-default="5" oninput="updateFinal()">
+      <div class="scale-readout"><span>Poziom</span><span id="postLekVal">5</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsg">Przesuń suwak „PO", żeby zobaczyć efekt.</div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: eksperyment zmienia <em>przekonanie</em>, nie nawyk. Mózg ma teraz dane: „sprawdzanie wzmacnia lęk". Nawyk wymaga jeszcze 2–4 tygodni systematycznego niesprawdzania, by się wygasić. Dane to fundament — utrwalenie to praca.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Sprawdzanie <strong>czuje</strong> się jak ulga, ale w danych jest <strong>silnikiem lęku</strong>. To rozdźwięk między subiektywnym przeżyciem (chwilowym) a obiektywnym efektem (długotrwałym). Eksperyment jest narzędziem, by ten rozdźwięk zobaczyć — bez przeciągania, bez przekonywania, bez argumentów. <em>Dane robią robotę za Ciebie.</em></div>
+    </div>
+
+    <div class="src">Bennett-Levy i in. (2004, <em>Oxford Guide to Behavioural Experiments</em>); Salkovskis (1996); Salkovskis i Warwick (2001); Olatunji i in. (2011, RCT); Wells (1997).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function updateA() {
+  var v = document.getElementById('aSlider').value;
+  document.getElementById('aVal').textContent = v;
+  computeDiff();
+}
+function updateB() {
+  var v = document.getElementById('bSlider').value;
+  document.getElementById('bVal').textContent = v;
+  computeDiff();
+}
+function computeDiff() {
+  var a = parseInt(document.getElementById('aSlider').value, 10);
+  var b = parseInt(document.getElementById('bSlider').value, 10);
+  var diff = a - b;
+  var msg = '';
+  if (diff > 0) msg = '<strong>Tydzień bez sprawdzania ma niższy lęk o ' + diff + ' punkt(y)</strong>. Sprawdzanie nie obniża lęku — podtrzymuje go. Twoje własne dane pokazują efekt paradoksu Salkovskisa: <em>mniej sprawdzania = mniej lęku</em>.';
+  else if (diff === 0) msg = 'Identyczny poziom lęku. Sprawdzanie nie obniża lęku, mimo że tak się wydaje subiektywnie. Już to jest istotny wniosek: jeśli sprawdzanie nie pomaga, po co je robić?';
+  else msg = 'Tydzień ze sprawdzaniem dał niższy lęk o ' + (-diff) + '. Możliwe przyczyny: tydzień bez był stresogenny (rodzinny, zdrowotny), albo eksperyment był zbyt krótki. Powtórz w innym kontekście — dla istotnych danych potrzeba 2 cykli A–B.';
+  document.getElementById('diffMsg').innerHTML = msg;
+}
+function updateFinal() {
+  var pre = parseInt(document.getElementById('preLek').value, 10);
+  var post = parseInt(document.getElementById('postLek').value, 10);
+  document.getElementById('postLekVal').textContent = post;
+  var diff = pre - post;
+  var msg = '';
+  if (diff > 0) msg = 'Spadek o <strong>' + diff + '</strong> punkt(y) — własne dane (nie cudze obietnice) zmieniają przekonanie najsilniej. „Sprawdzanie pomaga" przestaje być wiarygodne, gdy widzisz tabelę.';
+  else if (diff === 0) msg = 'Bez zmiany — eksperyment dał wgląd, ale nie zmienił automatu. Powtórz cykl jeszcze raz w innym tygodniu, by mieć dwa potwierdzenia.';
+  else msg = 'Wzrost o <strong>' + (-diff) + '</strong> — czasem własne dane są niewygodne („to znaczy, że robiłem/am to na próżno"). Ten dyskomfort to sygnał ważnej zmiany.';
+  document.getElementById('finalMsg').innerHTML = msg;
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ha_be_checking — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ha_be_checking";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+computeDiff();
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

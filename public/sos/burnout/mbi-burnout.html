@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wypalenie · MBI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.dim-card { background: rgba(184,197,168,0.14); border: 1px solid var(--sage); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.dim-card-h { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--sage-deep); margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
+.dim-card-h-icon { font-size: 18px; }
+.dim-card-d { font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 8px; }
+.dim-card-q { font-size: 12px; color: var(--ink-mute); font-style: italic; margin-bottom: 6px; }
+.profile-pill { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 4px; }
+.profile-pill.low { background: rgba(122,146,112,0.2); color: var(--sage-deep); }
+.profile-pill.mid { background: rgba(201,165,114,0.25); color: #8a6a2a; }
+.profile-pill.high { background: rgba(201,122,82,0.25); color: #8a3a1a; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wypalenie · MBI</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- KROK 1 -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Trzy wymiary <em>wypalenia</em> wg Maslach</h1>
+  <p class="card-detail">Wypalenie zawodowe (Maslach &amp; Jackson, 1981) opisuje <strong>trzy wymiary</strong>, nie jeden. Skala MBI (Maslach Burnout Inventory) — najczęściej cytowane narzędzie pomiaru — mierzy wszystkie trzy oddzielnie. ICD-11 (WHO, 2022, kod QD85) klasyfikuje wypalenie jako „zjawisko związane z pracą", nie jako zaburzenie psychiczne. To rozróżnienie ma znaczenie praktyczne: wypalenie odnosi się <em>do kontekstu pracy</em> i poprawia się przynajmniej częściowo na urlopie — depresja dotyczy całego życia i urlop jej nie zmienia.</p>
+  <p class="card-detail">Najczęstsza pomyłka: traktowanie wypalenia jako synonimu zmęczenia. Zmęczenie ustępuje po przespanej nocy — wypalenie nie. To zespół trzech komponent, które rozwijają się stopniowo, zazwyczaj w sekwencji: najpierw pojawia się <strong>wyczerpanie</strong>, potem <strong>cynizm</strong> jako obrona psychiczna, a na końcu <strong>spadek poczucia dokonań</strong>. Pomiar trzech wymiarów osobno pozwala wybrać właściwy punkt startu pracy.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Trzy wymiary MBI (Maslach 1981) + status klasyfikacyjny</div>
+    <div class="element-row">
+      <span class="element-icon">🪫</span>
+      <span class="element-text"><strong>Wyczerpanie emocjonalne</strong> — brak energii, zmęczenie utrzymujące się mimo odpoczynku, „bateria nigdy się nie ładuje".</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🧊</span>
+      <span class="element-text"><strong>Depersonalizacja / cynizm</strong> — dystans wobec pracy i ludzi, sarkazm, obojętność, traktowanie osób jak obiektów.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📉</span>
+      <span class="element-text"><strong>Obniżone poczucie dokonań</strong> — „nic nie znaczy to, co robię", utrata satysfakcji, wątpliwość w sens i kompetencje.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">📋</span>
+      <span class="element-text"><strong>ICD-11 (QD85)</strong> — zjawisko zawodowe, nie zaburzenie psychiczne. Wypalenie odnosi się do kontekstu pracy, nie do całości życia.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Wypalenie to syndrom emocjonalnego wyczerpania, depersonalizacji i obniżonego poczucia osiągnięć osobistych — występujący u ludzi, którzy pracują z innymi ludźmi."
+    <span class="frame-quote-attr">— Maslach &amp; Jackson (1981, Journal of Occupational Behavior)</span>
+  </div>
+
+  <div class="term-note"><strong>Klucz</strong>: trzy wymiary <em>nie muszą być jednoczesne</em> — możesz mieć wysokie wyczerpanie i jeszcze niezachwiane poczucie dokonań. Najczęstsza sekwencja: wyczerpanie → cynizm → spadek dokonań.</div>
+
+  <div class="term-note"><strong>📌 Praktyczna konsekwencja</strong>: jeśli zaczniesz pracę od wymiaru, który <em>najmniej</em> Cię obciąża, efekt będzie minimalny. Pierwsze 2–4 tygodnie pracy poświęć na <strong>wymiar dominujący</strong> — pozostałe dwa zaczynają się cofać samoistnie po stabilizacji wiodącego.</div>
+
+  <div class="src">Maslach &amp; Jackson (1981) · Maslach i in. (2001) · Maslach &amp; Leiter (2016) · ICD-11 (WHO, 2022, QD85)</div>
+</section>
+
+<!-- KROK 2 -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Twoja sytuacja</div>
+  <h1 class="card-prompt">Zmierz <em>każdy z trzech wymiarów</em> osobno</h1>
+  <p class="card-detail">Pomyśl o ostatnich 4 tygodniach pracy. Każdą skalę ustaw <strong>niezależnie</strong> — wymiary nie muszą być spójne. Nie próbuj być „obiektywna/y" — chodzi o Twoje subiektywne doświadczenie.</p>
+
+  <div class="dim-card">
+    <div class="dim-card-h"><span class="dim-card-h-icon">🪫</span> Wyczerpanie emocjonalne</div>
+    <div class="dim-card-d">Brak energii, zmęczenie poranne, „nie mam już sił".</div>
+    <div class="dim-card-q">Pytanie pomocnicze: czy weekend wystarcza, by się zregenerować?</div>
+    <div class="scale">
+      <div class="scale-bounds"><span>0 — pełna energia</span><span>10 — wyczerpana/y</span></div>
+      <input type="range" class="scale-input" id="dimEx" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Twoja ocena</span><span id="dimExVal">5</span></div>
+    </div>
+  </div>
+
+  <div class="dim-card">
+    <div class="dim-card-h"><span class="dim-card-h-icon">🧊</span> Cynizm / depersonalizacja</div>
+    <div class="dim-card-d">Dystans, obojętność, sarkazm wobec pracy i ludzi.</div>
+    <div class="dim-card-q">Pytanie pomocnicze: czy złapałaś/eś się na traktowaniu klientów/uczniów/pacjentów jak „spraw do załatwienia"?</div>
+    <div class="scale">
+      <div class="scale-bounds"><span>0 — zaangażowana/y</span><span>10 — cynicznie zdystansowana/y</span></div>
+      <input type="range" class="scale-input" id="dimCy" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Twoja ocena</span><span id="dimCyVal">5</span></div>
+    </div>
+  </div>
+
+  <div class="dim-card">
+    <div class="dim-card-h"><span class="dim-card-h-icon">📉</span> Obniżone poczucie dokonań</div>
+    <div class="dim-card-d">„Nie ma sensu tego, co robię", utrata satysfakcji, wątpliwości w kompetencje.</div>
+    <div class="dim-card-q">Pytanie pomocnicze: czy potrafisz wskazać konkret, z którego niedawno byłaś/eś zadowolona/y zawodowo?</div>
+    <div class="scale">
+      <div class="scale-bounds"><span>0 — sens i skuteczność</span><span>10 — bezsens i bezsiła</span></div>
+      <input type="range" class="scale-input" id="dimDo" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>Twoja ocena</span><span id="dimDoVal">5</span></div>
+    </div>
+  </div>
+
+  <div class="term-note"><strong>Reguła pomiaru</strong>: 0–3 to obszar bezpieczny, 4–6 sygnał ostrzegawczy, 7–10 strefa kliniczna. Liczy się <em>profil</em> trzech wartości razem, nie pojedynczy odczyt.</div>
+</section>
+
+<!-- KROK 3 -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Twój profil</div>
+  <h1 class="card-prompt">Który wymiar <em>dominuje</em> w Twoim doświadczeniu?</h1>
+  <p class="card-detail">Wybierz wymiar z najwyższym wynikiem — to on będzie pierwszym celem pracy. Jeśli dwa wymiary są równe, wybierz ten, który najbardziej Ci utrudnia codzienne funkcjonowanie.</p>
+
+  <div class="examples-h">Wybierz wiodący wymiar</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="leadEx" onclick="pickLead('Ex')">🪫 Wyczerpanie</button>
+    <button type="button" class="example-chip" id="leadCy" onclick="pickLead('Cy')">🧊 Cynizm</button>
+    <button type="button" class="example-chip" id="leadDo" onclick="pickLead('Do')">📉 Brak dokonań</button>
+  </div>
+
+  <div id="profileBox" style="margin-top:8px;"></div>
+
+  <textarea class="thought-input" id="leadWhy" rows="3" placeholder="Dlaczego ten wymiar wybierasz? np. „Wyczerpanie. Już od miesiąca budzę się równie zmęczona/y jak kładę spać. Cynizm i dokonania jeszcze trzymają.""></textarea>
+
+  <div class="term-note"><strong>Klucz wyboru</strong>: w typowej sekwencji wypalenia <em>wyczerpanie</em> pojawia się pierwsze i ono najczęściej jest punktem startu pracy. Jeśli dominuje dokonania — sprawdź też przesłanki depresji (poradnik różnicowania w narzędziu „Wypalenie vs depresja").</div>
+</section>
+
+<!-- KROK 4 -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ Pierwszy krok</div>
+  <h1 class="card-prompt">Jaki <em>jeden konkret</em> wprowadzisz w tym tygodniu?</h1>
+  <p class="card-detail">Nie reformuj całego życia. Wybierz jeden mały, mierzalny krok dopasowany do dominującego wymiaru. Cel: <strong>pierwszy mikro-sygnał</strong>, że masz wpływ.</p>
+
+  <textarea class="thought-input" id="oneStep" rows="4" placeholder="np. „W środę i piątek wychodzę z pracy o 16:00 — alarm w telefonie o 15:55. Nie sprawdzam maila po wyjściu.""></textarea>
+
+  <div class="examples-h">Inspiracje per wymiar</div>
+  <div class="example-chips">
+    <button type="button" class="example-chip" id="ideaEx1" onclick="pickIdea('ex1')">🪫 7 godz. snu × 5 dni</button>
+    <button type="button" class="example-chip" id="ideaEx2" onclick="pickIdea('ex2')">🪫 Stop pracy o ustalonej godzinie</button>
+    <button type="button" class="example-chip" id="ideaCy1" onclick="pickIdea('cy1')">🧊 1 rozmowa nieoceniająca dziennie</button>
+    <button type="button" class="example-chip" id="ideaCy2" onclick="pickIdea('cy2')">🧊 Tydzień bez sarkazmu o pracy</button>
+    <button type="button" class="example-chip" id="ideaDo1" onclick="pickIdea('do1')">📉 Lista 3 ukończonych spraw / dzień</button>
+    <button type="button" class="example-chip" id="ideaDo2" onclick="pickIdea('do2')">📉 1 zadanie zgodne z wartościami / tydzień</button>
+  </div>
+
+  <div class="term-note"><strong>Mechanizm</strong>: efekt rozpoczyna się od <em>pojedynczego, regularnie wykonywanego kroku</em>. 14 powtórzeń tworzy odróżnialny sygnał regulacji (Lally i in., 2010 — początek nawyku).</div>
+
+  <div class="term-note"><strong>⚠️ Pułapka „remontu generalnego"</strong>: gdy widzisz cały zakres tego, co trzeba zmienić — sen, ruch, dieta, granice, znajomi, sens — pokusą jest <em>ruszyć wszystko naraz</em>. Taka próba zwykle kończy się porażką po 7–10 dniach. Jeden krok wykonywany 14 dni daje więcej niż pięć kroków wykonywanych 3 dni.</div>
+</section>
+
+<!-- KROK 5 -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po dwóch tygodniach</div>
+  <h1 class="card-prompt">Zmierz <em>te same trzy wymiary</em> ponownie</h1>
+  <p class="card-detail">Po dwóch tygodniach wykonywania jednego kroku wróć do tej karty. Wpisz nowe wartości — porównanie z wynikami z kroku 2 pokaże kierunek zmiany. Jeśli minęło więcej czasu (4 tygodnie i więcej), porównanie też ma sens i pokaże wyraźniejszy trend.</p>
+
+  <textarea class="thought-input" id="afterReflect" rows="3" placeholder="Co się zmieniło? np. „Spałam/em średnio 7 godzin × 5 nocy. Rano wstaję mniej zmęczona/y. Cynizm bez zmian — to nie zniknie samo, potrzebuję pracy nad sensem.""></textarea>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>🪫 Wyczerpanie — po</span><span>0–10</span></div>
+    <input type="range" class="scale-input" id="dimExPo" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Po</span><span id="dimExPoVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>🧊 Cynizm — po</span><span>0–10</span></div>
+    <input type="range" class="scale-input" id="dimCyPo" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Po</span><span id="dimCyPoVal">5</span></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-bounds"><span>📉 Brak dokonań — po</span><span>0–10</span></div>
+    <input type="range" class="scale-input" id="dimDoPo" min="0" max="10" step="1" value="5" data-default="5">
+    <div class="scale-readout"><span>Po</span><span id="dimDoPoVal">5</span></div>
+  </div>
+
+  <div class="diff-list" id="diffList"></div>
+
+  <div class="final-msg" id="finalMsg">Po wpisaniu wartości po — zobaczysz różnice na każdym wymiarze.</div>
+
+  <div class="term-note"><strong>Reguła kalibracji</strong>: pierwsze widoczne zmiany pojawiają się zwykle na <em>wyczerpaniu</em> (najszybciej reaguje na regenerację). Cynizm i poczucie dokonań cofają się wolniej — potrzebują 4–8 tygodni stabilnej pracy.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Wypalenie ma <strong>trzy wymiary</strong>, nie jeden. Mierz każdy <em>oddzielnie</em>, pracuj nad <em>jednym naraz</em>, kontynuuj co 2 tygodnie aż <strong>wszystkie trzy spadną poniżej 4</strong>.</div>
+  </div>
+
+  <div class="src">Maslach &amp; Jackson (1981, Journal of Occupational Behavior) · Maslach i in. (2001, Annual Review of Psychology) · Maslach &amp; Leiter (2016, World Psychiatry) · ICD-11 (WHO, 2022, QD85) · Lally i in. (2010, European Journal of Social Psychology)</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function syncReadouts() {
+  ['dimEx','dimCy','dimDo','dimExPo','dimCyPo','dimDoPo'].forEach(function(id){
+    var inp = document.getElementById(id);
+    var out = document.getElementById(id + 'Val');
+    if (inp && out) {
+      out.textContent = inp.value;
+      inp.addEventListener('input', function(){ out.textContent = inp.value; });
+    }
+  });
+}
+
+function pickLead(letter) {
+  ['Ex','Cy','Do'].forEach(function(L){
+    var el = document.getElementById('lead' + L);
+    if (el) el.classList.remove('picked');
+  });
+  var sel = document.getElementById('lead' + letter);
+  if (sel) sel.classList.add('picked');
+  var box = document.getElementById('profileBox');
+  if (!box) return;
+  var msgs = {
+    'Ex': '🪫 <strong>Wyczerpanie</strong> jako wiodący wymiar — typowy start wypalenia. Praca: regeneracja (sen, ruch, mikro-przerwy), ograniczanie godzin pracy, psychologiczne odłączenie po pracy.',
+    'Cy': '🧊 <strong>Cynizm</strong> jako wiodący — etap pośredni. Praca: rekonstrukcja sensu i wartości, granice z trudnymi relacjami zawodowymi, ACT (akceptacja + zaangażowanie w wartości).',
+    'Do': '📉 <strong>Brak dokonań</strong> jako wiodący — etap zaawansowany. Praca: ewaluacja sensu pracy (job crafting), klaryfikacja wartości, decyzja o zostaniu vs zmianie. Sprawdź też różnicowanie z depresją.'
+  };
+  box.innerHTML = '<div class="term-note">' + msgs[letter] + '</div>';
+}
+
+function pickIdea(idx) {
+  var btn = document.getElementById('idea' + idx);
+  if (btn) btn.classList.add('picked');
+  var ideas = {
+    'ex1': '7 godzin snu przez 5 nocy w tygodniu — bez ekranu po 22:00.',
+    'ex2': 'Wychodzę z pracy o ustalonej godzinie — alarm w telefonie 5 min wcześniej.',
+    'cy1': 'Jedna rozmowa dziennie bez wewnętrznej oceny — słucham zamiast komentować w głowie.',
+    'cy2': 'Tydzień bez sarkazmu o pracy — w domu, ze znajomymi, w głowie.',
+    'do1': 'Lista 3 ukończonych spraw na koniec dnia — fakty, nie oceny.',
+    'do2': '1 zadanie tygodniowo zgodne z moimi wartościami zawodowymi.'
+  };
+  var ta = document.getElementById('oneStep');
+  if (ta && !ta.value.trim()) ta.value = ideas[idx] || '';
+  if (typeof save === 'function') save();
+}
+
+function updateDiff() {
+  var rows = [
+    ['🪫 Wyczerpanie', 'dimEx', 'dimExPo'],
+    ['🧊 Cynizm', 'dimCy', 'dimCyPo'],
+    ['📉 Brak dokonań', 'dimDo', 'dimDoPo']
+  ];
+  var html = '';
+  var anyChange = false;
+  rows.forEach(function(r){
+    var pre = parseInt(document.getElementById(r[1]).value, 10);
+    var post = parseInt(document.getElementById(r[2]).value, 10);
+    var d = post - pre;
+    var sign = d > 0 ? '+' : '';
+    var cls = d < 0 ? 'diff-delta' : 'diff-delta neg';
+    if (d !== 0) anyChange = true;
+    html += '<div class="diff-row"><strong>' + r[0] + '</strong><span class="' + cls + '">' + pre + ' → ' + post + ' (' + sign + d + ')</span></div>';
+  });
+  document.getElementById('diffList').innerHTML = html;
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    if (!anyChange) {
+      fm.innerHTML = 'Wartości <em>po</em> takie same jak <em>przed</em> — przesuń suwaki, by zobaczyć różnicę.';
+    } else {
+      var pe = parseInt(document.getElementById('dimEx').value, 10);
+      var po = parseInt(document.getElementById('dimExPo').value, 10);
+      var dEx = po - pe;
+      var msg = '';
+      if (dEx < -1) msg = '<strong>Wyczerpanie spadło o ' + Math.abs(dEx) + '</strong> — to typowy pierwszy efekt regeneracji. Kontynuuj wybrany krok.';
+      else if (dEx > 1) msg = '<strong>Wyczerpanie wzrosło</strong> — sprawdź czy wybrany krok faktycznie się odbywa, lub czy wymagania pracy nie wzrosły bardziej niż zasoby.';
+      else msg = 'Zmiana niewielka — to <em>normalne</em> w pierwszych 2 tygodniach. Zwiększ liczbę powtórzeń lub dodaj drugi mały krok.';
+      fm.innerHTML = msg;
+    }
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) updateDiff();
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_mbi_burnout — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_mbi_burnout";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+syncReadouts();
+['dimExPo','dimCyPo','dimDoPo'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateDiff);
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

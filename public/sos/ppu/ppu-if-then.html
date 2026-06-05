@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Plan if-then</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.plan-card {
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 10px; padding: 12px; margin-bottom: 10px;
+}
+.plan-line {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.plan-tag {
+  font-family: 'Fraunces', serif; font-size: 11px; font-weight: 700;
+  color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase;
+  background: var(--sage-soft); padding: 3px 8px; border-radius: 6px;
+  flex-shrink: 0;
+}
+.plan-input {
+  flex: 1; min-width: 200px; padding: 8px 10px;
+  border: 1px solid var(--sage); border-radius: 8px;
+  background: rgba(255,255,255,0.5); font-family: inherit; font-size: 13px;
+  color: var(--ink);
+}
+.plan-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+.plan-num { font-family: 'Fraunces', serif; font-weight: 700; color: var(--sage-deep); margin-bottom: 6px; font-size: 13px; }
+
+.trigger-grid {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px;
+}
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Plan if-then</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============ KROK 1 — Wprowadzenie ============ -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">Zamień <em>postanowienie</em> w plan warunkowy</h1>
+    <p class="card-detail">Plan if-then (implementation intentions) to technika Petera Gollwitzera (Gollwitzer, 1999), wsparta meta-analizą 94 badań (Gollwitzer &amp; Sheeran, 2006), która pokazała, że tak sformułowane plany <strong>podwajają</strong> skuteczność zachowań zamierzonych (efekt d≈0.65). Mechanizm: zamiast ogólnego postanowienia („będę się mniej oglądać") tworzysz konkretną regułę warunkową — <em>„jeśli wystąpi X, to zrobię Y"</em>. W momencie, gdy pojawia się X, akcja Y uruchamia się prawie automatycznie, bez obciążania samokontroli.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cztery zasady planu if-then</div>
+      <div class="element-row">
+        <span class="element-icon">🎯</span>
+        <span class="element-text"><strong>Konkret X</strong> — wyzwalacz: czas, miejsce, emocja, sytuacja. Im bardziej namacalny, tym łatwiej go rozpoznać.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🛠️</span>
+        <span class="element-text"><strong>Konkret Y</strong> — alternatywne zachowanie: nie „opanuję się", lecz „wyjdę z domu i pójdę do sklepu".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🔁</span>
+        <span class="element-text"><strong>Powtarzanie</strong> — plan zapisany i kilkakrotnie odczytany staje się nawykiem; raz pomyślany — szybko ginie.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">📋</span>
+        <span class="element-text"><strong>Kilka planów</strong> — 5 do 10 reguł obejmujących różne typowe sytuacje to typowe minimum w warunkach klinicznych.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Plan if-then przenosi kontrolę zachowania z trudnej, świadomej deliberacji na łatwą, automatyczną reakcję na sytuację."
+      <span class="frame-quote-attr">— parafraza Gollwitzera (Gollwitzer, 1999, American Psychologist)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: w impulsie nie pamiętasz strategii — abstrakcyjne plany nie działają. Plan if-then jest <em>„zaprogramowany"</em>: gdy pojawia się trigger, następuje akcja bez pośrednictwa „postanowienia".</div>
+
+    <div class="src">Gollwitzer (1999, American Psychologist); Gollwitzer &amp; Sheeran (2006, meta-analiza, Adv. Exp. Soc. Psychol.); Armitage (2007, kliniczne zastosowania); Brand i in. (2019, I-PACE — model PPU).</div>
+  </section>
+
+  <!-- ============ KROK 2 — Triggery ============ -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Twoje triggery — jakie X dotyczą Ciebie</div>
+    <h1 class="card-prompt">Zaznacz <em>typowe sytuacje wyzwalające</em></h1>
+    <p class="card-detail">Bez znajomości własnych X — Y nie zadziała. Wybierz wszystkie, które realnie pojawiały się w ostatnich tygodniach.</p>
+
+    <div class="examples-h">Czas i miejsce</div>
+    <div class="trigger-grid">
+      <button type="button" class="example-chip" id="trEvening" onclick="this.classList.toggle('picked')">Wieczór po 22:00</button>
+      <button type="button" class="example-chip" id="trMorning" onclick="this.classList.toggle('picked')">Rano po przebudzeniu</button>
+      <button type="button" class="example-chip" id="trBed" onclick="this.classList.toggle('picked')">W łóżku przed snem</button>
+      <button type="button" class="example-chip" id="trBath" onclick="this.classList.toggle('picked')">W łazience</button>
+      <button type="button" class="example-chip" id="trAlone" onclick="this.classList.toggle('picked')">Sam/a w domu</button>
+      <button type="button" class="example-chip" id="trWeekend" onclick="this.classList.toggle('picked')">Weekend bez planu</button>
+    </div>
+
+    <div class="examples-h">Stan emocjonalny</div>
+    <div class="trigger-grid">
+      <button type="button" class="example-chip" id="trLonely" onclick="this.classList.toggle('picked')">Samotność</button>
+      <button type="button" class="example-chip" id="trBored" onclick="this.classList.toggle('picked')">Nuda</button>
+      <button type="button" class="example-chip" id="trStress" onclick="this.classList.toggle('picked')">Stres pracy</button>
+      <button type="button" class="example-chip" id="trAnger" onclick="this.classList.toggle('picked')">Złość, frustracja</button>
+      <button type="button" class="example-chip" id="trTired" onclick="this.classList.toggle('picked')">Zmęczenie</button>
+      <button type="button" class="example-chip" id="trConflict" onclick="this.classList.toggle('picked')">Konflikt z partnerem/ką</button>
+    </div>
+
+    <div class="examples-h">Bodziec zewnętrzny</div>
+    <div class="trigger-grid">
+      <button type="button" class="example-chip" id="trPhone" onclick="this.classList.toggle('picked')">Scrollowanie telefonu</button>
+      <button type="button" class="example-chip" id="trIncognito" onclick="this.classList.toggle('picked')">Tryb incognito</button>
+      <button type="button" class="example-chip" id="trAlc" onclick="this.classList.toggle('picked')">Po alkoholu</button>
+      <button type="button" class="example-chip" id="trAd" onclick="this.classList.toggle('picked')">Reklama, miniaturka</button>
+    </div>
+
+    <div class="term-note"><strong>Reguła pomiaru</strong>: <em>3—5</em> najczęstszych triggerów wystarczy, by zaplanować większość interwencji. Nie próbuj objąć wszystkich — zacznij od najczęstszych.</div>
+  </section>
+
+  <!-- ============ KROK 3 — Tworzenie planów ============ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Trzy plany if-then</div>
+    <h1 class="card-prompt">Napisz <em>trzy własne reguły</em> X → Y</h1>
+    <p class="card-detail">Wybierz trzy z zaznaczonych w kroku 2 triggerów. Dla każdego sformułuj plan: <strong>„Jeśli (konkretne X), to (konkretne Y)"</strong>. Y musi być akcją wykonalną w &lt;1 minutę.</p>
+
+    <div class="plan-card">
+      <div class="plan-num">Plan 1</div>
+      <div class="plan-line">
+        <span class="plan-tag">Jeśli</span>
+        <input type="text" class="plan-input" id="if1" placeholder="np. „wracam do domu po 22:00"">
+      </div>
+      <div class="plan-line">
+        <span class="plan-tag">to</span>
+        <input type="text" class="plan-input" id="then1" placeholder="np. „zostawiam telefon w kuchni i idę pod prysznic"">
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <div class="plan-num">Plan 2</div>
+      <div class="plan-line">
+        <span class="plan-tag">Jeśli</span>
+        <input type="text" class="plan-input" id="if2" placeholder="np. „czuję urge ≥6"">
+      </div>
+      <div class="plan-line">
+        <span class="plan-tag">to</span>
+        <input type="text" class="plan-input" id="then2" placeholder="np. „dzwonię do K. lub robię 20 pompek"">
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <div class="plan-num">Plan 3</div>
+      <div class="plan-line">
+        <span class="plan-tag">Jeśli</span>
+        <input type="text" class="plan-input" id="if3" placeholder="np. „sięgnę po telefon w łóżku"">
+      </div>
+      <div class="plan-line">
+        <span class="plan-tag">to</span>
+        <input type="text" class="plan-input" id="then3" placeholder="np. „odkładam go na półkę w kuchni i wracam do łóżka"">
+      </div>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: dobre Y to akcja, której można <em>nie chcieć</em>, ale wykonać mechanicznie — <strong>odłożyć telefon, wstać, wyjść z pokoju</strong>. Złe Y to „opanowanie się", „walka z myślą".</div>
+  </section>
+
+  <!-- ============ KROK 4 — Wybór najmocniejszego ============ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Wybór najmocniejszego planu</div>
+    <h1 class="card-prompt">Wybierz <em>jeden plan</em> do testu</h1>
+    <p class="card-detail">Z trzech planów wybierz ten, który <strong>najczęściej</strong> będzie potrzebny w nadchodzącym tygodniu. Spisz go ręcznie na kartce widocznej w miejscu, gdzie jego X się pojawia (kuchnia, sypialnia, biurko).</p>
+
+    <button type="button" class="rel-btn" id="pickPlan1" onclick="pickPlan(1)">
+      <span class="rel-name">📋 Plan 1</span>
+      <span class="rel-desc">Najprostszy — jeśli typowy trigger zewnętrzny (czas, miejsce).</span>
+    </button>
+    <button type="button" class="rel-btn" id="pickPlan2" onclick="pickPlan(2)">
+      <span class="rel-name">🌊 Plan 2</span>
+      <span class="rel-desc">Reaktywny — gdy impuls już rośnie; szybkie przekierowanie.</span>
+    </button>
+    <button type="button" class="rel-btn" id="pickPlan3" onclick="pickPlan(3)">
+      <span class="rel-name">🛡️ Plan 3</span>
+      <span class="rel-desc">Profilaktyczny — przerywa łańcuch zanim się rozkręci.</span>
+    </button>
+
+    <textarea class="thought-input" id="commit" placeholder="np. „Plan 1 — kartka w kuchni, na lodówce. Telefon ląduje w szufladzie, prysznic 5 min."" rows="3"></textarea>
+
+    <div class="term-note"><strong>Mechanizm</strong>: zapisanie planu i umieszczenie w widocznym miejscu wzmacnia <em>środowiskową aktywację</em> nawyku. Wzrok napotykający kartkę uruchamia plan w mózgu, zanim trigger w ogóle wystąpi.</div>
+  </section>
+
+  <!-- ============ KROK 5 — Test mentalny + commit ============ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Test mentalny — symulacja</div>
+    <h1 class="card-prompt">Przećwicz <em>plan w głowie</em></h1>
+    <p class="card-detail">Wyobraź sobie konkretną przyszłą sytuację, gdzie X wystąpi (czas, miejsce, ciało). Następnie odtwórz Y — zobacz siebie wykonującego/ą akcję. Powtórz scenariusz <strong>3 razy</strong>. Mental rehearsal podwaja siłę planu (Gollwitzer &amp; Sheeran, 2006).</p>
+
+    <textarea class="thought-input" id="rehearsal" placeholder="np. „Wieczór, jestem w łóżku, sięgam po telefon. Wstaję, niosę telefon do kuchni, kładę na blacie, wracam. Czuję ulgę."" rows="4"></textarea>
+
+    <div class="scale">
+      <div class="scale-label"><span>Wiara, że plan zadziała (0—10)</span><span></span></div>
+      <input type="range" class="scale-input" id="conf" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = brak</span><span id="confVal">6</span></div>
+    </div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pojawi się tu po ocenie wiary.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: po pierwszym <em>realnym</em> uruchomieniu planu w nadchodzącym tygodniu wróć tu i zaktualizuj wiarę. Każde działające uruchomienie podnosi ją trwale; każde nieudane — wskazuje, co poprawić w X lub Y.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Plan if-then nie wymaga <em>woli</em> — wymaga tylko <strong>rozpoznania X</strong>. Twoim zadaniem nie jest „chcieć", tylko zauważyć moment i wykonać Y. Gollwitzer udowodnił: tak sformułowane plany działają <strong>2× lepiej</strong> niż postanowienia.</div>
+    </div>
+
+    <div class="src">Gollwitzer (1999, American Psychologist 54); Gollwitzer &amp; Sheeran (2006, Adv. Exp. Soc. Psychol. 38); Armitage (2007, J. Behav. Med.); Brand i in. (2019, I-PACE); Hall (2013, CBT for hypersexual disorder); Marlatt &amp; Donovan (2005).</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+bindRange('conf','confVal');
+
+window.pickedPlan = null;
+function pickPlan(n) {
+  window.pickedPlan = n;
+  [1,2,3].forEach(function(i){
+    var el = document.getElementById('pickPlan' + i);
+    if (el) el.classList.remove('picked');
+  });
+  var el = document.getElementById('pickPlan' + n);
+  if (el) el.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+
+function renderFinal() {
+  var fm = document.getElementById('finalMsg');
+  if (!fm) return;
+  var conf = parseInt(document.getElementById('conf').value, 10);
+  var msg = '';
+  if (conf >= 8) {
+    msg = '<strong>Wysoka wiara.</strong> To dobry sygnał — przy nadchodzącym X plan ma realną szansę uruchomić się automatycznie. Wykonaj go i wróć tu po pierwszym teście.';
+  } else if (conf >= 5) {
+    msg = '<strong>Umiarkowana wiara.</strong> Plan zadziała, ale Y może wymagać uproszczenia. Sprawdź: czy Y jest naprawdę wykonywalne w &lt;1 minutę i nie wymaga „walki"?';
+  } else {
+    msg = '<strong>Niska wiara.</strong> Y prawdopodobnie jest <em>za trudne</em> lub abstrakcyjne. Zamień na coś mechanicznego: zostawić telefon, wyjść z pokoju, włączyć prysznic. Im prostsze Y, tym wyższa skuteczność.';
+  }
+  fm.innerHTML = msg;
+}
+
+function onStepChange(step) {
+  if (step === 5) renderFinal();
+}
+
+function onReset() {
+  window.pickedPlan = null;
+  [1,2,3].forEach(function(i){
+    var el = document.getElementById('pickPlan' + i);
+    if (el) el.classList.remove('picked');
+  });
+}
+
+var confEl = document.getElementById('conf');
+if (confEl) confEl.addEventListener('input', renderFinal);
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_if_then — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_if_then";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+setTimeout(function(){
+  [1,2,3].forEach(function(n){
+    var el = document.getElementById('pickPlan' + n);
+    if (el && el.classList.contains('picked')) {
+      window.pickedPlan = n;
+    }
+  });
+}, 200);
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

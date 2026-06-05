@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Funkcje wykonawcze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+.ef-card { padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 10px 10px 0; margin-bottom: 8px; }
+.ef-h { font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage-deep); margin-bottom: 6px; }
+.ef-body { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.ef-body strong { color: var(--ink); font-weight: 600; }
+.def-card { padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: rgba(184,197,168,0.18); }
+.def-card.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.def-card.picked .def-desc { color: rgba(244,241,234,0.85); }
+.def-name { font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+.def-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.45; }
+.proto-step { display: flex; gap: 10px; padding: 8px 12px; background: rgba(184,197,168,0.12); border-left: 3px solid var(--sage-deep); border-radius: 0 8px 8px 0; margin-bottom: 6px; }
+.proto-num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; color: var(--sage-deep); flex-shrink: 0; min-width: 22px; }
+.proto-text { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.proto-text strong { color: var(--ink); font-weight: 600; }
+.tools-row { display: flex; gap: 8px; padding: 10px 12px; background: rgba(255,255,255,0.5); border: 1px solid var(--sage); border-radius: 10px; margin-bottom: 7px; align-items: flex-start; font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+.tools-row strong { color: var(--ink); }
+.tools-icon { font-size: 18px; flex-shrink: 0; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Funkcje wykonawcze</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+<!-- ============== KROK 1 — Wprowadzenie ============== -->
+<section class="card active" data-step="1">
+  <div class="card-eyebrow">🌱 Wprowadzenie</div>
+  <h1 class="card-prompt">Funkcje wykonawcze — <em>nie wola</em>, lecz mózg</h1>
+  <p class="card-detail">Hill (2004, Trends in Cognitive Sciences) i Demetriou i in. (2018, meta-analiza w Molecular Psychiatry): u dorosłych w spektrum autyzmu <strong>funkcje wykonawcze</strong> (executive functions, EF) bywają znacząco osłabione. Cztery deficyty są szczególnie częste: <strong>inicjacja</strong> (rozpoczęcie zadania), <strong>elastyczność</strong> (przełączanie między zadaniami), <strong>planowanie</strong> (sekwencjonowanie kroków), <strong>monitorowanie</strong> (czas i postęp). To są <em>różnice w funkcjonowaniu mózgu</em> — nie lenistwo, nie brak motywacji, nie kwestia charakteru. Skuteczna pomoc: <strong>eksternalizacja</strong>, czyli przeniesienie pracy poznawczej z mózgu na narzędzia.</p>
+
+  <div class="frame-card">
+    <div class="frame-h">Cztery deficyty EF u dorosłych w spektrum (Hill 2004, Demetriou 2018)</div>
+    <div class="element-row">
+      <span class="element-icon">🚪</span>
+      <span class="element-text"><strong>Inicjacja</strong> — trudność z rozpoczęciem zadania, nawet jeśli wiesz, że trzeba je zrobić. „Stoję przed lodówką i nie mogę zacząć rozładowywać zakupów." Najczęstszy deficyt; często mylony z prokrastynacją.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🔀</span>
+      <span class="element-text"><strong>Elastyczność / przełączanie</strong> — bolesne wyjście z aktualnego zadania. Telefon dzwoni w trakcie kodowania = 30 minut na powrót do skupienia. Im głębsze zanurzenie, tym wyższy koszt przerwania.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">🧭</span>
+      <span class="element-text"><strong>Planowanie / sekwencjonowanie</strong> — trudność z rozłożeniem dużego zadania na kroki. „Muszę zrobić projekt" zatrzymuje, „muszę otworzyć plik X i napisać 3 zdania" działa. Sekwencja musi być na zewnątrz.</span>
+    </div>
+    <div class="element-row">
+      <span class="element-icon">⏱️</span>
+      <span class="element-text"><strong>Monitorowanie czasu (time blindness)</strong> — czas „znika": 15 minut może być odczute jak godzina, godzina jak 15 minut. Wewnętrzny zegar zawodny — potrzeba zegarów zewnętrznych, alarmów, timerów.</span>
+    </div>
+  </div>
+
+  <div class="frame-quote">„Eksternalizacja funkcji wykonawczych — przeniesienie ich na narzędzia, listy, alarmy, drugą osobę — jest u dorosłych w spektrum strategią pierwszej linii. Próby ‚wzięcia się w garść' bez eksternalizacji prowadzą do wypalenia."
+    <span class="frame-quote-attr">— Demetriou i in. (2018, Molecular Psychiatry)</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Klucz</strong>: deficyt EF <em>nie zniknie</em>, ale jego wpływ na życie zniknie, jeśli zbudujesz <strong>protezy</strong> — narzędzia, które za Ciebie pamiętają, sekwencjonują i monitorują. „Lepszy zewnętrzny system niż wewnętrzny zachwyt" jest hasłem operacyjnym.</div>
+
+  <div class="src">Hill (2004, Trends in Cognitive Sciences); Demetriou i in. (2018, Molecular Psychiatry, meta-analiza); Geurts i in. (2014); Lever &amp; Geurts (2016, JAACAP, EF u dorosłych).</div>
+</section>
+
+<!-- ============== KROK 2 — 🎯 Mapa Twojego dnia ============== -->
+<section class="card" data-step="2">
+  <div class="card-eyebrow">🎯 Mapa zatrzymań</div>
+  <h1 class="card-prompt">Gdzie Twój dzień <em>zatrzymuje się</em>?</h1>
+  <p class="card-detail">Wybierz jeden typowy dzień z ostatniego tygodnia. Wpisz po jednym konkretnym przykładzie zatrzymania w każdej z czterech sfer EF. Konkret („w środę o 19:00 stałem przed lodówką 25 minut") jest cenniejszy niż abstrakcja („nigdy nie potrafię się zabrać").</p>
+
+  <div class="ef-card">
+    <div class="ef-h">🚪 Inicjacja — co dziś nie ruszyło</div>
+    <div class="ef-body"><textarea class="thought-input" id="i1" placeholder="np. „Zakupy stały na podłodze 90 minut po powrocie. Wiedziałam, że trzeba rozpakować, ale nie mogłam ‚włączyć' się w to"" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+  <div class="ef-card">
+    <div class="ef-h">🔀 Elastyczność — co bolało przy przełączeniu</div>
+    <div class="ef-body"><textarea class="thought-input" id="i2" placeholder="np. „Skupiałam się na arkuszu — zadzwonił partner. Po 5 minutach rozmowy nie umiałam wrócić do pliku przez 40 minut"" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+  <div class="ef-card">
+    <div class="ef-h">🧭 Planowanie — co stało się „za dużym zadaniem"</div>
+    <div class="ef-body"><textarea class="thought-input" id="i3" placeholder="np. „Mam wysłać podanie na kurs — od 3 tygodni. Zatrzymuje mnie zwrot ‚cały proces'. Nie wiem od czego zacząć"" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+  <div class="ef-card">
+    <div class="ef-h">⏱️ Czas — gdzie zniknął</div>
+    <div class="ef-body"><textarea class="thought-input" id="i4" placeholder="np. „Usiadłam ‚na 10 minut' do filmu o ptakach — minęło 2,5 godziny. Spóźniłam się na umówiony telefon"" rows="2" style="margin-bottom:0"></textarea></div>
+  </div>
+
+  <div class="scale">
+    <div class="scale-title">Twoja skuteczność wykonawcza w typowy dzień — przed</div>
+    <div class="scale-bounds"><span>0 — wszystko utyka</span><span>10 — wszystko płynie</span></div>
+    <input type="range" class="scale-input" id="skutPre" min="0" max="10" step="1" value="4" data-default="4">
+    <div class="scale-readout"><span>Skuteczność</span><span id="skutPreVal">4</span></div>
+  </div>
+
+  <div class="term-note"><strong>📌 Reguła konkretu</strong>: deficyt EF jest <em>kontekstowy</em>. Inicjacja może być dramatyczna w domu, a płynna w pracy (gdzie struktura zewnętrzna pomaga). Mapa pokazuje, <em>gdzie</em> brakuje protez. Bez konkretu skończysz przy ogólnym „muszę być bardziej zorganizowany/a", co nie zmienia niczego.</div>
+</section>
+
+<!-- ============== KROK 3 — 🧭 Wybór obszaru pracy ============== -->
+<section class="card" data-step="3">
+  <div class="card-eyebrow">🧭 Wybór obszaru</div>
+  <h1 class="card-prompt">Który <em>deficyt</em> najmocniej obniża jakość Twojego życia?</h1>
+  <p class="card-detail">Wybierz jeden z czterech. Pracujemy nim w kroku 4 — buduję dla niego konkretny system eksternalizacji. Próby naprawy wszystkich naraz prowadzą do paraliżu; jeden obszar przepracowany porządnie pociąga inne.</p>
+
+  <div class="def-card" id="dfA" onclick="pickDef('A')">
+    <div class="def-name">A · Inicjacja — proteza startowa</div>
+    <div class="def-desc">Najczęstszy obszar. Narzędzia: reguła 2 minut, body doubling, bardzo małe pierwsze kroki, fizyczne sygnały (ubieranie się od razu po wejściu do pokoju), zewnętrzne bodźce („zacznij gdy zegar pokaże xx:30").</div>
+  </div>
+  <div class="def-card" id="dfB" onclick="pickDef('B')">
+    <div class="def-name">B · Elastyczność — bufor przełączania</div>
+    <div class="def-desc">Narzędzia: zaplanowane „bramki" przełączania (między blokami zawsze 15 min przerwy), protokoły transition (krótka rytuał-interwencja), no-call windows, wcześniejsze powiadomienie o nadchodzących zmianach kontekstu.</div>
+  </div>
+  <div class="def-card" id="dfC" onclick="pickDef('C')">
+    <div class="def-name">C · Planowanie — sekwencjonowanie zewnętrzne</div>
+    <div class="def-desc">Narzędzia: rozbicie każdego zadania na kroki ≤15 min, lista kroków na widoku (nie w głowie), pierwszy krok zawsze fizyczny („otwieram plik X"), system kanban z trzema kolumnami.</div>
+  </div>
+  <div class="def-card" id="dfD" onclick="pickDef('D')">
+    <div class="def-name">D · Czas — zegary zewnętrzne</div>
+    <div class="def-desc">Narzędzia: timer Pomodoro (25/5), pojedyncze alarmy zegarkowe (a nie powiadomienia w telefonie), aplikacja typu „Time Timer" pokazująca upływ czasu wizualnie, regularne synchronizacje (np. co godzinę „gdzie jestem teraz").</div>
+  </div>
+
+  <div class="term-note"><strong>💡 Wskazówka</strong>: <em>jeden obszar</em> przepracowany przez 4 tygodnie daje większy zysk niż cztery próby równolegle. Lever &amp; Geurts (2016): trening EF u dorosłych w spektrum jest najskuteczniejszy, gdy fokus jest wąski i regularny — nie gdy zmiana ma „wszystko".</div>
+</section>
+
+<!-- ============== KROK 4 — ⚙️ Twój system eksternalizacji ============== -->
+<section class="card" data-step="4">
+  <div class="card-eyebrow">⚙️ System eksternalizacji</div>
+  <h1 class="card-prompt">Konkretny system na <em>4 tygodnie</em></h1>
+  <p class="card-detail">Z obszaru z kroku 3 buduję system z czterema elementami: narzędzie · rytuał · zewnętrzny sygnał · próg sukcesu. Każde pole 1–2 zdania, konkretne, sprawdzalne.</p>
+
+  <div class="proto-step">
+    <span class="proto-num">1</span>
+    <span class="proto-text"><strong>Narzędzie</strong> — co dokładnie kupisz/zainstalujesz/przygotujesz w 24 godziny</span>
+  </div>
+  <textarea class="thought-input" id="n1" placeholder="np. „Time Timer (aplikacja na telefon, darmowa) + zegarek z funkcją wibracji co 30 min"" rows="2"></textarea>
+
+  <div class="proto-step">
+    <span class="proto-num">2</span>
+    <span class="proto-text"><strong>Rytuał — kiedy używasz, jak długo, w jakiej kolejności</strong></span>
+  </div>
+  <textarea class="thought-input" id="n2" placeholder="np. „Co rano, 15 min po wejściu do biurka: ustawiam Time Timer na 25 min, telefon na ‚nie przeszkadzać', wracam do zegarka co alarm"" rows="2"></textarea>
+
+  <div class="proto-step">
+    <span class="proto-num">3</span>
+    <span class="proto-text"><strong>Zewnętrzny sygnał</strong> — co Cię uruchamia (a nie ‚siła woli')</span>
+  </div>
+  <textarea class="thought-input" id="n3" placeholder="np. „Karteczka na monitorze: ‚START Pomodoro'. Drugi sygnał: koleżanka z zespołu zaczyna swoje Pomodoro w tym samym momencie (body doubling)"" rows="2"></textarea>
+
+  <div class="proto-step">
+    <span class="proto-num">4</span>
+    <span class="proto-text"><strong>Próg sukcesu</strong> — jak rozpoznasz, że system działa po 4 tygodniach</span>
+  </div>
+  <textarea class="thought-input" id="n4" placeholder="np. „Oddaję 3 zadania w tygodniu zamiast 1. Odczuwam mniej winy wieczorem. Nie spóźniam się na umówione telefony"" rows="2"></textarea>
+
+  <div class="tools-row">
+    <span class="tools-icon">🤝</span>
+    <span><strong>Body doubling</strong> — jeśli inicjacja jest Twoim głównym deficytem, znacznie skuteczniejszą protezą niż jakakolwiek aplikacja jest <em>obecność drugiej osoby</em> wykonującej swoją pracę obok. Może być realna (kolega/żanka) lub wirtualna (Focusmate, sesja video bez rozmowy). Działa dlatego, że mózg „pożycza" cudzą inicjację.</span>
+  </div>
+
+  <div class="term-note"><strong>🔑 Mechanizm</strong>: eksternalizacja działa, bo <em>oddaje pracę</em>, której Twój mózg nie wykonuje samodzielnie. Demetriou i in. (2018): eksternalne wsparcie EF redukuje codzienny stres dorosłych w spektrum o 30–40% w 8 tygodni — bez treningu samej funkcji, tylko przez przeniesienie obciążenia.</div>
+</section>
+
+<!-- ============== KROK 5 — ✨ Po 4 tygodniach ============== -->
+<section class="card" data-step="5">
+  <div class="card-eyebrow">✨ Po 4 tygodniach</div>
+  <h1 class="card-prompt">Czy <em>system</em> wszedł w tło dnia?</h1>
+  <p class="card-detail">Po 4 tygodniach codziennego używania systemu z kroku 4 — pomiar skuteczności wykonawczej. Pierwszy tydzień zwykle czuje się jak dodatkowy wysiłek; kolejne — jak ulga.</p>
+
+  <div class="scale">
+    <div class="scale-title">Skuteczność wykonawcza w typowy dzień — po 4 tygodniach</div>
+    <div class="scale-bounds"><span>0 — wszystko utyka</span><span>10 — wszystko płynie</span></div>
+    <input type="range" class="scale-input" id="skutPost" min="0" max="10" step="1" value="6" data-default="6">
+    <div class="scale-readout"><span>Skuteczność</span><span id="skutPostVal">6</span></div>
+  </div>
+
+  <div class="final-msg" id="finalMsg">Po lewej i prawej stronie suwaka są dwie liczby. Twoja różnica pokazuje, na ile system wziął na siebie pracę EF, której wcześniej nie miał kto wykonać.</div>
+
+  <textarea class="thought-input" id="kolejny" placeholder="np. „Następne 4 tygodnie: planowanie (sekwencjonowanie projektów). Narzędzie: kanban z trzema kolumnami (do zrobienia, w trakcie, zrobione), aktualizacja codziennie rano"" rows="3"></textarea>
+
+  <div class="term-note"><strong>📌 Reguła kalibracji</strong>: deficyt EF u dorosłych w spektrum <em>jest stabilny</em>, ale jego wpływ na życie kalibruje się przez systemy. Powtarzaj cykl 4-tygodniowy z kolejnym obszarem (po inicjacji — planowanie, potem czas, potem elastyczność). Po roku masz cztery działające protezy. Lever &amp; Geurts (2016): osoby z protezami EF raportują znacząco mniej wypalenia i wyższą jakość życia w 12 miesięcy.</div>
+
+  <div class="repeat-reminder">
+    <div class="repeat-h">Zapamiętaj</div>
+    <div class="repeat-body">Funkcje wykonawcze to <strong>mózg</strong>, nie wola. Próby „wzięcia się w garść" bez protez prowadzą do wypalenia. <em>Eksternalizacja</em> — narzędzia, listy, alarmy, druga osoba — bierze pracę, której Twój mózg nie wykonuje sam. Lepszy zewnętrzny system niż wewnętrzny zachwyt.</div>
+  </div>
+
+  <div class="src">Hill (2004, Trends in Cognitive Sciences); Demetriou i in. (2018, Molecular Psychiatry); Geurts i in. (2014); Lever &amp; Geurts (2016, JAACAP); Wallace i in. (2016, JADD, EF i quality of life u dorosłych).</div>
+</section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function pickDef(letter) {
+  ['dfA','dfB','dfC','dfD'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('picked');
+  });
+  var sel = document.getElementById('df' + letter);
+  if (sel) sel.classList.add('picked');
+  if (typeof save === 'function') save();
+}
+function onStepChange(s) {
+  if (s === 5) {
+    var pre = parseInt(document.getElementById('skutPre').value || '4');
+    var post = parseInt(document.getElementById('skutPost').value || '6');
+    var diff = post - pre;
+    var msg = document.getElementById('finalMsg');
+    if (msg) {
+      var sign = (diff > 0) ? '+' : '';
+      var txt = '<strong>Twoja zmiana skuteczności:</strong> ' + sign + diff + ' punktów na skali 0–10.';
+      if (diff >= 3) txt += ' <em>Eksternalizacja zadziałała</em> — narzędzia wzięły na siebie pracę, której wcześniej nie miał kto wykonać. Powtarzaj system codziennie przez 4 tygodnie, by zautomatyzował się jako tło dnia.';
+      else if (diff >= 1) txt += ' Mała poprawa. Funkcje wykonawcze odpowiadają na powtarzane bodźce — daj systemowi 4–6 tygodni regularności, zanim oceniasz finalnie.';
+      else txt += ' Brak zmiany może oznaczać, że eksternalizacja jeszcze nie trafiła w realny deficyt. Wróć do kroku 3, wybierz inny obszar EF i zbuduj system pod niego.';
+      msg.innerHTML = txt;
+    }
+  }
+}
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_asd_exec — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_asd_exec";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+['skutPre','skutPost'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) {
+    var rd = document.getElementById(id + 'Val');
+    el.addEventListener('input', function(){ if (rd) rd.textContent = el.value; });
+    if (rd) rd.textContent = el.value;
+  }
+});
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>

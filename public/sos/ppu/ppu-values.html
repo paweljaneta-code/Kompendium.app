@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Narzędzie · Wartości jako kompas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg: #f4f1ea;
+  --ink: #1c2620;
+  --ink-soft: #3a4a40;
+  --ink-mute: #7a8a82;
+  --sage: #b8c5a8;
+  --sage-soft: #dde3d2;
+  --sage-deep: #4a6347;
+  --warm: #c9a572;
+  --shadow: rgba(28, 38, 32, 0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+.hdr { padding: 18px 22px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hdr-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--sage-deep); letter-spacing: 0.12em; text-transform: uppercase; }
+.hdr-title em { font-style: italic; color: var(--ink); font-weight: 500; letter-spacing: 0.04em; text-transform: none; }
+.hdr-step { font-size: 12px; color: var(--ink-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+
+.dots { display: flex; gap: 6px; padding: 8px 22px 0; }
+.dot { width: 100%; height: 3px; background: var(--sage-soft); border-radius: 2px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dot.active { background: var(--sage-deep); transform: scale(1.15); }
+
+.stage { padding: 18px 22px; }
+
+.card { display: none; transition: opacity 0.25s ease, transform 0.25s ease; transform: translateY(8px); opacity: 0; }
+.card.active { display: block; opacity: 1; transform: translateY(0); }
+.card-eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage-deep); font-weight: 700; margin-bottom: 12px; }
+.card-prompt { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 500; line-height: 1.2; margin-bottom: 14px; color: var(--ink); }
+.card-prompt em { font-style: italic; color: var(--sage-deep); }
+.card-detail { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 14px; }
+.card-detail strong { color: var(--ink); font-weight: 600; }
+.card-detail em { font-style: italic; color: var(--sage-deep); }
+
+.frame-card { background: var(--ink); color: var(--bg); padding: 16px 18px; border-radius: 12px; margin: 12px 0; }
+.frame-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 12px; }
+.element-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid rgba(244,241,234,0.1); }
+.element-row:first-of-type { border-top: none; }
+.element-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.element-text { font-size: 13px; line-height: 1.55; color: rgba(244,241,234,0.92); flex: 1; }
+.element-text strong { color: var(--bg); font-weight: 600; }
+
+.frame-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--ink-soft); padding: 12px 14px; background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); border-radius: 0 6px 6px 0; margin: 12px 0; }
+.frame-quote-attr { display: block; font-size: 11.5px; letter-spacing: 0.05em; color: var(--ink-mute); margin-top: 6px; font-style: normal; font-family: 'DM Sans', sans-serif; }
+
+.term-note { background: rgba(184,197,168,0.18); border-left: 3px solid var(--sage-deep); padding: 11px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); margin: 10px 0; }
+.term-note strong { color: var(--ink); font-weight: 600; }
+.term-note em { font-style: italic; color: var(--sage-deep); }
+
+.repeat-reminder { background: var(--ink); color: var(--bg); padding: 14px 16px; border-radius: 12px; margin: 12px 0; }
+.repeat-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.repeat-body { font-size: 13.5px; line-height: 1.55; color: rgba(244,241,234,0.92); }
+.repeat-body strong { color: var(--bg); font-weight: 600; }
+.repeat-body em { color: var(--sage); font-style: italic; }
+
+.src { font-size: 11.5px; color: var(--ink-mute); margin-top: 14px; line-height: 1.5; font-style: italic; }
+.src em { font-style: italic; color: var(--ink-soft); }
+
+.thought-input { width: 100%; min-height: 70px; padding: 12px 14px; border: 1px solid var(--sage); border-radius: 10px; background: rgba(255,255,255,0.5); font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--ink); resize: vertical; margin-bottom: 12px; transition: border-color 0.2s; }
+.thought-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.scale { margin: 12px 0 14px; }
+.scale-title { font-size: 13px; color: var(--ink-soft); margin-bottom: 4px; font-weight: 500; }
+.scale-bounds { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); margin-bottom: 6px; }
+.scale-input { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--sage-soft); border-radius: 2px; outline: none; }
+.scale-input::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; box-shadow: 0 2px 6px var(--shadow); }
+.scale-input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sage-deep); cursor: pointer; border: none; }
+.scale-readout { display: flex; justify-content: space-between; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; color: var(--sage-deep); margin-top: 6px; }
+
+.examples-h { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; margin: 10px 0 8px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.example-chip { background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.example-chip:hover, .example-chip.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+
+.rel-btn { width: 100%; text-align: left; background: rgba(184,197,168,0.18); border: 1px solid var(--sage); color: var(--ink); padding: 12px 14px; border-radius: 10px; font-size: 13.5px; cursor: pointer; transition: all 0.2s; font-family: inherit; margin-bottom: 8px; }
+.rel-btn:hover, .rel-btn.picked { background: var(--sage-deep); color: var(--bg); border-color: var(--sage-deep); }
+.rel-btn.picked .rel-desc { color: rgba(244,241,234,0.85); }
+.rel-name { font-weight: 600; display: block; margin-bottom: 4px; }
+.rel-desc { font-size: 12px; color: var(--ink-mute); line-height: 1.4; }
+
+.foot { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; display: flex; gap: 10px; }
+.foot-btn { flex: 1; padding: 14px 0; border-radius: 24px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.2s ease; letter-spacing: 0.02em; }
+.foot-btn:active:not(:disabled) { transform: scale(0.96); }
+.foot-btn.back { background: rgba(184,197,168,0.4); color: var(--ink); }
+.foot-btn.back:disabled { opacity: 0.4; cursor: default; }
+.foot-btn.next { background: var(--sage-deep); color: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+@keyframes v578pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 4px 18px rgba(122,146,112,0.45); }
+}
+#nextBtn[data-final="true"] { animation: v578pulse 1.6s ease-in-out infinite; }
+.v578-toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.02em; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 200; white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+}
+.v578-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.final-msg { background: linear-gradient(135deg, rgba(184,197,168,0.32), rgba(184,197,168,0.18)); padding: 14px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--ink); margin: 12px 0; border: 1px solid var(--sage); }
+.final-msg strong { color: var(--sage-deep); font-weight: 700; }
+.final-msg em { font-style: italic; color: var(--sage-deep); }
+
+.diff-list { margin: 10px 0; }
+.diff-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(184,197,168,0.12); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.diff-row strong { color: var(--ink); font-weight: 600; }
+.diff-delta { font-family: 'Fraunces', serif; font-weight: 600; color: var(--sage-deep); font-size: 14px; }
+.diff-delta.neg { color: var(--warm); }
+
+
+/* === Values specific === */
+.domain-card {
+  background: rgba(244,241,234,0.5); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.domain-h {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(184,197,168,0.4);
+  margin-bottom: 8px;
+}
+.domain-icon { font-size: 20px; line-height: 1; }
+.domain-name { font-family: 'Fraunces', serif; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.domain-q { font-size: 12px; color: var(--ink-mute); font-style: italic; margin-bottom: 6px; }
+.domain-input {
+  width: 100%; min-height: 50px; padding: 8px 10px;
+  border: 1px solid var(--sage); border-radius: 8px;
+  background: rgba(255,255,255,0.5); font-family: inherit;
+  font-size: 12.5px; line-height: 1.5; color: var(--ink); resize: vertical;
+}
+.domain-input:focus { outline: none; border-color: var(--sage-deep); background: white; }
+
+.compare-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+}
+.compare-h { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px; }
+.compare-row {
+  display: grid; grid-template-columns: 1fr 24px 1fr; gap: 10px;
+  align-items: flex-start; padding: 8px 0;
+  border-bottom: 1px dashed rgba(184,197,168,0.25);
+  font-size: 12.5px; line-height: 1.5;
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-goal { color: rgba(244,241,234,0.7); font-style: italic; }
+.compare-arrow { color: var(--sage); text-align: center; font-family: 'Fraunces', serif; }
+.compare-value { color: var(--bg); font-weight: 500; }
+
+.commit-card {
+  background: rgba(184,197,168,0.18); border: 1px solid var(--sage);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+}
+.commit-h {
+  font-family: 'Fraunces', serif; font-size: 12.5px;
+  font-weight: 600; color: var(--sage-deep); margin-bottom: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.commit-text { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); }
+
+.compass-card {
+  background: var(--ink); color: var(--bg);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.compass-h {
+  font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--sage); font-weight: 700; margin-bottom: 8px;
+}
+.compass-q {
+  font-family: 'Fraunces', serif; font-size: 16px; color: var(--bg);
+  font-style: italic; margin-bottom: 8px;
+}
+.compass-row { padding: 4px 0; font-size: 12.5px; line-height: 1.5; color: rgba(244,241,234,0.92); }
+.compass-row strong { color: var(--bg); }
+.compass-row em { color: var(--sage); font-style: italic; }
+
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-title">Narzędzie · <em>Wartości jako kompas</em></div>
+  <div class="hdr-step">krok <span id="stepNum">1</span> / 5</div>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main class="stage">
+
+  <!-- ============ KROK 1 — Wprowadzenie ============ -->
+  <section class="card active" data-step="1">
+    <div class="card-eyebrow">🌱 Wprowadzenie</div>
+    <h1 class="card-prompt">"Od czego" jest słabsze niż <em>"dokąd"</em></h1>
+    <p class="card-detail">Steven Hayes (twórca terapii akceptacji i zaangażowania, ACT) pokazał, że <strong>motywacja oparta na wartościach</strong> jest trwalsza niż motywacja oparta na unikaniu. W problematycznym używaniu pornografii (PPU) typowy obraz to walka <em>z</em> czymś — z urgem, z myślami, z PPU jako wrogiem. Taka motywacja wystarcza na 3—6 tygodni. Po tym czasie wraca pytanie: <strong>"po co właściwie to robię"</strong>. Wartości dają odpowiedź — kierunek, nie tylko ucieczkę.</p>
+
+    <div class="frame-card">
+      <div class="frame-h">Cele vs wartości — kluczowa różnica</div>
+      <div class="element-row">
+        <span class="element-icon">🏁</span>
+        <span class="element-text"><strong>Cele</strong> — osiągalne, skończone, mierzalne. "Mieć dziewczynę". "Nie oglądać porno przez 30 dni". "Schudnąć 5 kg". Da się je <em>osiągnąć i odhaczyć</em>.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🧭</span>
+        <span class="element-text"><strong>Wartości</strong> — kierunek, nigdy "ukończone". "Być bliskim partnerem". "Dbać o ciało i umysł". "Być rzetelnym ojcem". To <em>sposób bycia</em>, nie punkt na liście.</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">⚓</span>
+        <span class="element-text"><strong>Cel bez wartości</strong> — "30 dni bez PPU". Po 30 dniach: <em>i co dalej?</em>. Łatwe wracanie do PPU "skoro już mi się udało".</span>
+      </div>
+      <div class="element-row">
+        <span class="element-icon">🌱</span>
+        <span class="element-text"><strong>Wartość z celami</strong> — "być rzetelnym partnerem" (wartość) → "30 dni bez PPU jako wyraz tej wartości" (cel). Kierunek pozostaje, gdy cel zostanie osiągnięty.</span>
+      </div>
+    </div>
+
+    <div class="frame-quote">„Wartość to nie miejsce, do którego dochodzisz. To kierunek, w którym konsekwentnie idziesz, niezależnie od pogody."
+      <span class="frame-quote-attr">— parafraza po Russe Harrisie, „The Happiness Trap" (2008)</span>
+    </div>
+
+    <div class="term-note"><strong>Klucz</strong>: wartości w PPU są <em>twoje</em>, nie cudze. Często mylimy wartości z normami społecznymi ("powinienem/am być silny/a"), oczekiwaniami religijnymi ("nie wolno oglądać"), naciskiem partnerów ("musisz przestać"). Te zewnętrzne presje nie napędzają trwałej zmiany. Trwała zmiana płynie z odpowiedzi: <em>jaki sposób życia chcę prowadzić, niezależnie od tego, czego ktoś by chciał ode mnie</em>.</div>
+
+    <div class="src">Hayes, Strosahl &amp; Wilson (2012, „Acceptance and Commitment Therapy"); Wilson &amp; DuFrene (2009, „Mindfulness for Two"); Wilson, Sandoz, Kitchens &amp; Roberts (2010, „The Valued Living Questionnaire"); Harris (2008, „The Happiness Trap"); zastosowanie do PPU: Crosby (2014, ACT for problematic Internet pornography); Twohig &amp; Crosby (2010).</div>
+  </section>
+
+  <!-- ============ KROK 2 — Mapa wartości ============ -->
+  <section class="card" data-step="2">
+    <div class="card-eyebrow">🎯 Audyt — twoje wartości w 8 domenach</div>
+    <h1 class="card-prompt">Zmapuj <em>swoje terytoria</em></h1>
+    <p class="card-detail">ACT pracuje z 8 obszarami życia. W każdym jest miejsce na wartości — sposób bycia, nie cel. Wpisz krótkie sformułowanie wartości w obszarach, które są dla ciebie ważne. <em>Nie wszystkie</em> muszą być wypełnione — wybierz te, które rezonują.</p>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">💑</span>
+        <span class="domain-name">Relacja partnerska</span>
+      </div>
+      <div class="domain-q">Jakim partnerem chcesz być? Co znaczy "być w relacji" zgodnie z tobą?</div>
+      <textarea class="domain-input" id="v1" placeholder='np. „Być obecnym, nie udającym. Słuchać, gdy mówi. Być prawdziwie blisko fizycznie i emocjonalnie. Nie zanikać w pornografii kosztem prawdziwej intymności.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">👨‍👩‍👧</span>
+        <span class="domain-name">Rodzina (rodzice, dzieci, rodzeństwo)</span>
+      </div>
+      <div class="domain-q">Jakim synem/córką, ojcem/matką, bratem/siostrą chcesz być?</div>
+      <textarea class="domain-input" id="v2" placeholder='np. „Obecny ojciec dla córki — nie tylko technicznie. Brat, do którego można zadzwonić w nocy. Syn, który pamięta o rodzicach częściej niż w święta.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">🤝</span>
+        <span class="domain-name">Przyjaźnie / wspólnota</span>
+      </div>
+      <div class="domain-q">Jakim przyjacielem chcesz być? Jakiej wspólnoty częścią?</div>
+      <textarea class="domain-input" id="v3" placeholder='np. „Przyjaciel, który nie znika w trudnych okresach. Ktoś, kto mówi prawdę z troską. Aktywny w grupie wsparcia, nie tylko biorący.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">💪</span>
+        <span class="domain-name">Zdrowie (ciało, umysł, sen)</span>
+      </div>
+      <div class="domain-q">Jak chcesz traktować ciało i umysł?</div>
+      <textarea class="domain-input" id="v4" placeholder='np. „Dbać o ciało jak o instrument — sen, ruch, jedzenie. Nie marnować nocy. Być świadomym swojego umysłu — nie autopilotem.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">💼</span>
+        <span class="domain-name">Praca / powołanie</span>
+      </div>
+      <div class="domain-q">Jakim pracownikiem / specjalistą / liderem chcesz być?</div>
+      <textarea class="domain-input" id="v5" placeholder='np. „Robić rzeczy dobrze, nie tylko skończyć. Mieć skupienie, którego brakuje, gdy spędzam noce z PPU. Wnoszą zwartość, nie chaos.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">📚</span>
+        <span class="domain-name">Rozwój osobisty / nauka</span>
+      </div>
+      <div class="domain-q">Jak chcesz rozwijać siebie? Czego się uczyć?</div>
+      <textarea class="domain-input" id="v6" placeholder='np. „Czytać 30 minut dziennie zamiast scrollować. Uczyć się umiejętności, których brakuje. Być ciekawym, nie znudzonym, nie jednostajnym.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">🙏</span>
+        <span class="domain-name">Duchowość / sens</span>
+      </div>
+      <div class="domain-q">Co dla ciebie jest większe niż codzienne ja? Co daje sens?</div>
+      <textarea class="domain-input" id="v7" placeholder='np. „Cisza, kontakt z naturą, modlitwa / medytacja. Bycie częścią czegoś większego. Nie tylko konsumowanie wrażeń.”' rows="2"></textarea>
+    </div>
+
+    <div class="domain-card">
+      <div class="domain-h">
+        <span class="domain-icon">🌍</span>
+        <span class="domain-name">Społeczność / wkład</span>
+      </div>
+      <div class="domain-q">Jaki ślad chcesz zostawić? Komu / czemu chcesz służyć?</div>
+      <textarea class="domain-input" id="v8" placeholder='np. „Pomagać innym z PPU, gdy sam wyjdę. Wnosić w lokalnej wspólnocie. Nie tylko brać.”' rows="2"></textarea>
+    </div>
+
+    <div class="term-note"><strong>Reguła autentyczności</strong>: gdy piszesz wartość, sprawdź — <em>czy to moje, czy cudze</em>? "Nie powinienem oglądać porno bo żona by się gniewała" to <strong>norma zewnętrzna</strong>, nie wartość. "Chcę być prawdziwie blisko żony" to <strong>twoja wartość</strong>. Test: <em>gdyby nikt nie wymagał, czy nadal chciałbym tego sposobu bycia?</em>. Jeśli tak — to wartość. Jeśli nie — to oczekiwanie cudze.</div>
+  </section>
+
+  <!-- ============ KROK 3 — Top 5 ============ -->
+  <section class="card" data-step="3">
+    <div class="card-eyebrow">🧭 Wybór — top 5 wartości</div>
+    <h1 class="card-prompt">Wybierz <em>5 najważniejszych</em></h1>
+    <p class="card-detail">Z 8 domen wybierz <strong>5 wartości</strong>, które są dla ciebie najmocniejsze <em>w tym momencie życia</em>. Mniej = silniej. Każda wartość zaznaczona poniżej powinna być sformułowana <em>w twoich słowach</em>, nie ogólnikowo.</p>
+
+    <div class="examples-h">5 wartości — wybierz domeny i wpisz krótkie sformułowanie</div>
+
+    <textarea class="thought-input" id="top1" placeholder='Wartość 1 — najważniejsza. np. „Być obecnym ojcem dla Hani — naprawdę słuchać, nie udawać.”' rows="2"></textarea>
+    <textarea class="thought-input" id="top2" placeholder='Wartość 2. np. „Prawdziwa bliskość z partnerką, nie zastępcza intymność.”' rows="2"></textarea>
+    <textarea class="thought-input" id="top3" placeholder='Wartość 3. np. „Dbać o ciało i sen — nie marnować nocy.”' rows="2"></textarea>
+    <textarea class="thought-input" id="top4" placeholder='Wartość 4. np. „Skupienie i rzetelność w pracy — robić rzeczy dobrze.”' rows="2"></textarea>
+    <textarea class="thought-input" id="top5" placeholder='Wartość 5. np. „Być rzetelnym przyjacielem — nie znikać w trudnych okresach.”' rows="2"></textarea>
+
+    <div class="compare-card">
+      <div class="compare-h">Cele vs wartości — przekład</div>
+      <div class="compare-row">
+        <div class="compare-goal">"30 dni bez PPU"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-value">"Być prawdziwie blisko partnerki"</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-goal">"Schudnąć 5 kg"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-value">"Dbać o ciało jak o instrument"</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-goal">"Mieć więcej kasy"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-value">"Być rzetelnym w pracy"</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-goal">"Awansować"</div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-value">"Wnosić wartość, której się nie wstydzę"</div>
+      </div>
+    </div>
+
+    <div class="examples-h">Test "po co"</div>
+    <p class="card-detail" style="margin-top:0; margin-bottom:8px;">Każdą z 5 wartości testuj pytaniem: <em>"po co to dla mnie ważne?"</em>. Idź głębiej, aż dojdziesz do <strong>fundamentalnej</strong> odpowiedzi — często prostej i znajomej.</p>
+    <textarea class="thought-input" id="why" placeholder='np. „Wartość 1: być obecnym ojcem. Po co? Bo dzieciństwo trwa krótko, a potem nigdy nie wróci. Po co to ważne? Bo nie chcę, by córka pamiętała mnie jako kogoś, kto był obok, nie z nią.”' rows="4"></textarea>
+
+    <div class="term-note"><strong>Reguła "po co" testu</strong>: jeśli wartość nie wytrzymuje 2—3 razy pytania "po co", to znaczy że jest <em>powierzchowna</em> lub <em>zewnętrzna</em>. Prawdziwa wartość ma <em>własny grunt</em> — nie potrzebuje uzasadnienia poza sobą. "Bo tak chcę żyć" jest pełną odpowiedzią.</div>
+  </section>
+
+  <!-- ============ KROK 4 — Akcje zgodne z wartościami ============ -->
+  <section class="card" data-step="4">
+    <div class="card-eyebrow">⚙️ Praktyka — committed action</div>
+    <h1 class="card-prompt">Zaprojektuj <em>jedno małe działanie</em> tygodniowo</h1>
+    <p class="card-detail">ACT mówi: <strong>committed action</strong> = małe, konkretne działanie zgodne z wartością, wykonywane <em>regularnie</em>. Nie wielkie deklaracje — małe, codzienne wybory. Dla każdej z 5 wartości zaprojektuj <em>jedno działanie</em> na ten tydzień.</p>
+
+    <div class="commit-card">
+      <div class="commit-h">📌 Wartość 1</div>
+      <textarea class="domain-input" id="act1" placeholder='Co konkretnie zrobisz w tym tygodniu, by działać w kierunku wartości 1? np. „W tym tygodniu — codziennie 20 min czytanie z Hanią przed snem, bez telefonu w pokoju.”' rows="2"></textarea>
+    </div>
+
+    <div class="commit-card">
+      <div class="commit-h">📌 Wartość 2</div>
+      <textarea class="domain-input" id="act2" placeholder='Działanie dla wartości 2. np. „Sobotni wieczór z partnerką — bez telefonu, gotowanie razem, rozmowa o tygodniu.”' rows="2"></textarea>
+    </div>
+
+    <div class="commit-card">
+      <div class="commit-h">📌 Wartość 3</div>
+      <textarea class="domain-input" id="act3" placeholder='Działanie dla wartości 3. np. „Trening 3× w tygodniu, sen przed 23:00 4 noce.”' rows="2"></textarea>
+    </div>
+
+    <div class="commit-card">
+      <div class="commit-h">📌 Wartość 4</div>
+      <textarea class="domain-input" id="act4" placeholder='Działanie dla wartości 4. np. „Pierwsze 90 minut dnia — bez maila i social. Tylko jedna ważna rzecz.”' rows="2"></textarea>
+    </div>
+
+    <div class="commit-card">
+      <div class="commit-h">📌 Wartość 5</div>
+      <textarea class="domain-input" id="act5" placeholder='Działanie dla wartości 5. np. „Niedziela 18:00 — telefon do brata. Dłuższa rozmowa, nie tylko zdawkowa.”' rows="2"></textarea>
+    </div>
+
+    <div class="compass-card">
+      <div class="compass-h">Test kompasu — przed każdą decyzją</div>
+      <div class="compass-q">"Czy ta decyzja przybliża mnie do wartości — czy oddala?"</div>
+      <div class="compass-row"><strong>Sięgnięcie po pornografię o 22:00</strong> → <em>oddala od wartości "być obecny dla rodziny", "dbać o sen"</em>.</div>
+      <div class="compass-row"><strong>Pójście na trening po pracy</strong> → <em>przybliża do wartości "dbać o ciało", "być rzetelnym w słowie do siebie"</em>.</div>
+      <div class="compass-row"><strong>Telefon do brata</strong> → <em>przybliża do "być obecnym przyjacielem"</em>.</div>
+      <div class="compass-row" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(184,197,168,0.3);"><strong>Kompas nie ocenia ciebie</strong> — pokazuje kierunek. Każda decyzja to nowy moment kompasu.</div>
+    </div>
+
+    <div class="examples-h">Akceptacja dyskomfortu w służbie wartości</div>
+    <textarea class="thought-input" id="discomfort" placeholder='Jaki dyskomfort jesteś gotów/a przyjąć dla swoich wartości? np. „Akceptuję samotność wieczoru, by nie zanikać w pornografii. Akceptuję napięcie po trudnym dniu, by nie sięgać po dystrakcję. Akceptuję trud rozmowy, by być prawdziwie blisko.”' rows="3"></textarea>
+
+    <div class="term-note"><strong>Mechanizm</strong>: wartości tworzą <em>kierunek</em>, committed actions tworzą <em>ślad</em>. Po 4—8 tygodniach regularnych małych działań w kierunku wartości <strong>tożsamość zaczyna nadążać</strong> — zaczynasz <em>być</em> kimś, kto dba o ciało, kto jest obecnym partnerem, kto czyta wieczorem. PPU traci miejsce w tej tożsamości naturalnie, nie przez walkę.</div>
+  </section>
+
+  <!-- ============ KROK 5 — Po ============ -->
+  <section class="card" data-step="5">
+    <div class="card-eyebrow">✨ Po — kalibracja</div>
+    <h1 class="card-prompt">Czy <em>kompas się ustawia</em>?</h1>
+    <p class="card-detail">Wróć tu po 1—2 tygodniach pracy z wartościami i committed actions. Wartości nie zmieniają się szybko — committed actions już tak; po pierwszym tygodniu zobaczysz, czy plan jest realistyczny.</p>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy wartości czują się <em>twoje</em> (autentyczne)?</span><span></span></div>
+      <input type="range" class="scale-input" id="postAuth" min="0" max="10" step="1" value="6" data-default="6">
+      <div class="scale-readout"><span>0 = obce</span><span id="postAuthval">6</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Liczba zrealizowanych committed actions (z 5)</span><span></span></div>
+      <input type="range" class="scale-input" id="postAct" min="0" max="5" step="1" value="3" data-default="3">
+      <div class="scale-readout"><span>0 = żadne</span><span id="postActval">3</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy "test kompasu" pojawia się przy decyzjach?</span><span></span></div>
+      <input type="range" class="scale-input" id="postCompass" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postCompassval">5</span></div>
+    </div>
+
+    <div class="scale">
+      <div class="scale-label"><span>Czy motywacja "dokąd" zastąpiła "od czego"?</span><span></span></div>
+      <input type="range" class="scale-input" id="postShift" min="0" max="10" step="1" value="5" data-default="5">
+      <div class="scale-readout"><span>0 = nie</span><span id="postShiftval">5</span></div>
+    </div>
+
+    <div class="diff-list" id="diffList"></div>
+
+    <div class="final-msg" id="finalMsg">
+      <strong>Wniosek</strong>: kalibracja pokaże się tu po pierwszym pomiarze.
+    </div>
+
+    <div class="term-note"><strong>Reguła kalibracji</strong>: wartości "uderzają", gdy <em>autentyczność</em> ≥7, <em>3—5 zrealizowanych actions</em> w tygodniu, <em>kompas pojawia się</em> ≥6 i widzisz <em>shift od "od czego" do "dokąd"</em>. Brak któregoś z elementów to sygnał, gdzie jest słabe ogniwo. Najczęstsze: wartości za ogólne, actions za duże/abstrakcyjne, kompas nieobecny w realnych decyzjach.</div>
+
+    <div class="repeat-reminder">
+      <div class="repeat-h">Zapamiętaj</div>
+      <div class="repeat-body">Wartości to <em>długoterminowa kotwica</em> — nie zmieniają się szybko, ale gdy raz się ustawią, dają stabilność, której walka z PPU nie daje. Kontynuuj <strong>cotygodniowe planowanie 5 committed actions</strong> przez 8—12 tygodni. To wbudowuje wartości w <em>strukturę tygodnia</em>, nie tylko w głowę. Po kilku miesiącach <em>tożsamość nadąża</em>: zaczynasz być kimś, kto żyje w kierunku wartości, a PPU staje się rzadkim odstępstwem od kierunku, nie wyzwaniem do każdorazowego pokonywania. <strong>Wartości nie wymagają walki — wymagają konsekwencji</strong>.</div>
+    </div>
+
+    <div class="src">Hayes, Strosahl &amp; Wilson (2012, „ACT"); Wilson &amp; DuFrene (2009); Wilson, Sandoz, Kitchens &amp; Roberts (2010, „The Valued Living Questionnaire", PsycTESTS); Harris (2008, „The Happiness Trap", 2009 „ACT Made Simple"); meta-analiza ACT: A-Tjak i in. (2015); zastosowanie do PPU: Crosby (2014); Twohig &amp; Crosby (2010, „Acceptance and commitment therapy as a treatment for problematic Internet pornography viewing").</div>
+  </section>
+
+</main>
+
+<div class="foot">
+  <button class="foot-btn back" id="backBtn" onclick="prevStep()">← Wstecz</button>
+  <button class="foot-btn next" id="nextBtn" onclick="nextStep()">Dalej →</button>
+</div>
+
+<script>
+
+const TOTAL_STEPS = 5;
+let curStep = 1;
+
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= TOTAL_STEPS; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  dotsEl.appendChild(d);
+}
+
+function updateUI() {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.card[data-step="' + curStep + '"]').classList.add('active');
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 <= curStep));
+  document.getElementById('stepNum').textContent = curStep;
+  document.getElementById('backBtn').disabled = (curStep === 1);
+  document.getElementById('nextBtn').textContent = (curStep === TOTAL_STEPS) ? 'Zacznij od nowa ↻' : 'Dalej →';
+  /* Pulse na finalnym przycisku (ostatni krok) */
+  var nb = document.getElementById('nextBtn');
+  if (nb) {
+    if (curStep === TOTAL_STEPS) nb.setAttribute('data-final', 'true');
+    else nb.removeAttribute('data-final');
+  }
+  if (typeof onStepChange === 'function') onStepChange(curStep);
+}
+
+/* Scroll do góry SOS-a po przejściu między krokami.
+   Wbudowane w nextStep/prevStep (NIE w hook na updateUI), żeby działało niezależnie od kontekstu renderowania.
+   Trzy fallbacki — niektóre WebView (Android/ColorOS) odrzucają scrollTo z opcjami. */
+function scrollToTop() {
+  try {
+    var hdr = document.querySelector('.hdr');
+    if (hdr && typeof hdr.scrollIntoView === 'function') {
+      hdr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  } catch(e) {}
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
+  try { document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } catch(e) {}
+}
+
+/* Toast „✨ Krok N ukończony" / „🎉 Wszystkie kroki ukończone".
+   Wbudowany w nextStep BEZPOŚREDNIO (NIE przez hook na window.nextStep w IIFE),
+   żeby działał niezawodnie też po wgraniu do kompendium (iframe.srcdoc).
+   Toast tworzy własny element DOM przy każdym wywołaniu — bez zależności od istniejącego elementu. */
+function showStepToast(stepCompleted) {
+  var existing = document.querySelector('.v578-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.className = 'v578-toast';
+  t.textContent = (stepCompleted >= TOTAL_STEPS) ? '🎉 Wszystkie kroki ukończone' : '✨ Krok ' + stepCompleted + ' ukończony';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+  }, 1600);
+}
+
+function prevStep() {
+  if (curStep > 1) {
+    curStep--;
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+function nextStep() {
+  if (curStep < TOTAL_STEPS) {
+    var prevStepNum = curStep;
+    curStep++;
+    updateUI();
+    if (typeof save === 'function') save();
+    showStepToast(prevStepNum);
+    scrollToTop();
+  }
+  else {
+    if (!confirm('Na pewno zacząć od nowa?\n\nSpowoduje to trwałe usunięcie wszystkich wpisanych treści.')) {
+      return;
+    }
+    curStep = 1;
+    document.querySelectorAll('textarea, input').forEach(el => {
+      if (el.type === 'range') {
+        const def = el.getAttribute('data-default') || '5';
+        el.value = def;
+      } else {
+        el.value = '';
+      }
+    });
+    document.querySelectorAll('.example-chip.picked, .rel-btn.picked').forEach(el => el.classList.remove('picked'));
+    if (typeof onReset === 'function') onReset();
+    updateUI();
+    if (typeof save === 'function') save();
+    scrollToTop();
+  }
+}
+
+
+
+function bindRange(id, valId) {
+  var r = document.getElementById(id);
+  var v = document.getElementById(valId);
+  if (!r || !v) return;
+  r.addEventListener('input', function(){ v.textContent = r.value; });
+}
+['postAuth','postAct','postCompass','postShift'].forEach(function(id){
+  bindRange(id, id+'val');
+});
+
+function renderDiff() {
+  var dl = document.getElementById('diffList');
+  if (!dl) return;
+  var auth = parseInt(document.getElementById('postAuth').value, 10);
+  var act = parseInt(document.getElementById('postAct').value, 10);
+  var comp = parseInt(document.getElementById('postCompass').value, 10);
+  var shift = parseInt(document.getElementById('postShift').value, 10);
+
+  var rows = [];
+  var aW = auth <= 3 ? 'obce' : (auth <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Autentyczność wartości</strong><span class="diff-delta">' + auth + '/10 — ' + aW + '</span></div>');
+  rows.push('<div class="diff-row"><strong>Zrealizowane actions</strong><span class="diff-delta">' + act + ' / 5</span></div>');
+  var cW = comp <= 3 ? 'nie' : (comp <= 6 ? 'czasem' : 'tak');
+  rows.push('<div class="diff-row"><strong>Test kompasu</strong><span class="diff-delta">' + comp + '/10 — ' + cW + '</span></div>');
+  var sW = shift <= 3 ? 'nie' : (shift <= 6 ? 'częściowo' : 'tak');
+  rows.push('<div class="diff-row"><strong>Shift "od" → "dokąd"</strong><span class="diff-delta">' + shift + '/10 — ' + sW + '</span></div>');
+  dl.innerHTML = rows.join('');
+
+  var fm = document.getElementById('finalMsg');
+  if (fm) {
+    var msg;
+    if (auth >= 7 && act >= 3 && comp >= 6) {
+      msg = '<strong>Wartości pracują.</strong> Autentyczne, realizujesz actions, kompas się pojawia. <em>Kontynuuj 8—12 tygodni</em> cotygodniowego planowania — to wbudowuje wartości w tożsamość.';
+    } else if (auth >= 6 && act >= 2) {
+      msg = '<strong>Wartości się ustawiają.</strong> Pomóż sobie: <em>cotygodniowy przegląd</em> w niedzielę wieczorem. Co zrealizowane? Co nie? Co planuję na nowy tydzień?';
+    } else if (auth <= 4) {
+      msg = '<strong>Wartości czują się obco.</strong> Najczęstsza przyczyna: napisane są w słowach <em>społecznie poprawnych</em>, nie twoich. Wróć do kroku 2 i przeformułuj — własnymi słowami, jakbyś tłumaczył/a przyjacielowi.';
+    } else if (act <= 1) {
+      msg = '<strong>Plan, brak realizacji.</strong> Najczęstsza przyczyna: actions <em>za duże</em>. "Codzienny trening 60 min" jest za duży na start; "20-minutowy spacer 3× w tygodniu" jest realistyczny. Zmniejsz skalę.';
+    } else if (shift <= 3) {
+      msg = '<strong>Motywacja wciąż "od czego".</strong> Naturalnie — shift wymaga 4—8 tygodni regularnej praktyki kompasu. Cierpliwość; wartości pracują skumulowanie.';
+    } else {
+      msg = '<strong>Wstępny postęp.</strong> Wartości to długoterminowa kotwica — efekty widoczne po 4—8 tygodniach.';
+    }
+    fm.innerHTML = msg;
+  }
+}
+
+function onStepChange(step) {
+  if (step === 5) renderDiff();
+}
+
+function onReset() {}
+
+['postAuth','postAct','postCompass','postShift'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', renderDiff);
+});
+
+
+
+/* ===== AUTO-ZAPIS (wzór: SOS SAD) =====
+   Delegacja zdarzeń na document — działa też dla DYNAMICZNIE tworzonych elementów.
+   Klucz: sos_ppu_values — zgodny z formatem `generateFilledSOS` w kompendium.
+   Multiple applyRestore + hook na updateUI — odzyskanie stanu nawet przy opóźnionym renderze. */
+(function(){
+  var clickSel2 = '.example-chip, .rel-btn';
+  var KEY = "sos_ppu_values";
+  
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+
+  function applyRestore() {
+    if (saved.t) {
+      var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+      for (var i = 0; i < areas.length; i++) {
+        var id = areas[i].id;
+        if (id && saved.t[id] !== undefined && areas[i].value !== saved.t[id]) {
+          areas[i].value = saved.t[id];
+        }
+      }
+    }
+    if (saved.r) {
+      var ranges = document.querySelectorAll('input[type="range"][id]');
+      for (var i = 0; i < ranges.length; i++) {
+        if (saved.r[ranges[i].id] !== undefined && ranges[i].value !== saved.r[ranges[i].id]) {
+          ranges[i].value = saved.r[ranges[i].id];
+          try { ranges[i].dispatchEvent(new Event('input', { bubbles: true })); } catch(e) {}
+        }
+      }
+    }
+    /* p: uniwersalny mechanizm — picked po ID elementu (działa dla DOWOLNEJ klasy klikalnej:
+       .example-chip, .rel-btn, .triada-card, .horizon-card, .path-card itd.).
+       Wprowadzony w v585 — naprawa buga gdzie niestandardowe klasy z onclick="pickX(...)"
+       nie były restorowane po reopen SOS-a. */
+    if (saved.p) {
+      Object.keys(saved.p).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.classList.contains("picked")) el.classList.add("picked");
+      });
+    }
+    /* c2: BACKWARD COMPATIBILITY dla danych zapisanych przed v585 (indeks w querySelectorAll).
+       Tylko czyta — nowe zapisy idą do .p. */
+    if (saved.c2) {
+      var rows2 = document.querySelectorAll(clickSel2);
+      for (var i = 0; i < rows2.length; i++) {
+        if (saved.c2[i] && !rows2[i].classList.contains("picked")) {
+          rows2[i].classList.add("picked");
+        }
+      }
+    }
+  }
+
+  function save() {
+    var d = { t: {}, r: {}, p: {} };
+    var areas = document.querySelectorAll('textarea[id], input[type="text"][id], input[type="number"][id]');
+    for (var i = 0; i < areas.length; i++) {
+      if (areas[i].id && areas[i].value) d.t[areas[i].id] = areas[i].value;
+    }
+    var ranges = document.querySelectorAll('input[type="range"][id]');
+    for (var i = 0; i < ranges.length; i++) {
+      if (ranges[i].id) d.r[ranges[i].id] = ranges[i].value;
+    }
+    /* p: uniwersalny zapis — wszystkie elementy z .picked, które mają ID.
+       Pokrywa .example-chip, .rel-btn ORAZ niestandardowe klasy (.triada-card itd.). */
+    document.querySelectorAll('.picked').forEach(function(el) {
+      if (el.id) d.p[el.id] = 1;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(d)); } catch(e) {}
+    showSaved();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target || !e.target.matches) return;
+    if (e.target.matches('textarea[id], input[type="text"][id], input[type="number"][id], input[type="range"][id]')) save();
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    /* Save po dowolnym kliknięciu w widget (z opóźnieniem 30 ms na zaktualizowanie DOM-u).
+       Pokrywa: standardowe .example-chip i .rel-btn ORAZ niestandardowe klikalne klasy
+       (.triada-card, .horizon-card, .path-card itd.) których funkcje pickX() mogą NIE wołać save() ręcznie.
+       v585: zmiana z selektywnego (.example-chip/.rel-btn) na uniwersalne — naprawa buga
+       gdzie wybór w sos-cierpienie/trauma/smiertelnosc nie zapisywał się po reopen. */
+    setTimeout(save, 30);
+  });
+
+  applyRestore();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyRestore);
+  }
+  setTimeout(applyRestore, 100);
+  setTimeout(applyRestore, 500);
+
+  if (typeof window.updateUI === 'function') {
+    var origUpdateUI = window.updateUI;
+    window.updateUI = function() { origUpdateUI(); applyRestore(); };
+  }
+
+  function showSaved() {
+    var dot = document.getElementById('savedDot');
+    if (!dot) {
+      dot = document.createElement('div');
+      dot.id = 'savedDot';
+      dot.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(28,38,32,0.85);color:#f4f1ea;padding:6px 14px;border-radius:999px;font-family:DM Sans,system-ui,sans-serif;font-size:11px;letter-spacing:0.04em;z-index:9999;opacity:0;transition:opacity 0.2s;pointer-events:none';
+      dot.textContent = '✓ zapisano';
+      document.body.appendChild(dot);
+    }
+    dot.style.opacity = '1';
+    clearTimeout(window._sosSaveTimer);
+    window._sosSaveTimer = setTimeout(function(){ dot.style.opacity = '0'; }, 800);
+  }
+})();
+
+
+
+
+
+
+/* JS_DOPAMINA: logika dopaminowa (toast po kroku, pulse na finalnym buttonie)
+   została wbudowana BEZPOŚREDNIO w nextStep i updateUI w JS_BASE.
+   Powód: hook na window.nextStep przez IIFE jest podatny na zmiany scope
+   i kontekstu renderowania (iframe.srcdoc po wgraniu do kompendium).
+   Inline = niezawodne we wszystkich środowiskach. */
+
+
+updateUI();
+</script>
+</body>
+</html>
