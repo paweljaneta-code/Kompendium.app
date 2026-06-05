@@ -312,14 +312,8 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     return !!(sos && sos.classList.contains("active"));
   }
 
-  function closeOpenCards() {
-    var openCards = document.querySelectorAll(".card[open]");
-    if (!openCards.length) return false;
-    for (var i = 0; i < openCards.length; i++) openCards[i].removeAttribute("open");
-    setTimeout(function () {
-      openCards[0].scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }, 50);
-    return true;
+  function hasOpenToolCards() {
+    return document.querySelectorAll(".card[open]").length > 0;
   }
 
   function goHome() {
@@ -373,6 +367,10 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     true
   );
 
+  function hasOpenToolCards() {
+    return document.querySelectorAll(".card[open]").length > 0;
+  }
+
   function handleBack(event) {
     if (backBusy) {
       if (event) {
@@ -382,21 +380,14 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       return;
     }
 
-    if (isHandoutOpen() && typeof window.closeHandout === "function") {
+    if (isHandoutOpen() || isSosOpen() || hasOpenToolCards()) {
       if (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
-      window.closeHandout();
-      return;
-    }
-
-    if (isSosOpen() && typeof window.closeSOS === "function") {
-      if (event) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
-      window.closeSOS();
+      window._returnToHowto = null;
+      window._howtoScrollPos = null;
+      goHome();
       return;
     }
 
@@ -419,14 +410,6 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
         }
       }
       window._returnToHowto = null;
-    }
-
-    if (closeOpenCards()) {
-      if (event) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
-      return;
     }
 
     var activeTab =
@@ -540,6 +523,29 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
+
+  function scrollToHowtoAnchor(id) {
+    var target = document.getElementById(id);
+    if (!target) return false;
+    var hdr = document.querySelector(".header");
+    var off = (hdr ? hdr.offsetHeight : 0) + 12;
+    var y = target.getBoundingClientRect().top + window.pageYOffset - off;
+    window.scrollTo({ top: y, behavior: "smooth" });
+    return true;
+  }
+
+  // <base href="/"> would turn #section links into /#section and load the home page.
+  document.addEventListener("click", function (e) {
+    var anchor = e.target.closest(".howto-view a[href^='#']");
+    if (!anchor) return;
+    var href = anchor.getAttribute("href");
+    if (!href || href === "#") return;
+    var id = decodeURIComponent(href.slice(1));
+    if (scrollToHowtoAnchor(id)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
 
   document.addEventListener("click", function (e) {
     var pill = e.target.closest(".pill");
@@ -665,6 +671,20 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
   });
 
   bindOverlayControls();
+
+  (function wrapSwitchModuleMode() {
+    var orig = window.switchModuleMode;
+    if (!orig || orig.__navWrapped) return;
+    window.switchModuleMode = function (tab, mode) {
+      var hv = document.getElementById("howto-view-" + tab);
+      var leavingHowto = !!(hv && getComputedStyle(hv).display !== "none" && mode !== "howto");
+      orig.call(this, tab, mode);
+      if (leavingHowto) {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+    };
+    window.switchModuleMode.__navWrapped = true;
+  })();
 
   var tab = document.querySelector(".tab-content");
   if (tab) {

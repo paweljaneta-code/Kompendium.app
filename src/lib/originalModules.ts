@@ -44,6 +44,41 @@ const HOWTO_VIEW_LAYOUT_STYLES = `
 }
 `;
 
+const ACCOUNT_HEADER_BUTTON = `<button class="home-toggle" id="account-btn" type="button" title="Konto" aria-label="Zarządzanie kontem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>`;
+
+const HEADER_USER_ACTIONS = `<div class="header-user-actions"><button class="home-toggle" id="home-btn" title="Strona główna">⌂</button>\n${ACCOUNT_HEADER_BUTTON}</div>`;
+
+const ACCOUNT_HEADER_STYLES = `
+.header-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+`;
+
+const KOMPENDIUM_ACCOUNT_BTN_SCRIPT = `(function () {
+  var btn = document.getElementById("account-btn");
+  if (!btn || btn.dataset.bound === "1") return;
+  btn.dataset.bound = "1";
+  btn.addEventListener("click", function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.top.location.href = "/account";
+  });
+})();`;
+
+function withAccountHeaderButton(header: string) {
+  if (header.includes('class="header-user-actions"')) return header;
+  return header.replace(
+    `<button class="home-toggle" id="planner-btn" title="Plan Terapii" onclick="window.openPlanner()" style="margin-right:6px">📋</button>
+<button class="home-toggle" id="home-btn" title="Strona główna">⌂</button>`,
+    `<button class="home-toggle" id="planner-btn" title="Plan Terapii" onclick="window.openPlanner()" style="margin-right:6px">📋</button>
+${HEADER_USER_ACTIONS}`
+  );
+}
+
 let cache: OriginalData | null = null;
 let sosFileIndexCache: Record<string, string> | null = null;
 let handoutFileIndexCache: Record<string, string> | null = null;
@@ -315,13 +350,17 @@ body { opacity: 1 !important; padding-bottom: 0 !important; }
 .home-screen { display: block !important; }
 .header-search { display: none; }
 #planner-btn { display: none; }
+${ACCOUNT_HEADER_STYLES}
     </style>
   </head>
   <body>
-${data.header}
+${withAccountHeaderButton(data.header)}
 ${homeHtml}
     <script>
 ${KOMPENDIUM_HOME_BRIDGE_SCRIPT}
+    </script>
+    <script>
+${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
   </body>
 </html>`;
@@ -364,12 +403,13 @@ ${HOWTO_VIEW_LAYOUT_STYLES}
 body { opacity: 1 !important; padding-bottom: 16px !important; }
 .nav-bar, .home-screen, .home-footer { display: none !important; }
 .header-search, #planner-btn { display: none; }
+${ACCOUNT_HEADER_STYLES}
 .tab-content { display: block !important; }
 .tab-content .main { padding-bottom: 20px; }
     </style>
   </head>
   <body>
-${data.header}
+${withAccountHeaderButton(data.header)}
 <button class="scroll-top" id="scroll-top" title="Do góry">↑</button>
 ${cleanedHtml}
 ${data.handoutOverlay}
@@ -399,6 +439,9 @@ ${data.moduleUiScript}
     </script>
     <script>
 ${KOMPENDIUM_MODULE_NAV_SCRIPT}
+    </script>
+    <script>
+${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
   </body>
 </html>`;
