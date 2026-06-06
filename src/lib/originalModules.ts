@@ -988,10 +988,20 @@ async function loadOriginalData(): Promise<OriginalData> {
   const source = await fs.readFile(sourcePath, "utf8");
   const style = source.match(/<style>([\s\S]*?)<\/style>/i)?.[1] ?? "";
   const moduleFeatureStyles = extractModuleFeatureStyles(source);
+  const handoutStart = source.indexOf("// === HANDOUT SYSTEM ===");
+  const printDocStart = source.indexOf("function printDoc(");
+  const handoutBlockStart =
+    printDocStart !== -1 &&
+    handoutStart !== -1 &&
+    printDocStart < handoutStart
+      ? printDocStart
+      : handoutStart;
+  const handoutBlockEnd =
+    handoutBlockStart === -1 ? -1 : source.indexOf("</script>", handoutBlockStart);
   const handoutScriptRaw =
-    source.match(
-      /(\/\/ === HANDOUT SYSTEM ===[\s\S]*?async function downloadFilledSOS\([\s\S]*?\}\s*)/
-    )?.[1] ?? "";
+    handoutBlockStart !== -1 && handoutBlockEnd !== -1
+      ? source.slice(handoutBlockStart, handoutBlockEnd).trim()
+      : "";
   const handoutScript = handoutScriptRaw
     .replace(
       "return 'sos/' + mod + '/' + cardId + '.html';",
