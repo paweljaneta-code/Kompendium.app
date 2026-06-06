@@ -28,7 +28,7 @@ export type ApproachGroup = {
 
 export const homeHeroStats = [
   { num: "1609", label: "narzędzi" },
-  { num: "879", label: "handoutów" },
+  { num: "1898", label: "handoutów" },
   { num: "29", label: "modułów" },
   { num: "28", label: "kart farmako" }
 ] as const;
@@ -419,15 +419,15 @@ export const homeApproachGroups: ApproachGroup[] = [
   {
     label: "Podejścia terapeutyczne",
     chips: [
-      { slug: "act", name: "ACT", count: "71", color: "#2a7a5a" },
-      { slug: "dbt", name: "DBT", count: "40", color: "#2a7a5a" },
-      { slug: "schema", name: "Terapia schematów", count: "53", color: "#2a7a5a" },
-      { slug: "core-beliefs", name: "Przekonania kluczowe (CBT)", count: "45", color: "#3a6a8a" },
-      { slug: "stpp", name: "STPP (psychodynamiczna)", count: "32", color: "#4a3a7a" },
-      { slug: "empathy-comm", name: "Komunikacja empatyczna", count: "34", color: "#3a7a7a" },
-      { slug: "systemowa", name: "Terapia systemowa + NVC", count: "31", color: "#4a7a7a" },
-      { slug: "mindful", name: "Mindfulness", count: "21", color: "#2a7a5a" },
-      { slug: "mi", name: "Dialog motywujący", count: "12", color: "#2a6a7a" }
+      { slug: "act", name: "ACT", count: "71", color: "#558a72" },
+      { slug: "dbt", name: "DBT", count: "40", color: "#558a72" },
+      { slug: "schema", name: "Terapia schematów", count: "53", color: "#558a72" },
+      { slug: "core-beliefs", name: "Przekonania kluczowe (CBT)", count: "45", color: "#558a72" },
+      { slug: "stpp", name: "STPP (psychodynamiczna)", count: "32", color: "#558a72" },
+      { slug: "empathy-comm", name: "Komunikacja empatyczna", count: "34", color: "#558a72" },
+      { slug: "systemowa", name: "Terapia systemowa + NVC", count: "31", color: "#558a72" },
+      { slug: "mindful", name: "Mindfulness", count: "21", color: "#558a72" },
+      { slug: "mi", name: "Dialog motywujący", count: "12", color: "#558a72" }
     ]
   },
   {
@@ -478,7 +478,7 @@ export const homeApproachGroups: ApproachGroup[] = [
     label: "Bezpieczeństwo i kryzys",
     chips: [
       { slug: "crisis", name: "Interwencja kryzysowa", count: "12", color: "#8a2a2a" },
-      { slug: "suicide", name: "Ryzyko samobójcze", count: "12", color: "#6a1b1b" }
+      { slug: "suicide", name: "Ryzyko samobójcze", count: "12", color: "#8a2a2a" }
     ]
   },
   {
@@ -493,7 +493,7 @@ export const homeApproachGroups: ApproachGroup[] = [
       { slug: "labwork", name: "Badania krwi", count: "12", color: "#5a4a7a" },
       { slug: "therapy-diff", name: "Trudne sytuacje", count: "12", color: "#5a4a7a" },
       { slug: "development", name: "Psychologia rozwoju", count: "12", color: "#5a4a7a" },
-      { slug: "genogram", name: "Genogram", count: "30", color: "#5a7a8a" },
+      { slug: "genogram", name: "Genogram", count: "30", color: "#5a4a7a" },
       { slug: "leki", name: "Farmakoterapia", count: "6", color: "#5a4a7a" }
     ]
   }

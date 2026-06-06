@@ -1,3 +1,5 @@
+import { KOMPENDIUM_PENDING_CARD_KEY } from "./kompendiumScroll";
+
 export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 (function () {
   var printExts = [".pdf", ".html"];
@@ -371,6 +373,21 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     return document.querySelectorAll(".card[open]").length > 0;
   }
 
+  function returnToHowtoGuide(tab) {
+    var openc = document.querySelectorAll(".card[open]");
+    for (var oc = 0; oc < openc.length; oc++) openc[oc].removeAttribute("open");
+    window._returnToHowto = null;
+    if (window.switchModuleMode) {
+      window._howtoScrollRestore =
+        typeof window._howtoScrollPos === "number" ? window._howtoScrollPos : null;
+      window._howtoScrollPos = null;
+      window.switchModuleMode(tab, "howto");
+      return true;
+    }
+    window._howtoScrollPos = null;
+    return false;
+  }
+
   function handleBack(event) {
     if (backBusy) {
       if (event) {
@@ -380,7 +397,27 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       return;
     }
 
-    if (isHandoutOpen() || isSosOpen() || hasOpenToolCards()) {
+    if (isHandoutOpen() || isSosOpen()) {
+      if (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      window._returnToHowto = null;
+      window._howtoScrollPos = null;
+      goHome();
+      return;
+    }
+
+    if (hasOpenToolCards() && window._returnToHowto) {
+      if (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      returnToHowtoGuide(window._returnToHowto);
+      return;
+    }
+
+    if (hasOpenToolCards()) {
       if (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -392,24 +429,12 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     }
 
     if (window._returnToHowto) {
-      var htab = window._returnToHowto;
-      var hv = document.getElementById("howto-view-" + htab);
-      if (hv) {
-        var atab = document.getElementById("tab-" + htab);
-        if (atab) {
-          var openc = document.querySelectorAll(".card[open]");
-          for (var oc = 0; oc < openc.length; oc++) openc[oc].removeAttribute("open");
-          window._returnToHowto = null;
-          if (window.switchModuleMode) {
-            window._howtoScrollRestore =
-              typeof window._howtoScrollPos === "number" ? window._howtoScrollPos : null;
-            window._howtoScrollPos = null;
-            window.switchModuleMode(htab, "howto");
-            return;
-          }
-        }
+      if (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
       }
-      window._returnToHowto = null;
+      returnToHowtoGuide(window._returnToHowto);
+      return;
     }
 
     var activeTab =
@@ -524,28 +549,88 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     });
   }
 
-  function scrollToHowtoAnchor(id) {
-    var target = document.getElementById(id);
+  function findHowtoAnchor(scope, id) {
+    if (!scope || scope === document) return document.getElementById(id);
+    if (typeof CSS !== "undefined" && CSS.escape) {
+      return scope.querySelector("#" + CSS.escape(id));
+    }
+    var nodes = scope.querySelectorAll("[id]");
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].id === id) return nodes[i];
+    }
+    return null;
+  }
+
+  function scrollToHowtoAnchor(id, root) {
+    var target = findHowtoAnchor(root && root.querySelector ? root : document, id);
     if (!target) return false;
-    var hdr = document.querySelector(".header");
-    var off = (hdr ? hdr.offsetHeight : 0) + 12;
-    var y = target.getBoundingClientRect().top + window.pageYOffset - off;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
     return true;
   }
 
-  // <base href="/"> would turn #section links into /#section and load the home page.
-  document.addEventListener("click", function (e) {
-    var anchor = e.target.closest(".howto-view a[href^='#']");
+  function openToolFromHowto(tab, el) {
+    window._returnToHowto = tab;
+    window._howtoScrollPos = window.pageYOffset;
+    window._skipHowtoExitScroll = true;
+    if (window.switchModuleMode) {
+      window.switchModuleMode(tab, "library");
+    }
+    window._skipHowtoExitScroll = false;
+
+    if (window.libCloseSection) window.libCloseSection(tab);
+
+    var tabRoot = document.getElementById("tab-" + tab);
+    if (tabRoot) {
+      var allPill = tabRoot.querySelector('.pill[data-filter="all"]');
+      if (allPill) allPill.click();
+    }
+
+    var open = document.querySelectorAll(".card[open]");
+    for (var k = 0; k < open.length; k++) open[k].removeAttribute("open");
+    el.classList.remove("hidden");
+    el.setAttribute("open", "");
+    setTimeout(function () {
+      var hdr = document.querySelector(".header");
+      var nav = document.querySelector(".nav-bar");
+      var off = (hdr ? hdr.offsetHeight : 0) + (nav ? nav.offsetHeight : 0) + 12;
+      var y = el.getBoundingClientRect().top + window.pageYOffset - off;
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    }, 120);
+  }
+
+  function handleHowtoHashClick(e) {
+    var anchor = e.target.closest('[id^="howto-view-"] a[href^="#"], .howto-view a[href^="#"]');
     if (!anchor) return;
     var href = anchor.getAttribute("href");
     if (!href || href === "#") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
     var id = decodeURIComponent(href.slice(1));
-    if (scrollToHowtoAnchor(id)) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-  }, true);
+    var howtoView = anchor.closest('[id^="howto-view-"]') || anchor.closest(".howto-view");
+    scrollToHowtoAnchor(id, howtoView);
+  }
+
+  function handleHowtoQgClick(e) {
+    var qg = e.target.closest(".qg-link");
+    if (!qg) return;
+    var id = qg.getAttribute("data-go");
+    if (!id) return;
+    var howtoSrc = qg.closest('[id^="howto-view-"]');
+    if (!howtoSrc) return;
+    var tab = howtoSrc.id.replace("howto-view-", "");
+    var tabRoot =
+      howtoSrc.closest(".tab-content") || document.getElementById("tab-" + tab);
+    var el = tabRoot
+      ? tabRoot.querySelector('[id="' + id.replace(/"/g, '\\"') + '"]')
+      : document.getElementById(id);
+    if (!el || el.tagName !== "DETAILS") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    openToolFromHowto(tab, el);
+  }
+
+  document.addEventListener("click", handleHowtoHashClick, true);
+  document.addEventListener("click", handleHowtoQgClick, true);
 
   document.addEventListener("click", function (e) {
     var pill = e.target.closest(".pill");
@@ -588,8 +673,7 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       if (el && el.tagName === "DETAILS") {
         var howtoSrc = qg.closest('[id^="howto-view-"]');
         if (howtoSrc) {
-          window._returnToHowto = howtoSrc.id.replace("howto-view-", "");
-          window._howtoScrollPos = window.pageYOffset;
+          return;
         } else {
           window._returnToHowto = null;
           window._howtoScrollPos = null;
@@ -679,7 +763,7 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       var hv = document.getElementById("howto-view-" + tab);
       var leavingHowto = !!(hv && getComputedStyle(hv).display !== "none" && mode !== "howto");
       orig.call(this, tab, mode);
-      if (leavingHowto) {
+      if (leavingHowto && !window._skipHowtoExitScroll) {
         window.scrollTo({ top: 0, behavior: "auto" });
       }
     };
@@ -691,6 +775,24 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     var accent = tab.getAttribute("data-accent");
     if (accent) document.documentElement.style.setProperty("--accent", accent);
   }
+
+  (function openPendingCardFromSearch() {
+    try {
+      var raw = sessionStorage.getItem(${JSON.stringify(KOMPENDIUM_PENDING_CARD_KEY)});
+      if (!raw) return;
+      sessionStorage.removeItem(${JSON.stringify(KOMPENDIUM_PENDING_CARD_KEY)});
+      var data = JSON.parse(raw);
+      if (!data || !data.cardId) return;
+      var el = document.getElementById(data.cardId);
+      if (!el) return;
+      var openc = document.querySelectorAll(".card[open]");
+      for (var i = 0; i < openc.length; i++) openc[i].removeAttribute("open");
+      el.setAttribute("open", "");
+      setTimeout(function () {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    } catch (e) {}
+  })();
 
   document.body.style.opacity = "1";
 })();
