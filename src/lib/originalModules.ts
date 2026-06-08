@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import {
   FILE_HANDOUT_OVERRIDE_SCRIPT,
@@ -7,8 +8,13 @@ import {
 } from "./handoutOverrides";
 import {
   KOMPENDIUM_HOME_SCROLL_KEY,
-  KOMPENDIUM_PENDING_CARD_KEY
+  KOMPENDIUM_PENDING_CARD_KEY,
+  KOMPENDIUM_PENDING_HOWTO_KEY
 } from "./kompendiumScroll";
+import {
+  MODULE_HANDOUT_ALIASES,
+  buildModuleSearchKeywords
+} from "./moduleSearchAliases";
 
 type OriginalModule = {
   slug: string;
@@ -109,7 +115,33 @@ function buildHomeGlobalSearchScript(
   var moduleSearchData = ${moduleSearchData};
   var moduleNames = ${moduleNames};
   var moduleColors = ${moduleColors};
+  var moduleSearchAliases = ${JSON.stringify(MODULE_HANDOUT_ALIASES)};
   var PENDING_CARD_KEY = ${JSON.stringify(KOMPENDIUM_PENDING_CARD_KEY)};
+
+  function normalizeSearch(value) {
+    return String(value)
+      .normalize("NFD")
+      .replace(/\\p{M}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\\s]/g, " ")
+      .replace(/\\s+/g, " ")
+      .trim();
+  }
+
+  function moduleMatchesQuery(modKey, query) {
+    if (!query || !modKey) return false;
+    var mod = moduleSearchData[modKey];
+    if (!mod) return false;
+    if (normalizeSearch(mod.name).indexOf(query) !== -1) return true;
+    if (modKey.indexOf(query) !== -1) return true;
+    if (normalizeSearch(mod.keywords).indexOf(query) !== -1) return true;
+    var aliases = moduleSearchAliases[modKey] || [];
+    for (var ai = 0; ai < aliases.length; ai++) {
+      var alias = aliases[ai];
+      if (alias.indexOf(query) !== -1 || query.indexOf(alias) !== -1) return true;
+    }
+    return false;
+  }
 
   var gs = document.getElementById("global-search");
   var gsResults = document.getElementById("gs-results");
@@ -151,8 +183,9 @@ function buildHomeGlobalSearchScript(
     if (typeof window.goModule === "function") window.goModule(tabKey);
   }
 
-  function buildResults(q) {
+  function buildResults(rawQuery) {
     if (!gsResults) return;
+    var q = normalizeSearch(rawQuery || "");
     if (!q || q.length < 2) {
       gsResults.innerHTML =
         '<div class="gs-hint">Wpisz min. 2 znaki, by wyszukać…</div>';
@@ -168,9 +201,10 @@ function buildHomeGlobalSearchScript(
     for (var key in moduleSearchData) {
       var mod = moduleSearchData[key];
       var score = 0;
-      if (mod.name.toLowerCase().indexOf(q) !== -1) score += 3;
-      if (mod.desc.toLowerCase().indexOf(q) !== -1) score += 2;
-      if (mod.keywords.toLowerCase().indexOf(q) !== -1) score += 1;
+      if (normalizeSearch(mod.name).indexOf(q) !== -1) score += 3;
+      if (normalizeSearch(mod.desc).indexOf(q) !== -1) score += 2;
+      if (normalizeSearch(mod.keywords).indexOf(q) !== -1) score += 1;
+      if (moduleMatchesQuery(key, q)) score += 1;
       if (score > 0) matchedModules.push({ key: key, score: score });
     }
     matchedModules.sort(function (a, b) {
@@ -211,6 +245,38 @@ function buildHomeGlobalSearchScript(
         why: sr.why
       });
       totalCards++;
+    }
+
+    for (var modKey in moduleSearchData) {
+      if (!moduleMatchesQuery(modKey, q)) continue;
+      var tabEl = document.getElementById("tab-" + modKey);
+      if (!tabEl) continue;
+      if (!cardResults[modKey]) cardResults[modKey] = [];
+      var seenCardIds = {};
+      for (var sci = 0; sci < cardResults[modKey].length; sci++) {
+        seenCardIds[cardResults[modKey][sci].id] = true;
+      }
+      var tabCards = tabEl.querySelectorAll(".card");
+      for (var tci = 0; tci < tabCards.length; tci++) {
+        var tabCard = tabCards[tci];
+        var tabCardId = tabCard.getAttribute("id") || "";
+        if (!tabCardId || seenCardIds[tabCardId]) continue;
+        seenCardIds[tabCardId] = true;
+        var tabNameEl = tabCard.querySelector(".nm");
+        var tabSubEl = tabCard.querySelector(".sub");
+        var tabName = tabNameEl ? tabNameEl.textContent : "";
+        var tabSub = tabSubEl ? tabSubEl.textContent : "";
+        cardResults[modKey].push({
+          id: tabCardId,
+          name: tabName,
+          sub: tabSub,
+          titleMatch: normalizeSearch(tabName).indexOf(q) !== -1,
+          tagMatch: false,
+          score: 2,
+          why: ["module"]
+        });
+        totalCards++;
+      }
     }
 
     if (matchedModules.length > 0) {
@@ -585,6 +651,7 @@ async function loadSosFileIndex(): Promise<Record<string, string>> {
 function buildHandoutIndexExtensionScript(fileIndex: Record<string, string>) {
   return `(function () {
   var fileIndex = ${JSON.stringify(fileIndex)};
+  window.HANDOUT_FILE_INDEX = fileIndex;
   window.HANDOUT_INDEX = window.HANDOUT_INDEX || {};
   for (var cid in fileIndex) {
     window.HANDOUT_INDEX[cid] = fileIndex[cid];
@@ -667,10 +734,40 @@ type ToolCardEntry = { id: string; name: string; sub: string };
 type ModuleToolsCatalog = {
   slug: string;
   label: string;
+  keywords: string[];
   cardCount: number;
   handouts: ToolCardEntry[];
   sos: ToolCardEntry[];
+  howto: { label: string } | null;
 };
+
+function extractHowtoInfo(html: string, slug: string): { label: string } | null {
+  if (!html.includes(`howto-view-${slug}`)) return null;
+
+  const btnMatch =
+    html.match(
+      new RegExp(
+        `id="${slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-howto-btn"[^>]*>[\\s\\S]*?<span>([^<]+)<\\/span>`,
+        "i"
+      )
+    ) ?? html.match(/class="gad-howto-cta"[^>]*>[\s\S]*?<span>(Jak pracować[^<]*)<\/span>/i);
+
+  if (btnMatch?.[1]) {
+    return { label: stripTags(btnMatch[1]) };
+  }
+
+  const h1Match = html.match(
+    new RegExp(
+      `id="howto-view-${slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[\\s\\S]*?<h1>([\\s\\S]*?)<\\/h1>`,
+      "i"
+    )
+  );
+  if (h1Match?.[1]) {
+    return { label: stripTags(h1Match[1]) };
+  }
+
+  return { label: "Jak pracować — " + slug };
+}
 
 function extractCardInfo(cardHtml: string, cid: string): { name: string; sub: string } {
   const nameMatch =
@@ -682,6 +779,41 @@ function extractCardInfo(cardHtml: string, cid: string): { name: string; sub: st
     name: stripTags(nameMatch?.[1] ?? cid),
     sub: subMatch ? stripTags(subMatch[1]) : ""
   };
+}
+
+const PRINT_HANDOUTS_ROOT = path.join(process.cwd(), "public/handouts/print");
+
+function printHandoutFileExists(mod: string, basename: string): boolean {
+  const modDir = path.join(PRINT_HANDOUTS_ROOT, mod);
+  return (
+    existsSync(path.join(modDir, `${basename}.html`)) ||
+    existsSync(path.join(modDir, `${basename}.pdf`))
+  );
+}
+
+function canOpenPrintHandout(
+  cid: string,
+  modSlug: string,
+  printResolver: Record<string, PrintHandoutTarget>,
+  handoutIndex: Record<string, string>
+): boolean {
+  const resolved = printResolver[cid];
+  if (resolved && printHandoutFileExists(resolved.mod, resolved.file)) {
+    return true;
+  }
+
+  const modFromIndex = handoutIndex[cid];
+  if (modFromIndex && printHandoutFileExists(modFromIndex, cid)) {
+    return true;
+  }
+
+  const prefixed = `${modSlug}-${cid}`;
+  const modFromPrefixed = handoutIndex[prefixed];
+  if (modFromPrefixed && printHandoutFileExists(modFromPrefixed, prefixed)) {
+    return true;
+  }
+
+  return false;
 }
 
 function buildToolsCatalog(
@@ -705,14 +837,14 @@ function buildToolsCatalog(
         const cardHtml = match[0];
         const info = extractCardInfo(cardHtml, cid);
 
-        const hasHandout =
-          /\bhandout-btn\b/.test(cardHtml) ||
-          /openHandout\s*\(\s*['"]/.test(cardHtml) ||
-          cid in handoutIndex ||
-          cid in printResolver;
+        const hasHandout = canOpenPrintHandout(
+          cid,
+          mod.slug,
+          printResolver,
+          handoutIndex
+        );
 
-        const hasSos =
-          /openSOS\s*\(\s*['"]/.test(cardHtml) || cid in sosIndex;
+        const hasSos = cid in sosIndex;
 
         if (hasHandout) handouts.push({ id: cid, ...info });
         if (hasSos) sos.push({ id: cid, ...info });
@@ -721,9 +853,11 @@ function buildToolsCatalog(
       return {
         slug: mod.slug,
         label: mod.title,
+        keywords: buildModuleSearchKeywords(mod.slug, mod.title),
         cardCount,
         handouts,
-        sos
+        sos,
+        howto: extractHowtoInfo(mod.html, mod.slug)
       };
     });
 }
@@ -745,18 +879,21 @@ const TOOLS_BROWSER_MODAL = `<div class="modal-bg" id="toolsBrowserModal" style=
 
 function buildHomeToolsBrowserScript(
   catalog: ModuleToolsCatalog[],
-  counts: { handouts: number; sos: number; modules: number }
+  counts: { handouts: number; sos: number; modules: number; pathways: number }
 ) {
   const handoutTotal = catalog.reduce((sum, mod) => sum + mod.handouts.length, 0);
   const sosTotal = catalog.reduce((sum, mod) => sum + mod.sos.length, 0);
+  const pathwayTotal = catalog.filter((mod) => mod.howto).length;
 
   return `(function () {
   var _toolsBrowserType = null;
+  var _toolsBrowserResume = null;
   var _catalog = ${JSON.stringify(catalog)};
   var _counts = {
     handouts: ${counts.handouts || handoutTotal},
     sos: ${counts.sos || sosTotal},
-    modules: ${counts.modules || catalog.length}
+    modules: ${counts.modules || catalog.length},
+    pathways: ${counts.pathways || pathwayTotal}
   };
 
   function esc(value) {
@@ -771,8 +908,79 @@ function buildHomeToolsBrowserScript(
     return Number(value).toLocaleString("en-US");
   }
 
+  function hideToolsBrowserForPreview(groupLabel, toolId) {
+    var modal = document.getElementById("toolsBrowserModal");
+    var searchEl = document.getElementById("toolsBrowserSearch");
+    var listEl = document.getElementById("toolsBrowserList");
+    if (!modal || modal.style.display !== "flex") return;
+    _toolsBrowserResume = {
+      type: _toolsBrowserType,
+      query: searchEl ? searchEl.value : "",
+      scrollTop: listEl ? listEl.scrollTop : 0,
+      openGroupLabel: groupLabel || "",
+      toolId: toolId || ""
+    };
+    modal.style.display = "none";
+  }
+
+  function reopenToolsBrowserGroup(listEl, groupLabel, toolId) {
+    if (!listEl || !groupLabel) return;
+    var groups = listEl.querySelectorAll("details[data-group-label]");
+    for (var i = 0; i < groups.length; i++) {
+      if (groups[i].getAttribute("data-group-label") === groupLabel) {
+        groups[i].setAttribute("open", "");
+        if (toolId) {
+          var rows = groups[i].querySelectorAll(".tb-tool-row[data-tool-id]");
+          for (var j = 0; j < rows.length; j++) {
+            if (rows[j].getAttribute("data-tool-id") === toolId) {
+              rows[j].scrollIntoView({ block: "nearest" });
+              break;
+            }
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  window.restoreToolsBrowserIfNeeded = function () {
+    if (!_toolsBrowserResume) return false;
+    var state = _toolsBrowserResume;
+    _toolsBrowserResume = null;
+    _toolsBrowserType = state.type;
+    var modal = document.getElementById("toolsBrowserModal");
+    var searchEl = document.getElementById("toolsBrowserSearch");
+    var listEl = document.getElementById("toolsBrowserList");
+    if (!modal) return false;
+    if (searchEl) searchEl.value = state.query;
+    window.renderToolsBrowserList();
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+    if (listEl) {
+      requestAnimationFrame(function () {
+        reopenToolsBrowserGroup(listEl, state.openGroupLabel, state.toolId);
+        listEl.scrollTop = state.scrollTop;
+      });
+    }
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
+    return true;
+  };
+
+  window.openToolFromToolsBrowser = function (type, id, groupLabel) {
+    if (!id) return;
+    _toolsBrowserType = type;
+    hideToolsBrowserForPreview(groupLabel, id);
+    if (type === "handout" && typeof window.openHandout === "function") {
+      window.openHandout(id);
+    } else if (type === "sos" && typeof window.openSOS === "function") {
+      window.openSOS(id);
+    }
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
+  };
+
   window.openToolsBrowser = function (type) {
     _toolsBrowserType = type;
+    _toolsBrowserResume = null;
     var modal = document.getElementById("toolsBrowserModal");
     var titleEl = document.getElementById("toolsBrowserTitle");
     var subtitleEl = document.getElementById("toolsBrowserSubtitle");
@@ -797,60 +1005,120 @@ function buildHomeToolsBrowserScript(
     } else if (type === "pathway") {
       titleEl.textContent = "Przewodniki kliniczne";
       subtitleEl.textContent =
-        _counts.modules + " modułów · protokoły krok po kroku";
+        _counts.pathways + " przewodników „Jak pracować z…” · protokoły krok po kroku";
       iconEl.innerHTML = "🛤️";
       iconEl.style.background = "linear-gradient(135deg,#a8c9b8,#6e9d88)";
       iconEl.style.color = "#1f4a36";
     }
 
     searchEl.value = "";
+    searchEl.placeholder =
+      type === "pathway"
+        ? "Filtruj po nazwie przewodnika lub modułu…"
+        : "Filtruj po nazwie modułu lub narzędzia…";
     window.renderToolsBrowserList();
     modal.style.display = "flex";
     document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
   };
 
   window.closeToolsBrowser = function () {
+    _toolsBrowserResume = null;
     var modal = document.getElementById("toolsBrowserModal");
     if (modal) modal.style.display = "none";
     document.body.style.overflow = "";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
   };
+
+  function normalizeSearch(value) {
+    return String(value)
+      .normalize("NFD")
+      .replace(/\\p{M}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\\s]/g, " ")
+      .replace(/\\s+/g, " ")
+      .trim();
+  }
+
+  function moduleMatchesQuery(mod, query) {
+    if (!query || !mod) return false;
+    if (normalizeSearch(mod.label).indexOf(query) !== -1) return true;
+    if (mod.slug.indexOf(query) !== -1) return true;
+    if (
+      mod.howto &&
+      mod.howto.label &&
+      normalizeSearch(mod.howto.label).indexOf(query) !== -1
+    ) {
+      return true;
+    }
+    if (
+      mod.keywords &&
+      mod.keywords.some(function (keyword) {
+        return keyword.indexOf(query) !== -1 || query.indexOf(keyword) !== -1;
+      })
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  var modBySlug = {};
+  _catalog.forEach(function (mod) {
+    modBySlug[mod.slug] = mod;
+  });
 
   window.renderToolsBrowserList = function () {
     var listEl = document.getElementById("toolsBrowserList");
     var searchEl = document.getElementById("toolsBrowserSearch");
     if (!listEl || !searchEl) return;
 
-    var q = (searchEl.value || "").toLowerCase().trim();
+    var q = normalizeSearch(searchEl.value || "");
     var type = _toolsBrowserType;
 
     if (type === "pathway") {
-      var items = _catalog.map(function (mod) {
-        return { key: mod.slug, label: mod.label, count: mod.cardCount };
-      });
+      var items = _catalog
+        .filter(function (mod) {
+          return mod.howto;
+        })
+        .map(function (mod) {
+          return {
+            key: mod.slug,
+            label: mod.howto.label,
+            moduleLabel: mod.label
+          };
+        });
       var filteredPath = q
         ? items.filter(function (item) {
-            return item.label.toLowerCase().includes(q);
+            var mod = modBySlug[item.key];
+            if (moduleMatchesQuery(mod, q)) return true;
+            return (
+              normalizeSearch(item.label).indexOf(q) !== -1 ||
+              normalizeSearch(item.moduleLabel).indexOf(q) !== -1
+            );
           })
         : items;
 
       if (filteredPath.length === 0) {
         listEl.innerHTML =
-          '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Brak modułów pasujących do filtra.</div>';
+          '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">Brak przewodników pasujących do filtra.</div>';
         return;
       }
 
       listEl.innerHTML = filteredPath
         .map(function (item) {
           return (
-            '<button onclick="window.closeToolsBrowser();setTimeout(function(){window.goModule(' +
-            JSON.stringify(item.key) +
-            ')},80)" class="tb-row" style="display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;background:rgba(255,255,255,0.5);border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;margin-bottom:4px;transition:background .15s">' +
-            '<div style="flex:1;min-width:0;font-size:13.5px;color:var(--text);font-weight:500">' +
+            '<button type="button" data-module-slug="' +
+            esc(item.key) +
+            '" class="tb-row tb-path-row" style="display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;background:rgba(255,255,255,0.5);border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;margin-bottom:4px;transition:background .15s">' +
+            '<div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#a8c9b8,#6e9d88);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📘</div>' +
+            '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:13.5px;color:var(--text);font-weight:500;line-height:1.3">' +
             esc(item.label) +
             "</div>" +
-            '<div style="font-size:11.5px;color:var(--muted)">' +
-            item.count +
-            " kart</div>" +
+            '<div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3">' +
+            esc(item.moduleLabel) +
+            "</div>" +
+            "</div>" +
             '<div style="font-size:14px;color:var(--plum)">→</div>' +
             "</button>"
           );
@@ -883,15 +1151,18 @@ function buildHomeToolsBrowserScript(
     var filteredGroups = {};
     if (q) {
       Object.keys(grouped).forEach(function (lbl) {
-        var matchingCards = grouped[lbl].cards.filter(function (card) {
-          return (
-            card.name.toLowerCase().includes(q) ||
-            card.sub.toLowerCase().includes(q) ||
-            lbl.toLowerCase().includes(q)
-          );
-        });
+        var group = grouped[lbl];
+        var mod = modBySlug[group.key];
+        var matchingCards = moduleMatchesQuery(mod, q)
+          ? group.cards
+          : group.cards.filter(function (card) {
+              var hay = normalizeSearch(
+                [card.name, card.sub, card.id, lbl, card.tabKey].join(" ")
+              );
+              return hay.indexOf(q) !== -1;
+            });
         if (matchingCards.length > 0) {
-          filteredGroups[lbl] = { key: grouped[lbl].key, cards: matchingCards };
+          filteredGroups[lbl] = { key: group.key, cards: matchingCards };
         }
       });
     } else {
@@ -922,7 +1193,9 @@ function buildHomeToolsBrowserScript(
         html +=
           '<details ' +
           (q ? "open" : "") +
-          ' style="margin-bottom:8px;border:0.5px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.5);overflow:hidden">';
+          ' data-group-label="' +
+          esc(lbl) +
+          '" style="margin-bottom:8px;border:0.5px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.5);overflow:hidden">';
         html +=
           '<summary style="padding:10px 14px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:8px;list-style:none">';
         html += '<span style="flex:1">' + esc(lbl) + "</span>";
@@ -935,13 +1208,10 @@ function buildHomeToolsBrowserScript(
         html += "</summary>";
         html += '<div style="padding:4px 8px 8px">';
         group.cards.forEach(function (card) {
-          var action = type === "handout" ? "openHandout" : "openSOS";
           html +=
-            '<button onclick="window.closeToolsBrowser();setTimeout(function(){window.' +
-            action +
-            "(" +
-            JSON.stringify(card.id) +
-            ')},80)" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-family:inherit;text-align:left;transition:background .15s" onmouseover="this.style.background=\\'rgba(139,90,60,0.06)\\'" onmouseout="this.style.background=\\'transparent\\'">';
+            '<button type="button" data-tool-id="' +
+            esc(card.id) +
+            '" class="tb-tool-row" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-family:inherit;text-align:left;transition:background .15s" onmouseover="this.style.background=\\'rgba(139,90,60,0.06)\\'" onmouseout="this.style.background=\\'transparent\\'">';
           html += '<div style="flex:1;min-width:0">';
           html +=
             '<div style="font-size:13px;color:var(--text);font-weight:500;line-height:1.3">' +
@@ -973,10 +1243,44 @@ function buildHomeToolsBrowserScript(
     if (modal && event.target === modal) window.closeToolsBrowser();
   });
 
+  var toolsListEl = document.getElementById("toolsBrowserList");
+  if (toolsListEl && toolsListEl.dataset.bound !== "1") {
+    toolsListEl.dataset.bound = "1";
+    toolsListEl.addEventListener("click", function (event) {
+      var toolBtn = event.target.closest(".tb-tool-row");
+      if (toolBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        var toolId = toolBtn.getAttribute("data-tool-id");
+        var detailsEl = toolBtn.closest("details[data-group-label]");
+        var groupLabel = detailsEl
+          ? detailsEl.getAttribute("data-group-label")
+          : "";
+        if (toolId && _toolsBrowserType) {
+          window.openToolFromToolsBrowser(_toolsBrowserType, toolId, groupLabel);
+        }
+        return;
+      }
+      var pathBtn = event.target.closest(".tb-path-row");
+      if (pathBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        var slug = pathBtn.getAttribute("data-module-slug");
+        window.closeToolsBrowser();
+        setTimeout(function () {
+          if (_toolsBrowserType === "pathway" && typeof window.goModuleHowto === "function") {
+            window.goModuleHowto(slug);
+          } else {
+            window.goModule(slug);
+          }
+        }, 80);
+      }
+    });
+  }
+
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-      var modal = document.getElementById("toolsBrowserModal");
-      if (modal && modal.style.display === "flex") window.closeToolsBrowser();
+    if (event.key === "Escape" && typeof window.handleHomeBack === "function") {
+      window.handleHomeBack(event);
     }
   });
 })();`;
@@ -1094,6 +1398,7 @@ async function loadOriginalData(): Promise<OriginalData> {
 
 const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
   var HOME_SCROLL_KEY = ${JSON.stringify(KOMPENDIUM_HOME_SCROLL_KEY)};
+  var PENDING_HOWTO_KEY = ${JSON.stringify(KOMPENDIUM_PENDING_HOWTO_KEY)};
 
   function saveHomeScroll() {
     try {
@@ -1107,6 +1412,21 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
     window.top.location.href = "/modules/" + encodeURIComponent(slug);
   }
 
+  function goModuleHowto(slug) {
+    if (!slug) return;
+    saveHomeScroll();
+    try {
+      window.top.sessionStorage.setItem(
+        PENDING_HOWTO_KEY,
+        JSON.stringify({ slug: slug, mode: "howto", fromHome: true })
+      );
+    } catch (e) {}
+    window.top.location.href = "/modules/" + encodeURIComponent(slug);
+  }
+
+  window.goModule = goModule;
+  window.goModuleHowto = goModuleHowto;
+
   document.querySelectorAll(".home-btn[data-tab]").forEach(function (btn) {
     btn.addEventListener("click", function (event) {
       event.preventDefault();
@@ -1114,8 +1434,6 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
       goModule(btn.getAttribute("data-tab"));
     });
   });
-
-  window.goModule = goModule;
 
   window.openPlanner = function () {
     window.top.location.href = "/";
@@ -1137,8 +1455,62 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
   }
 
   var backBtn = document.getElementById("back-btn");
-  if (backBtn) {
+  if (backBtn && backBtn.dataset.homeBound !== "1") {
+    backBtn.dataset.homeBound = "1";
     backBtn.style.display = "none";
+  }
+
+  function isHandoutOpen() {
+    var ov = document.getElementById("handout-overlay");
+    if (!ov) return false;
+    return (
+      ov.classList.contains("ho-file-mode") ||
+      ov.style.display === "flex" ||
+      getComputedStyle(ov).display === "flex"
+    );
+  }
+
+  function isSosOpen() {
+    var sos = document.getElementById("sos-modal-bg");
+    return !!(sos && sos.classList.contains("active"));
+  }
+
+  function isToolsBrowserOpen() {
+    var modal = document.getElementById("toolsBrowserModal");
+    return !!(modal && modal.style.display === "flex");
+  }
+
+  function refreshHomeChrome() {
+    if (!backBtn) return;
+    var show = isHandoutOpen() || isSosOpen() || isToolsBrowserOpen();
+    backBtn.style.display = show ? "" : "none";
+    backBtn.classList.toggle("visible", show);
+  }
+
+  window.refreshHomeChrome = refreshHomeChrome;
+
+  function handleHomeBack(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+    if (isHandoutOpen() && typeof window.closeHandout === "function") {
+      window.closeHandout();
+      return;
+    }
+    if (isSosOpen() && typeof window.closeSOS === "function") {
+      window.closeSOS();
+      return;
+    }
+    if (isToolsBrowserOpen() && typeof window.closeToolsBrowser === "function") {
+      window.closeToolsBrowser();
+    }
+  }
+
+  window.handleHomeBack = handleHomeBack;
+
+  if (backBtn) {
+    backBtn.addEventListener("click", handleHomeBack, true);
   }
 })();`;
 
@@ -1155,6 +1527,12 @@ export async function getKompendiumHomeDocument() {
     handoutFileIndex,
     printHandoutResolver
   );
+  const handoutBrowserCount = toolsCatalog.reduce(
+    (sum, mod) => sum + mod.handouts.length,
+    0
+  );
+  const sosBrowserCount = toolsCatalog.reduce((sum, mod) => sum + mod.sos.length, 0);
+  const pathwayBrowserCount = toolsCatalog.filter((mod) => mod.howto).length;
   const searchIndexDom = buildSearchIndexDom(data.modules);
 
   const homeHtml = data.homeScreen
@@ -1162,6 +1540,10 @@ export async function getKompendiumHomeDocument() {
     .replace(
       'class="home-screen"',
       'class="home-screen visible"'
+    )
+    .replace(
+      /(<div class="home-action-title">Przewodniki kliniczne<\/div>\s*<div class="home-action-count">)[^<]+(<\/div>)/,
+      `$1${pathwayBrowserCount} przewodników$2`
     );
 
   const doc = `<!DOCTYPE html>
@@ -1205,9 +1587,10 @@ ${escapeEmbeddedScript(
     <script>
 ${escapeEmbeddedScript(
   buildHomeToolsBrowserScript(toolsCatalog, {
-    handouts: 1898,
-    sos: 1391,
-    modules: toolsCatalog.length
+    handouts: handoutBrowserCount,
+    sos: sosBrowserCount,
+    modules: toolsCatalog.length,
+    pathways: pathwayBrowserCount
   })
 )}
     </script>

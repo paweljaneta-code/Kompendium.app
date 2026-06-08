@@ -1,5 +1,6 @@
 export const KOMPENDIUM_HOME_SCROLL_KEY = "kompendium-home-scroll";
 export const KOMPENDIUM_PENDING_CARD_KEY = "kompendium-pending-card";
+export const KOMPENDIUM_PENDING_HOWTO_KEY = "kompendium-pending-howto";
 
 export function readHomeScrollPosition(): number | null {
   if (typeof window === "undefined") return null;
