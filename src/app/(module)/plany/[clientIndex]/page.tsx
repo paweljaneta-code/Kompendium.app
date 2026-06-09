@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ModuleViewer } from "@/components/modules/ModuleViewer";
-import { getKompendiumPlannerDocument } from "@/lib/originalModules";
+
+export const dynamic = "force-dynamic";
 
 type PlannerClientPageProps = {
   params: Promise<{ clientIndex: string }>;
@@ -18,20 +19,10 @@ export default async function PlannerClientPage({ params }: PlannerClientPagePro
     notFound();
   }
 
-  const clientIndex = Number.parseInt(rawIndex, 10);
-  const planner = await getKompendiumPlannerDocument({
-    view: "client",
-    clientIndex
-  });
-
-  if (!planner) {
-    notFound();
-  }
-
   return (
     <ModuleViewer
       title="Plan terapii — klient"
-      document={planner.document}
+      src={`/api/plany/document?view=client&index=${rawIndex}`}
       fallbackHref="/plany"
     />
   );
