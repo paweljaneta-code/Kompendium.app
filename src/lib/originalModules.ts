@@ -27,6 +27,7 @@ type OriginalData = {
   style: string;
   moduleFeatureStyles: string;
   header: string;
+  navBar: string;
   homeScreen: string;
   handoutScript: string;
   moduleUiScript: string;
@@ -35,8 +36,56 @@ type OriginalData = {
   moduleSearchData: string;
   moduleNames: string;
   moduleColors: string;
+  plannerGlobalElements: string;
+  plannerScript: string;
   modules: OriginalModule[];
 };
+
+function extractBalancedDiv(source: string, start: number): string {
+  if (start === -1) return "";
+  let depth = 0;
+  for (let i = start; i < source.length; i += 1) {
+    if (source.startsWith("<div", i)) depth += 1;
+    else if (source.startsWith("</div>", i)) {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + "</div>".length);
+    }
+  }
+  return "";
+}
+
+function extractTabContentHtml(source: string, slug: string): string {
+  const needle = `<div class="tab-content" id="tab-${slug}"`;
+  const start = source.indexOf(needle);
+  return extractBalancedDiv(source, start);
+}
+
+function extractNavBar(source: string): string {
+  const start = source.indexOf('<div class="nav-bar" id="nav-bar"');
+  return extractBalancedDiv(source, start);
+}
+
+function extractPlannerGlobalElements(source: string): string {
+  const start = source.indexOf("<!-- PLAN TERAPII - GLOBAL ELEMENTS -->");
+  const scriptMarker = source.indexOf("<!-- PLAN TERAPII - JAVASCRIPT -->");
+  if (start === -1 || scriptMarker === -1) return "";
+  return source.slice(start, scriptMarker).trim();
+}
+
+function extractPlannerScript(source: string): string {
+  const marker = source.indexOf("<!-- PLAN TERAPII - JAVASCRIPT -->");
+  if (marker === -1) return "";
+  const scriptOpen = source.indexOf("<script>", marker);
+  if (scriptOpen === -1) return "";
+  const contentStart = scriptOpen + "<script>".length;
+  const wrapMarker = source.indexOf("wrapOpenPlannerForCtxReset", marker);
+  if (wrapMarker === -1) return "";
+  const closeParen = source.indexOf("})();", wrapMarker);
+  if (closeParen === -1) return "";
+  const closeTag = source.indexOf("</script>", closeParen);
+  if (closeTag === -1) return "";
+  return source.slice(contentStart, closeTag).trim();
+}
 
 function extractJsVarObject(source: string, varName: string): string {
   const marker = `var ${varName}=`;
@@ -1328,7 +1377,8 @@ async function loadOriginalData(): Promise<OriginalData> {
 
   for (const match of source.matchAll(moduleRegex)) {
     const slug = match[1];
-    const html = match[0];
+    const html =
+      slug === "plany" ? extractTabContentHtml(source, slug) : match[0];
     const title = stripTags(html.match(/<h2>([\s\S]*?)<\/h2>/i)?.[1] ?? slug);
     const subtitle = stripTags(html.match(/<span class="tab-subtitle">([\s\S]*?)<\/span>/i)?.[1] ?? "");
 
@@ -1379,10 +1429,15 @@ async function loadOriginalData(): Promise<OriginalData> {
       ? source.slice(semanticStart, semanticEnd + "// === END SEMANTIC SEARCH".length).trim()
       : "";
 
+  const navBar = extractNavBar(source);
+  const plannerGlobalElements = extractPlannerGlobalElements(source);
+  const plannerScript = extractPlannerScript(source);
+
   cache = {
     style,
     moduleFeatureStyles,
     header,
+    navBar,
     homeScreen,
     handoutScript,
     moduleUiScript,
@@ -1391,6 +1446,8 @@ async function loadOriginalData(): Promise<OriginalData> {
     moduleSearchData: extractJsVarObject(source, "moduleSearchData"),
     moduleNames: extractJsVarObject(source, "moduleNames"),
     moduleColors: extractJsVarObject(source, "moduleColors"),
+    plannerGlobalElements,
+    plannerScript,
     modules
   };
   return cache;
@@ -1436,7 +1493,7 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
   });
 
   window.openPlanner = function () {
-    window.top.location.href = "/";
+    window.top.location.href = "/plany";
   };
 
   var logo = document.querySelector(".logo");
@@ -1513,6 +1570,181 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
     backBtn.addEventListener("click", handleHomeBack, true);
   }
 })();`;
+
+const PLANNER_LIST_LAYOUT_STYLES = `
+.planner-route-list #tab-plany .main { display: none !important; }
+.planner-route-list #tab-plany .container {
+  grid-template-columns: 1fr;
+  max-width: 720px;
+}
+.planner-route-list body.viewing-client #tab-plany .main { display: none !important; }
+`;
+
+const PLANNER_CLIENT_LAYOUT_STYLES = `
+.planner-route-client #tab-plany .sidebar { display: none !important; }
+.planner-route-client #tab-plany .container { grid-template-columns: 1fr; }
+.planner-route-client #tab-plany .main { display: flex !important; }
+`;
+
+type PlannerDocumentView = "list" | "client";
+
+type PlannerDocumentOptions = {
+  view?: PlannerDocumentView;
+  clientIndex?: number;
+};
+
+function sanitizePlannerScript(script: string): string {
+  return script.replace(
+    /if \(document\.readyState === 'loading'\) \{\s*document\.addEventListener\('DOMContentLoaded', plannerInit\);\s*\} else \{\s*plannerInit\(\);\s*\}\s*/,
+    ""
+  );
+}
+
+function buildPlannerBridgeScript(options: PlannerDocumentOptions): string {
+  const view = options.view ?? "list";
+  const clientIndex =
+    view === "client" && typeof options.clientIndex === "number"
+      ? options.clientIndex
+      : null;
+
+  return `(function () {
+  var ROUTE_VIEW = ${JSON.stringify(view)};
+  var ROUTE_CLIENT_INDEX = ${clientIndex === null ? "null" : String(clientIndex)};
+
+  function goHome() {
+    window.top.location.href = "/";
+  }
+
+  function goClientList() {
+    window.top.location.href = "/plany";
+  }
+
+  function goClientPage(idx) {
+    window.top.location.href = "/plany/" + idx;
+  }
+
+  window.openPlanner = function () {
+    window._returnToPlannerCtx = null;
+    document.querySelectorAll(".tab-content").forEach(function (tab) {
+      tab.classList.remove("active");
+      tab.style.display = "none";
+    });
+    var plannerTab = document.getElementById("tab-plany");
+    if (plannerTab) {
+      plannerTab.classList.add("active");
+      plannerTab.style.display = "block";
+    }
+    document.documentElement.style.setProperty("--accent", "#4a6347");
+    var navBar = document.getElementById("nav-bar");
+    if (navBar) navBar.style.display = "none";
+    var backBtn = document.getElementById("back-btn");
+    if (backBtn && !window._returnToPlannerCtx) backBtn.classList.add("visible");
+    document.body.classList.remove("viewing-client");
+    window.scrollTo(0, 0);
+    if (ROUTE_VIEW === "client" && ROUTE_CLIENT_INDEX !== null) {
+      if (typeof window.__nativeSelectClient === "function") {
+        window.__nativeSelectClient(ROUTE_CLIENT_INDEX);
+      }
+    } else if (typeof window.__nativePlannerInit === "function") {
+      window.__nativePlannerInit();
+    }
+  };
+
+  function installRouteHooks() {
+    if (typeof selectClient === "function" && !window.__nativeSelectClient) {
+      window.__nativeSelectClient = selectClient;
+      window.selectClient = function (idx) {
+        if (ROUTE_VIEW === "list") {
+          goClientPage(idx);
+          return;
+        }
+        window.__nativeSelectClient(idx);
+      };
+    }
+
+    if (typeof plannerInit === "function" && !window.__nativePlannerInit) {
+      window.__nativePlannerInit = plannerInit;
+      window.plannerInit = function () {
+        if (!document.getElementById("clientList")) return;
+        if (typeof ensureAllClientsCounters === "function") ensureAllClientsCounters();
+        if (typeof renderClientList === "function") renderClientList();
+        if (typeof updatePlannerHomeCounts === "function") updatePlannerHomeCounts();
+        if (ROUTE_VIEW === "client") {
+          if (
+            ROUTE_CLIENT_INDEX === null ||
+            !db.clients ||
+            !db.clients[ROUTE_CLIENT_INDEX]
+          ) {
+            goClientList();
+            return;
+          }
+          window.__nativeSelectClient(ROUTE_CLIENT_INDEX);
+          return;
+        }
+      };
+    }
+
+    if (typeof goBackToList === "function") {
+      window.goBackToList = goClientList;
+    }
+
+    if (typeof deleteClient === "function" && !window.__nativeDeleteClient) {
+      window.__nativeDeleteClient = deleteClient;
+      window.deleteClient = async function () {
+        await window.__nativeDeleteClient();
+        if (ROUTE_VIEW === "client") goClientList();
+      };
+    }
+  }
+
+  var backBtn = document.getElementById("back-btn");
+  var homeBtn = document.getElementById("home-btn");
+  var logo = document.querySelector(".logo");
+
+  if (backBtn) {
+    backBtn.addEventListener(
+      "click",
+      function (event) {
+        if (window._returnToPlannerCtx) return;
+        var moduleTab = document.querySelector(".tab-content.active:not(#tab-plany)");
+        if (moduleTab) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (ROUTE_VIEW === "client") goClientList();
+        else goHome();
+      },
+      true
+    );
+  }
+
+  if (homeBtn) {
+    homeBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      goHome();
+    });
+  }
+
+  if (logo) {
+    logo.style.cursor = "pointer";
+    logo.addEventListener("click", goHome);
+  }
+
+  function bootPlanner() {
+    document.body.classList.add(
+      ROUTE_VIEW === "client" ? "planner-route-client" : "planner-route-list"
+    );
+    window.openPlanner();
+  }
+
+  installRouteHooks();
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootPlanner);
+  } else {
+    bootPlanner();
+  }
+})();`;
+}
 
 export async function getKompendiumHomeDocument() {
   const data = await loadOriginalData();
@@ -1624,9 +1856,112 @@ ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
   return { document: doc };
 }
 
+export async function getKompendiumPlannerDocument(
+  options: PlannerDocumentOptions = {}
+) {
+  const view = options.view ?? "list";
+  const clientIndex = options.clientIndex;
+  const data = await loadOriginalData();
+  const planyModule = data.modules.find((item) => item.slug === "plany");
+  if (!planyModule || !data.plannerScript) return null;
+
+  if (view === "client" && (clientIndex === undefined || clientIndex < 0)) {
+    return null;
+  }
+
+  const sosFileIndex = await loadSosFileIndex();
+  const handoutFileIndex = await loadHandoutFileIndex();
+  const printHandoutResolver = await loadPrintHandoutResolver();
+
+  const planyHtml = planyModule.html
+    .replace(/style="display:\s*none"/gi, "")
+    .replace(/class="tab-content"/g, 'class="tab-content active"');
+
+  const moduleTabsHtml = data.modules
+    .filter((item) => item.slug !== "plany")
+    .map((item) =>
+      item.html.replace(/class="tab-content"/g, 'class="tab-content" style="display:none"')
+    )
+    .join("\n");
+
+  const baseHref =
+    view === "client" && clientIndex !== undefined
+      ? `/plany/${clientIndex}/`
+      : "/plany/";
+  const routeStyles =
+    view === "client" ? PLANNER_CLIENT_LAYOUT_STYLES : PLANNER_LIST_LAYOUT_STYLES;
+  const bridgeScript = buildPlannerBridgeScript({ view, clientIndex });
+
+  const doc = `<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="${baseHref}" />
+    <style>
+${data.style}
+${data.moduleFeatureStyles}
+body { opacity: 1 !important; padding-bottom: 16px !important; }
+.home-screen, .home-footer { display: none !important; }
+.nav-bar { display: none; }
+.header-search, #planner-btn { display: none; }
+#tab-plany { display: block !important; }
+.tab-content:not(#tab-plany) { display: none; }
+${ACCOUNT_HEADER_STYLES}
+${routeStyles}
+    </style>
+  </head>
+  <body class="${view === "client" ? "planner-route-client" : "planner-route-list"}">
+${withAccountHeaderButton(data.header)}
+${data.navBar}
+${planyHtml}
+${moduleTabsHtml}
+${data.plannerGlobalElements}
+${data.handoutOverlay}
+    <script>
+${escapeEmbeddedScript(data.handoutScript)}
+    </script>
+    <script>
+${buildSosIndexExtensionScript(sosFileIndex)}
+    </script>
+    <script>
+${buildHandoutIndexExtensionScript(handoutFileIndex)}
+    </script>
+    <script>
+${buildPrintHandoutResolverScript(printHandoutResolver)}
+    </script>
+    <script>
+window._legacyOpenHandout = window.openHandout;
+    </script>
+    <script>
+${FILE_HANDOUT_OVERRIDE_SCRIPT}
+    </script>
+    <script>
+${FILE_SOS_OVERRIDE_SCRIPT}
+    </script>
+    <script>
+${escapeEmbeddedScript(data.moduleUiScript)}
+    </script>
+    <script>
+${escapeEmbeddedScript(sanitizePlannerScript(data.plannerScript))}
+    </script>
+    <script>
+${escapeEmbeddedScript(bridgeScript)}
+    </script>
+    <script>
+${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
+    </script>
+  </body>
+</html>`;
+
+  return { document: doc, view, clientIndex };
+}
+
 export async function getOriginalModulesList() {
   const { modules } = await loadOriginalData();
-  return modules.map(({ slug, title, subtitle }) => ({ slug, title, subtitle }));
+  return modules
+    .filter(({ slug }) => slug !== "plany")
+    .map(({ slug, title, subtitle }) => ({ slug, title, subtitle }));
 }
 
 export async function getOriginalModuleBySlug(slug: string) {
