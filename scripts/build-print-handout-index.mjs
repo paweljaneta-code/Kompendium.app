@@ -288,7 +288,14 @@ const MANUAL_OVERRIDES = {
   "ppu-diff": { mod: "ppu", file: "ppu-differential" },
   "rodzina-ha": { mod: "health_anx", file: "ha-kontrakt-rodzina" },
   "sabbatical-burnout": { mod: "burnout", file: "bo-sabbatical" },
-  "zapewnienie-ha": { mod: "health_anx", file: "ha-kontrakt-rodzina" }
+  "zapewnienie-ha": { mod: "health_anx", file: "ha-kontrakt-rodzina" },
+  // 2026-06: karty 'podłoże' bez przycisku druku — dodano przycisk + mapowanie
+  "podloze-avpd": { mod: "avpd", file: "02-podloze" },
+  "podloze-behav-add": { mod: "behav-add", file: "ub-25-podloze" },
+  "podloze-gad": { mod: "gad", file: "gad-podloze-gad" },
+  "podloze-npd": { mod: "npd", file: "02-podloze" },
+  "podloze-panika": { mod: "panika", file: "pan-podloze" },
+  "podloze-phobia": { mod: "phobia", file: "phobia-podloze" }
 };
 
 const STOP_WORDS = new Set([
