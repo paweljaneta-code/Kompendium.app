@@ -1,6 +1,6 @@
 export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 (function () {
-  var printExts = [".pdf", ".html"];
+  var printExts = [".html", ".pdf"];
   var criticalAliases = {
     "znieksztalcenia-dep": { mod: "dep", file: "dep-znieksztalcenia", ext: "pdf" },
     "znieksztalcenia": { mod: "gad", file: "znieksztalcenia", ext: "pdf" },
@@ -64,11 +64,11 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
       criticalAliases[id] ||
       (window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id]);
     if (target && target.mod && target.file) {
-      var preferredExt = target.ext ? "." + target.ext : ".pdf";
-      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
+      // HTML przed PDF: HTML przewija się i renderuje na mobile,
+      // PDF w iframe na telefonach często pokazuje tylko 1. stronę lub nic.
       return [
-        "/handouts/print/" + target.mod + "/" + target.file + preferredExt,
-        "/handouts/print/" + target.mod + "/" + target.file + fallbackExt
+        "/handouts/print/" + target.mod + "/" + target.file + ".html",
+        "/handouts/print/" + target.mod + "/" + target.file + ".pdf"
       ];
     }
 
@@ -96,7 +96,9 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     for (var i = 0; i < candidates.length; i++) {
       if (await probeHandoutUrl(candidates[i])) return candidates[i];
     }
-    return candidates[0] || null;
+    // Brak potwierdzonego pliku = null. Ładowanie 404 do iframe dawało
+    // "pusty handout" — gorsze niż jasny komunikat.
+    return null;
   }
 
   window.closeHandout = function () {
@@ -112,18 +114,37 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     notifyParent({ type: "kompendium-overlay-closed" });
   };
 
+  function showHandoutUnavailable(id) {
+    var ov = document.getElementById("handout-overlay");
+    var ct = document.getElementById("handout-content");
+    if (!ov || !ct) return;
+    ov.classList.remove("sage-mode");
+    ov.classList.remove("ho-file-mode");
+    ct.innerHTML =
+      '<div style="max-width:380px;margin:80px auto;text-align:center;font-family:system-ui,sans-serif">' +
+      '<h2 style="font-family:Georgia,serif;font-weight:400;font-size:22px;color:#4a6347;margin:0 0 14px">Wersja do druku w przygotowaniu</h2>' +
+      '<p style="font-size:14px;line-height:1.6;color:#3a4a40;margin:0">Ten handout nie ma jeszcze pliku do wydruku. ' +
+      "Skorzystaj z opisu narzędzia na karcie lub wróć wkrótce.</p></div>";
+    ov.style.display = "flex";
+    ov.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
+  }
+
   window.openHandout = async function (id) {
     var candidates = resolvePrintHandoutUrl(id);
     var url = await pickFirstAvailableHandoutUrl(candidates);
     if (!url) {
-      if (typeof window._legacyOpenHandout === "function") {
-        return window._legacyOpenHandout(id);
+      // Fallback: jeśli narzędzie ma wersję elektroniczną SOS — otwórz ją
+      // (lepsza interaktywna wersja niż brak materiału).
+      if (
+        typeof window.openSOS === "function" &&
+        window.SOS_INDEX &&
+        window.SOS_INDEX[id]
+      ) {
+        return window.openSOS(id);
       }
-      alert(
-        "Handout niedostepny. Dodaj plik PDF lub HTML:\\npublic/handouts/print/<modul>/" +
-          id +
-          ".pdf (lub .html)"
-      );
+      showHandoutUnavailable(id);
       return;
     }
 

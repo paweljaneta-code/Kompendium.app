@@ -14,7 +14,20 @@ const MANUAL_OVERRIDES = {
   "aktywnosci-przyjemne": { mod: "dep", file: "ba-pleasant" },
   "dep-be-mastery": { mod: "dep", file: "ba-mastery" },
   "znieksztalcenia-dep": { mod: "dep", file: "dep-znieksztalcenia", ext: "pdf" },
-  "znieksztalcenia": { mod: "gad", file: "znieksztalcenia", ext: "pdf" }
+  "znieksztalcenia": { mod: "gad", file: "znieksztalcenia", ext: "pdf" },
+  // dedup 2026-06: aliasy między-modułowe (alias-PDF usunięty, treść bajt-identyczna z kanonicznym)
+  "halt-uz": { mod: "ppu", file: "ppu-halt" },
+  "uzaleznienia-behaw": { mod: "adhd", file: "adhd-uzaleznienia" },
+  "motywacja-aspd": { mod: "adhd", file: "adhd-motywacja" },
+  "wstyd-avpd": { mod: "derm", file: "derm-wstyd" },
+  "model-beck": { mod: "dep", file: "dep-model-beck" },
+  "body-neutrality": { mod: "bn", file: "bn-body-neutrality" },
+  "mezczyzni-ed": { mod: "bn", file: "bn-mezczyzni" },
+  "wywiad-genogramowy": { mod: "bn", file: "bn-wywiad" },
+  "mentalization-ha": { mod: "ppu", file: "ppu-mentalization" },
+  "cykl-paniki": { mod: "bn", file: "bn-cykl" },
+  "dating-sad": { mod: "ppu", file: "ppu-dating" },
+  "model-clark": { mod: "sad", file: "sad-model-clark-wells" }
 };
 
 const STOP_WORDS = new Set([
@@ -242,18 +255,37 @@ const resolver = {};
 const unresolved = [];
 const suspicious = [];
 
-for (const id of openIds) {
-  const mod = handoutIndex[id];
-  if (!mod) continue;
-
-  const modDir = path.join(printRoot, mod);
-  if (!fs.existsSync(modDir)) {
-    unresolved.push({ id, mod, reason: "missing-module-dir" });
-    continue;
+// Cache etykiet plików (globalne wyszukiwanie czyta każdy plik raz)
+const labelCache = new Map();
+function labelsFor(filePath, basename) {
+  let entry = labelCache.get(filePath);
+  if (!entry) {
+    entry = {
+      searchText: extractFileLabels(filePath, basename),
+      displayTitle: extractDisplayTitle(filePath)
+    };
+    labelCache.set(filePath, entry);
   }
+  return entry;
+}
 
+// Wszystkie moduły → pliki (do globalnego fallbacku)
+const allModules = new Map();
+for (const mod of fs.readdirSync(printRoot)) {
+  const dir = path.join(printRoot, mod);
+  if (!fs.statSync(dir).isDirectory()) continue;
+  allModules.set(mod, listModuleFiles(dir));
+}
+
+// Fuzzy cross-module WYŁĄCZONE: testy pokazały błędne klinicznie dopasowania
+// (np. czym-ocpd → ocd/czym-jest, zo-farmako → cptsd-farmakoterapia).
+// Zły handout jest gorszy niż brak — cross-module tylko exact (nazwa=id) i manual.
+const CROSS_MODULE_MIN_SCORE = Infinity;
+
+for (const id of openIds) {
+  // 1. Manual override — obowiązuje zawsze (także cross-module)
   const manual = MANUAL_OVERRIDES[id];
-  if (manual && manual.mod === mod) {
+  if (manual) {
     const ext =
       manual.ext ||
       pickPreferredExt(path.join(printRoot, manual.mod), manual.file);
@@ -263,46 +295,81 @@ for (const id of openIds) {
     }
   }
 
+  const mod = handoutIndex[id];
   const meta = cardMeta[id] || { title: id, subtitle: "" };
-  const files = listModuleFiles(modDir);
 
+  // 2. Wyszukiwanie we własnym module (jeśli znany)
   let best = null;
   let bestScore = -1;
-
-  for (const [basename, filePath] of files) {
-    const searchText = extractFileLabels(filePath, basename);
-    const fileDisplayTitle = extractDisplayTitle(filePath);
-    const score = scoreCandidate(
-      id,
-      mod,
-      basename,
-      searchText,
-      meta.title,
-      meta.subtitle,
-      fileDisplayTitle
-    );
-    if (score > bestScore) {
-      bestScore = score;
-      best = basename;
+  if (mod && allModules.has(mod)) {
+    for (const [basename, filePath] of allModules.get(mod)) {
+      const { searchText, displayTitle } = labelsFor(filePath, basename);
+      const score = scoreCandidate(
+        id, mod, basename, searchText, meta.title, meta.subtitle, displayTitle
+      );
+      if (score > bestScore) {
+        bestScore = score;
+        best = basename;
+      }
+    }
+    if (best && bestScore >= 15) {
+      const ext = pickPreferredExt(path.join(printRoot, mod), best);
+      if (ext) {
+        if (best !== id) {
+          suspicious.push({ id, mod, file: best, title: meta.title, score: bestScore });
+        }
+        resolver[id] = { mod, file: best, ext, score: bestScore };
+        continue;
+      }
     }
   }
 
-  if (!best || bestScore < 15) {
-    unresolved.push({ id, mod, title: meta.title, bestScore });
-    continue;
+  // 3. Globalny fallback — dokładna nazwa pliku = id w innym module
+  const exactHits = [];
+  for (const [omod, files] of allModules) {
+    if (omod === mod) continue;
+    if (files.has(id)) exactHits.push(omod);
+  }
+  if (exactHits.length) {
+    let chosenMod = exactHits[0];
+    if (exactHits.length > 1) {
+      let bs = -Infinity;
+      for (const omod of exactHits) {
+        const { searchText, displayTitle } = labelsFor(allModules.get(omod).get(id), id);
+        const s = scoreCandidate(id, omod, id, searchText, meta.title, meta.subtitle, displayTitle);
+        if (s > bs) { bs = s; chosenMod = omod; }
+      }
+    }
+    const ext = pickPreferredExt(path.join(printRoot, chosenMod), id);
+    if (ext) {
+      suspicious.push({ id, mod: chosenMod, file: id, title: meta.title, score: 900, cross: true });
+      resolver[id] = { mod: chosenMod, file: id, ext, score: 900, cross: true };
+      continue;
+    }
   }
 
-  const ext = pickPreferredExt(modDir, best);
-  if (!ext) {
-    unresolved.push({ id, mod, title: meta.title, reason: "no-file-ext" });
-    continue;
+  // 4. Globalny fallback — scoring z wysokim progiem
+  let gBest = null, gScore = -1, gMod = null;
+  for (const [omod, files] of allModules) {
+    if (omod === mod) continue;
+    for (const [basename, filePath] of files) {
+      const { searchText, displayTitle } = labelsFor(filePath, basename);
+      const s = scoreCandidate(
+        id, omod, basename, searchText, meta.title, meta.subtitle, displayTitle
+      );
+      if (s > gScore) { gScore = s; gBest = basename; gMod = omod; }
+    }
+  }
+  if (gBest && gScore >= CROSS_MODULE_MIN_SCORE) {
+    const ext = pickPreferredExt(path.join(printRoot, gMod), gBest);
+    if (ext) {
+      suspicious.push({ id, mod: gMod, file: gBest, title: meta.title, score: gScore, cross: true });
+      resolver[id] = { mod: gMod, file: gBest, ext, score: gScore, cross: true };
+      continue;
+    }
   }
 
-  if (best !== id) {
-    suspicious.push({ id, mod, file: best, title: meta.title, score: bestScore });
-  }
-
-  resolver[id] = { mod, file: best, ext, score: bestScore };
+  unresolved.push({ id, mod: mod || null, title: meta.title, bestScore: Math.max(bestScore, gScore) });
 }
 
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
