@@ -1,3 +1,6 @@
+import { KOMPENDIUM_PENDING_CARD_KEY, KOMPENDIUM_PENDING_HOWTO_KEY } from "./kompendiumScroll";
+import { MODULE_HANDOUT_ALIASES } from "./moduleSearchAliases";
+
 export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 (function () {
   var printExts = [".html", ".pdf"];
@@ -5,7 +8,21 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     "znieksztalcenia-dep": { mod: "dep", file: "dep-znieksztalcenia", ext: "pdf" },
     "znieksztalcenia": { mod: "gad", file: "znieksztalcenia", ext: "pdf" },
     "planowanie-aktywnosci": { mod: "dep", file: "ba-scheduling", ext: "pdf" },
-    "dieta-dep": { mod: "dep", file: "jedzenie-nastroj", ext: "pdf" }
+    "dieta-dep": { mod: "dep", file: "jedzenie-nastroj", ext: "pdf" },
+    "rejestr-mysli": { mod: "dep", file: "dziennik-mysli", ext: "html" },
+    "dziennik-pozytywow": { mod: "dep", file: "wdziecznosc", ext: "html" },
+    "adhd-grief-diagnosis": { mod: "adhd", file: "adhd-grief-diagnosis", ext: "html" },
+    "prokrastynacja-adhd": { mod: "adhd", file: "adhd-prokrastynacja", ext: "html" },
+    "eksperymenty-sad": { mod: "sad", file: "eksperyment-behawioralny", ext: "pdf" },
+    "asertywnosc-sad": { mod: "sad", file: "sad-asertywnosc", ext: "pdf" },
+    "szacowanie-sad": { mod: "sad", file: "teoria-a-b", ext: "pdf" },
+    "obraz-siebie-sad": { mod: "sad", file: "efekt-reflektora", ext: "pdf" },
+    "umiejetnosci-społ": { mod: "sad", file: "rozmowa", ext: "pdf" },
+    "fizjologia-sad": { mod: "sad", file: "antycypacja", ext: "pdf" },
+    "sad-be-imperfect": { mod: "sad", file: "eksperyment-behawioralny", ext: "pdf" },
+    "self-disclosure": { mod: "sad", file: "komplementy", ext: "pdf" },
+    "workplace-sad": { mod: "sad", file: "wystapienia-publiczne", ext: "pdf" },
+    "wartosci-sad": { mod: "sad", file: "teoria-a-b", ext: "pdf" }
   };
 
   function ensureHandoutPreviewStyles() {
@@ -60,24 +77,47 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
   }
 
   function resolvePrintHandoutUrl(id) {
-    var target =
-      criticalAliases[id] ||
-      (window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id]);
+    var urls = [];
+    var seen = {};
+
+    function add(url) {
+      if (!url || seen[url]) return;
+      seen[url] = true;
+      urls.push(url);
+    }
+
+    var target = criticalAliases[id];
     if (target && target.mod && target.file) {
-      // HTML przed PDF: HTML przewija się i renderuje na mobile,
-      // PDF w iframe na telefonach często pokazuje tylko 1. stronę lub nic.
-      return [
-        "/handouts/print/" + target.mod + "/" + target.file + ".html",
-        "/handouts/print/" + target.mod + "/" + target.file + ".pdf"
-      ];
+      var preferredExt = target.ext ? "." + target.ext : ".pdf";
+      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
+      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
+      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
+    }
+
+    var fileIndex = window.HANDOUT_FILE_INDEX || {};
+    if (fileIndex[id]) {
+      var indexedMod = fileIndex[id];
+      printExts.forEach(function (ext) {
+        add("/handouts/print/" + indexedMod + "/" + id + ext);
+      });
     }
 
     var mod = window.HANDOUT_INDEX && window.HANDOUT_INDEX[id];
-    if (!mod) return [];
+    if (mod) {
+      printExts.forEach(function (ext) {
+        add("/handouts/print/" + mod + "/" + id + ext);
+      });
+    }
 
-    return printExts.map(function (ext) {
-      return "/handouts/print/" + mod + "/" + id + ext;
-    });
+    target = window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id];
+    if (target && target.mod && target.file) {
+      var preferredExt = target.ext ? "." + target.ext : ".pdf";
+      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
+      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
+      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
+    }
+
+    return urls;
   }
 
   async function probeHandoutUrl(url) {
@@ -88,6 +128,14 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
       });
       if (resp.ok) return true;
     } catch (e) {}
+
+    try {
+      var resp = await fetch(url, {
+        method: "GET",
+        credentials: "same-origin"
+      });
+      if (resp.ok) return true;
+    } catch (e2) {}
 
     return false;
   }
@@ -109,8 +157,14 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
       ov.classList.remove("sage-mode", "ho-printing", "ho-file-mode");
     }
     if (ct) ct.innerHTML = "";
-    document.body.style.overflow = "";
-    restoreActiveHandoutCard();
+    var restoredBrowser =
+      typeof window.restoreToolsBrowserIfNeeded === "function" &&
+      window.restoreToolsBrowserIfNeeded();
+    if (!restoredBrowser) {
+      document.body.style.overflow = "";
+      restoreActiveHandoutCard();
+    }
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
     notifyParent({ type: "kompendium-overlay-closed" });
   };
 
@@ -130,6 +184,51 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     document.body.style.overflow = "hidden";
     notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
   }
+
+  window.openClinicianHandout = function (id) {
+    if (!id) return;
+    var mod = window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id];
+    if (!mod) {
+      alert(
+        "Arkusz dla terapeuty niedostepny.\\npublic/handouts/clinician/<modul>/" +
+          id +
+          ".html"
+      );
+      return;
+    }
+
+    var url = "/handouts/clinician/" + mod + "/" + id + ".html";
+    ensureHandoutPreviewStyles();
+
+    var ov = document.getElementById("handout-overlay");
+    var ct = document.getElementById("handout-content");
+    if (!ov || !ct) {
+      alert("Nie mozna otworzyc podgladu arkusza (brak warstwy handout).");
+      return;
+    }
+
+    window._activeHandoutId = id;
+    var card = document.getElementById(id);
+    if (card) card.setAttribute("open", "");
+
+    ov.classList.remove("sage-mode");
+    ov.classList.add("ho-file-mode");
+    ct.innerHTML = "";
+    var iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.title = "Handout dla terapeuty";
+    iframe.onload = function () {
+      try {
+        injectHtmlHandoutPreviewStyles(iframe.contentDocument);
+      } catch (e) {}
+    };
+    ct.appendChild(iframe);
+    ov.style.display = "flex";
+    ov.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
+    notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
+  };
 
   window.openHandout = async function (id) {
     var candidates = resolvePrintHandoutUrl(id);
@@ -152,7 +251,12 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 
     var ov = document.getElementById("handout-overlay");
     var ct = document.getElementById("handout-content");
-    if (!ov || !ct) return;
+    if (!ov || !ct) {
+      if (typeof window.restoreToolsBrowserIfNeeded === "function") {
+        window.restoreToolsBrowserIfNeeded();
+      }
+      return;
+    }
 
     window._activeHandoutId = id;
     var card = document.getElementById(id);
@@ -174,6 +278,7 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     ov.style.display = "flex";
     ov.scrollTop = 0;
     document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
     notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
   };
 
@@ -206,6 +311,23 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
         ".html"
     );
   };
+
+  function syncClinicianHandoutButtons() {
+    var index = window.CLINICIAN_HANDOUT_INDEX || {};
+    document.querySelectorAll("details.card").forEach(function (card) {
+      var btn = card.querySelector(".tool-mat.tm-ther");
+      if (!btn) return;
+      btn.style.display = index[card.id] ? "" : "none";
+    });
+  }
+
+  window.syncClinicianHandoutButtons = syncClinicianHandoutButtons;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncClinicianHandoutButtons);
+  } else {
+    syncClinicianHandoutButtons();
+  }
 })();
 `;
 
@@ -256,8 +378,14 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
       iframe.removeAttribute("srcdoc");
       iframe.src = "about:blank";
     }
-    document.body.style.overflow = "";
-    restoreActiveSosCard();
+    var restoredBrowser =
+      typeof window.restoreToolsBrowserIfNeeded === "function" &&
+      window.restoreToolsBrowserIfNeeded();
+    if (!restoredBrowser) {
+      document.body.style.overflow = "";
+      restoreActiveSosCard();
+    }
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
     notifyParent({ type: "kompendium-overlay-closed" });
   };
 
@@ -265,6 +393,9 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
     var modal = document.getElementById("sos-modal-bg");
     var iframe = document.getElementById("sos-iframe");
     if (!modal || !iframe) {
+      if (typeof window.restoreToolsBrowserIfNeeded === "function") {
+        window.restoreToolsBrowserIfNeeded();
+      }
       alert("Wersja elektroniczna niedostepna (brak modala SOS).");
       return;
     }
@@ -280,6 +411,7 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
       iframe.srcdoc = SOS_FALLBACK_HTML;
       modal.classList.add("active");
       document.body.style.overflow = "hidden";
+      if (window.refreshHomeChrome) window.refreshHomeChrome();
       notifyParent({ type: "kompendium-overlay-open", overlay: "sos" });
       return;
     }
@@ -288,6 +420,7 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
     iframe.src = path;
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
     notifyParent({ type: "kompendium-overlay-open", overlay: "sos" });
   };
 
@@ -307,6 +440,33 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
 
 export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
 (function () {
+  var moduleSearchAliases = ${JSON.stringify(MODULE_HANDOUT_ALIASES)};
+
+  function normalizeSearch(value) {
+    return String(value)
+      .normalize("NFD")
+      .replace(/\\p{M}/gu, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\\s]/g, " ")
+      .replace(/\\s+/g, " ")
+      .trim();
+  }
+
+  function moduleSearchMatches(tabKey, query) {
+    if (!query || !tabKey) return false;
+    if (tabKey.indexOf(query) !== -1) return true;
+    var aliases = moduleSearchAliases[tabKey] || [];
+    for (var ai = 0; ai < aliases.length; ai++) {
+      var alias = aliases[ai];
+      if (alias.indexOf(query) !== -1 || query.indexOf(alias) !== -1) return true;
+    }
+    var header = document.querySelector(".tab-header h2");
+    if (header && normalizeSearch(header.textContent || "").indexOf(query) !== -1) {
+      return true;
+    }
+    return false;
+  }
+
   var backBtn = document.getElementById("back-btn");
   var scrollBtn = document.getElementById("scroll-top");
   var homeBtn = document.getElementById("home-btn");
@@ -333,14 +493,8 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     return !!(sos && sos.classList.contains("active"));
   }
 
-  function closeOpenCards() {
-    var openCards = document.querySelectorAll(".card[open]");
-    if (!openCards.length) return false;
-    for (var i = 0; i < openCards.length; i++) openCards[i].removeAttribute("open");
-    setTimeout(function () {
-      openCards[0].scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }, 50);
-    return true;
+  function hasOpenToolCards() {
+    return document.querySelectorAll(".card[open]").length > 0;
   }
 
   function goHome() {
@@ -394,6 +548,25 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     true
   );
 
+  function hasOpenToolCards() {
+    return document.querySelectorAll(".card[open]").length > 0;
+  }
+
+  function returnToHowtoGuide(tab) {
+    var openc = document.querySelectorAll(".card[open]");
+    for (var oc = 0; oc < openc.length; oc++) openc[oc].removeAttribute("open");
+    window._returnToHowto = null;
+    if (window.switchModuleMode) {
+      window._howtoScrollRestore =
+        typeof window._howtoScrollPos === "number" ? window._howtoScrollPos : null;
+      window._howtoScrollPos = null;
+      window.switchModuleMode(tab, "howto");
+      return true;
+    }
+    window._howtoScrollPos = null;
+    return false;
+  }
+
   function handleBack(event) {
     if (backBusy) {
       if (event) {
@@ -403,50 +576,54 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       return;
     }
 
-    if (isHandoutOpen() && typeof window.closeHandout === "function") {
+    if (isHandoutOpen()) {
       if (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
+      window._returnToHowto = null;
+      window._howtoScrollPos = null;
       window.closeHandout();
       return;
     }
 
-    if (isSosOpen() && typeof window.closeSOS === "function") {
+    if (isSosOpen()) {
       if (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
+      window._returnToHowto = null;
+      window._howtoScrollPos = null;
       window.closeSOS();
       return;
     }
 
-    if (window._returnToHowto) {
-      var htab = window._returnToHowto;
-      var hv = document.getElementById("howto-view-" + htab);
-      if (hv) {
-        var atab = document.getElementById("tab-" + htab);
-        if (atab) {
-          var openc = document.querySelectorAll(".card[open]");
-          for (var oc = 0; oc < openc.length; oc++) openc[oc].removeAttribute("open");
-          window._returnToHowto = null;
-          if (window.switchModuleMode) {
-            window._howtoScrollRestore =
-              typeof window._howtoScrollPos === "number" ? window._howtoScrollPos : null;
-            window._howtoScrollPos = null;
-            window.switchModuleMode(htab, "howto");
-            return;
-          }
-        }
-      }
-      window._returnToHowto = null;
-    }
-
-    if (closeOpenCards()) {
+    if (hasOpenToolCards() && window._returnToHowto) {
       if (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
+      returnToHowtoGuide(window._returnToHowto);
+      return;
+    }
+
+    if (hasOpenToolCards()) {
+      if (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      window._returnToHowto = null;
+      window._howtoScrollPos = null;
+      goHome();
+      return;
+    }
+
+    if (window._returnToHowto) {
+      if (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      returnToHowtoGuide(window._returnToHowto);
       return;
     }
 
@@ -458,6 +635,15 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       var tabKey = activeTab.id.replace("tab-", "");
       var hvOpen = document.getElementById("howto-view-" + tabKey);
       if (hvOpen && getComputedStyle(hvOpen).display !== "none") {
+        if (window._howtoFromHome) {
+          window._howtoFromHome = null;
+          if (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+          goHome();
+          return;
+        }
         if (window.switchModuleMode) {
           var _bm = window._howtoFromMode === "guide" ? "guide" : "library";
           window._howtoFromMode = null;
@@ -562,6 +748,89 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
     });
   }
 
+  function findHowtoAnchor(scope, id) {
+    if (!scope || scope === document) return document.getElementById(id);
+    if (typeof CSS !== "undefined" && CSS.escape) {
+      return scope.querySelector("#" + CSS.escape(id));
+    }
+    var nodes = scope.querySelectorAll("[id]");
+    for (var i = 0; i < nodes.length; i++) {
+      if (nodes[i].id === id) return nodes[i];
+    }
+    return null;
+  }
+
+  function scrollToHowtoAnchor(id, root) {
+    var target = findHowtoAnchor(root && root.querySelector ? root : document, id);
+    if (!target) return false;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    return true;
+  }
+
+  function openToolFromHowto(tab, el) {
+    window._returnToHowto = tab;
+    window._howtoScrollPos = window.pageYOffset;
+    window._skipHowtoExitScroll = true;
+    if (window.switchModuleMode) {
+      window.switchModuleMode(tab, "library");
+    }
+    window._skipHowtoExitScroll = false;
+
+    if (window.libCloseSection) window.libCloseSection(tab);
+
+    var tabRoot = document.getElementById("tab-" + tab);
+    if (tabRoot) {
+      var allPill = tabRoot.querySelector('.pill[data-filter="all"]');
+      if (allPill) allPill.click();
+    }
+
+    var open = document.querySelectorAll(".card[open]");
+    for (var k = 0; k < open.length; k++) open[k].removeAttribute("open");
+    el.classList.remove("hidden");
+    el.setAttribute("open", "");
+    setTimeout(function () {
+      var hdr = document.querySelector(".header");
+      var nav = document.querySelector(".nav-bar");
+      var off = (hdr ? hdr.offsetHeight : 0) + (nav ? nav.offsetHeight : 0) + 12;
+      var y = el.getBoundingClientRect().top + window.pageYOffset - off;
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    }, 120);
+  }
+
+  function handleHowtoHashClick(e) {
+    var anchor = e.target.closest('[id^="howto-view-"] a[href^="#"], .howto-view a[href^="#"]');
+    if (!anchor) return;
+    var href = anchor.getAttribute("href");
+    if (!href || href === "#") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var id = decodeURIComponent(href.slice(1));
+    var howtoView = anchor.closest('[id^="howto-view-"]') || anchor.closest(".howto-view");
+    scrollToHowtoAnchor(id, howtoView);
+  }
+
+  function handleHowtoQgClick(e) {
+    var qg = e.target.closest(".qg-link");
+    if (!qg) return;
+    var id = qg.getAttribute("data-go");
+    if (!id) return;
+    var howtoSrc = qg.closest('[id^="howto-view-"]');
+    if (!howtoSrc) return;
+    var tab = howtoSrc.id.replace("howto-view-", "");
+    var tabRoot =
+      howtoSrc.closest(".tab-content") || document.getElementById("tab-" + tab);
+    var el = tabRoot
+      ? tabRoot.querySelector('[id="' + id.replace(/"/g, '\\"') + '"]')
+      : document.getElementById(id);
+    if (!el || el.tagName !== "DETAILS") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    openToolFromHowto(tab, el);
+  }
+
+  document.addEventListener("click", handleHowtoHashClick, true);
+  document.addEventListener("click", handleHowtoQgClick, true);
+
   document.addEventListener("click", function (e) {
     var pill = e.target.closest(".pill");
     if (pill) {
@@ -603,8 +872,7 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       if (el && el.tagName === "DETAILS") {
         var howtoSrc = qg.closest('[id^="howto-view-"]');
         if (howtoSrc) {
-          window._returnToHowto = howtoSrc.id.replace("howto-view-", "");
-          window._howtoScrollPos = window.pageYOffset;
+          return;
         } else {
           window._returnToHowto = null;
           window._howtoScrollPos = null;
@@ -667,12 +935,18 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
 
   document.addEventListener("input", function (e) {
     if (e.target.matches(".search-wrap input")) {
-      var q = e.target.value.toLowerCase();
+      var q = normalizeSearch(e.target.value || "");
       var p = e.target.closest(".tab-content") || document;
+      var tabKey = p.id ? p.id.replace(/^tab-/, "") : "";
+      var moduleMatch = moduleSearchMatches(tabKey, q);
       var cards = p.querySelectorAll(".card");
       var s = 0;
       for (var i = 0; i < cards.length; i++) {
-        if (!q || (cards[i].textContent || "").toLowerCase().indexOf(q) !== -1) {
+        if (
+          !q ||
+          moduleMatch ||
+          normalizeSearch(cards[i].textContent || "").indexOf(q) !== -1
+        ) {
           cards[i].classList.remove("hidden");
           s++;
         } else {
@@ -687,11 +961,59 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
 
   bindOverlayControls();
 
+  (function wrapSwitchModuleMode() {
+    var orig = window.switchModuleMode;
+    if (!orig || orig.__navWrapped) return;
+    window.switchModuleMode = function (tab, mode) {
+      var hv = document.getElementById("howto-view-" + tab);
+      var leavingHowto = !!(hv && getComputedStyle(hv).display !== "none" && mode !== "howto");
+      orig.call(this, tab, mode);
+      if (leavingHowto && !window._skipHowtoExitScroll) {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+    };
+    window.switchModuleMode.__navWrapped = true;
+  })();
+
   var tab = document.querySelector(".tab-content");
   if (tab) {
     var accent = tab.getAttribute("data-accent");
     if (accent) document.documentElement.style.setProperty("--accent", accent);
   }
+
+  (function openPendingCardFromSearch() {
+    try {
+      var raw = sessionStorage.getItem(${JSON.stringify(KOMPENDIUM_PENDING_CARD_KEY)});
+      if (!raw) return;
+      sessionStorage.removeItem(${JSON.stringify(KOMPENDIUM_PENDING_CARD_KEY)});
+      var data = JSON.parse(raw);
+      if (!data || !data.cardId) return;
+      var el = document.getElementById(data.cardId);
+      if (!el) return;
+      var openc = document.querySelectorAll(".card[open]");
+      for (var i = 0; i < openc.length; i++) openc[i].removeAttribute("open");
+      el.setAttribute("open", "");
+      setTimeout(function () {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    } catch (e) {}
+  })();
+
+  (function openPendingHowtoFromNav() {
+    try {
+      var raw = sessionStorage.getItem(${JSON.stringify(KOMPENDIUM_PENDING_HOWTO_KEY)});
+      if (!raw) return;
+      sessionStorage.removeItem(${JSON.stringify(KOMPENDIUM_PENDING_HOWTO_KEY)});
+      var data = JSON.parse(raw);
+      if (!data || !data.slug) return;
+      if (!window.switchModuleMode) return;
+      if (data.fromHome) window._howtoFromHome = true;
+      window.switchModuleMode(data.slug, data.mode || "howto");
+      setTimeout(function () {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }, 120);
+    } catch (e) {}
+  })();
 
   document.body.style.opacity = "1";
 })();

@@ -6,7 +6,53 @@ const kompendiumPath = path.join(root, "kompendium.html");
 const printRoot = path.join(root, "public/handouts/print");
 const outPath = path.join(root, "public/handouts/print-resolver.json");
 
+/** Cards that must not resolve to a print handout (no file / wrong legacy mapping). */
+const SKIP_PRINT_IDS = new Set([
+  "wurs-adhd",
+  "gad7",
+  "pswq",
+  "phq9",
+  "bdi",
+  "ybocs",
+  "ocir",
+  "npi-npd",
+  "lsas-avpd",
+  "pi-ocpd",
+  "ocpd-mapa-kosztow",
+  "ocpd-eksperymenty-behawioralne",
+  "ocpd-diffdiag",
+  "ocpd-ego-syntonia",
+  "imagery-ocpd",
+  "geneza-ocpd",
+  "krytyka-ocpd",
+  "ocpd-farmakoterapia",
+  "adhd-trauma"
+]);
+
 const MANUAL_OVERRIDES = {
+  // OCPD — nazwy plików nie odpowiadają treści (<title>); mapowanie po tytule HTML
+  "czym-ocpd": { mod: "ocpd", file: "ocpd-relacje" },
+  "podloze-ocpd": { mod: "ocpd", file: "delegowanie-ocpd" },
+  "praca-zycie-ocpd": { mod: "ocpd", file: "ocpd-profilaktyka" },
+  "sknerstwo-ocpd": { mod: "ocpd", file: "ocpd-a-ocd-terapia" },
+  "perfekcjonizm-ocpd": { mod: "ocpd", file: "odpoczynek-ocpd" },
+  "profilaktyka-ocpd": { mod: "ocpd", file: "perfekcjonizm-ocpd" },
+  "ocpd-utrwalenie-elastycznosci": { mod: "ocpd", file: "krytyka-ocpd" },
+  "prokrastynacja-ocpd": { mod: "ocpd", file: "ocpd-czym" },
+  "decyzyjnosc-ocpd": { mod: "ocpd", file: "sztywnosc-ocpd" },
+  "ocpd-a-ocd-terapia": { mod: "ocpd", file: "spontanicznosc-ocpd" },
+  "sztywnosc-ocpd": { mod: "ocpd", file: "krytyka-ocpd" },
+  "moralizm-ocpd": { mod: "ocpd", file: "ocpd-prokrastynacja" },
+  "interpersonalne-ocpd": { mod: "ocpd", file: "imagery-ocpd" },
+  "emocje-ocpd": { mod: "ocpd", file: "sknerstwo-ocpd" },
+  "spontanicznosc-ocpd": { mod: "ocpd", file: "ocpd-vs-ocd" },
+  "relacje-ocpd": { mod: "ocpd", file: "ocpd-sknerstwo", ext: "pdf" },
+  "delegowanie-ocpd": { mod: "ocpd", file: "geneza-ocpd" },
+  "skutecznosc-ocpd": { mod: "ocpd", file: "humor-ocpd" },
+  "humor-ocpd": { mod: "ocpd", file: "ocpd-podloze" },
+  "ocpd-vs-ocd": { mod: "ocpd", file: "decyzyjnosc-ocpd" },
+  "schematy-ocpd": { mod: "ocpd", file: "moralizm-ocpd" },
+  "odpoczynek-ocpd": { mod: "ocpd", file: "schematy-ocpd" },
   "czym-bdd": { mod: "bdd-dys", file: "bdd-czym-jest" },
   "dieta-dep": { mod: "dep", file: "jedzenie-nastroj" },
   "planowanie-aktywnosci": { mod: "dep", file: "ba-scheduling" },
@@ -27,7 +73,21 @@ const MANUAL_OVERRIDES = {
   "mentalization-ha": { mod: "ppu", file: "ppu-mentalization" },
   "cykl-paniki": { mod: "bn", file: "bn-cykl" },
   "dating-sad": { mod: "ppu", file: "ppu-dating" },
-  "model-clark": { mod: "sad", file: "sad-model-clark-wells" }
+  "model-clark": { mod: "sad", file: "sad-model-clark-wells" },
+  "rejestr-mysli": { mod: "dep", file: "dziennik-mysli" },
+  "dziennik-pozytywow": { mod: "dep", file: "wdziecznosc" },
+  "adhd-grief-diagnosis": { mod: "adhd", file: "adhd-grief-diagnosis" },
+  "prokrastynacja-adhd": { mod: "adhd", file: "adhd-prokrastynacja" },
+  "eksperymenty-sad": { mod: "sad", file: "eksperyment-behawioralny" },
+  "asertywnosc-sad": { mod: "sad", file: "sad-asertywnosc" },
+  "szacowanie-sad": { mod: "sad", file: "teoria-a-b" },
+  "obraz-siebie-sad": { mod: "sad", file: "efekt-reflektora" },
+  "umiejetnosci-społ": { mod: "sad", file: "rozmowa" },
+  "fizjologia-sad": { mod: "sad", file: "antycypacja" },
+  "sad-be-imperfect": { mod: "sad", file: "eksperyment-behawioralny" },
+  "self-disclosure": { mod: "sad", file: "komplementy" },
+  "workplace-sad": { mod: "sad", file: "wystapienia-publiczne" },
+  "wartosci-sad": { mod: "sad", file: "teoria-a-b" }
 };
 
 const STOP_WORDS = new Set([
@@ -63,21 +123,60 @@ const TOKEN_SYNONYMS = {
   monitorowanie: ["monitoring", "monitor"],
   przyjemne: ["pleasant"],
   depresja: ["dep"],
-  depresji: ["dep"]
+  depresji: ["dep"],
+  eksperymenty: ["eksperyment", "behawioralny"],
+  eksperyment: ["eksperymenty", "behawioralny"],
+  szacowanie: ["teoria", "prawdopodobienstwo"],
+  asertywnosc: ["asertywnosci", "odmowa"],
+  umiejetnosci: ["rozmowa", "konwersacyjne"],
+  fizjologia: ["antycypacja", "objawy"],
+  obraz: ["efekt", "reflektora"],
+  siebie: ["reflektora", "efekt"]
 };
 
 const MODULE_MARKERS = {
-  dep: ["depresj", "smutku", "beck", "ba ", " behaw"],
+  dep: ["depresj", "smutku", "beck", " ba ", " behaw"],
   adhd: ["adhd", "uwagi", "dopamin", "hiperfokus"],
   gad: ["gad", "martwien", "uogolnion"],
   ocd: ["ocd", "obsesj", "kompulsj"],
+  ocpd: ["ocpd", "perfekcjonizm perfekcjonist", "sumiennosc"],
   bdd: ["bdd", "dysmorfo", "body dysmorphic"],
-  psychosis: ["psychoz", "schizofren"]
+  psychosis: ["psychoz", "schizofren"],
+  sad: ["sad", "lek spoleczny", "fobia spoleczna", "social anxiety"]
 };
 
+const QUESTIONNAIRE_RE =
+  /(?:^|-)(wurs|asrs|diva|phq9|phq|bdi|gad7|gad|ocir|oci|ybocs|lsas|msi|npi|hai|epds|pswq|caars|pss|audit|dast|pcl|dass|nssi)(?:-|$)/i;
+
+const MIN_TITLE_OVERLAP = 0.14;
+const MIN_TITLE_OVERLAP_DIRECT = 0.1;
+
 function parseHandoutIndex(source) {
-  const match = source.match(/window\.HANDOUT_INDEX = (\{[\s\S]*?\});/);
-  return match ? eval("(" + match[1] + ")") : {};
+  const marker = "window.HANDOUT_INDEX = ";
+  const start = source.indexOf(marker);
+  if (start === -1) return {};
+  const jsonStart = start + marker.length;
+  let depth = 0;
+  for (let i = jsonStart; i < source.length; i++) {
+    if (source[i] === "{") depth++;
+    else if (source[i] === "}") {
+      depth--;
+      if (!depth) return eval("(" + source.slice(jsonStart, i + 1) + ")");
+    }
+  }
+  return {};
+}
+
+function buildCardModuleMap(source) {
+  const map = {};
+  const tabRe =
+    /<div class="tab-content"[^>]*id="tab-([^"]+)"[\s\S]*?(?=<div class="tab-content"|<button class="scroll-top")/g;
+  for (const match of source.matchAll(tabRe)) {
+    for (const cm of match[0].matchAll(/<details class="card" id="([^"]+)"/g)) {
+      map[cm[1]] = match[1];
+    }
+  }
+  return map;
 }
 
 function parseCardMeta(source) {
@@ -126,6 +225,99 @@ function expandWord(word) {
   return [...set];
 }
 
+function isQuestionnaireId(id) {
+  return QUESTIONNAIRE_RE.test(id);
+}
+
+function questionnaireToken(id) {
+  const m = id.match(QUESTIONNAIRE_RE);
+  return m ? m[1].toLowerCase().replace(/-/g, "") : "";
+}
+
+function fileMatchesQuestionnaire(id, basename) {
+  if (!isQuestionnaireId(id)) return true;
+  const token = questionnaireToken(id);
+  const b = normalizeText(basename);
+  if (b.includes(token)) return true;
+  if (token === "phq9" && b.includes("phq")) return true;
+  if (token === "gad7" && b.includes("gad")) return true;
+  if (token === "ocir" && b.includes("oci")) return true;
+  return false;
+}
+
+function titleWordOverlap(cardTitle, filePath, basename, cardSubtitle = "") {
+  const words = significantWords(cardTitle, cardSubtitle);
+  if (!words.length) return 0;
+  const hay = normalizeText(
+    [
+      extractDisplayTitle(filePath),
+      basename.replace(/-/g, " "),
+      extractFileLabels(filePath, basename)
+    ].join(" ")
+  );
+  let hit = 0;
+  for (const word of words) {
+    for (const variant of expandWord(word)) {
+      if (hay.includes(variant)) {
+        hit++;
+        break;
+      }
+    }
+  }
+  return hit / words.length;
+}
+
+/** Overlap tylko po tytule/h1 pliku — bez nazwy pliku (ważne przy pomieszanych folderach OCPD). */
+function displayTitleWordOverlap(cardTitle, filePath, cardSubtitle = "") {
+  const words = significantWords(cardTitle, cardSubtitle);
+  if (!words.length) return 0;
+  const hay = extractDisplayTitle(filePath);
+  if (!hay) return 0;
+  let hit = 0;
+  for (const word of words) {
+    for (const variant of expandWord(word)) {
+      if (hay.includes(variant)) {
+        hit++;
+        break;
+      }
+    }
+  }
+  return hit / words.length;
+}
+
+function basenameTitleDrift(filePath, basename) {
+  const display = extractDisplayTitle(filePath);
+  if (!display) return 1;
+  const stemWords = significantWords(basename.replace(/-/g, " "));
+  if (!stemWords.length) return 1;
+  let hit = 0;
+  for (const word of stemWords) {
+    for (const variant of expandWord(word)) {
+      if (display.includes(variant)) {
+        hit++;
+        break;
+      }
+    }
+  }
+  return hit / stemWords.length;
+}
+
+function pickBestTitleMatch(meta, files) {
+  let best = null;
+  let bestOverlap = 0;
+  for (const [basename, filePath] of files) {
+    const overlap = displayTitleWordOverlap(meta.title, filePath, meta.subtitle);
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap;
+      best = basename;
+    }
+  }
+  if (best && bestOverlap >= MIN_TITLE_OVERLAP) {
+    return { file: best, overlap: bestOverlap };
+  }
+  return null;
+}
+
 function extractDisplayTitle(filePath) {
   const html = fs.readFileSync(filePath, "utf8");
   const title = html.match(/<title>([^<]+)/i)?.[1]?.trim() || "";
@@ -150,6 +342,12 @@ function titleAlignmentPenalty(cardTitle, fileDisplayTitle) {
   }
   if (fileDisplayTitle.includes("diagram") && !cardNorm.includes("diagram")) {
     penalty += 30;
+  }
+  if (cardNorm.includes("trauma") && !/(trauma|ptsd|ace|cptsd)/.test(fileDisplayTitle)) {
+    penalty += 90;
+  }
+  if (cardNorm.includes("trauma") && /(kreatywn|dywergent|pomysl)/.test(fileDisplayTitle)) {
+    penalty += 90;
   }
 
   return penalty;
@@ -197,8 +395,67 @@ function modulePenalty(mod, searchText, cardTitle) {
   if (mod === "dep" && searchText.includes("adhd") && !cardNorm.includes("adhd")) {
     penalty += 60;
   }
+  if (mod === "ocd" && searchText.includes("ocpd") && !cardNorm.includes("ocpd")) {
+    penalty += 80;
+  }
+  if (mod === "ocpd" && searchText.includes(" ocd") && !cardNorm.includes("ocd")) {
+    penalty += 40;
+  }
 
   return penalty;
+}
+
+function directIdCandidates(id, mod) {
+  const candidates = new Set();
+  const push = (value) => {
+    if (!value) return;
+    candidates.add(value);
+    candidates.add(
+      value
+        .normalize("NFD")
+        .replace(/\p{M}/gu, "")
+    );
+  };
+
+  push(id);
+  push(`${mod}-${id}`);
+
+  if (id.startsWith(`${mod}-`)) {
+    push(id.slice(mod.length + 1));
+  }
+
+  if (id.endsWith(`-${mod}`)) {
+    const stem = id.slice(0, -(mod.length + 1));
+    push(stem);
+    push(`${mod}-${stem}`);
+  }
+
+  return [...candidates].filter(Boolean);
+}
+
+function pickDirectFile(id, mod, files) {
+  for (const candidate of directIdCandidates(id, mod)) {
+    if (files.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+function idBasenameBonus(id, mod, basename) {
+  let bonus = 0;
+  if (basename === id) bonus += 25;
+  if (basename === `${mod}-${id}`) bonus += 20;
+
+  if (id.endsWith(`-${mod}`)) {
+    const stem = id.slice(0, -(mod.length + 1));
+    if (basename === stem || basename === `${mod}-${stem}`) bonus += 35;
+  }
+
+  if (id.startsWith(`${mod}-`)) {
+    const stem = id.slice(mod.length + 1);
+    if (basename === stem) bonus += 25;
+  }
+
+  return bonus;
 }
 
 function scoreCandidate(id, mod, basename, searchText, cardTitle, cardSubtitle, fileDisplayTitle) {
@@ -224,6 +481,7 @@ function scoreCandidate(id, mod, basename, searchText, cardTitle, cardSubtitle, 
 
   score -= modulePenalty(mod, searchText, cardTitle);
   score -= titleAlignmentPenalty(cardTitle, fileDisplayTitle);
+  score += idBasenameBonus(id, mod, basename);
 
   return score;
 }
@@ -248,6 +506,7 @@ function pickPreferredExt(modDir, basename) {
 
 const source = fs.readFileSync(kompendiumPath, "utf8");
 const handoutIndex = parseHandoutIndex(source);
+const cardModuleMap = buildCardModuleMap(source);
 const cardMeta = parseCardMeta(source);
 const openIds = parseOpenHandoutIds(source);
 
@@ -269,21 +528,43 @@ function labelsFor(filePath, basename) {
   return entry;
 }
 
-// Wszystkie moduły → pliki (do globalnego fallbacku)
+// Wszystkie moduły → pliki (globalny fallback po dokładnej nazwie)
 const allModules = new Map();
-for (const mod of fs.readdirSync(printRoot)) {
-  const dir = path.join(printRoot, mod);
+for (const m of fs.readdirSync(printRoot)) {
+  const dir = path.join(printRoot, m);
   if (!fs.statSync(dir).isDirectory()) continue;
-  allModules.set(mod, listModuleFiles(dir));
+  allModules.set(m, listModuleFiles(dir));
 }
 
-// Fuzzy cross-module WYŁĄCZONE: testy pokazały błędne klinicznie dopasowania
-// (np. czym-ocpd → ocd/czym-jest, zo-farmako → cptsd-farmakoterapia).
-// Zły handout jest gorszy niż brak — cross-module tylko exact (nazwa=id) i manual.
-const CROSS_MODULE_MIN_SCORE = Infinity;
+// Cross-module TYLKO exact (nazwa pliku = id) lub manual — fuzzy cross-module
+// dawał błędne klinicznie dopasowania (czym-ocpd→ocd, zo-farmako→cptsd).
+function tryGlobalExact(id, meta, excludeMod) {
+  const hits = [];
+  for (const [omod, files] of allModules) {
+    if (omod === excludeMod) continue;
+    if (files.has(id)) hits.push(omod);
+  }
+  if (!hits.length) return null;
+  let chosen = hits[0];
+  if (hits.length > 1) {
+    let bs = -Infinity;
+    for (const omod of hits) {
+      const { searchText, displayTitle } = labelsFor(allModules.get(omod).get(id), id);
+      const s = scoreCandidate(id, omod, id, searchText, meta.title, meta.subtitle, displayTitle);
+      if (s > bs) { bs = s; chosen = omod; }
+    }
+  }
+  const ext = pickPreferredExt(path.join(printRoot, chosen), id);
+  return ext ? { mod: chosen, file: id, ext, score: 900, cross: true } : null;
+}
 
 for (const id of openIds) {
-  // 1. Manual override — obowiązuje zawsze (także cross-module)
+  if (SKIP_PRINT_IDS.has(id)) {
+    unresolved.push({ id, reason: "skip-print" });
+    continue;
+  }
+
+  // Manual override obowiązuje zawsze (także cross-module i bez modułu w indeksie)
   const manual = MANUAL_OVERRIDES[id];
   if (manual) {
     const ext =
@@ -295,81 +576,110 @@ for (const id of openIds) {
     }
   }
 
-  const mod = handoutIndex[id];
+  const mod = handoutIndex[id] || cardModuleMap[id];
   const meta = cardMeta[id] || { title: id, subtitle: "" };
 
-  // 2. Wyszukiwanie we własnym module (jeśli znany)
-  let best = null;
-  let bestScore = -1;
-  if (mod && allModules.has(mod)) {
-    for (const [basename, filePath] of allModules.get(mod)) {
-      const { searchText, displayTitle } = labelsFor(filePath, basename);
-      const score = scoreCandidate(
-        id, mod, basename, searchText, meta.title, meta.subtitle, displayTitle
-      );
-      if (score > bestScore) {
-        bestScore = score;
-        best = basename;
-      }
+  if (!mod) {
+    const g = tryGlobalExact(id, meta, null);
+    if (g) {
+      suspicious.push({ id, mod: g.mod, file: g.file, title: meta.title, score: g.score, cross: true });
+      resolver[id] = g;
+    } else {
+      unresolved.push({ id, reason: "no-module" });
     }
-    if (best && bestScore >= 15) {
-      const ext = pickPreferredExt(path.join(printRoot, mod), best);
+    continue;
+  }
+
+  const modDir = path.join(printRoot, mod);
+  if (!fs.existsSync(modDir)) {
+    const g = tryGlobalExact(id, meta, mod);
+    if (g) {
+      suspicious.push({ id, mod: g.mod, file: g.file, title: meta.title, score: g.score, cross: true });
+      resolver[id] = g;
+    } else {
+      unresolved.push({ id, mod, reason: "missing-module-dir" });
+    }
+    continue;
+  }
+
+  const files = listModuleFiles(modDir);
+
+  const direct = pickDirectFile(id, mod, files);
+  if (direct) {
+    const filePath = files.get(direct);
+    const overlap = titleWordOverlap(meta.title, filePath, direct, meta.subtitle);
+    const displayOverlap = displayTitleWordOverlap(meta.title, filePath, meta.subtitle);
+    const exactId = direct === id || direct === `${mod}-${id}`;
+    const drift = basenameTitleDrift(filePath, direct);
+    const driftOk = drift >= 0.34;
+    if (
+      fileMatchesQuestionnaire(id, direct) &&
+      displayOverlap >= MIN_TITLE_OVERLAP_DIRECT &&
+      (driftOk || !exactId || overlap >= MIN_TITLE_OVERLAP)
+    ) {
+      const ext = pickPreferredExt(modDir, direct);
       if (ext) {
-        if (best !== id) {
-          suspicious.push({ id, mod, file: best, title: meta.title, score: bestScore });
-        }
-        resolver[id] = { mod, file: best, ext, score: bestScore };
+        resolver[id] = { mod, file: direct, ext, score: Math.round(overlap * 100), direct: true };
         continue;
       }
     }
   }
 
-  // 3. Globalny fallback — dokładna nazwa pliku = id w innym module
-  const exactHits = [];
-  for (const [omod, files] of allModules) {
-    if (omod === mod) continue;
-    if (files.has(id)) exactHits.push(omod);
-  }
-  if (exactHits.length) {
-    let chosenMod = exactHits[0];
-    if (exactHits.length > 1) {
-      let bs = -Infinity;
-      for (const omod of exactHits) {
-        const { searchText, displayTitle } = labelsFor(allModules.get(omod).get(id), id);
-        const s = scoreCandidate(id, omod, id, searchText, meta.title, meta.subtitle, displayTitle);
-        if (s > bs) { bs = s; chosenMod = omod; }
+  const titleHit = pickBestTitleMatch(meta, files);
+  if (
+    titleHit &&
+    fileMatchesQuestionnaire(id, titleHit.file) &&
+    titleHit.overlap >= MIN_TITLE_OVERLAP
+  ) {
+    const ext = pickPreferredExt(modDir, titleHit.file);
+    if (ext) {
+      const score = Math.round(titleHit.overlap * 100);
+      if (titleHit.file !== id) {
+        suspicious.push({ id, mod, file: titleHit.file, title: meta.title, score, titleMatch: true });
       }
-    }
-    const ext = pickPreferredExt(path.join(printRoot, chosenMod), id);
-    if (ext) {
-      suspicious.push({ id, mod: chosenMod, file: id, title: meta.title, score: 900, cross: true });
-      resolver[id] = { mod: chosenMod, file: id, ext, score: 900, cross: true };
+      resolver[id] = { mod, file: titleHit.file, ext, score, titleMatch: true };
       continue;
     }
   }
 
-  // 4. Globalny fallback — scoring z wysokim progiem
-  let gBest = null, gScore = -1, gMod = null;
-  for (const [omod, files] of allModules) {
-    if (omod === mod) continue;
-    for (const [basename, filePath] of files) {
-      const { searchText, displayTitle } = labelsFor(filePath, basename);
-      const s = scoreCandidate(
-        id, omod, basename, searchText, meta.title, meta.subtitle, displayTitle
-      );
-      if (s > gScore) { gScore = s; gBest = basename; gMod = omod; }
-    }
-  }
-  if (gBest && gScore >= CROSS_MODULE_MIN_SCORE) {
-    const ext = pickPreferredExt(path.join(printRoot, gMod), gBest);
-    if (ext) {
-      suspicious.push({ id, mod: gMod, file: gBest, title: meta.title, score: gScore, cross: true });
-      resolver[id] = { mod: gMod, file: gBest, ext, score: gScore, cross: true };
-      continue;
+  let best = null;
+  let bestScore = -1;
+
+  for (const [basename, filePath] of files) {
+    if (!fileMatchesQuestionnaire(id, basename)) continue;
+    const { searchText, displayTitle } = labelsFor(filePath, basename);
+    const score = scoreCandidate(
+      id, mod, basename, searchText, meta.title, meta.subtitle, displayTitle
+    );
+    const overlap = titleWordOverlap(meta.title, filePath, basename, meta.subtitle);
+    if (score > bestScore && overlap >= MIN_TITLE_OVERLAP) {
+      bestScore = score;
+      best = basename;
     }
   }
 
-  unresolved.push({ id, mod: mod || null, title: meta.title, bestScore: Math.max(bestScore, gScore) });
+  if (!best || bestScore < 20) {
+    const g = tryGlobalExact(id, meta, mod);
+    if (g) {
+      suspicious.push({ id, mod: g.mod, file: g.file, title: meta.title, score: g.score, cross: true });
+      resolver[id] = g;
+      continue;
+    }
+    unresolved.push({ id, mod, title: meta.title, bestScore });
+    continue;
+  }
+
+  const ext = pickPreferredExt(modDir, best);
+  if (!ext) {
+    unresolved.push({ id, mod, title: meta.title, reason: "no-file-ext" });
+    continue;
+  }
+
+  if (best !== id) {
+    suspicious.push({ id, mod, file: best, title: meta.title, score: bestScore });
+  }
+
+  resolver[id] = { mod, file: best, ext, score: bestScore };
 }
 
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -411,3 +721,60 @@ for (const id of checkIds) {
   const hit = resolver[id];
   console.log(`  ${id} ->`, hit ? `${hit.mod}/${hit.file}.${hit.ext} (${hit.score})` : "MISSING");
 }
+
+function buildFileIndexFromDir(rootDir, { skipUnderscore = false, extensions = [".html"] } = {}) {
+  const index = {};
+  if (!fs.existsSync(rootDir)) return index;
+
+  for (const mod of fs.readdirSync(rootDir)) {
+    const modDir = path.join(rootDir, mod);
+    if (!fs.statSync(modDir).isDirectory()) continue;
+
+    for (const file of fs.readdirSync(modDir)) {
+      if (skipUnderscore && file.startsWith("_")) continue;
+      const ext = path.extname(file);
+      if (!extensions.includes(ext)) continue;
+      index[file.slice(0, -ext.length)] = mod;
+    }
+  }
+
+  return index;
+}
+
+const handoutIndexPath = path.join(root, "public/handouts/handout-file-index.json");
+const handoutFileIndex = buildFileIndexFromDir(printRoot, {
+  skipUnderscore: true,
+  extensions: [".html", ".pdf"]
+});
+fs.writeFileSync(
+  handoutIndexPath,
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      count: Object.keys(handoutFileIndex).length,
+      index: handoutFileIndex
+    },
+    null,
+    2
+  )
+);
+console.log("\nHandout file index:", Object.keys(handoutFileIndex).length, "entries");
+console.log("Written:", handoutIndexPath);
+
+const sosRoot = path.join(root, "public/sos");
+const sosIndexPath = path.join(root, "public/sos/sos-file-index.json");
+const sosFileIndex = buildFileIndexFromDir(sosRoot, { extensions: [".html"] });
+fs.writeFileSync(
+  sosIndexPath,
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      count: Object.keys(sosFileIndex).length,
+      index: sosFileIndex
+    },
+    null,
+    2
+  )
+);
+console.log("SOS file index:", Object.keys(sosFileIndex).length, "entries");
+console.log("Written:", sosIndexPath);

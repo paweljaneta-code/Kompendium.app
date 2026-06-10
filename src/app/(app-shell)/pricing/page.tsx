@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Show, SignInButton, useAuth } from "@clerk/nextjs";
 import { MONEY_BACK_DAYS, PLAN_TRIAL_DAYS, plans, type PlanKey } from "@/lib/plans";
 
-type BusyAction = "checkout" | "portal" | "cancel" | null;
+type BusyAction = "checkout" | null;
 
 async function postJson<T>(url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -40,37 +41,6 @@ export default function PricingPage() {
       window.location.assign(data.checkoutUrl);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Nie udalo sie uruchomic platnosci");
-      setBusy(null);
-    }
-  }
-
-  async function openPortal() {
-    try {
-      setBusy("portal");
-      setMessage("");
-      const data = await postJson<{ portalUrl: string }>("/api/stripe/portal");
-      window.location.assign(data.portalUrl);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Nie udalo sie otworzyc panelu Stripe");
-      setBusy(null);
-    }
-  }
-
-  async function cancelWithPolicy() {
-    try {
-      setBusy("cancel");
-      setMessage("");
-      const data = await postJson<{ canceled: boolean; refunded: boolean; refundPolicyDays: number }>(
-        "/api/stripe/cancel"
-      );
-      setMessage(
-        data.refunded
-          ? `Subskrypcja anulowana i zwrot zostal zlecony (okno ${data.refundPolicyDays} dni).`
-          : "Subskrypcja anulowana. Zwrot nie zostal zlecony (poza oknem money-back lub brak obciazenia)."
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Nie udalo sie anulowac subskrypcji");
-    } finally {
       setBusy(null);
     }
   }
@@ -172,21 +142,13 @@ export default function PricingPage() {
         </div>
 
         {mounted && isSignedIn ? (
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              onClick={openPortal}
-              disabled={busy !== null}
-              className="rounded-xl border border-[var(--card-border)] bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-60"
+          <div className="mt-5">
+            <Link
+              href="/account/subscription"
+              className="inline-flex rounded-xl border border-[var(--card-border)] bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              {busy === "portal" ? "Otwieranie..." : "Zarzadzaj subskrypcja"}
-            </button>
-            <button
-              onClick={cancelWithPolicy}
-              disabled={busy !== null}
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60"
-            >
-              {busy === "cancel" ? "Anulowanie..." : "Anuluj i sprawdz zwrot"}
-            </button>
+              Zarządzaj subskrypcją w koncie
+            </Link>
           </div>
         ) : null}
 

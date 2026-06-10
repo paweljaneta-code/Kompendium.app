@@ -6,13 +6,15 @@ import { goBackOrHome } from "@/components/layout/BackButton";
 
 type ModuleViewerProps = {
   title: string;
-  document: string;
+  document?: string;
+  src?: string;
   fallbackHref?: string;
 };
 
 export function ModuleViewer({
   title,
   document,
+  src,
   fallbackHref = "/"
 }: ModuleViewerProps) {
   const router = useRouter();
@@ -37,7 +39,8 @@ export function ModuleViewer({
     <iframe
       ref={iframeRef}
       title={title}
-      srcDoc={document}
+      src={src}
+      srcDoc={src ? undefined : document}
       className="block h-[100dvh] w-full border-0"
     />
   );

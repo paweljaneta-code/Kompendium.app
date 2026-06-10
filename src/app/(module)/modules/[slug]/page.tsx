@@ -7,6 +7,8 @@ import {
   getOriginalModulesList
 } from "@/lib/originalModules";
 
+export const dynamic = "force-dynamic";
+
 type ModulePageProps = {
   params: Promise<{ slug: string }>;
 };
