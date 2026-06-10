@@ -91,28 +91,34 @@ for (const [cardId, list] of providers) {
 // (tytuł arkusza sformułowany inaczej niż tytuł karty). Ograniczone do plików
 // o nazwie == cardId, więc bez ryzyka cross-module. Próg: Jaccard tokenów >= 0.5.
 const tok = (s) => new Set(s.split(" ").filter((w) => w.length >= 4));
-function jaccard(a, b) {
-  if (!a.size || !b.size) return 0;
-  let inter = 0;
-  for (const w of a) if (b.has(w)) inter++;
-  return inter / (a.size + b.size - inter);
+// tokeny tytułu + body pliku (do oceny, czy plik dotyczy tematu karty)
+function fileTokens(file) {
+  const html = fs.readFileSync(file, "utf8");
+  const t = html.match(/<title>[^—–-]*[—–-]\s*([^<]+)/i);
+  const body = html.replace(/<(script|style)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").slice(0, 3000);
+  return tok(norm((t ? t[1] : "") + " " + body));
 }
-const bySelfName = new Map(); // file basename -> [{mod, ct}]
-for (const { mod, file, ct } of allFiles) {
+const bySelfName = new Map(); // file basename -> [mod]
+for (const { mod, file } of allFiles) {
   if (!bySelfName.has(file)) bySelfName.set(file, []);
-  bySelfName.get(file).push({ mod, ct });
+  bySelfName.get(file).push(mod);
 }
 let recovered = 0;
 for (const [cardId, titleNorm] of cardTitleById) {
   if (index[cardId]) continue;
-  const cands = bySelfName.get(cardId);
-  if (!cands) continue;
+  const mods = bySelfName.get(cardId);
+  if (!mods) continue;
   const cardTok = tok(titleNorm);
-  const hit =
-    cands.find((c) => c.mod === cardModule.get(cardId) && jaccard(cardTok, tok(c.ct)) >= 0.5) ||
-    cands.find((c) => jaccard(cardTok, tok(c.ct)) >= 0.5);
-  if (hit) {
-    index[cardId] = `${hit.mod}/${cardId}`;
+  if (!cardTok.size) continue;
+  // plik O NAZWIE karty, którego TREŚĆ pokrywa >=60% słów tytułu karty
+  // (rozpoznaje arkusz z inaczej sformułowanym tytułem; wyklucza pomieszane,
+  // bo tam słowa tytułu karty nie występują w treści). Bez ryzyka cross-module.
+  const pref = mods.includes(cardModule.get(cardId)) ? cardModule.get(cardId) : mods[0];
+  const ftok = fileTokens(path.join(clinicianRoot, pref, `${cardId}.html`));
+  let cov = 0;
+  for (const w of cardTok) if (ftok.has(w)) cov++;
+  if (cov / cardTok.size >= 0.6) {
+    index[cardId] = `${pref}/${cardId}`;
     recovered++;
   }
 }

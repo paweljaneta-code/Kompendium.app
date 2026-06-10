@@ -146,23 +146,24 @@ const clinIndex = JSON.parse(
   fs.readFileSync(path.join(root, "public/handouts/clinician-handout-index.json"), "utf8")
 ).index;
 const clinDead = [], clinWrong = [];
+const tk = (x) => new Set(x.split(" ").filter((w) => w.length >= 4));
 for (const [cardId, ref] of Object.entries(clinIndex)) {
   const fp = path.join(root, "public/handouts/clinician", `${ref}.html`);
   if (!fs.existsSync(fp)) { clinDead.push(`${cardId}->${ref}`); continue; }
-  const m = fs.readFileSync(fp, "utf8").match(/<title>[^—–-]*[—–-]\s*([^<]+)/i);
+  const html = fs.readFileSync(fp, "utf8");
+  const m = html.match(/<title>[^—–-]*[—–-]\s*([^<]+)/i);
   const ct = m ? normT(m[1]) : "";
   const own = cardTitle.get(cardId) || "";
-  // zgodne, gdy substring LUB silny overlap tokenów (tytuł arkusza bywa
-  // sformułowany inaczej niż tytuł karty — patrz pass-2 build-clinician-index)
-  const tk = (x) => new Set(x.split(" ").filter((w) => w.length >= 4));
-  const jac = (a, b) => {
-    if (!a.size || !b.size) return 0;
-    let i = 0;
-    for (const w of a) if (b.has(w)) i++;
-    return i / (a.size + b.size - i);
-  };
-  if (own && ct && !(own === ct || own.includes(ct) || ct.includes(own) || jac(tk(own), tk(ct)) >= 0.5))
-    clinWrong.push(`${cardId}->${ref}`);
+  if (!own) continue;
+  // zgodne, gdy tytuł arkusza pokrywa się z tytułem karty (substring) LUB
+  // gdy TREŚĆ pliku pokrywa >=60% słów tytułu karty (arkusz z innym tytułem).
+  // Pomieszany arkusz (inny temat) ma pokrycie ~0 -> wykrywany.
+  if (own === ct || own.includes(ct) || ct.includes(own)) continue;
+  const bodyTok = tk(normT(html.replace(/<(script|style)[\s\S]*?<\/\1>/g, " ").replace(/<[^>]+>/g, " ").slice(0, 3000)));
+  const ownTok = tk(own);
+  let cov = 0;
+  for (const w of ownTok) if (bodyTok.has(w)) cov++;
+  if (!ownTok.size || cov / ownTok.size < 0.6) clinWrong.push(`${cardId}->${ref}`);
 }
 console.log(`# Arkusze klinicysty (${Object.keys(clinIndex).length} mapowań)`);
 check("klinicysta: 0 martwych wskazań na plik", clinDead);
