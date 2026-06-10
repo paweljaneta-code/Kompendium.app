@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/s/(.*)",
   "/api/plany/document(.*)"
 ]);
 

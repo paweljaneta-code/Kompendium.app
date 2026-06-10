@@ -61,6 +61,19 @@ const MANUAL_OVERRIDES = {
   "dep-be-mastery": { mod: "dep", file: "ba-mastery" },
   "znieksztalcenia-dep": { mod: "dep", file: "dep-znieksztalcenia", ext: "pdf" },
   "znieksztalcenia": { mod: "gad", file: "znieksztalcenia", ext: "pdf" },
+  // dedup 2026-06: aliasy między-modułowe (alias-PDF usunięty, treść bajt-identyczna z kanonicznym)
+  "halt-uz": { mod: "ppu", file: "ppu-halt" },
+  "uzaleznienia-behaw": { mod: "adhd", file: "adhd-uzaleznienia" },
+  "motywacja-aspd": { mod: "adhd", file: "adhd-motywacja" },
+  "wstyd-avpd": { mod: "derm", file: "derm-wstyd" },
+  "model-beck": { mod: "dep", file: "dep-model-beck" },
+  "body-neutrality": { mod: "bn", file: "bn-body-neutrality" },
+  "mezczyzni-ed": { mod: "bn", file: "bn-mezczyzni" },
+  "wywiad-genogramowy": { mod: "bn", file: "bn-wywiad" },
+  "mentalization-ha": { mod: "ppu", file: "ppu-mentalization" },
+  "cykl-paniki": { mod: "bn", file: "bn-cykl" },
+  "dating-sad": { mod: "ppu", file: "ppu-dating" },
+  "model-clark": { mod: "sad", file: "sad-model-clark-wells" },
   "rejestr-mysli": { mod: "dep", file: "dziennik-mysli" },
   "dziennik-pozytywow": { mod: "dep", file: "wdziecznosc" },
   "adhd-grief-diagnosis": { mod: "adhd", file: "adhd-grief-diagnosis" },
@@ -501,26 +514,59 @@ const resolver = {};
 const unresolved = [];
 const suspicious = [];
 
+// Cache etykiet plików (globalne wyszukiwanie czyta każdy plik raz)
+const labelCache = new Map();
+function labelsFor(filePath, basename) {
+  let entry = labelCache.get(filePath);
+  if (!entry) {
+    entry = {
+      searchText: extractFileLabels(filePath, basename),
+      displayTitle: extractDisplayTitle(filePath)
+    };
+    labelCache.set(filePath, entry);
+  }
+  return entry;
+}
+
+// Wszystkie moduły → pliki (globalny fallback po dokładnej nazwie)
+const allModules = new Map();
+for (const m of fs.readdirSync(printRoot)) {
+  const dir = path.join(printRoot, m);
+  if (!fs.statSync(dir).isDirectory()) continue;
+  allModules.set(m, listModuleFiles(dir));
+}
+
+// Cross-module TYLKO exact (nazwa pliku = id) lub manual — fuzzy cross-module
+// dawał błędne klinicznie dopasowania (czym-ocpd→ocd, zo-farmako→cptsd).
+function tryGlobalExact(id, meta, excludeMod) {
+  const hits = [];
+  for (const [omod, files] of allModules) {
+    if (omod === excludeMod) continue;
+    if (files.has(id)) hits.push(omod);
+  }
+  if (!hits.length) return null;
+  let chosen = hits[0];
+  if (hits.length > 1) {
+    let bs = -Infinity;
+    for (const omod of hits) {
+      const { searchText, displayTitle } = labelsFor(allModules.get(omod).get(id), id);
+      const s = scoreCandidate(id, omod, id, searchText, meta.title, meta.subtitle, displayTitle);
+      if (s > bs) { bs = s; chosen = omod; }
+    }
+  }
+  const ext = pickPreferredExt(path.join(printRoot, chosen), id);
+  return ext ? { mod: chosen, file: id, ext, score: 900, cross: true } : null;
+}
+
 for (const id of openIds) {
-  const mod = handoutIndex[id] || cardModuleMap[id];
-  if (!mod) {
-    unresolved.push({ id, reason: "no-module" });
-    continue;
-  }
-
   if (SKIP_PRINT_IDS.has(id)) {
-    unresolved.push({ id, mod, reason: "skip-print" });
+    unresolved.push({ id, reason: "skip-print" });
     continue;
   }
 
-  const modDir = path.join(printRoot, mod);
-  if (!fs.existsSync(modDir)) {
-    unresolved.push({ id, mod, reason: "missing-module-dir" });
-    continue;
-  }
-
+  // Manual override obowiązuje zawsze (także cross-module i bez modułu w indeksie)
   const manual = MANUAL_OVERRIDES[id];
-  if (manual && manual.mod === mod) {
+  if (manual) {
     const ext =
       manual.ext ||
       pickPreferredExt(path.join(printRoot, manual.mod), manual.file);
@@ -530,7 +576,32 @@ for (const id of openIds) {
     }
   }
 
+  const mod = handoutIndex[id] || cardModuleMap[id];
   const meta = cardMeta[id] || { title: id, subtitle: "" };
+
+  if (!mod) {
+    const g = tryGlobalExact(id, meta, null);
+    if (g) {
+      suspicious.push({ id, mod: g.mod, file: g.file, title: meta.title, score: g.score, cross: true });
+      resolver[id] = g;
+    } else {
+      unresolved.push({ id, reason: "no-module" });
+    }
+    continue;
+  }
+
+  const modDir = path.join(printRoot, mod);
+  if (!fs.existsSync(modDir)) {
+    const g = tryGlobalExact(id, meta, mod);
+    if (g) {
+      suspicious.push({ id, mod: g.mod, file: g.file, title: meta.title, score: g.score, cross: true });
+      resolver[id] = g;
+    } else {
+      unresolved.push({ id, mod, reason: "missing-module-dir" });
+    }
+    continue;
+  }
+
   const files = listModuleFiles(modDir);
 
   const direct = pickDirectFile(id, mod, files);
@@ -566,13 +637,7 @@ for (const id of openIds) {
       if (titleHit.file !== id) {
         suspicious.push({ id, mod, file: titleHit.file, title: meta.title, score, titleMatch: true });
       }
-      resolver[id] = {
-        mod,
-        file: titleHit.file,
-        ext,
-        score,
-        titleMatch: true
-      };
+      resolver[id] = { mod, file: titleHit.file, ext, score, titleMatch: true };
       continue;
     }
   }
@@ -582,16 +647,9 @@ for (const id of openIds) {
 
   for (const [basename, filePath] of files) {
     if (!fileMatchesQuestionnaire(id, basename)) continue;
-    const searchText = extractFileLabels(filePath, basename);
-    const fileDisplayTitle = extractDisplayTitle(filePath);
+    const { searchText, displayTitle } = labelsFor(filePath, basename);
     const score = scoreCandidate(
-      id,
-      mod,
-      basename,
-      searchText,
-      meta.title,
-      meta.subtitle,
-      fileDisplayTitle
+      id, mod, basename, searchText, meta.title, meta.subtitle, displayTitle
     );
     const overlap = titleWordOverlap(meta.title, filePath, basename, meta.subtitle);
     if (score > bestScore && overlap >= MIN_TITLE_OVERLAP) {
@@ -601,6 +659,12 @@ for (const id of openIds) {
   }
 
   if (!best || bestScore < 20) {
+    const g = tryGlobalExact(id, meta, mod);
+    if (g) {
+      suspicious.push({ id, mod: g.mod, file: g.file, title: meta.title, score: g.score, cross: true });
+      resolver[id] = g;
+      continue;
+    }
     unresolved.push({ id, mod, title: meta.title, bestScore });
     continue;
   }
