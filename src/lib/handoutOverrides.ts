@@ -10,19 +10,14 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     "planowanie-aktywnosci": { mod: "dep", file: "ba-scheduling", ext: "pdf" },
     "dieta-dep": { mod: "dep", file: "jedzenie-nastroj", ext: "pdf" },
     "rejestr-mysli": { mod: "dep", file: "dziennik-mysli", ext: "html" },
-    "dziennik-pozytywow": { mod: "dep", file: "wdziecznosc", ext: "html" },
     "adhd-grief-diagnosis": { mod: "adhd", file: "adhd-grief-diagnosis", ext: "html" },
     "prokrastynacja-adhd": { mod: "adhd", file: "adhd-prokrastynacja", ext: "html" },
     "eksperymenty-sad": { mod: "sad", file: "eksperyment-behawioralny", ext: "pdf" },
     "asertywnosc-sad": { mod: "sad", file: "sad-asertywnosc", ext: "pdf" },
-    "szacowanie-sad": { mod: "sad", file: "teoria-a-b", ext: "pdf" },
     "obraz-siebie-sad": { mod: "sad", file: "efekt-reflektora", ext: "pdf" },
     "umiejetnosci-społ": { mod: "sad", file: "rozmowa", ext: "pdf" },
-    "fizjologia-sad": { mod: "sad", file: "antycypacja", ext: "pdf" },
     "sad-be-imperfect": { mod: "sad", file: "eksperyment-behawioralny", ext: "pdf" },
-    "self-disclosure": { mod: "sad", file: "komplementy", ext: "pdf" },
     "workplace-sad": { mod: "sad", file: "wystapienia-publiczne", ext: "pdf" },
-    "wartosci-sad": { mod: "sad", file: "teoria-a-b", ext: "pdf" }
   };
 
   function ensureHandoutPreviewStyles() {
