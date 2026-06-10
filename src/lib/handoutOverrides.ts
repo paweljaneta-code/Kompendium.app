@@ -186,17 +186,15 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 
   window.openClinicianHandout = function (id) {
     if (!id) return;
-    var mod = window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id];
-    if (!mod) {
-      alert(
-        "Arkusz dla terapeuty niedostepny.\\npublic/handouts/clinician/<modul>/" +
-          id +
-          ".html"
-      );
+    // Indeks mapuje cardId -> "mod/plik" pliku, którego TREŚĆ należy do tej
+    // karty (pliki bywają pomieszane — nazwa pliku != temat treści).
+    var ref = window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id];
+    if (!ref) {
+      alert("Arkusz dla terapeuty niedostepny dla: " + id);
       return;
     }
 
-    var url = "/handouts/clinician/" + mod + "/" + id + ".html";
+    var url = "/handouts/clinician/" + ref + ".html";
     ensureHandoutPreviewStyles();
 
     var ov = document.getElementById("handout-overlay");

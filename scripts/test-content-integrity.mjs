@@ -132,6 +132,32 @@ check("0 końcówek CRLF", crlf);
 check("0 treści przed <!DOCTYPE", beforeDoctype);
 check("0 zewnętrznych <script src> (ślad AV/proxy)", extScript);
 
+// ---- arkusze klinicysty: indeks (cardId -> "mod/plik") wskazuje plik,
+//      którego TREŚĆ należy do karty (ochrona przed pomieszaniem treści) ----
+const normT = (t) =>
+  t.replace(/<[^>]+>/g, " ").normalize("NFD").replace(/\p{M}/gu, "")
+    .toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+const kompendium = fs.readFileSync(path.join(root, "kompendium.html"), "utf8");
+const cardTitle = new Map();
+for (const m of kompendium.matchAll(/<details class="card" id="([^"]+)"[\s\S]*?<span class="nm">([\s\S]*?)<\/span>/g)) {
+  cardTitle.set(m[1], normT(m[2]));
+}
+const clinIndex = JSON.parse(
+  fs.readFileSync(path.join(root, "public/handouts/clinician-handout-index.json"), "utf8")
+).index;
+const clinDead = [], clinWrong = [];
+for (const [cardId, ref] of Object.entries(clinIndex)) {
+  const fp = path.join(root, "public/handouts/clinician", `${ref}.html`);
+  if (!fs.existsSync(fp)) { clinDead.push(`${cardId}->${ref}`); continue; }
+  const m = fs.readFileSync(fp, "utf8").match(/<title>[^—–-]*[—–-]\s*([^<]+)/i);
+  const ct = m ? normT(m[1]) : "";
+  const own = cardTitle.get(cardId) || "";
+  if (own && ct && !(own === ct || own.includes(ct) || ct.includes(own))) clinWrong.push(`${cardId}->${ref}`);
+}
+console.log(`# Arkusze klinicysty (${Object.keys(clinIndex).length} mapowań)`);
+check("klinicysta: 0 martwych wskazań na plik", clinDead);
+check("klinicysta: treść pliku zgodna z kartą (0 pomieszanych)", clinWrong);
+
 console.log("");
 if (fails.length) {
   console.error(`✖ Integralność: ${fails.length} testów FAIL`);
