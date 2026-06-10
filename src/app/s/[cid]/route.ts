@@ -1,28 +1,12 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { NextResponse } from "next/server";
+import sosIndex from "../../../../public/sos-index.json";
 
-// Publiczny link do pustego narzędzia SOS: /s/<cid>
-// Serwuje samodzielny plik HTML z public/sos/<mod>/<cid>.html.
-// Wypełnienie zapisuje się lokalnie w przeglądarce klienta (localStorage w pliku SOS).
+// Publiczny krótki link do narzędzia SOS: /s/<cid>
+// Przekierowuje do statycznego, już-publicznego pliku /sos/<mod>/<cid>.html
+// (serwowanego przez warstwę statyczną Vercela — bez fs w funkcji, odporne na
+// outputFileTracingExcludes). Wypełnienie zapisuje się lokalnie w przeglądarce.
 
-let indexCache: Record<string, string> | null = null;
-
-async function loadSosIndex(): Promise<Record<string, string>> {
-  if (indexCache) return indexCache;
-  const root = path.join(process.cwd(), "public/sos");
-  const index: Record<string, string> = {};
-  for (const mod of await fs.readdir(root)) {
-    const dir = path.join(root, mod);
-    const stat = await fs.stat(dir);
-    if (!stat.isDirectory()) continue;
-    for (const file of await fs.readdir(dir)) {
-      if (file.endsWith(".html")) index[file.slice(0, -5)] = mod;
-    }
-  }
-  indexCache = index;
-  return index;
-}
+const INDEX = sosIndex as Record<string, string>;
 
 const NOT_FOUND_HTML = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Narzędzie niedostępne</title>
@@ -31,36 +15,19 @@ const NOT_FOUND_HTML = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-
 <p>Ten link nie wskazuje na żadne narzędzie. Poproś osobę, która go wysłała, o nowy link.</p>
 </main></body></html>`;
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ cid: string }> }
-) {
-  const { cid } = await params;
+function notFound() {
+  return new NextResponse(NOT_FOUND_HTML, {
+    status: 404,
+    headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex" }
+  });
+}
 
-  if (!/^[a-z0-9][a-z0-9_-]{0,80}$/i.test(cid)) {
-    return new NextResponse(NOT_FOUND_HTML, {
-      status: 404,
-      headers: { "Content-Type": "text/html; charset=utf-8" }
-    });
-  }
-
-  const index = await loadSosIndex();
-  const mod = index[cid];
-  if (!mod) {
-    return new NextResponse(NOT_FOUND_HTML, {
-      status: 404,
-      headers: { "Content-Type": "text/html; charset=utf-8" }
-    });
-  }
-
-  const filePath = path.join(process.cwd(), "public/sos", mod, `${cid}.html`);
-  const html = await fs.readFile(filePath, "utf8");
-  return new NextResponse(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, max-age=3600",
-      "X-Robots-Tag": "noindex"
-    }
+export function GET(req: Request, { params }: { params: Promise<{ cid: string }> }) {
+  return params.then(({ cid }) => {
+    if (!/^[a-z0-9][a-z0-9_-]{0,80}$/i.test(cid)) return notFound();
+    const mod = INDEX[cid];
+    if (!mod) return notFound();
+    const target = new URL(`/sos/${mod}/${cid}.html`, req.url);
+    return NextResponse.redirect(target, 307);
   });
 }
