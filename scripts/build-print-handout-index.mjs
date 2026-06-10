@@ -46,7 +46,7 @@ const MANUAL_OVERRIDES = {
   "interpersonalne-ocpd": { mod: "ocpd", file: "imagery-ocpd" },
   "emocje-ocpd": { mod: "ocpd", file: "sknerstwo-ocpd" },
   "spontanicznosc-ocpd": { mod: "ocpd", file: "ocpd-vs-ocd" },
-  "relacje-ocpd": { mod: "ocpd", file: "ocpd-sknerstwo", ext: "pdf" },
+  "relacje-ocpd": { mod: "ocpd", file: "ocpd-sknerstwo" },
   "delegowanie-ocpd": { mod: "ocpd", file: "geneza-ocpd" },
   "skutecznosc-ocpd": { mod: "ocpd", file: "humor-ocpd" },
   "humor-ocpd": { mod: "ocpd", file: "ocpd-podloze" },
@@ -59,8 +59,8 @@ const MANUAL_OVERRIDES = {
   "monitorowanie-aktywnosci": { mod: "dep", file: "ba-monitoring" },
   "aktywnosci-przyjemne": { mod: "dep", file: "ba-pleasant" },
   "dep-be-mastery": { mod: "dep", file: "ba-mastery" },
-  "znieksztalcenia-dep": { mod: "dep", file: "dep-znieksztalcenia", ext: "pdf" },
-  "znieksztalcenia": { mod: "gad", file: "znieksztalcenia", ext: "pdf" },
+  "znieksztalcenia-dep": { mod: "dep", file: "dep-znieksztalcenia" },
+  "znieksztalcenia": { mod: "gad", file: "znieksztalcenia" },
   // dedup 2026-06: aliasy między-modułowe (alias-PDF usunięty, treść bajt-identyczna z kanonicznym)
   "halt-uz": { mod: "ppu", file: "ppu-halt" },
   "uzaleznienia-behaw": { mod: "adhd", file: "adhd-uzaleznienia" },
@@ -499,8 +499,10 @@ function listModuleFiles(modDir) {
 function pickPreferredExt(modDir, basename) {
   const pdf = path.join(modDir, `${basename}.pdf`);
   const html = path.join(modDir, `${basename}.html`);
-  if (fs.existsSync(pdf)) return "pdf";
+  // HTML-first: treść jest identyczna z PDF, a HTML jest ~7× lżejszy (mniejszy
+  // transfer). PDF tylko jako fallback dla materiałów bez wersji HTML.
   if (fs.existsSync(html)) return "html";
+  if (fs.existsSync(pdf)) return "pdf";
   return null;
 }
 

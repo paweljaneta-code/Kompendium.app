@@ -88,10 +88,12 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 
     var target = criticalAliases[id];
     if (target && target.mod && target.file) {
-      var preferredExt = target.ext ? "." + target.ext : ".pdf";
-      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
-      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
-      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
+      // HTML-first: lżejsza wersja tej samej treści. PDF jako fallback dla
+      // materiałów, które mają tylko wersję do druku.
+      var declaredExt = target.ext ? "." + target.ext : ".pdf";
+      add("/handouts/print/" + target.mod + "/" + target.file + ".html");
+      add("/handouts/print/" + target.mod + "/" + target.file + declaredExt);
+      add("/handouts/print/" + target.mod + "/" + target.file + ".pdf");
     }
 
     var fileIndex = window.HANDOUT_FILE_INDEX || {};
@@ -111,10 +113,12 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 
     target = window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id];
     if (target && target.mod && target.file) {
-      var preferredExt = target.ext ? "." + target.ext : ".pdf";
-      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
-      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
-      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
+      // HTML-first: lżejsza wersja tej samej treści. PDF jako fallback dla
+      // materiałów, które mają tylko wersję do druku.
+      var declaredExt = target.ext ? "." + target.ext : ".pdf";
+      add("/handouts/print/" + target.mod + "/" + target.file + ".html");
+      add("/handouts/print/" + target.mod + "/" + target.file + declaredExt);
+      add("/handouts/print/" + target.mod + "/" + target.file + ".pdf");
     }
 
     return urls;
