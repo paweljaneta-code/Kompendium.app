@@ -92,6 +92,72 @@ function buildHandoutIndexExtensionScript(fileIndex: Record<string, string>) {
 })();`;
 }
 
+// Ukrywa przyciski "drukuj"/"wersja elektroniczna" dla narzędzi bez żadnego
+// materiału (ani pliku print, ani SOS). Zestaw dostępności liczony z prawdy
+// dyskowej po stronie serwera — gdy materiał powstanie i wejdzie do indeksu,
+// przycisk wraca automatycznie. MutationObserver łapie przyciski renderowane
+// dynamicznie (planer, picker).
+function buildDeadButtonHiderScript(
+  resolver: Record<string, PrintHandoutTarget>,
+  handoutFiles: Record<string, string>,
+  sosFiles: Record<string, string>
+) {
+  const available = Array.from(
+    new Set([
+      ...Object.keys(resolver),
+      ...Object.keys(handoutFiles),
+      ...Object.keys(sosFiles)
+    ])
+  );
+  return `(function () {
+  var AV = new Set(${JSON.stringify(available)});
+  function cidFrom(el) {
+    var oc = el.getAttribute("onclick") || "";
+    var m = oc.match(/(?:openHandout|downloadStandaloneHandout)\\((["'])([^"']+)\\1/);
+    return m ? m[2] : null;
+  }
+  function hasMaterial(id) {
+    if (!id) return true;
+    if (AV.has(id)) return true;
+    try {
+      if (typeof resolveCardId === "function") {
+        var r = resolveCardId(id);
+        if (r && AV.has(r)) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+  function process(root) {
+    if (!root || !root.querySelectorAll) return;
+    var btns = root.querySelectorAll(
+      '[onclick*="openHandout("], [onclick*="downloadStandaloneHandout("]'
+    );
+    for (var i = 0; i < btns.length; i++) {
+      var el = btns[i];
+      if (el.hasAttribute("data-material-checked")) continue;
+      el.setAttribute("data-material-checked", "1");
+      if (!hasMaterial(cidFrom(el))) el.style.display = "none";
+    }
+  }
+  function start() {
+    process(document);
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var added = muts[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          if (added[j].nodeType === 1) process(added[j]);
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();`;
+}
+
 function buildPrintHandoutResolverScript(resolver: Record<string, PrintHandoutTarget>) {
   return `(function () {
   window.PRINT_HANDOUT_RESOLVER = ${JSON.stringify(resolver)};
@@ -415,6 +481,9 @@ ${FILE_HANDOUT_OVERRIDE_SCRIPT}
     </script>
     <script>
 ${FILE_SOS_OVERRIDE_SCRIPT}
+    </script>
+    <script>
+${buildDeadButtonHiderScript(printHandoutResolver, handoutFileIndex, sosFileIndex)}
     </script>
     <script>
 ${data.moduleUiScript}
