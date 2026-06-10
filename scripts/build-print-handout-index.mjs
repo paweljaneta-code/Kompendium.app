@@ -27,6 +27,12 @@ const SKIP_PRINT_IDS = new Set([
   "krytyka-ocpd",
   "ocpd-farmakoterapia",
   "adhd-trauma",
+  // dedup 2026-06: insomnia/eating — pliki to błędne kopie treści OCD/dep
+  // (prawidłowa treść nie istnieje); karty direct-match -> placeholder
+  "model-3p",
+  "dziennik-snu",
+  "typy-ed",
+  "ruch-ed",
   // dedup 2026-06: karty bez trafnego handoutu (audyt dopasowania) -> placeholder
   "aa-stabilne-przymierze",
   "aa-utrwalenie-zmiany",
@@ -230,9 +236,9 @@ const MANUAL_OVERRIDES = {
   "dep-neuro": { mod: "dep", file: "podloze-dep" },
   "derm-wpadka-dane": { mod: "derm", file: "derm-nawroty" },
   "eksperymenty-dep": { mod: "dep", file: "be-wprowadzenie" },
-  "fb-be-inhibitory": { mod: "phobia", file: "Kopia phobia-be-inhibitory" },
-  "fb-inhibitory": { mod: "phobia", file: "Kopia phobia-inhibitory" },
-  "fb-protokol": { mod: "phobia", file: "Kopia phobia-protokol-ost" },
+  "fb-be-inhibitory": { mod: "phobia", file: "be-inhibitory" },
+  "fb-inhibitory": { mod: "phobia", file: "inhibitory" },
+  "fb-protokol": { mod: "phobia", file: "protokol-ost" },
   "gad-be-worry-postpone": { mod: "gad", file: "odroczenie-martwienia" },
   "gad-model-wells": { mod: "gad", file: "model-martwienia" },
   "granice-burnout": { mod: "burnout", file: "bo-granice" },
