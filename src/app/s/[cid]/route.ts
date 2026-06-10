@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import sosIndex from "../../../../public/sos-index.json";
+import sosIndex from "./sos-index.json";
 
 // Publiczny krótki link do narzędzia SOS: /s/<cid>
 // Przekierowuje do statycznego, już-publicznego pliku /sos/<mod>/<cid>.html
