@@ -172,6 +172,49 @@ console.log(`# Arkusze klinicysty (${Object.keys(clinIndex).length} mapowań)`);
 check("klinicysta: 0 martwych wskazań na plik", clinDead);
 check("klinicysta: treść pliku zgodna z kartą (0 pomieszanych)", clinWrong);
 
+// ---- handouty do druku: symulacja serwowania (strażnik fixu scramble) ----
+// Replikuje resolvePrintHandoutUrl: skip -> criticalAliases -> manual ->
+// HANDOUT_FILE_INDEX(<id>) -> HANDOUT_INDEX(<id>) -> resolver. Gwarantuje, że
+// (a) karty w skip[] dają placeholder mimo istnienia <id>.html (scramble),
+// (b) kuratorowany override wygrywa z plikiem o dokładnej nazwie.
+const PRINTROOT = path.join(root, "public/handouts/print");
+const printExists = (mod, f) =>
+  fs.existsSync(path.join(PRINTROOT, mod, `${f}.html`)) || fs.existsSync(path.join(PRINTROOT, mod, `${f}.pdf`));
+const rjson = JSON.parse(fs.readFileSync(path.join(root, "public/handouts/print-resolver.json"), "utf8"));
+const printResolver = rjson.resolver, skipSet = new Set(rjson.skip || []);
+const fileIdx = JSON.parse(fs.readFileSync(path.join(root, "public/handouts/handout-file-index.json"), "utf8")).index;
+// criticalAliases z handoutOverrides.ts
+const hoSrc = fs.readFileSync(path.join(root, "src/lib/handoutOverrides.ts"), "utf8");
+const caBlock = (hoSrc.match(/var criticalAliases = \{([\s\S]*?)\};/) || [, ""])[1];
+const critAlias = {};
+for (const mm of caBlock.matchAll(/"([^"]+)":\s*\{\s*mod:\s*"([^"]+)",\s*file:\s*"([^"]+)"/g)) critAlias[mm[1]] = { mod: mm[2], file: mm[3] };
+// HANDOUT_INDEX z kompendium.html
+const hIndex = {};
+const hiM = kompendium.match(/window\.HANDOUT_INDEX\s*=\s*(\{[\s\S]*?\});/);
+if (hiM) for (const mm of hiM[1].matchAll(/"([^"]+)"\s*:\s*"([^"]+)"/g)) hIndex[mm[1]] = mm[2];
+function resolvePrint(id) {
+  if (skipSet.has(id)) return null;
+  const r = printResolver[id];
+  const cand = [];
+  if (critAlias[id]) cand.push(critAlias[id]);
+  if (r && r.manual) cand.push({ mod: r.mod, file: r.file });
+  if (fileIdx[id]) cand.push({ mod: fileIdx[id], file: id });
+  if (hIndex[id]) cand.push({ mod: hIndex[id], file: id });
+  if (r) cand.push({ mod: r.mod, file: r.file });
+  for (const c of cand) if (printExists(c.mod, c.file)) return c;
+  return null;
+}
+const skipLeak = [...skipSet].filter((id) => resolvePrint(id)).map((id) => `${id}->${resolvePrint(id).mod}/${resolvePrint(id).file}`);
+const manualBroken = [];
+for (const [id, r] of Object.entries(printResolver)) {
+  if (!r.manual || critAlias[id]) continue; // criticalAlias ma pierwszeństwo
+  const got = resolvePrint(id);
+  if (!got || got.file !== r.file) manualBroken.push(`${id} chce ${r.file}, dostaje ${got ? got.file : "placeholder"}`);
+}
+console.log(`# Handouty do druku — symulacja serwowania`);
+check("druk: karty SKIP dają placeholder (scramble nie serwowany)", skipLeak);
+check("druk: override manual wygrywa z plikiem exact-id", manualBroken);
+
 console.log("");
 if (fails.length) {
   console.error(`✖ Integralność: ${fails.length} testów FAIL`);
