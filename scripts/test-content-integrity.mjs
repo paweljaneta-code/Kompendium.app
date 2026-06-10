@@ -152,7 +152,17 @@ for (const [cardId, ref] of Object.entries(clinIndex)) {
   const m = fs.readFileSync(fp, "utf8").match(/<title>[^—–-]*[—–-]\s*([^<]+)/i);
   const ct = m ? normT(m[1]) : "";
   const own = cardTitle.get(cardId) || "";
-  if (own && ct && !(own === ct || own.includes(ct) || ct.includes(own))) clinWrong.push(`${cardId}->${ref}`);
+  // zgodne, gdy substring LUB silny overlap tokenów (tytuł arkusza bywa
+  // sformułowany inaczej niż tytuł karty — patrz pass-2 build-clinician-index)
+  const tk = (x) => new Set(x.split(" ").filter((w) => w.length >= 4));
+  const jac = (a, b) => {
+    if (!a.size || !b.size) return 0;
+    let i = 0;
+    for (const w of a) if (b.has(w)) i++;
+    return i / (a.size + b.size - i);
+  };
+  if (own && ct && !(own === ct || own.includes(ct) || ct.includes(own) || jac(tk(own), tk(ct)) >= 0.5))
+    clinWrong.push(`${cardId}->${ref}`);
 }
 console.log(`# Arkusze klinicysty (${Object.keys(clinIndex).length} mapowań)`);
 check("klinicysta: 0 martwych wskazań na plik", clinDead);

@@ -29,6 +29,7 @@ function norm(t) {
 const source = fs.readFileSync(kompendiumPath, "utf8");
 const titleToIds = new Map();
 const cardModule = new Map();
+const cardTitleById = new Map();
 const tabRe =
   /<div class="tab-content"[^>]*id="tab-([^"]+)"[\s\S]*?(?=<div class="tab-content"|<button class="scroll-top"|$)/g;
 for (const tab of source.matchAll(tabRe)) {
@@ -40,6 +41,7 @@ for (const tab of source.matchAll(tabRe)) {
     if (!titleToIds.has(nt)) titleToIds.set(nt, []);
     titleToIds.get(nt).push(id);
     if (!cardModule.has(id)) cardModule.set(id, mod);
+    if (!cardTitleById.has(id)) cardTitleById.set(id, nt);
   }
 }
 
@@ -52,6 +54,7 @@ function contentTitle(file) {
 
 // dla każdej karty zbierz pliki, których treść do niej należy
 const providers = new Map(); // cardId -> [{mod,file,selfNamed}]
+const allFiles = []; // {mod, file, ct} — do pass-2
 for (const mod of fs.readdirSync(clinicianRoot)) {
   const dir = path.join(clinicianRoot, mod);
   if (!fs.statSync(dir).isDirectory()) continue;
@@ -60,6 +63,7 @@ for (const mod of fs.readdirSync(clinicianRoot)) {
     const fid = f.slice(0, -5);
     const ct = contentTitle(path.join(dir, f));
     if (!ct) continue;
+    allFiles.push({ mod, file: fid, ct });
     for (const cardId of titleToIds.get(ct) || []) {
       if (!providers.has(cardId)) providers.set(cardId, []);
       providers.get(cardId).push({ mod, file: fid, selfNamed: fid === cardId });
@@ -80,6 +84,37 @@ for (const [cardId, list] of providers) {
     list[0];
   index[cardId] = `${pick.mod}/${pick.file}`;
   if (list.length > 1 && !list.some((p) => p.selfNamed)) ambiguous.push(cardId);
+}
+
+// Pass 2 — odzysk po nazwie pliku: karta bez dokładnego dopasowania treści,
+// ale istnieje plik O JEJ NAZWIE, którego treść dotyczy tej samej tematyki
+// (tytuł arkusza sformułowany inaczej niż tytuł karty). Ograniczone do plików
+// o nazwie == cardId, więc bez ryzyka cross-module. Próg: Jaccard tokenów >= 0.5.
+const tok = (s) => new Set(s.split(" ").filter((w) => w.length >= 4));
+function jaccard(a, b) {
+  if (!a.size || !b.size) return 0;
+  let inter = 0;
+  for (const w of a) if (b.has(w)) inter++;
+  return inter / (a.size + b.size - inter);
+}
+const bySelfName = new Map(); // file basename -> [{mod, ct}]
+for (const { mod, file, ct } of allFiles) {
+  if (!bySelfName.has(file)) bySelfName.set(file, []);
+  bySelfName.get(file).push({ mod, ct });
+}
+let recovered = 0;
+for (const [cardId, titleNorm] of cardTitleById) {
+  if (index[cardId]) continue;
+  const cands = bySelfName.get(cardId);
+  if (!cands) continue;
+  const cardTok = tok(titleNorm);
+  const hit =
+    cands.find((c) => c.mod === cardModule.get(cardId) && jaccard(cardTok, tok(c.ct)) >= 0.5) ||
+    cands.find((c) => jaccard(cardTok, tok(c.ct)) >= 0.5);
+  if (hit) {
+    index[cardId] = `${hit.mod}/${cardId}`;
+    recovered++;
+  }
 }
 
 const sorted = {};
@@ -104,5 +139,6 @@ for (const [cardId, ref] of Object.entries(sorted)) {
 console.log("Clinician index (wg treści):", Object.keys(sorted).length, "kart");
 console.log("  treść w pliku o własnej nazwie:", self);
 console.log("  treść w INNYM pliku (remap):", remap);
+console.log("  odzyskane po nazwie pliku (pass-2, inny tytuł): ", recovered);
 console.log("  karty z >1 kandydatem (rozstrzygnięte):", ambiguous.length);
 console.log("Written:", outPath);
