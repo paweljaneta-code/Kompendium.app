@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Szybki gate integralności treści (bez instalacji zależności) — chroni przed
+  # regresją błędów z PR #5: kreatory SOS, resolver handoutów, artefakty w plikach.
+  content-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test integralności treści
+        run: node scripts/test-content-integrity.mjs
+
+  # Pełna weryfikacja kompilacji i builda produkcyjnego.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: ESLint
+        run: npm run lint
+      - name: Build produkcyjny
+        run: npm run build
