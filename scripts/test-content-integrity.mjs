@@ -142,14 +142,17 @@ const cardTitle = new Map();
 for (const m of kompendium.matchAll(/<details class="card" id="([^"]+)"[\s\S]*?<span class="nm">([\s\S]*?)<\/span>/g)) {
   cardTitle.set(m[1], normT(m[2]));
 }
-const clinIndex = JSON.parse(
+const clinData = JSON.parse(
   fs.readFileSync(path.join(root, "public/handouts/clinician-handout-index.json"), "utf8")
-).index;
+);
+const clinIndex = clinData.index;
+const clinVerified = new Set(clinData.verified || []); // ręcznie zweryfikowane (pass-3)
 const clinDead = [], clinWrong = [];
 const tk = (x) => new Set(x.split(" ").filter((w) => w.length >= 4));
 for (const [cardId, ref] of Object.entries(clinIndex)) {
   const fp = path.join(root, "public/handouts/clinician", `${ref}.html`);
   if (!fs.existsSync(fp)) { clinDead.push(`${cardId}->${ref}`); continue; }
+  if (clinVerified.has(cardId)) continue; // przegląd ręczny — pomijamy auto-kontrolę treści
   const html = fs.readFileSync(fp, "utf8");
   const m = html.match(/<title>[^—–-]*[—–-]\s*([^<]+)/i);
   const ct = m ? normT(m[1]) : "";

@@ -123,13 +123,86 @@ for (const [cardId, titleNorm] of cardTitleById) {
   }
 }
 
+// Pass 3 — ręczny przegląd 60 plików-sierot (scramble = shift treści w modułach).
+// Tytuł "Arkusz klinicysty — X" jednoznacznie nazywa narzędzie; mapowanie
+// zweryfikowane indywidualnie (cardId -> plik zawierający JEGO treść).
+const ORPHAN_RECOVERY = {
+  "gosc-w-domu": "act/kompas-wartosci",
+  "adhd-finanse": "adhd/adhd-kobieta2",
+  "adhd-mindful": "adhd/adhd-odzywianie",
+  "an-mantra": "an/an-body-imagery",
+  "an-thinspo-detox": "an/an-fear-foods",
+  "an-regular": "an/an-hospital",
+  "an-ego-syntonia": "an/an-mezczyzni",
+  "an-podtypy": "an/an-podtypy",
+  "aspd-farmakoterapia": "aspd/prawo-aspd",
+  "at-ipf": "att-teoria/at-earned",
+  "at-hold-me-tight": "att-teoria/at-kultura",
+  "at-rupture-repair": "att-teoria/at-plan",
+  "avpd-farmakoterapia": "avpd/samowspolczucie-avpd",
+  "bn-wazenie": "bn/bn-alternatywy-kompensacji",
+  "bn-lustro": "bn/bn-checking",
+  "bn-glod-sytosc": "bn/bn-dziennik-zywieniowy",
+  "bn-urge-surfing": "bn/bn-ekspozycja-food",
+  "bn-plan-awaryjny": "bn/bn-emocje-objadanie",
+  "bn-overvalue": "bn/bn-glod-sytosc",
+  "bn-reguly-zywieniowe": "bn/bn-higiena-posilkow",
+  "bn-sekret": "bn/bn-intolerancja-dystresu",
+  "bn-dlugoterminowy-plan": "bn/bn-komunikacja",
+  "bn-emocje-objadanie": "bn/bn-kontinuum-atrakcyjnosci",
+  "bn-psychoedukacja-rodzina": "bn/bn-plan-awaryjny",
+  "bn-slizg-vs-nawrot": "bn/bn-psychoedukacja-rodzina",
+  "bn-mindful-eating": "bn/bn-reguly-zywieniowe",
+  "bn-regularne-jedzenie": "bn/bn-scoff",
+  "bn-sygnaly-nawrotu": "bn/bn-sygnaly-nawrotu",
+  "bn-kontinuum-atrakcyjnosci": "bn/bn-unikanie-ciala",
+  "bn-model-fairburn": "bn/podloze-bn",
+  "dep-specyfikatory": "dep/dep-be-pleasure",
+  "dep-mezczyzni": "dep/dep-diffdiag",
+  "dep-be-pleasure": "dep/profilaktyka-dep",
+  "strzalka-dep": "dep/rejestr-mysli",
+  "stepped-care": "gad/oderwana-uwaznosc",
+  "safety-inv-ha": "health_anx/ha-case-kasia",
+  "rodzina-ha": "health_anx/hai-diffdiag",
+  "triangles-ha": "health_anx/proxy-ha",
+  "inne-zo-farmakoterapia": "inne-zo/inne-zo-plan-profilaktyki",
+  "npd-farmakoterapia": "npd/npi-npd",
+  "ocd-be-checking": "ocd/ocd-be-checking",
+  "ocd-be-contamination": "ocd/ocd-be-contamination",
+  "fb-protokol": "phobia/fb-be-context",
+  "fb-dzieci": "phobia/fb-bii",
+  "fb-be-expectancy": "phobia/fb-dzieci",
+  "fb-be-context": "phobia/fb-farmako",
+  "fb-farmako": "phobia/fb-protokol",
+  "fb-model-craske": "phobia/podloze-phobia",
+  "psychosis-farmakoterapia": "psychosis/ps-objpoz",
+  "psy-recovery": "psychosis/ps-praca",
+  "ps-praca": "psychosis/ps-samobojstwo",
+  "st-green-exercise": "stress/st-oddech-rezonans"
+};
+let orphanRecovered = 0;
+for (const [cardId, ref] of Object.entries(ORPHAN_RECOVERY)) {
+  if (index[cardId]) continue;
+  if (!cardTitleById.has(cardId)) continue; // karta musi istnieć
+  if (!fs.existsSync(path.join(clinicianRoot, `${ref}.html`))) continue;
+  index[cardId] = ref;
+  orphanRecovered++;
+}
+
 const sorted = {};
 for (const k of Object.keys(index).sort()) sorted[k] = index[k];
+
+// karty z ręcznie zweryfikowanego pass-3 (tytuł arkusza różni się słownie od
+// tytułu karty, więc automatyczny gate pokrycia treści ich nie potwierdzi —
+// gate je pomija, bo przegląd był ręczny).
+const verified = Object.keys(ORPHAN_RECOVERY)
+  .filter((c) => sorted[c] === ORPHAN_RECOVERY[c])
+  .sort();
 
 fs.writeFileSync(
   outPath,
   JSON.stringify(
-    { generatedAt: new Date().toISOString(), count: Object.keys(sorted).length, index: sorted },
+    { generatedAt: new Date().toISOString(), count: Object.keys(sorted).length, verified, index: sorted },
     null,
     2
   ) + "\n"
@@ -146,5 +219,6 @@ console.log("Clinician index (wg treści):", Object.keys(sorted).length, "kart")
 console.log("  treść w pliku o własnej nazwie:", self);
 console.log("  treść w INNYM pliku (remap):", remap);
 console.log("  odzyskane po nazwie pliku (pass-2, inny tytuł): ", recovered);
+console.log("  odzyskane z plików-sierot (pass-3, ręczny przegląd):", orphanRecovered);
 console.log("  karty z >1 kandydatem (rozstrzygnięte):", ambiguous.length);
 console.log("Written:", outPath);
