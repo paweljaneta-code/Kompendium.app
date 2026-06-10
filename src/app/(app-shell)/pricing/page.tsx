@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Show, SignInButton, useAuth } from "@clerk/nextjs";
 import { MONEY_BACK_DAYS, PLAN_TRIAL_DAYS, plans, type PlanKey } from "@/lib/plans";
+import { useHydrated } from "@/lib/useHydrated";
 
 type BusyAction = "checkout" | null;
 
@@ -25,13 +26,9 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
 
 export default function PricingPage() {
   const { isSignedIn } = useAuth();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [busy, setBusy] = useState<BusyAction>(null);
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   async function startCheckout(planKey: PlanKey) {
     try {

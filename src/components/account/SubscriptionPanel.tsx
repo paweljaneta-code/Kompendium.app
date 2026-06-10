@@ -44,15 +44,17 @@ export function SubscriptionPanel() {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<BusyAction>(null);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
+  // Komunikat po powrocie z Stripe wyliczamy z URL przy pierwszym renderze
+  // (leniwa inicjalizacja) zamiast w efekcie — unika setState w useEffect.
+  const [message, setMessage] = useState(() => {
     if (searchParams.get("success") === "true") {
-      setMessage("Płatność zakończona pomyślnie. Twój plan powinien być aktywny za chwilę.");
-    } else if (searchParams.get("canceled") === "true") {
-      setMessage("Płatność została anulowana.");
+      return "Płatność zakończona pomyślnie. Twój plan powinien być aktywny za chwilę.";
     }
-  }, [searchParams]);
+    if (searchParams.get("canceled") === "true") {
+      return "Płatność została anulowana.";
+    }
+    return "";
+  });
 
   const loadSubscription = useCallback(async () => {
     try {
@@ -71,7 +73,9 @@ export function SubscriptionPanel() {
   }, []);
 
   useEffect(() => {
-    loadSubscription();
+    void (async () => {
+      await loadSubscription();
+    })();
   }, [loadSubscription]);
 
   async function startCheckout(planKey: PlanKey) {
