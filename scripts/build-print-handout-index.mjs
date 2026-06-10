@@ -22,11 +22,25 @@ const SKIP_PRINT_IDS = new Set([
   "ocpd-eksperymenty-behawioralne",
   "ocpd-diffdiag",
   "ocpd-ego-syntonia",
-  "imagery-ocpd",
   "geneza-ocpd",
   "krytyka-ocpd",
   "ocpd-farmakoterapia",
   "adhd-trauma",
+  // audyt 2026-06 print: karty bez właściwego pliku -> placeholder
+  "aa-baza",
+  "aa-injury",
+  "aa-priming",
+  "adhd-utrzymanie-systemow",
+  "codep-plan-utrzymania",
+  "cptsd-plan-kryzysy",
+  "ip-plan-trudne",
+  "ip-zadania-behawioralne",
+  "krytyka-ocpd",
+  "mct-ha",
+  "ppu-behavioral",
+  "proc-utrwalenie",
+  "psychoed-rodziny-ptsd",
+  "workplace-sad",
   // dedup 2026-06: insomnia/eating — pliki to błędne kopie treści OCD/dep
   // (prawidłowa treść nie istnieje); karty direct-match -> placeholder
   "model-3p",
@@ -208,7 +222,7 @@ const MANUAL_OVERRIDES = {
   "eksperymenty-sad": { mod: "sad", file: "eksperyment-behawioralny" },
   "asertywnosc-sad": { mod: "sad", file: "sad-asertywnosc" },
   "szacowanie-sad": { mod: "sad", file: "teoria-a-b" },
-  "obraz-siebie-sad": { mod: "sad", file: "efekt-reflektora" },
+  "obraz-siebie-sad": { mod: "sad", file: "sad-imagery-rescripting" },
   "umiejetnosci-społ": { mod: "sad", file: "rozmowa" },
   "fizjologia-sad": { mod: "sad", file: "antycypacja" },
   "sad-be-imperfect": { mod: "sad", file: "eksperyment-behawioralny" },
@@ -243,7 +257,7 @@ const MANUAL_OVERRIDES = {
   "gad-model-wells": { mod: "gad", file: "model-martwienia" },
   "granice-burnout": { mod: "burnout", file: "bo-granice" },
   "grounding": { mod: "ptsd", file: "ugruntowanie-54321" },
-  "ha-be-reassurance": { mod: "health_anx", file: "ha-redukcja-sprawdzania" },
+  "ha-be-reassurance": { mod: "health_anx", file: "ha-kontrakt-rodzina" },
   "ha-be-theoryAB": { mod: "health_anx", file: "ha-teoria-a-vs-b" },
   "lapsy-relapsy": { mod: "addiction", file: "uz-lapsy-relapsy" },
   "mbi-skala": { mod: "burnout", file: "bo-mbi" },
@@ -268,7 +282,15 @@ const MANUAL_OVERRIDES = {
   "rozwiazywanie-dep": { mod: "dep", file: "ruminacja" },
   "rytualy-pamieci": { mod: "grief", file: "rocznice-grief" },
   "samoobwinianie": { mod: "ptsd", file: "wstyd-i-wina" },
-  "zazdrosc-npd": { mod: "npd", file: "11-zazdrosc" }
+  "zazdrosc-npd": { mod: "npd", file: "11-zazdrosc" },
+  // audyt 2026-06 print: weryfikacja per-karta + naprawa scramble
+  "aa-mindful": { mod: "att-anxious", file: "aa-samoocena" },
+  "imagery-ocpd": { mod: "ocpd", file: "skutecznosc-ocpd" },
+  "plan-awaryjny-uz": { mod: "addiction", file: "uz-plan-awaryjny" },
+  "ppu-diff": { mod: "ppu", file: "ppu-differential" },
+  "rodzina-ha": { mod: "health_anx", file: "ha-kontrakt-rodzina" },
+  "sabbatical-burnout": { mod: "burnout", file: "bo-sabbatical" },
+  "zapewnienie-ha": { mod: "health_anx", file: "ha-kontrakt-rodzina" }
 };
 
 const STOP_WORDS = new Set([
@@ -873,6 +895,7 @@ fs.writeFileSync(
       generatedAt: new Date().toISOString(),
       mapped: Object.keys(resolver).length,
       unresolved: unresolved.length,
+      skip: [...SKIP_PRINT_IDS].sort(),
       resolver
     },
     null,

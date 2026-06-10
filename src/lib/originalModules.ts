@@ -670,6 +670,7 @@ let clinicianHandoutIndexCache: Record<string, string> | null = null;
 let clinicianHandoutIndexMtime: number | null = null;
 let printHandoutResolverCache: Record<string, PrintHandoutTarget> | null = null;
 let printHandoutResolverMtime: number | null = null;
+let printHandoutSkipCache: string[] = [];
 
 type PrintHandoutTarget = { mod: string; file: string; ext?: string };
 
@@ -777,9 +778,16 @@ function buildDeadButtonHiderScript(
 })();`;
 }
 
+function toSkipObject(skip: string[]) {
+  const o: Record<string, number> = {};
+  for (const id of skip) o[id] = 1;
+  return o;
+}
+
 function buildPrintHandoutResolverScript(resolver: Record<string, PrintHandoutTarget>) {
   return `(function () {
   window.PRINT_HANDOUT_RESOLVER = ${JSON.stringify(resolver)};
+  window.PRINT_HANDOUT_SKIP = ${JSON.stringify(toSkipObject(printHandoutSkipCache))};
   fetch("/handouts/print-resolver.json", { credentials: "same-origin" })
     .then(function (resp) {
       return resp.ok ? resp.json() : null;
@@ -787,6 +795,11 @@ function buildPrintHandoutResolverScript(resolver: Record<string, PrintHandoutTa
     .then(function (data) {
       if (data && data.resolver) {
         window.PRINT_HANDOUT_RESOLVER = data.resolver;
+      }
+      if (data && data.skip) {
+        var s = {};
+        for (var i = 0; i < data.skip.length; i++) s[data.skip[i]] = 1;
+        window.PRINT_HANDOUT_SKIP = s;
       }
     })
     .catch(function () {});
@@ -806,8 +819,9 @@ async function loadPrintHandoutResolver(): Promise<Record<string, PrintHandoutTa
     }
 
     const raw = await fs.readFile(resolverPath, "utf8");
-    const data = JSON.parse(raw) as { resolver?: Record<string, PrintHandoutTarget> };
+    const data = JSON.parse(raw) as { resolver?: Record<string, PrintHandoutTarget>; skip?: string[] };
     printHandoutResolverCache = data.resolver ?? {};
+    printHandoutSkipCache = data.skip ?? [];
     printHandoutResolverMtime = stat.mtimeMs;
   } catch {
     if (!printHandoutResolverCache) {
