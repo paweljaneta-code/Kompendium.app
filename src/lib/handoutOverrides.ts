@@ -86,9 +86,7 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
       urls.push(url);
     }
 
-    var target =
-      criticalAliases[id] ||
-      (window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id]);
+    var target = criticalAliases[id];
     if (target && target.mod && target.file) {
       var preferredExt = target.ext ? "." + target.ext : ".pdf";
       var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
@@ -109,6 +107,14 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
       printExts.forEach(function (ext) {
         add("/handouts/print/" + mod + "/" + id + ext);
       });
+    }
+
+    target = window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id];
+    if (target && target.mod && target.file) {
+      var preferredExt = target.ext ? "." + target.ext : ".pdf";
+      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
+      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
+      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
     }
 
     return urls;
@@ -158,6 +164,51 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     }
     if (window.refreshHomeChrome) window.refreshHomeChrome();
     notifyParent({ type: "kompendium-overlay-closed" });
+  };
+
+  window.openClinicianHandout = function (id) {
+    if (!id) return;
+    var mod = window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id];
+    if (!mod) {
+      alert(
+        "Arkusz dla terapeuty niedostepny.\\npublic/handouts/clinician/<modul>/" +
+          id +
+          ".html"
+      );
+      return;
+    }
+
+    var url = "/handouts/clinician/" + mod + "/" + id + ".html";
+    ensureHandoutPreviewStyles();
+
+    var ov = document.getElementById("handout-overlay");
+    var ct = document.getElementById("handout-content");
+    if (!ov || !ct) {
+      alert("Nie mozna otworzyc podgladu arkusza (brak warstwy handout).");
+      return;
+    }
+
+    window._activeHandoutId = id;
+    var card = document.getElementById(id);
+    if (card) card.setAttribute("open", "");
+
+    ov.classList.remove("sage-mode");
+    ov.classList.add("ho-file-mode");
+    ct.innerHTML = "";
+    var iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.title = "Handout dla terapeuty";
+    iframe.onload = function () {
+      try {
+        injectHtmlHandoutPreviewStyles(iframe.contentDocument);
+      } catch (e) {}
+    };
+    ct.appendChild(iframe);
+    ov.style.display = "flex";
+    ov.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
+    notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
   };
 
   window.openHandout = async function (id) {
@@ -242,6 +293,23 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
         ".html"
     );
   };
+
+  function syncClinicianHandoutButtons() {
+    var index = window.CLINICIAN_HANDOUT_INDEX || {};
+    document.querySelectorAll("details.card").forEach(function (card) {
+      var btn = card.querySelector(".tool-mat.tm-ther");
+      if (!btn) return;
+      btn.style.display = index[card.id] ? "" : "none";
+    });
+  }
+
+  window.syncClinicianHandoutButtons = syncClinicianHandoutButtons;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncClinicianHandoutButtons);
+  } else {
+    syncClinicianHandoutButtons();
+  }
 })();
 `;
 

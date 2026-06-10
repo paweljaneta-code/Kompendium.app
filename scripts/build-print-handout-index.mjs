@@ -533,6 +533,27 @@ for (const id of openIds) {
   const meta = cardMeta[id] || { title: id, subtitle: "" };
   const files = listModuleFiles(modDir);
 
+  const direct = pickDirectFile(id, mod, files);
+  if (direct) {
+    const filePath = files.get(direct);
+    const overlap = titleWordOverlap(meta.title, filePath, direct, meta.subtitle);
+    const displayOverlap = displayTitleWordOverlap(meta.title, filePath, meta.subtitle);
+    const exactId = direct === id || direct === `${mod}-${id}`;
+    const drift = basenameTitleDrift(filePath, direct);
+    const driftOk = drift >= 0.34;
+    if (
+      fileMatchesQuestionnaire(id, direct) &&
+      displayOverlap >= MIN_TITLE_OVERLAP_DIRECT &&
+      (driftOk || !exactId || overlap >= MIN_TITLE_OVERLAP)
+    ) {
+      const ext = pickPreferredExt(modDir, direct);
+      if (ext) {
+        resolver[id] = { mod, file: direct, ext, score: Math.round(overlap * 100), direct: true };
+        continue;
+      }
+    }
+  }
+
   const titleHit = pickBestTitleMatch(meta, files);
   if (
     titleHit &&
@@ -553,27 +574,6 @@ for (const id of openIds) {
         titleMatch: true
       };
       continue;
-    }
-  }
-
-  const direct = pickDirectFile(id, mod, files);
-  if (direct) {
-    const filePath = files.get(direct);
-    const overlap = titleWordOverlap(meta.title, filePath, direct, meta.subtitle);
-    const displayOverlap = displayTitleWordOverlap(meta.title, filePath, meta.subtitle);
-    const exactId = direct === id || direct === `${mod}-${id}`;
-    const drift = basenameTitleDrift(filePath, direct);
-    const driftOk = drift >= 0.34;
-    if (
-      fileMatchesQuestionnaire(id, direct) &&
-      displayOverlap >= MIN_TITLE_OVERLAP_DIRECT &&
-      (driftOk || !exactId || overlap >= MIN_TITLE_OVERLAP)
-    ) {
-      const ext = pickPreferredExt(modDir, direct);
-      if (ext) {
-        resolver[id] = { mod, file: direct, ext, score: Math.round(overlap * 100), direct: true };
-        continue;
-      }
     }
   }
 

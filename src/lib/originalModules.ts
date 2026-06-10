@@ -663,8 +663,11 @@ ${HEADER_USER_ACTIONS}`
 }
 
 let cache: OriginalData | null = null;
+let cacheSourceMtime = 0;
 let sosFileIndexCache: Record<string, string> | null = null;
 let handoutFileIndexCache: Record<string, string> | null = null;
+let clinicianHandoutIndexCache: Record<string, string> | null = null;
+let clinicianHandoutIndexMtime: number | null = null;
 let printHandoutResolverCache: Record<string, PrintHandoutTarget> | null = null;
 let printHandoutResolverMtime: number | null = null;
 
@@ -757,6 +760,33 @@ async function loadHandoutFileIndex(): Promise<Record<string, string>> {
     handoutFileIndexCache
   );
   return handoutFileIndexCache;
+}
+
+async function loadClinicianHandoutIndex(): Promise<Record<string, string>> {
+  const filePath = path.join(process.cwd(), "public/handouts/clinician-handout-index.json");
+  try {
+    const stat = await fs.stat(filePath);
+    if (
+      clinicianHandoutIndexCache &&
+      clinicianHandoutIndexMtime === stat.mtimeMs
+    ) {
+      return clinicianHandoutIndexCache;
+    }
+    clinicianHandoutIndexMtime = stat.mtimeMs;
+    clinicianHandoutIndexCache = await loadJsonIndexFile(filePath, null);
+  } catch {
+    if (!clinicianHandoutIndexCache) {
+      clinicianHandoutIndexCache = {};
+    }
+  }
+
+  return clinicianHandoutIndexCache;
+}
+
+function buildClinicianHandoutIndexScript(fileIndex: Record<string, string>) {
+  return `(function () {
+  window.CLINICIAN_HANDOUT_INDEX = ${JSON.stringify(fileIndex)};
+})();`;
 }
 
 function buildSosIndexExtensionScript(fileIndex: Record<string, string>) {
@@ -1336,7 +1366,15 @@ function buildHomeToolsBrowserScript(
 }
 
 async function loadOriginalData(): Promise<OriginalData> {
-  if (cache) return cache;
+  if (!existsSync(sourcePath)) {
+    throw new Error(`Missing kompendium source file: ${sourcePath}`);
+  }
+
+  const sourceMtime = (await fs.stat(sourcePath)).mtimeMs;
+  if (cache && cacheSourceMtime === sourceMtime) return cache;
+
+  cache = null;
+  cacheSourceMtime = sourceMtime;
 
   const source = await fs.readFile(sourcePath, "utf8");
   const style = source.match(/<style>([\s\S]*?)<\/style>/i)?.[1] ?? "";
@@ -1586,6 +1624,24 @@ const PLANNER_CLIENT_LAYOUT_STYLES = `
 .planner-route-client #tab-plany .main { display: flex !important; }
 `;
 
+const PLANNER_TOOL_PICKER_STYLES = `
+#toolPickerModal .modal {
+  height: min(92dvh, 920px) !important;
+  max-height: 92dvh !important;
+}
+#toolPickerModal .tool-picker-tabs {
+  flex: 0 1 auto !important;
+  max-height: 128px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+#toolPickerModal .tool-picker-list {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+`;
+
 type PlannerDocumentView = "list" | "client";
 
 type PlannerDocumentOptions = {
@@ -1752,6 +1808,7 @@ export async function getKompendiumHomeDocument() {
 
   const sosFileIndex = await loadSosFileIndex();
   const handoutFileIndex = await loadHandoutFileIndex();
+  const clinicianHandoutIndex = await loadClinicianHandoutIndex();
   const printHandoutResolver = await loadPrintHandoutResolver();
   const toolsCatalog = buildToolsCatalog(
     data.modules,
@@ -1836,6 +1893,9 @@ ${buildSosIndexExtensionScript(sosFileIndex)}
 ${buildHandoutIndexExtensionScript(handoutFileIndex)}
     </script>
     <script>
+${buildClinicianHandoutIndexScript(clinicianHandoutIndex)}
+    </script>
+    <script>
 ${buildPrintHandoutResolverScript(printHandoutResolver)}
     </script>
     <script>
@@ -1871,6 +1931,7 @@ export async function getKompendiumPlannerDocument(
 
   const sosFileIndex = await loadSosFileIndex();
   const handoutFileIndex = await loadHandoutFileIndex();
+  const clinicianHandoutIndex = await loadClinicianHandoutIndex();
   const printHandoutResolver = await loadPrintHandoutResolver();
 
   const planyHtml = planyModule.html
@@ -1909,6 +1970,7 @@ body { opacity: 1 !important; padding-bottom: 16px !important; }
 .tab-content:not(#tab-plany) { display: none; }
 ${ACCOUNT_HEADER_STYLES}
 ${routeStyles}
+${PLANNER_TOOL_PICKER_STYLES}
     </style>
   </head>
   <body class="${view === "client" ? "planner-route-client" : "planner-route-list"}">
@@ -1926,6 +1988,9 @@ ${buildSosIndexExtensionScript(sosFileIndex)}
     </script>
     <script>
 ${buildHandoutIndexExtensionScript(handoutFileIndex)}
+    </script>
+    <script>
+${buildClinicianHandoutIndexScript(clinicianHandoutIndex)}
     </script>
     <script>
 ${buildPrintHandoutResolverScript(printHandoutResolver)}
@@ -1973,6 +2038,7 @@ export async function getOriginalModuleDocument(slug: string) {
   const data = await loadOriginalData();
   const sosFileIndex = await loadSosFileIndex();
   const handoutFileIndex = await loadHandoutFileIndex();
+  const clinicianHandoutIndex = await loadClinicianHandoutIndex();
   const printHandoutResolver = await loadPrintHandoutResolver();
   const moduleData = data.modules.find((item) => item.slug === slug);
   if (!moduleData) return null;
@@ -2012,6 +2078,9 @@ ${buildSosIndexExtensionScript(sosFileIndex)}
     </script>
     <script>
 ${buildHandoutIndexExtensionScript(handoutFileIndex)}
+    </script>
+    <script>
+${buildClinicianHandoutIndexScript(clinicianHandoutIndex)}
     </script>
     <script>
 ${buildPrintHandoutResolverScript(printHandoutResolver)}

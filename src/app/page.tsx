@@ -1,6 +1,8 @@
 import { HomeViewer } from "@/components/kompendium-home/HomeViewer";
 import { getKompendiumHomeDocument } from "@/lib/originalModules";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const home = await getKompendiumHomeDocument();
 
