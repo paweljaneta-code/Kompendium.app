@@ -592,7 +592,7 @@ const HOWTO_VIEW_LAYOUT_STYLES = `
 
 const ACCOUNT_HEADER_BUTTON = `<button class="home-toggle" id="account-btn" type="button" title="Konto" aria-label="Zarządzanie kontem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>`;
 
-const HEADER_USER_ACTIONS = `<div class="header-user-actions"><button class="home-toggle" id="home-btn" title="Strona główna">⌂</button>\n${ACCOUNT_HEADER_BUTTON}</div>`;
+const HEADER_USER_ACTIONS = `<div class="header-user-actions">${ACCOUNT_HEADER_BUTTON}</div>`;
 
 const ACCOUNT_HEADER_STYLES = `
 .header-user-actions {
@@ -1617,8 +1617,18 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
   var logo = document.querySelector(".logo");
   if (logo) {
     logo.style.cursor = "pointer";
+    logo.setAttribute("role", "button");
+    logo.setAttribute("tabindex", "0");
+    logo.title = "Strona główna";
+    logo.setAttribute("aria-label", "Strona główna");
     logo.addEventListener("click", function () {
       window.top.location.href = "/";
+    });
+    logo.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        window.top.location.href = "/";
+      }
     });
   }
 
