@@ -592,7 +592,7 @@ const HOWTO_VIEW_LAYOUT_STYLES = `
 
 const ACCOUNT_HEADER_BUTTON = `<button class="home-toggle" id="account-btn" type="button" title="Konto" aria-label="Zarządzanie kontem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>`;
 
-const HEADER_USER_ACTIONS = `<div class="header-user-actions"><button class="home-toggle" id="home-btn" title="Strona główna">⌂</button>\n${ACCOUNT_HEADER_BUTTON}</div>`;
+const HEADER_USER_ACTIONS = `<div class="header-user-actions">${ACCOUNT_HEADER_BUTTON}</div>`;
 
 const ACCOUNT_HEADER_STYLES = `
 .header-user-actions {
@@ -629,7 +629,13 @@ const HOME_HEADER_SEARCH_STYLES = `
 }
 @media (max-width: 680px) {
   .header-inner .header-search {
-    width: min(300px, calc(100% - 140px));
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
   }
 }
 `;
@@ -670,6 +676,7 @@ let clinicianHandoutIndexCache: Record<string, string> | null = null;
 let clinicianHandoutIndexMtime: number | null = null;
 let printHandoutResolverCache: Record<string, PrintHandoutTarget> | null = null;
 let printHandoutResolverMtime: number | null = null;
+let printHandoutSkipCache: string[] = [];
 
 type PrintHandoutTarget = { mod: string; file: string; ext?: string };
 
@@ -777,9 +784,16 @@ function buildDeadButtonHiderScript(
 })();`;
 }
 
+function toSkipObject(skip: string[]) {
+  const o: Record<string, number> = {};
+  for (const id of skip) o[id] = 1;
+  return o;
+}
+
 function buildPrintHandoutResolverScript(resolver: Record<string, PrintHandoutTarget>) {
   return `(function () {
   window.PRINT_HANDOUT_RESOLVER = ${JSON.stringify(resolver)};
+  window.PRINT_HANDOUT_SKIP = ${JSON.stringify(toSkipObject(printHandoutSkipCache))};
   fetch("/handouts/print-resolver.json", { credentials: "same-origin" })
     .then(function (resp) {
       return resp.ok ? resp.json() : null;
@@ -787,6 +801,11 @@ function buildPrintHandoutResolverScript(resolver: Record<string, PrintHandoutTa
     .then(function (data) {
       if (data && data.resolver) {
         window.PRINT_HANDOUT_RESOLVER = data.resolver;
+      }
+      if (data && data.skip) {
+        var s = {};
+        for (var i = 0; i < data.skip.length; i++) s[data.skip[i]] = 1;
+        window.PRINT_HANDOUT_SKIP = s;
       }
     })
     .catch(function () {});
@@ -806,8 +825,9 @@ async function loadPrintHandoutResolver(): Promise<Record<string, PrintHandoutTa
     }
 
     const raw = await fs.readFile(resolverPath, "utf8");
-    const data = JSON.parse(raw) as { resolver?: Record<string, PrintHandoutTarget> };
+    const data = JSON.parse(raw) as { resolver?: Record<string, PrintHandoutTarget>; skip?: string[] };
     printHandoutResolverCache = data.resolver ?? {};
+    printHandoutSkipCache = data.skip ?? [];
     printHandoutResolverMtime = stat.mtimeMs;
   } catch {
     if (!printHandoutResolverCache) {
@@ -1603,8 +1623,18 @@ const KOMPENDIUM_HOME_BRIDGE_SCRIPT = `(function () {
   var logo = document.querySelector(".logo");
   if (logo) {
     logo.style.cursor = "pointer";
+    logo.setAttribute("role", "button");
+    logo.setAttribute("tabindex", "0");
+    logo.title = "Strona główna";
+    logo.setAttribute("aria-label", "Strona główna");
     logo.addEventListener("click", function () {
       window.top.location.href = "/";
+    });
+    logo.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        window.top.location.href = "/";
+      }
     });
   }
 

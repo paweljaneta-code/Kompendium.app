@@ -1,15 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { useHydrated } from "@/lib/useHydrated";
 
 export function AppHeader() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   return (
     <header className="app-top-header sticky top-0 z-[100] border-b border-[#eae5dd] bg-[rgba(250,248,245,0.92)] backdrop-blur-[16px]">

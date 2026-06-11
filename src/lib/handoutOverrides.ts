@@ -10,19 +10,12 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     "planowanie-aktywnosci": { mod: "dep", file: "ba-scheduling", ext: "pdf" },
     "dieta-dep": { mod: "dep", file: "jedzenie-nastroj", ext: "pdf" },
     "rejestr-mysli": { mod: "dep", file: "dziennik-mysli", ext: "html" },
-    "dziennik-pozytywow": { mod: "dep", file: "wdziecznosc", ext: "html" },
     "adhd-grief-diagnosis": { mod: "adhd", file: "adhd-grief-diagnosis", ext: "html" },
     "prokrastynacja-adhd": { mod: "adhd", file: "adhd-prokrastynacja", ext: "html" },
     "eksperymenty-sad": { mod: "sad", file: "eksperyment-behawioralny", ext: "pdf" },
     "asertywnosc-sad": { mod: "sad", file: "sad-asertywnosc", ext: "pdf" },
-    "szacowanie-sad": { mod: "sad", file: "teoria-a-b", ext: "pdf" },
-    "obraz-siebie-sad": { mod: "sad", file: "efekt-reflektora", ext: "pdf" },
     "umiejetnosci-społ": { mod: "sad", file: "rozmowa", ext: "pdf" },
-    "fizjologia-sad": { mod: "sad", file: "antycypacja", ext: "pdf" },
     "sad-be-imperfect": { mod: "sad", file: "eksperyment-behawioralny", ext: "pdf" },
-    "self-disclosure": { mod: "sad", file: "komplementy", ext: "pdf" },
-    "workplace-sad": { mod: "sad", file: "wystapienia-publiczne", ext: "pdf" },
-    "wartosci-sad": { mod: "sad", file: "teoria-a-b", ext: "pdf" }
   };
 
   function ensureHandoutPreviewStyles() {
@@ -85,14 +78,25 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
       seen[url] = true;
       urls.push(url);
     }
+    function addTriple(mod, file, ext) {
+      var declaredExt = ext ? "." + ext : ".pdf";
+      add("/handouts/print/" + mod + "/" + file + ".html");
+      add("/handouts/print/" + mod + "/" + file + declaredExt);
+      add("/handouts/print/" + mod + "/" + file + ".pdf");
+    }
+
+    // Karty świadomie bez handoutu (audyt): zwróć brak kandydatów -> placeholder.
+    // Konieczne, bo plik o nazwie == id bywa scramblem treści innego narzędzia
+    // i sam SKIP w resolverze nie wystarcza (HANDOUT_FILE_INDEX i tak by go podał).
+    if (window.PRINT_HANDOUT_SKIP && window.PRINT_HANDOUT_SKIP[id]) return urls;
 
     var target = criticalAliases[id];
-    if (target && target.mod && target.file) {
-      var preferredExt = target.ext ? "." + target.ext : ".pdf";
-      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
-      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
-      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
-    }
+    if (target && target.mod && target.file) addTriple(target.mod, target.file, target.ext);
+
+    // Kuratorowany override (manual) MA PIERWSZEŃSTWO przed plikiem o dokładnej
+    // nazwie — bo <id>.html bywa pomieszany (zawiera arkusz innego narzędzia).
+    var manual = window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id];
+    if (manual && manual.manual && manual.mod && manual.file) addTriple(manual.mod, manual.file, manual.ext);
 
     var fileIndex = window.HANDOUT_FILE_INDEX || {};
     if (fileIndex[id]) {
@@ -110,12 +114,7 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     }
 
     target = window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id];
-    if (target && target.mod && target.file) {
-      var preferredExt = target.ext ? "." + target.ext : ".pdf";
-      var fallbackExt = preferredExt === ".pdf" ? ".html" : ".pdf";
-      add("/handouts/print/" + target.mod + "/" + target.file + preferredExt);
-      add("/handouts/print/" + target.mod + "/" + target.file + fallbackExt);
-    }
+    if (target && target.mod && target.file) addTriple(target.mod, target.file, target.ext);
 
     return urls;
   }
@@ -187,17 +186,15 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
 
   window.openClinicianHandout = function (id) {
     if (!id) return;
-    var mod = window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id];
-    if (!mod) {
-      alert(
-        "Arkusz dla terapeuty niedostepny.\\npublic/handouts/clinician/<modul>/" +
-          id +
-          ".html"
-      );
+    // Indeks mapuje cardId -> "mod/plik" pliku, którego TREŚĆ należy do tej
+    // karty (pliki bywają pomieszane — nazwa pliku != temat treści).
+    var ref = window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id];
+    if (!ref) {
+      alert("Arkusz dla terapeuty niedostepny dla: " + id);
       return;
     }
 
-    var url = "/handouts/clinician/" + mod + "/" + id + ".html";
+    var url = "/handouts/clinician/" + ref + ".html";
     ensureHandoutPreviewStyles();
 
     var ov = document.getElementById("handout-overlay");
