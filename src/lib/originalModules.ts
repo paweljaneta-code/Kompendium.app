@@ -690,7 +690,7 @@ const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
     var menu = document.createElement("div");
     menu.className = "lib-dd-menu";
     menu.setAttribute("role", "listbox");
-    function setCur(f) { cur.textContent = lbl(f) + (cnt(f) ? " · " + cnt(f) : ""); }
+    function setCur(f) { cur.textContent = lbl(f); }
     var current = null;
     els.forEach(function (f) { if (f.classList.contains("active")) current = f; });
     if (!current) current = els[0];
