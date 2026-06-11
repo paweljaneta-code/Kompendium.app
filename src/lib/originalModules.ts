@@ -629,7 +629,13 @@ const HOME_HEADER_SEARCH_STYLES = `
 }
 @media (max-width: 680px) {
   .header-inner .header-search {
-    width: min(300px, calc(100% - 140px));
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
   }
 }
 `;
