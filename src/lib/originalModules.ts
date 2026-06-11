@@ -669,6 +669,13 @@ const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
     if (!els.length) return;
     function lbl(f) { return (f.querySelector(".lib-sb-fname") || {}).textContent || ""; }
     function cnt(f) { return (f.querySelector(".lib-sb-fcount") || {}).textContent || ""; }
+    var scope = lv.closest(".tab-content") || lv;
+    function dotColor(f) {
+      var key = keyOf(f);
+      if (!key || key === "all") return "";
+      var b = scope.querySelector('.card[data-m="' + key + '"] .badge');
+      return b ? (b.style.color || "") : "";
+    }
     var dd = document.createElement("div");
     dd.className = "lib-dd";
     var trig = document.createElement("button");
@@ -688,6 +695,7 @@ const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
     els.forEach(function (f) { if (f.classList.contains("active")) current = f; });
     if (!current) current = els[0];
     setCur(current);
+    dot.style.background = dotColor(current);
     function closeMenu() { dd.classList.remove("open"); trig.setAttribute("aria-expanded", "false"); }
     els.forEach(function (f) {
       var key = keyOf(f);
@@ -705,6 +713,7 @@ const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
         if (prev) prev.classList.remove("sel");
         opt.classList.add("sel");
         setCur(f);
+        dot.style.background = dotColor(f);
         closeMenu();
         if (window.libFilterSidebar) window.libFilterSidebar(tab, key, f);
       });
