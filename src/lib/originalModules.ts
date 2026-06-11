@@ -664,29 +664,61 @@ const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
     var lv = document.getElementById("library-view-" + tab);
     if (!lv) return;
     var filters = lv.querySelector(".lib-sb-filters");
-    if (!filters || lv.querySelector(".lib-sb-select")) return;
+    if (!filters || lv.querySelector(".lib-dd")) return;
     var els = Array.prototype.slice.call(filters.querySelectorAll(".lib-sb-filter"));
-    var sel = document.createElement("select");
-    sel.className = "lib-sb-select";
-    sel.setAttribute("aria-label", "Filtruj kategorię");
+    if (!els.length) return;
+    function lbl(f) { return (f.querySelector(".lib-sb-fname") || {}).textContent || ""; }
+    function cnt(f) { return (f.querySelector(".lib-sb-fcount") || {}).textContent || ""; }
+    var dd = document.createElement("div");
+    dd.className = "lib-dd";
+    var trig = document.createElement("button");
+    trig.type = "button";
+    trig.className = "lib-dd-trigger";
+    trig.setAttribute("aria-haspopup", "listbox");
+    trig.setAttribute("aria-expanded", "false");
+    var dot = document.createElement("span"); dot.className = "lib-dd-dot";
+    var cur = document.createElement("span"); cur.className = "lib-dd-current";
+    var chev = document.createElement("span"); chev.className = "lib-dd-chev"; chev.textContent = "▾";
+    trig.appendChild(dot); trig.appendChild(cur); trig.appendChild(chev);
+    var menu = document.createElement("div");
+    menu.className = "lib-dd-menu";
+    menu.setAttribute("role", "listbox");
+    function setCur(f) { cur.textContent = lbl(f) + (cnt(f) ? " · " + cnt(f) : ""); }
+    var current = null;
+    els.forEach(function (f) { if (f.classList.contains("active")) current = f; });
+    if (!current) current = els[0];
+    setCur(current);
+    function closeMenu() { dd.classList.remove("open"); trig.setAttribute("aria-expanded", "false"); }
     els.forEach(function (f) {
       var key = keyOf(f);
       if (!key) return;
-      var name = (f.querySelector(".lib-sb-fname") || {}).textContent || "";
-      var cnt = (f.querySelector(".lib-sb-fcount") || {}).textContent || "";
-      var opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = name + (cnt ? " · " + cnt : "");
-      if (f.classList.contains("active")) opt.selected = true;
-      sel.appendChild(opt);
+      var opt = document.createElement("button");
+      opt.type = "button";
+      opt.className = "lib-dd-opt" + (f === current ? " sel" : "");
+      opt.setAttribute("role", "option");
+      var la = document.createElement("span"); la.className = "lib-dd-label"; la.textContent = lbl(f);
+      var co = document.createElement("span"); co.className = "lib-dd-count"; co.textContent = cnt(f);
+      var ck = document.createElement("span"); ck.className = "lib-dd-check"; ck.textContent = "✓";
+      opt.appendChild(la); opt.appendChild(co); opt.appendChild(ck);
+      opt.addEventListener("click", function () {
+        var prev = menu.querySelector(".lib-dd-opt.sel");
+        if (prev) prev.classList.remove("sel");
+        opt.classList.add("sel");
+        setCur(f);
+        closeMenu();
+        if (window.libFilterSidebar) window.libFilterSidebar(tab, key, f);
+      });
+      menu.appendChild(opt);
     });
-    if (!sel.options.length) return;
-    sel.addEventListener("change", function () {
-      var key = this.value, target = null;
-      els.forEach(function (f) { if (keyOf(f) === key) target = f; });
-      if (window.libFilterSidebar) window.libFilterSidebar(tab, key, target);
+    trig.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (dd.classList.contains("open")) closeMenu();
+      else { dd.classList.add("open"); trig.setAttribute("aria-expanded", "true"); }
     });
-    filters.parentNode.insertBefore(sel, filters);
+    document.addEventListener("click", function (e) { if (!dd.contains(e.target)) closeMenu(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMenu(); });
+    dd.appendChild(trig); dd.appendChild(menu);
+    filters.parentNode.insertBefore(dd, filters);
   }
   function init() { build("gad"); }
   if (document.readyState !== "loading") init();
