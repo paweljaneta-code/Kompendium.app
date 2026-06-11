@@ -651,6 +651,48 @@ const KOMPENDIUM_ACCOUNT_BTN_SCRIPT = `(function () {
   });
 })();`;
 
+// Mobile: zamiast pigułek kategorii — rozwijana lista (prototyp: moduł gad).
+// Budowana z istniejących .lib-sb-filter (auto-mirror etykiet/liczników),
+// podpięta pod libFilterSidebar (ta sama mechanika filtrowania).
+const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
+  function keyOf(f) {
+    var oc = f.getAttribute("onclick") || "";
+    var m = oc.match(/libFilterSidebar\\([^,]*,'([^']*)'/);
+    return m ? m[1] : null;
+  }
+  function build(tab) {
+    var lv = document.getElementById("library-view-" + tab);
+    if (!lv) return;
+    var filters = lv.querySelector(".lib-sb-filters");
+    if (!filters || lv.querySelector(".lib-sb-select")) return;
+    var els = Array.prototype.slice.call(filters.querySelectorAll(".lib-sb-filter"));
+    var sel = document.createElement("select");
+    sel.className = "lib-sb-select";
+    sel.setAttribute("aria-label", "Filtruj kategorię");
+    els.forEach(function (f) {
+      var key = keyOf(f);
+      if (!key) return;
+      var name = (f.querySelector(".lib-sb-fname") || {}).textContent || "";
+      var cnt = (f.querySelector(".lib-sb-fcount") || {}).textContent || "";
+      var opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = name + (cnt ? " · " + cnt : "");
+      if (f.classList.contains("active")) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (!sel.options.length) return;
+    sel.addEventListener("change", function () {
+      var key = this.value, target = null;
+      els.forEach(function (f) { if (keyOf(f) === key) target = f; });
+      if (window.libFilterSidebar) window.libFilterSidebar(tab, key, target);
+    });
+    filters.parentNode.insertBefore(sel, filters);
+  }
+  function init() { build("gad"); }
+  if (document.readyState !== "loading") init();
+  else document.addEventListener("DOMContentLoaded", init);
+})();`;
+
 function withAccountHeaderButton(header: string) {
   if (
     header.includes('class="header-user-actions"') ||
@@ -2009,6 +2051,9 @@ ${buildDeadButtonHiderScript(printHandoutResolver, handoutFileIndex, sosFileInde
     <script>
 ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
+    <script>
+${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
+    </script>
   </body>
 </html>`;
 
@@ -2118,6 +2163,9 @@ ${escapeEmbeddedScript(bridgeScript)}
     <script>
 ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
+    <script>
+${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
+    </script>
   </body>
 </html>`;
 
@@ -2207,6 +2255,9 @@ ${KOMPENDIUM_MODULE_NAV_SCRIPT}
     </script>
     <script>
 ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
+    </script>
+    <script>
+${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
     </script>
   </body>
 </html>`;
