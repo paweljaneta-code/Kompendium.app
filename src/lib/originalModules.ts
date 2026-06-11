@@ -724,12 +724,25 @@ const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
       if (dd.classList.contains("open")) closeMenu();
       else { dd.classList.add("open"); trig.setAttribute("aria-expanded", "true"); }
     });
-    document.addEventListener("click", function (e) { if (!dd.contains(e.target)) closeMenu(); });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMenu(); });
     dd.appendChild(trig); dd.appendChild(menu);
     filters.parentNode.insertBefore(dd, filters);
   }
-  function init() { build("gad"); }
+  function closeAll() {
+    var open = document.querySelectorAll(".lib-dd.open");
+    for (var i = 0; i < open.length; i++) {
+      open[i].classList.remove("open");
+      var t = open[i].querySelector(".lib-dd-trigger");
+      if (t) t.setAttribute("aria-expanded", "false");
+    }
+  }
+  function init() {
+    var views = document.querySelectorAll('[id^="library-view-"]');
+    for (var i = 0; i < views.length; i++) build(views[i].id.slice(13));
+    document.addEventListener("click", function (e) {
+      if (!e.target || !e.target.closest || !e.target.closest(".lib-dd")) closeAll();
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeAll(); });
+  }
   if (document.readyState !== "loading") init();
   else document.addEventListener("DOMContentLoaded", init);
 })();`;
