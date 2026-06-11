@@ -651,6 +651,102 @@ const KOMPENDIUM_ACCOUNT_BTN_SCRIPT = `(function () {
   });
 })();`;
 
+// Mobile: zamiast pigułek kategorii — rozwijana lista (prototyp: moduł gad).
+// Budowana z istniejących .lib-sb-filter (auto-mirror etykiet/liczników),
+// podpięta pod libFilterSidebar (ta sama mechanika filtrowania).
+const KOMPENDIUM_FILTER_DROPDOWN_SCRIPT = `(function () {
+  function keyOf(f) {
+    var oc = f.getAttribute("onclick") || "";
+    var m = oc.match(/libFilterSidebar\\([^,]*,'([^']*)'/);
+    return m ? m[1] : null;
+  }
+  function build(tab) {
+    var lv = document.getElementById("library-view-" + tab);
+    if (!lv) return;
+    var filters = lv.querySelector(".lib-sb-filters");
+    if (!filters || lv.querySelector(".lib-dd")) return;
+    var els = Array.prototype.slice.call(filters.querySelectorAll(".lib-sb-filter"));
+    if (!els.length) return;
+    function lbl(f) { return (f.querySelector(".lib-sb-fname") || {}).textContent || ""; }
+    function cnt(f) { return (f.querySelector(".lib-sb-fcount") || {}).textContent || ""; }
+    var scope = lv.closest(".tab-content") || lv;
+    function dotColor(f) {
+      var key = keyOf(f);
+      if (!key || key === "all") return "";
+      var b = scope.querySelector('.card[data-m="' + key + '"] .badge');
+      return b ? (b.style.color || "") : "";
+    }
+    var dd = document.createElement("div");
+    dd.className = "lib-dd";
+    var trig = document.createElement("button");
+    trig.type = "button";
+    trig.className = "lib-dd-trigger";
+    trig.setAttribute("aria-haspopup", "listbox");
+    trig.setAttribute("aria-expanded", "false");
+    var dot = document.createElement("span"); dot.className = "lib-dd-dot";
+    var cur = document.createElement("span"); cur.className = "lib-dd-current";
+    var chev = document.createElement("span"); chev.className = "lib-dd-chev"; chev.textContent = "▾";
+    trig.appendChild(dot); trig.appendChild(cur); trig.appendChild(chev);
+    var menu = document.createElement("div");
+    menu.className = "lib-dd-menu";
+    menu.setAttribute("role", "listbox");
+    function setCur(f) { cur.textContent = lbl(f); }
+    var current = null;
+    els.forEach(function (f) { if (f.classList.contains("active")) current = f; });
+    if (!current) current = els[0];
+    setCur(current);
+    dot.style.background = dotColor(current);
+    function closeMenu() { dd.classList.remove("open"); trig.setAttribute("aria-expanded", "false"); }
+    els.forEach(function (f) {
+      var key = keyOf(f);
+      if (!key) return;
+      var opt = document.createElement("button");
+      opt.type = "button";
+      opt.className = "lib-dd-opt" + (f === current ? " sel" : "");
+      opt.setAttribute("role", "option");
+      var la = document.createElement("span"); la.className = "lib-dd-label"; la.textContent = lbl(f);
+      var co = document.createElement("span"); co.className = "lib-dd-count"; co.textContent = cnt(f);
+      var ck = document.createElement("span"); ck.className = "lib-dd-check"; ck.textContent = "✓";
+      opt.appendChild(la); opt.appendChild(co); opt.appendChild(ck);
+      opt.addEventListener("click", function () {
+        var prev = menu.querySelector(".lib-dd-opt.sel");
+        if (prev) prev.classList.remove("sel");
+        opt.classList.add("sel");
+        setCur(f);
+        dot.style.background = dotColor(f);
+        closeMenu();
+        if (window.libFilterSidebar) window.libFilterSidebar(tab, key, f);
+      });
+      menu.appendChild(opt);
+    });
+    trig.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (dd.classList.contains("open")) closeMenu();
+      else { dd.classList.add("open"); trig.setAttribute("aria-expanded", "true"); }
+    });
+    dd.appendChild(trig); dd.appendChild(menu);
+    filters.parentNode.insertBefore(dd, filters);
+  }
+  function closeAll() {
+    var open = document.querySelectorAll(".lib-dd.open");
+    for (var i = 0; i < open.length; i++) {
+      open[i].classList.remove("open");
+      var t = open[i].querySelector(".lib-dd-trigger");
+      if (t) t.setAttribute("aria-expanded", "false");
+    }
+  }
+  function init() {
+    var views = document.querySelectorAll('[id^="library-view-"]');
+    for (var i = 0; i < views.length; i++) build(views[i].id.slice(13));
+    document.addEventListener("click", function (e) {
+      if (!e.target || !e.target.closest || !e.target.closest(".lib-dd")) closeAll();
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeAll(); });
+  }
+  if (document.readyState !== "loading") init();
+  else document.addEventListener("DOMContentLoaded", init);
+})();`;
+
 function withAccountHeaderButton(header: string) {
   if (
     header.includes('class="header-user-actions"') ||
@@ -2009,6 +2105,9 @@ ${buildDeadButtonHiderScript(printHandoutResolver, handoutFileIndex, sosFileInde
     <script>
 ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
+    <script>
+${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
+    </script>
   </body>
 </html>`;
 
@@ -2118,6 +2217,9 @@ ${escapeEmbeddedScript(bridgeScript)}
     <script>
 ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
+    <script>
+${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
+    </script>
   </body>
 </html>`;
 
@@ -2207,6 +2309,9 @@ ${KOMPENDIUM_MODULE_NAV_SCRIPT}
     </script>
     <script>
 ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
+    </script>
+    <script>
+${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
     </script>
   </body>
 </html>`;
