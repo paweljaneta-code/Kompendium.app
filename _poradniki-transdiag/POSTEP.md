@@ -1,0 +1,21 @@
+# Poradniki transdiag — postęp produkcji
+Wzorzec oprawy: CSS + topbar/wrap z poradnik_td-perfekcjonizm.html (zgodny z att-anxious).
+Akcent = kolor pip pigułki subsekcji. Linki qg-link -> realne karty td-*.
+
+- [x] perfekcjonizm (#3c5ba7) — GOTOWY (wzorzec)
+- [ ] niepewnosc (#5a4b97) — Nietolerancja niepewności (Dugas/Robichaud, IUS-12, Carleton)
+- [ ] ruminacja (#6b3a87) — RNT (Watkins RFCBT, PTQ/RRS/PSWQ, Ehring)
+- [ ] wrazliwosc-lekowa (#8a3a87) — AS (Reiss, ASI-3, CAST, ekspozycja interoceptywna)
+- [ ] samoocena (#a0357a) — Fennell LSE, positive data log, kontinuum
+- [ ] unikanie (#b5612a) — unikanie doświadczeniowe (Hayes), behawioralne
+- [ ] regulacja-emocji (#8a5a2a) — Gross, DERS, negatywny afekt/HiTOP
+- [ ] zachowania-zabezpieczajace (#3a7a3a) — Salkovskis, reasekuracja, checking (Rachman)
+- [ ] ekspozycja (#c83a3a) — habituacja vs inhibitory learning (Craske), SUDS, protokół sesji
+- [ ] imagery-rescripting (#b03a5a) — ImRs (Arntz), 3 fazy, zastosowania
+- [ ] aktywacja-behawioralna (#d56a2a) — BA (Lewinsohn/Martell), wartości
+- [ ] restrukturyzacja (#a02a5a) — thought record, dialog sokratejski (Padesky)
+- [ ] mct (#2a6a8a) — Wells S-REF, MCQ-30, detached mindfulness, protokół 12 sesji
+- [ ] defuzja-atencja (#2a8a8a) — defuzja ACT, TAF (Rachman/Shafran), ATT/SAR (Wells)
+- [ ] samokrytycyzm (#8a6a2a) — Gilbert CFT, FSCRS, chairwork, compassionate imagery
+- [ ] wstyd-wspolczucie (#a0852a) — Tangney, Gilbert, Neff/Germer MSC
+- [ ] protokoly (#555555) — UP (Barlow), CETA, ERT, MATCH/MoBa, porównanie
