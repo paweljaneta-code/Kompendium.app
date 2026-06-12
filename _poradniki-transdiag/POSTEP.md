@@ -18,4 +18,4 @@ Akcent = kolor pip pigułki subsekcji. Linki qg-link -> realne karty td-*.
 - [x] defuzja-atencja (#2a8a8a) — defuzja ACT, TAF (Rachman/Shafran), ATT/SAR (Wells)
 - [x] samokrytycyzm (#8a6a2a) — Gilbert CFT, FSCRS, chairwork, compassionate imagery
 - [x] wstyd-wspolczucie (#a0852a) — Tangney, Gilbert, Neff/Germer MSC
-- [ ] protokoly (#555555) — UP (Barlow), CETA, ERT, MATCH/MoBa, porównanie
+- [x] protokoly (#555555) — UP (Barlow), CETA, ERT, MATCH/MoBa, porównanie
