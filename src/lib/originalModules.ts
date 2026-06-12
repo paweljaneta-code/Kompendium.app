@@ -3,6 +3,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import sosRouteIndex from "../app/s/[cid]/sos-index.json";
 import {
+  applyExtraContent,
+  buildTopicHowtoScript,
+  KOMPENDIUM_RECOUNT_SCRIPT
+} from "./extraContent";
+import {
   FILE_HANDOUT_OVERRIDE_SCRIPT,
   FILE_SOS_OVERRIDE_SCRIPT,
   KOMPENDIUM_MODULE_NAV_SCRIPT
@@ -1707,6 +1712,10 @@ async function loadOriginalData(): Promise<OriginalData> {
     plannerScript,
     modules
   };
+  // Treść z content/extra/** i public/howto/** (nowe karty, nowe moduły,
+  // poradniki per subsekcja) — wstrzykiwana przed budową katalogów i stron,
+  // więc trafia też do wyszukiwarki i przeglądarki narzędzi.
+  applyExtraContent(cache);
   return cache;
 }
 
@@ -2349,6 +2358,12 @@ ${KOMPENDIUM_ACCOUNT_BTN_SCRIPT}
     </script>
     <script>
 ${KOMPENDIUM_FILTER_DROPDOWN_SCRIPT}
+    </script>
+    <script>
+${KOMPENDIUM_RECOUNT_SCRIPT}
+    </script>
+    <script>
+${buildTopicHowtoScript()}
     </script>
   </body>
 </html>`;

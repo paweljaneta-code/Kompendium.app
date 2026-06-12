@@ -279,6 +279,28 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
   };
 
+  // Poradniki "Jak pracować z..." (pliki w public/howto/**): pełnoekranowy
+  // podgląd w nakładce z domyślnym paskiem (Drukuj/Zamknij).
+  window.openHowtoFullscreen = function (url, title) {
+    var ov = document.getElementById("handout-overlay");
+    var ct = document.getElementById("handout-content");
+    if (!ov || !ct || !url) return;
+    ensureHandoutPreviewStyles();
+    window._activeHandoutId = null;
+    ov.classList.remove("sage-mode");
+    ov.classList.add("ho-file-mode");
+    ct.innerHTML = "";
+    var iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.title = title || "Poradnik";
+    ct.appendChild(iframe);
+    ov.style.display = "flex";
+    ov.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
+    notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
+  };
+
   window.openHandout = async function (id) {
     var candidates = resolvePrintHandoutUrl(id);
     var url = await pickFirstAvailableHandoutUrl(candidates);
