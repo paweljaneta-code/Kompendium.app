@@ -227,6 +227,34 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
   };
 
+  // Przewodniki interaktywne (transdiag): pełnoekranowy podgląd w tej samej
+  // nakładce co arkusze klinicysty, zamiast małego modala SOS.
+  window.openGuideFullscreen = function (cardId) {
+    var mod = window.SOS_INDEX && window.SOS_INDEX[cardId];
+    var ov = document.getElementById("handout-overlay");
+    var ct = document.getElementById("handout-content");
+    if (!mod || !ov || !ct) {
+      if (typeof window.openSOS === "function") return window.openSOS(cardId);
+      return;
+    }
+    ensureHandoutPreviewStyles();
+    window._activeHandoutId = cardId;
+    var card = document.getElementById(cardId);
+    if (card) card.setAttribute("open", "");
+    ov.classList.remove("sage-mode");
+    ov.classList.add("ho-file-mode");
+    ct.innerHTML = "";
+    var iframe = document.createElement("iframe");
+    iframe.src = "/sos/" + mod + "/" + cardId + ".html";
+    iframe.title = "Przewodnik interaktywny";
+    ct.appendChild(iframe);
+    ov.style.display = "flex";
+    ov.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    if (window.refreshHomeChrome) window.refreshHomeChrome();
+    notifyParent({ type: "kompendium-overlay-open", overlay: "handout" });
+  };
+
   window.openHandout = async function (id) {
     var candidates = resolvePrintHandoutUrl(id);
     var url = await pickFirstAvailableHandoutUrl(candidates);
