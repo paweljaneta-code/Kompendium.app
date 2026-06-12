@@ -7,7 +7,7 @@ Akcent = kolor pip pigułki subsekcji. Linki qg-link -> realne karty td-*.
 - [x] ruminacja (#6b3a87) — RNT (Watkins RFCBT, PTQ/RRS/PSWQ, Ehring)
 - [x] wrazliwosc-lekowa (#8a3a87) — AS (Reiss, ASI-3, CAST, ekspozycja interoceptywna)
 - [x] samoocena (#a0357a) — Fennell LSE, positive data log, kontinuum
-- [ ] unikanie (#b5612a) — unikanie doświadczeniowe (Hayes), behawioralne
+- [x] unikanie (#b5612a) — unikanie doświadczeniowe (Hayes), behawioralne
 - [ ] regulacja-emocji (#8a5a2a) — Gross, DERS, negatywny afekt/HiTOP
 - [ ] zachowania-zabezpieczajace (#3a7a3a) — Salkovskis, reasekuracja, checking (Rachman)
 - [ ] ekspozycja (#c83a3a) — habituacja vs inhibitory learning (Craske), SUDS, protokół sesji
