@@ -5,6 +5,7 @@ import sosRouteIndex from "../app/s/[cid]/sos-index.json";
 import {
   applyExtraContent,
   buildTopicHowtoScript,
+  KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT,
   KOMPENDIUM_RECOUNT_SCRIPT
 } from "./extraContent";
 import {
@@ -2364,6 +2365,9 @@ ${KOMPENDIUM_RECOUNT_SCRIPT}
     </script>
     <script>
 ${buildTopicHowtoScript()}
+    </script>
+    <script>
+${KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT}
     </script>
   </body>
 </html>`;

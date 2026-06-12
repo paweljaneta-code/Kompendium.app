@@ -173,19 +173,46 @@ ${buildMaterialButtons(tool)}
 `;
 }
 
+// Koniec karty <details class="card"> od pozycji startIdx — z licznikiem
+// głębokości (karty zawierają zagnieżdżone <details class="card-section">).
+function findCardEnd(html: string, startIdx: number): number {
+  const re = /<details\b|<\/details>/g;
+  re.lastIndex = startIdx;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    if (m[0] === "<details") depth += 1;
+    else {
+      depth -= 1;
+      if (depth === 0) return m.index + "</details>".length;
+    }
+  }
+  return -1;
+}
+
 function injectToolsIntoHtml(html: string, tools: ExtraTool[]): string {
   let out = html;
   for (const tool of tools) {
     const card = buildExtraToolCard(tool);
     let insertAt = -1;
-    if (tool.position !== "bottom" && tool.topic) {
+    if (tool.topic) {
       const re = new RegExp(
-        `<details class="card"[^>]*data-topic="${tool.topic.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`
+        `<details class="card"[^>]*data-topic="${tool.topic.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
+        "g"
       );
-      const m = out.match(re);
-      if (m && typeof m.index === "number") insertAt = m.index;
+      const matches = [...out.matchAll(re)];
+      if (matches.length) {
+        if (tool.position === "top") {
+          insertAt = matches[0].index ?? -1;
+        } else {
+          // domyślnie: za ostatnią kartą tematu (nowe narzędzie na końcu grupy)
+          const last = matches[matches.length - 1];
+          insertAt = findCardEnd(out, last.index ?? 0);
+        }
+      }
     }
     if (insertAt === -1) {
+      // moduł bez kart tego tematu — na początek listy
       const wrap = out.indexOf('<div class="cards-wrap">');
       if (wrap !== -1) insertAt = wrap + '<div class="cards-wrap">'.length;
     }
@@ -377,6 +404,44 @@ export const KOMPENDIUM_RECOUNT_SCRIPT = `(function () {
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
   else run();
+})();`;
+
+// Most: poradnik otwarty w pełnoekranowym iframe wysyła postMessage
+// {type:"kompendium-open-card", id} po kliknięciu elementu [data-go];
+// strona modułu zamyka nakładkę i otwiera wskazaną kartę (zdejmując filtr,
+// jeśli karta jest ukryta — przełącza na pigułkę tematu karty).
+export const KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT = `(function () {
+  window.addEventListener("message", function (ev) {
+    var data = ev.data;
+    if (!data || data.type !== "kompendium-open-card" || !data.id) return;
+    var el = document.getElementById(String(data.id));
+    if (!el) return;
+    if (typeof window.closeHandout === "function") window.closeHandout();
+    if (typeof window.closeSOS === "function") {
+      var sos = document.getElementById("sos-modal-bg");
+      if (sos && sos.classList.contains("active")) window.closeSOS();
+    }
+    if (el.classList.contains("hidden")) {
+      var lv = el.closest(".library-view");
+      var topic = el.getAttribute("data-topic");
+      var pill =
+        (lv && topic && lv.querySelector('.pill[data-filter="' + topic + '"]')) ||
+        (lv && lv.querySelector('.pill[data-filter="all"]'));
+      if (pill) pill.click();
+    }
+    var open = document.querySelectorAll(".card[open]");
+    for (var i = 0; i < open.length; i++) {
+      if (open[i] !== el) open[i].removeAttribute("open");
+    }
+    el.setAttribute("open", "");
+    setTimeout(function () {
+      var hdr = document.querySelector(".header");
+      var nav = document.querySelector(".nav-bar");
+      var off = (hdr ? hdr.offsetHeight : 0) + (nav ? nav.offsetHeight : 0) + 12;
+      var y = el.getBoundingClientRect().top + window.pageYOffset - off;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }, 180);
+  });
 })();`;
 
 // Kontekstowy przycisk 📘 "Jak pracować z..." nad listą narzędzi, widoczny

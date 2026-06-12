@@ -50,13 +50,43 @@ for (const file of listFiles(modulesRoot, ".json")) {
 }
 
 // --- Poradniki per subsekcja ---
+// Skrypt mostu: klik w element [data-go] wewnątrz poradnika (otwartego
+// w pełnoekranowym iframe) prosi stronę modułu o otwarcie wskazanej karty.
+// Wstrzykiwany idempotentnie przy buildzie — autor poradnika nie musi
+// o nim pamiętać.
+const BRIDGE_MARK = "/* kompendium-toollink-bridge */";
+const BRIDGE_SCRIPT = `<script>${BRIDGE_MARK}
+(function () {
+  document.addEventListener("click", function (ev) {
+    var el = ev.target && ev.target.closest ? ev.target.closest("[data-go]") : null;
+    if (!el) return;
+    ev.preventDefault();
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { type: "kompendium-open-card", id: el.getAttribute("data-go") },
+          "*"
+        );
+      }
+    } catch (e) {}
+  });
+})();
+</scr` + `ipt>`;
+
 const howto = {};
 let howtoCount = 0;
 for (const tab of listDirs(howtoRoot)) {
   const topics = {};
   for (const file of listFiles(path.join(howtoRoot, tab), ".html")) {
     const topic = file.slice(0, -5);
-    const html = fs.readFileSync(path.join(howtoRoot, tab, file), "utf8");
+    const fullPath = path.join(howtoRoot, tab, file);
+    let html = fs.readFileSync(fullPath, "utf8");
+    if (!html.includes(BRIDGE_MARK)) {
+      html = html.includes("</body>")
+        ? html.replace("</body>", BRIDGE_SCRIPT + "\n</body>")
+        : html + BRIDGE_SCRIPT;
+      fs.writeFileSync(fullPath, html);
+    }
     const title = html.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim() ?? "";
     // "Poradnik · Jak pracować z X" -> etykieta przycisku "Jak pracować z X"
     const label = title.replace(/^Poradnik\s*·\s*/i, "").trim() || topic;
