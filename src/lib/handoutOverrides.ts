@@ -367,6 +367,77 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
     return "/sos/" + mod + "/" + cardId + ".html";
   }
 
+  // Strony serwowane przez aplikację nie zawierają markupu #shareModal ani
+  // showToast z monolitu, więc oryginalny shareToolLink wywala się na
+  // getElementById(null). Nadpisanie: krótki link /s/<cid> przez Web Share
+  // (mobile) lub schowek + własny toast.
+  function shareNotify(msg) {
+    if (typeof window.showToast === "function") {
+      window.showToast(msg);
+      return;
+    }
+    var badge = document.getElementById("share-link-toast");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "share-link-toast";
+      badge.style.cssText =
+        "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);" +
+        "background:#2a4a3a;color:#fff;padding:10px 22px;border-radius:22px;" +
+        "font-size:13.5px;font-weight:600;font-family:inherit;z-index:10010;" +
+        "box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;" +
+        "pointer-events:none;max-width:90vw;text-align:center";
+      document.body.appendChild(badge);
+    }
+    badge.textContent = msg;
+    badge.style.opacity = "1";
+    clearTimeout(badge._t);
+    badge._t = setTimeout(function () {
+      badge.style.opacity = "0";
+    }, 2600);
+  }
+  window.shareToolLink = function (cardId) {
+    if (!(window.SOS_INDEX && window.SOS_INDEX[cardId])) {
+      shareNotify("Brak wersji elektronicznej tego narzędzia");
+      return;
+    }
+    var url = window.location.origin + "/s/" + cardId;
+    function done() {
+      shareNotify("Link dla klienta skopiowany do schowka");
+    }
+    function fallbackCopy() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = url;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        done();
+      } catch (err) {
+        window.prompt("Skopiuj link dla klienta:", url);
+      }
+    }
+    function copy() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    }
+    if (navigator.share) {
+      navigator
+        .share({ url: url, title: "Narzędzie terapeutyczne" })
+        .catch(function (e) {
+          if (!e || e.name !== "AbortError") copy();
+        });
+      return;
+    }
+    copy();
+  };
+
   window.closeSOS = function () {
     var modal = document.getElementById("sos-modal-bg");
     var iframe = document.getElementById("sos-iframe");
