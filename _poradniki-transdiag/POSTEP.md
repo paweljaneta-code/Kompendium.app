@@ -16,6 +16,6 @@ Akcent = kolor pip pigułki subsekcji. Linki qg-link -> realne karty td-*.
 - [x] restrukturyzacja (#a02a5a) — thought record, dialog sokratejski (Padesky)
 - [x] mct (#2a6a8a) — Wells S-REF, MCQ-30, detached mindfulness, protokół 12 sesji
 - [x] defuzja-atencja (#2a8a8a) — defuzja ACT, TAF (Rachman/Shafran), ATT/SAR (Wells)
-- [ ] samokrytycyzm (#8a6a2a) — Gilbert CFT, FSCRS, chairwork, compassionate imagery
+- [x] samokrytycyzm (#8a6a2a) — Gilbert CFT, FSCRS, chairwork, compassionate imagery
 - [ ] wstyd-wspolczucie (#a0852a) — Tangney, Gilbert, Neff/Germer MSC
 - [ ] protokoly (#555555) — UP (Barlow), CETA, ERT, MATCH/MoBa, porównanie
