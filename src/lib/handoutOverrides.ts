@@ -395,12 +395,34 @@ export const FILE_SOS_OVERRIDE_SCRIPT = `
       badge.style.opacity = "0";
     }, 2600);
   }
+  // Dokumenty modułów są osadzane przez <iframe srcDoc>, gdzie
+  // location.origin === "null" — origin trzeba wziąć z rodzica lub referrera
+  // (ten sam wzorzec co appOrigin() w monolicie).
+  function shareOrigin() {
+    try {
+      if (window.location.origin && window.location.origin !== "null")
+        return window.location.origin;
+    } catch (e) {}
+    try {
+      var po = window.parent && window.parent !== window && window.parent.location.origin;
+      if (po && po !== "null") return po;
+    } catch (e) {}
+    try {
+      if (document.referrer) return new URL(document.referrer).origin;
+    } catch (e) {}
+    return "";
+  }
   window.shareToolLink = function (cardId) {
     if (!(window.SOS_INDEX && window.SOS_INDEX[cardId])) {
       shareNotify("Brak wersji elektronicznej tego narzędzia");
       return;
     }
-    var url = window.location.origin + "/s/" + cardId;
+    var origin = shareOrigin();
+    if (!origin) {
+      shareNotify("Nie udało się ustalić adresu aplikacji");
+      return;
+    }
+    var url = origin + "/s/" + cardId;
     function done() {
       shareNotify("Link dla klienta skopiowany do schowka");
     }
