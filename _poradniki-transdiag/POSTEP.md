@@ -3,7 +3,7 @@ Wzorzec oprawy: CSS + topbar/wrap z poradnik_td-perfekcjonizm.html (zgodny z att
 Akcent = kolor pip pigułki subsekcji. Linki qg-link -> realne karty td-*.
 
 - [x] perfekcjonizm (#3c5ba7) — GOTOWY (wzorzec)
-- [ ] niepewnosc (#5a4b97) — Nietolerancja niepewności (Dugas/Robichaud, IUS-12, Carleton)
+- [x] niepewnosc (#5a4b97) — Nietolerancja niepewności (Dugas/Robichaud, IUS-12, Carleton)
 - [ ] ruminacja (#6b3a87) — RNT (Watkins RFCBT, PTQ/RRS/PSWQ, Ehring)
 - [ ] wrazliwosc-lekowa (#8a3a87) — AS (Reiss, ASI-3, CAST, ekspozycja interoceptywna)
 - [ ] samoocena (#a0357a) — Fennell LSE, positive data log, kontinuum
