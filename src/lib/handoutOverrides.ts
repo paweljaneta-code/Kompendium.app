@@ -841,7 +841,9 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
       var s = 0;
       for (var j = 0; j < cards.length; j++) {
         var m = cards[j].getAttribute("data-m") || "";
-        if (f === "all" || m === f || (" " + m + " ").indexOf(" " + f + " ") !== -1) {
+        // tab-transdiag: pigułki tematyczne filtrują po data-topic (data-m = kategoria)
+        var tt = cards[j].getAttribute("data-topic") || "";
+        if (f === "all" || m === f || tt === f || (" " + m + " ").indexOf(" " + f + " ") !== -1) {
           cards[j].classList.remove("hidden");
           s++;
         } else {
