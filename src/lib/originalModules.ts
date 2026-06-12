@@ -877,6 +877,8 @@ function buildDeadButtonHiderScript(
       avail = !!((window.SOS_INDEX && window.SOS_INDEX[id]) || (window.HANDOUT_FILE_INDEX && window.HANDOUT_FILE_INDEX[id]));
     else if (oc.indexOf("openHandout") !== -1)
       avail = !!((window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id]) || (window.HANDOUT_FILE_INDEX && window.HANDOUT_FILE_INDEX[id]));
+    else if (oc.indexOf("openSOS") !== -1 || oc.indexOf("shareToolLink") !== -1)
+      avail = !!(window.SOS_INDEX && window.SOS_INDEX[id]);
     if (!avail) {
       e.preventDefault();
       e.stopPropagation();
