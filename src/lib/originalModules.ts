@@ -858,10 +858,34 @@ function buildDeadButtonHiderScript(
       var el = btns[i];
       if (el.hasAttribute("data-material-checked")) continue;
       el.setAttribute("data-material-checked", "1");
+      // Karty transdiag (td-*): pokazuj przyciski jako placeholdery, nawet bez
+      // pliku — klik obsługuje interceptor ("Materiał w przygotowaniu").
+      var tdCard = el.closest ? el.closest('details.card[id^="td-"]') : null;
+      if (tdCard) continue;
       if (!hasMaterial(cidFrom(el))) el.style.display = "none";
     }
   }
+  function placeholderClick(e) {
+    var btn = e.target && e.target.closest ? e.target.closest(".tool-mat") : null;
+    if (!btn) return;
+    var card = btn.closest("details.card");
+    if (!card || !card.id || card.id.indexOf("td-") !== 0) return;
+    var id = card.id, oc = btn.getAttribute("onclick") || "", avail = false;
+    if (oc.indexOf("openClinicianHandout") !== -1)
+      avail = !!(window.CLINICIAN_HANDOUT_INDEX && window.CLINICIAN_HANDOUT_INDEX[id]);
+    else if (oc.indexOf("downloadStandaloneHandout") !== -1)
+      avail = !!((window.SOS_INDEX && window.SOS_INDEX[id]) || (window.HANDOUT_FILE_INDEX && window.HANDOUT_FILE_INDEX[id]));
+    else if (oc.indexOf("openHandout") !== -1)
+      avail = !!((window.PRINT_HANDOUT_RESOLVER && window.PRINT_HANDOUT_RESOLVER[id]) || (window.HANDOUT_FILE_INDEX && window.HANDOUT_FILE_INDEX[id]));
+    if (!avail) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof showToast === "function") showToast("Materiał w przygotowaniu");
+      else alert("Materiał w przygotowaniu");
+    }
+  }
   function start() {
+    document.addEventListener("click", placeholderClick, true);
     process(document);
     new MutationObserver(function (muts) {
       for (var i = 0; i < muts.length; i++) {

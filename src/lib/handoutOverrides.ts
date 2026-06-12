@@ -314,7 +314,10 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     document.querySelectorAll("details.card").forEach(function (card) {
       var btn = card.querySelector(".tool-mat.tm-ther");
       if (!btn) return;
-      btn.style.display = index[card.id] ? "" : "none";
+      // Karty transdiag (td-*): pokazuj arkusz terapeuty jako placeholder
+      // nawet bez pliku (klik -> "Materiał w przygotowaniu").
+      var isTd = card.id && card.id.indexOf("td-") === 0;
+      btn.style.display = index[card.id] || isTd ? "" : "none";
     });
   }
 
