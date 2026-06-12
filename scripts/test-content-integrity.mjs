@@ -71,9 +71,13 @@ for (const p of sosFiles) {
   if (total && steps.length && (Math.max(...steps) !== total || steps.length !== total)) totalMismatch.push(p);
   if (steps.length && steps.some((v, idx) => v !== idx + 1)) gaps.push(p);
 
-  if (REQ.some((id) => !s.includes(`id="${id}"`))) missingId.push(p);
+  // Wymogi szablonu kreatora dotyczą tylko kreatorów (rozpoznawanych po
+  // TOTAL_STEPS/data-step) — przewodniki interaktywne (np. transdiag) mają
+  // własną nawigację sekcyjną, ale podlegają pozostałym kontrolom.
+  const isKreator = total !== null || steps.length > 0;
+  if (isKreator && REQ.some((id) => !s.includes(`id="${id}"`))) missingId.push(p);
   if (localStorageUnguarded(s)) lsBad.push(p);
-  if (!/function\s+nextStep/.test(s)) noNextFn.push(p);
+  if (isKreator && !/function\s+nextStep/.test(s)) noNextFn.push(p);
   if (/[\w)\]]\?\.\s*[A-Za-z_[(]/.test(s)) oc.push(p);
   if (s.includes("(?<=") || s.includes("(?<!")) lookbehind.push(p);
   if (/[\w)\]"']\s*\?\?\s*[\w(["']/.test(s)) nullish.push(p);
