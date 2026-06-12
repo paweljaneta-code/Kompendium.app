@@ -10,7 +10,7 @@ Akcent = kolor pip pigułki subsekcji. Linki qg-link -> realne karty td-*.
 - [x] unikanie (#b5612a) — unikanie doświadczeniowe (Hayes), behawioralne
 - [x] regulacja-emocji (#8a5a2a) — Gross, DERS, negatywny afekt/HiTOP
 - [x] zachowania-zabezpieczajace (#3a7a3a) — Salkovskis, reasekuracja, checking (Rachman)
-- [ ] ekspozycja (#c83a3a) — habituacja vs inhibitory learning (Craske), SUDS, protokół sesji
+- [x] ekspozycja (#c83a3a) — habituacja vs inhibitory learning (Craske), SUDS, protokół sesji
 - [ ] imagery-rescripting (#b03a5a) — ImRs (Arntz), 3 fazy, zastosowania
 - [ ] aktywacja-behawioralna (#d56a2a) — BA (Lewinsohn/Martell), wartości
 - [ ] restrukturyzacja (#a02a5a) — thought record, dialog sokratejski (Padesky)
