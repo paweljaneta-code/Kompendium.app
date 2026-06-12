@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import sosRouteIndex from "../app/s/[cid]/sos-index.json";
 import {
   FILE_HANDOUT_OVERRIDE_SCRIPT,
   FILE_SOS_OVERRIDE_SCRIPT,
@@ -796,10 +797,20 @@ async function loadJsonIndexFile(
 async function loadSosFileIndex(): Promise<Record<string, string>> {
   if (sosFileIndexCache) return sosFileIndexCache;
 
-  sosFileIndexCache = await loadJsonIndexFile(
+  // Na Vercelu public/sos/** jest wycięte z bundli funkcji
+  // (outputFileTracingExcludes), więc odczyt sos-file-index.json z dysku
+  // kończył się pustym indeksem — nowe narzędzia nie trafiały do SOS_INDEX
+  // mimo że pliki serwują się statycznie. Źródłem prawdy jest statycznie
+  // importowany indeks route'a /s (ten sam zestaw cid→mod, zawsze w bundlu);
+  // odczyt z dysku zostaje jako nadpisanie w dev bez przebudowy.
+  const fromDisk = await loadJsonIndexFile(
     path.join(process.cwd(), "public/sos/sos-file-index.json"),
-    sosFileIndexCache
+    null
   );
+  sosFileIndexCache =
+    Object.keys(fromDisk).length > 0
+      ? fromDisk
+      : (sosRouteIndex as Record<string, string>);
   return sosFileIndexCache;
 }
 
