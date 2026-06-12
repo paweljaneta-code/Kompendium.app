@@ -154,6 +154,12 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     if (ov) {
       ov.style.display = "none";
       ov.classList.remove("sage-mode", "ho-printing", "ho-file-mode");
+      // Przywróć pasek po podglądzie przewodnika (ukryty „Drukuj",
+      // wstrzyknięty „Udostępnij").
+      var guideShareBtn = ov.querySelector(".ho-guide-share-btn");
+      if (guideShareBtn) guideShareBtn.style.display = "none";
+      var printBtn = ov.querySelector(".ho-print-btn:not(.ho-guide-share-btn)");
+      if (printBtn) printBtn.style.display = "";
     }
     if (ct) ct.innerHTML = "";
     var restoredBrowser =
@@ -241,6 +247,24 @@ export const FILE_HANDOUT_OVERRIDE_SCRIPT = `
     window._activeHandoutId = cardId;
     var card = document.getElementById(cardId);
     if (card) card.setAttribute("open", "");
+    // W pasku nakładki: zamiast „Drukuj" przycisk „Udostępnij" generujący
+    // publiczny link /s/<cid> (działa bez logowania).
+    var toolbar = ov.querySelector(".ho-toolbar");
+    if (toolbar) {
+      var printBtn = toolbar.querySelector(".ho-print-btn:not(.ho-guide-share-btn)");
+      if (printBtn) printBtn.style.display = "none";
+      var shareBtn = toolbar.querySelector(".ho-guide-share-btn");
+      if (!shareBtn) {
+        shareBtn = document.createElement("button");
+        shareBtn.className = "ho-print-btn ho-guide-share-btn";
+        toolbar.insertBefore(shareBtn, toolbar.firstChild);
+      }
+      shareBtn.textContent = "📤 Udostępnij";
+      shareBtn.style.display = "";
+      shareBtn.onclick = function () {
+        if (typeof window.shareToolLink === "function") window.shareToolLink(cardId);
+      };
+    }
     ov.classList.remove("sage-mode");
     ov.classList.add("ho-file-mode");
     ct.innerHTML = "";
