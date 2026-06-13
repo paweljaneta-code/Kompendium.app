@@ -1178,7 +1178,7 @@ const TOOLS_BROWSER_MODAL = `<div class="modal-bg" id="toolsBrowserModal" style=
 <div id="toolsBrowserIcon" style="width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📄</div>
 <div style="flex:1;min-width:0">
 <h3 id="toolsBrowserTitle" style="margin:0;font-size:18px;letter-spacing:-.2px">Handouty do druku</h3>
-<div id="toolsBrowserSubtitle" style="font-size:12.5px;color:var(--muted);margin-top:2px">1,898 arkuszy do druku · grupowane po modułach</div>
+<div id="toolsBrowserSubtitle" style="font-size:12.5px;color:var(--muted);margin-top:2px">arkusze do druku · grupowane po modułach</div>
 </div>
 <button onclick="closeToolsBrowser()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:6px;line-height:1" aria-label="Zamknij">✕</button>
 </div>
@@ -2071,17 +2071,32 @@ export async function getKompendiumHomeDocument() {
   );
   const sosBrowserCount = toolsCatalog.reduce((sum, mod) => sum + mod.sos.length, 0);
   const pathwayBrowserCount = toolsCatalog.filter((mod) => mod.howto).length;
+  const moduleCount = data.modules.filter((mod) => mod.slug !== "plany").length;
+  const fmtStat = (n: number) => n.toLocaleString("en-US");
   const searchIndexDom = buildSearchIndexDom(data.modules);
 
+  // Liczniki strony głównej z JEDNEGO wyliczanego źródła — te same wartości,
+  // które po kliknięciu kafla pokazuje przeglądarka narzędzi. Bez tego kafel
+  // hero i stopka miały statyczne liczby (1 898 / 1 391 / 86) rozjeżdżające się
+  // z faktyczną, otwieralną listą.
   const homeHtml = data.homeScreen
     .replace(/style="display:\s*none"/gi, "")
+    .replace('class="home-screen"', 'class="home-screen visible"')
     .replace(
-      'class="home-screen"',
-      'class="home-screen visible"'
+      /(<div class="home-action-title">Handouty do druku<\/div>\s*<div class="home-action-count">)[^<]+(<\/div>)/,
+      `$1${fmtStat(handoutBrowserCount)} arkuszy A4$2`
+    )
+    .replace(
+      /(<div class="home-action-title">Wersje elektroniczne<\/div>\s*<div class="home-action-count">)[^<]+(<\/div>)/,
+      `$1${fmtStat(sosBrowserCount)} interaktywnych narzędzi$2`
     )
     .replace(
       /(<div class="home-action-title">Przewodniki kliniczne<\/div>\s*<div class="home-action-count">)[^<]+(<\/div>)/,
-      `$1${pathwayBrowserCount} przewodników$2`
+      `$1${fmtStat(pathwayBrowserCount)} przewodników$2`
+    )
+    .replace(
+      /· [\d.,]+ handoutów · [\d.,]+ wersji elektronicznych · [\d.,]+ modułów/,
+      `· ${fmtStat(handoutBrowserCount)} handoutów · ${fmtStat(sosBrowserCount)} wersji elektronicznych · ${fmtStat(moduleCount)} modułów`
     );
 
   const doc = `<!DOCTYPE html>
