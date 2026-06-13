@@ -38,7 +38,10 @@ klinicysty (`public/handouts/clinician/`, ~1300 plików — wcześniej nieaudyto
 
 ## Wynik
 
-### `kompendium.html` — 97 wystąpień poprawionych
+W monolicie poprawiono **ponad 220 wystąpień** błędów (cztery zweryfikowane
+partie); w materiałach 1. Poniżej rozbicie.
+
+### `kompendium.html` — partia 1: 97 wystąpień
 
 **Glitche wielkości liter (42):** błędna wielkość liter w słowach polskich, każdy
 wg kontekstu — m.in. `śWIADOMOŚĆ→świadomość`, `śWIADKIEM→świadkiem`,
@@ -60,6 +63,52 @@ z jednoznacznym celem polskim — `veteranów→weteranów`,
 `skłubanie→skubanie`, `dowod→dowód` (3×, tylko standalone — „dowodów" z encją
 `&#243;` pominięte), `założ buty→załóż buty`, `nie założ→nie zakładaj`,
 `wyobraż→wyobraź`.
+
+### `kompendium.html` — partie 3–4: ~130 wystąpień (anglicyzmy/latynizmy/literówki)
+
+Po triażu hunspell‑a (sugestie z odległością edycyjną 1, krzyżowo ze słownikiem
+EN), z weryfikacją kontekstową i **kontrolą atrybutów** (token w `data-go`/`id`/
+`class`/`href` pomijany jako slug/kod):
+
+- **v→w:** `validacja→walidacja`, `intervencji→interwencji`,
+  `konversja→konwersja`, `ambivalencja→ambiwalencja`, `supervizja→superwizja`,
+  `improvizacja→improwizacja`, `vomitowanie→womitowanie`, `verbalnie→werbalnie`.
+- **podwojone litery:** `effekt→efekt`, `suppresja→supresja`,
+  `klassyczne→klasyczne`, `akkomodacja→akomodacja`, `koffeina→kofeina`,
+  `traumma→trauma`, `tunnelowanie→tunelowanie`, `dystress→dystres`.
+- **hyper/hypo→hiper/hipo:** `hyperaktywny→hiperaktywny`,
+  `hypomanii→hipomanii`, `hypokaliemia→hipokaliemia`.
+- **i→y w latynizmach:** `dichotomiczne→dychotomiczne`,
+  `eksperiment→eksperyment`, `heuristyka→heurystyka`, `koordinacja→koordynacja`,
+  `supplementacja→suplementacja`, `glorifikacja→gloryfikacja`,
+  `polarizacje→polaryzacje`, `socializacja→socjalizacja`,
+  `horizontalnie→horyzontalnie`, `orthopedyczne→ortopedyczne`,
+  `resonans→rezonans`, `eksplicitna→eksplicytna`, `introspeksji→introspekcji`,
+  `ritualizacja→rytualizacja`, `ekstinkcja→ekstynkcja`,
+  `standardyzacja→standaryzacja`, `suicidologiczne→suicydologiczne`,
+  `incidencie→incydencie`.
+- **literówki literowe:** `dietytycy→dietetycy`, `gineokologa→ginekologa`,
+  `oseoporoza→osteoporoza`, `perzentyli→percentyli`, `prokursorem→prekursorem`,
+  `rekmrutowanymi→rekrutowanymi`, `niespodziankek→niespodzianek`,
+  `frustacja→frustracja`, `deperosonalizacja→depersonalizacja`,
+  `desintegracji→dezintegracji`, `decompensacja→dekompensacja`,
+  `injekcja→iniekcja`, `processowanie→procesowanie`, `reportuje→raportuje`,
+  `behavioralne→behawioralne`, `compulsywnym→kompulsywnym`, `cortyzol→kortyzol`,
+  `abnormalny→anormalny`, `deaktywuje→dezaktywuje`, `determiniuje→determinuje`,
+  `interrnalizuje→internalizuje`, `konsumcyjna→konsumpcyjna`,
+  `komplimenty→komplementy`, `kontynuum→kontinuum`, `najbolesniejszy→najboleśniejszy`,
+  `epizodie→epizodzie`.
+- **proza z brakującym diakrytykiem (NIE slug):** `przywiazania→przywiązania`
+  (6×; slug `genogram-przywiazania` chroniony), `w kazdym kroku→w każdym kroku`,
+  `intrusywne→intruzywne`.
+
+**Świadomie pominięte podłańcuchy** (zmiana zepsułaby poprawne słowa): `epizode`
+(w „epizodem"), `epizodzi` (w „epizodzie"), `dowod` (w „dowodów"), `tworz`/
+`czesto`/`osob`/`wybor` (w „tworzy"/„często"/„osobą"/„wyborów") oraz **slugi**
+`data-go`/`id` (`cialo-…`, `sygnaly-…`, `rozwiazywanie`, `genogram-przywiazania`).
+Każda partia walidowana renderem monolitu i testem integralności; jedna
+partia z błędnym dopasowaniem podłańcucha została wykryta i wycofana przed
+zatwierdzeniem (epizodem→epizodm), po czym powtórzona poprawnie.
 
 ### Materiały — 1 wystąpienie
 
