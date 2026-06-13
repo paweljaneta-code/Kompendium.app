@@ -876,7 +876,27 @@ export const KOMPENDIUM_MODULE_NAV_SCRIPT = `
   if (backBtn && backBtn.dataset.navBound !== "1") {
     backBtn.dataset.navBound = "1";
     backBtn.classList.add("visible");
-    backBtn.addEventListener("click", handleBack, true);
+    // Obsługa na pointerdown + click z deduplikacją. Powód: gdy fokus jest w
+    // wewnętrznym iframe (otwarty przewodnik / podgląd narzędzia), pierwszy
+    // "click" na przycisk wstecz w dokumencie-rodzicu bywa pochłaniany przez
+    // przeniesienie fokusu — przez co "czasem nie działa za pierwszym razem".
+    // pointerdown nie podlega temu pochłanianiu; click zostaje dla klawiatury.
+    var lastBackTs = 0;
+    var onBackEvent = function (event) {
+      if (event.type === "click" && Date.now() - lastBackTs < 700) {
+        // ten click to dopełnienie obsłużonego już pointerdown — pomiń
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (event.type === "pointerdown") {
+        if (event.button != null && event.button !== 0) return; // tylko lewy
+        lastBackTs = Date.now();
+      }
+      handleBack(event);
+    };
+    backBtn.addEventListener("pointerdown", onBackEvent, true);
+    backBtn.addEventListener("click", onBackEvent, true);
   }
 
   if (homeBtn && homeBtn.dataset.navBound !== "1") {
