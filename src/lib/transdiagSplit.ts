@@ -128,8 +128,22 @@ function plural(n: number): string {
 function buildModuleHtml(def: TopicDef, cardsHtml: string, count: number): string {
   const slug = slugFor(def.topic);
   const howto = howtoFor(def.topic);
+  // Przewodnik "Jak pracować z…" jak w pozostałych modułach: przycisk w
+  // nagłówku przełącza w tryb howto (switchModuleMode) — treść poradnika ląduje
+  // w widoku inline howto-view (iframe), górny pasek Zorza zostaje, a powrót
+  // obsługuje przycisk wstecz aplikacji (handleBack: howto-view → library).
+  // switchModuleMode wymaga istnienia guide-view ORAZ library-view.
   const cta = howto
-    ? `<div class="gad-feat-cta"><button class="gad-howto-cta" onclick="openHowtoFullscreen('${escJs(howto.file)}','${escJs(howto.label)}')"><span class="ghc-emoji" aria-hidden="true">📘</span><span>${esc(howto.label)}</span></button><div class="gad-feat-note">Krok po kroku: fazy pracy, kolejność wprowadzania narzędzi i najczęstsze pułapki kliniczne.</div></div>`
+    ? `<div class="gad-feat-cta"><button class="gad-howto-cta" onclick="switchModuleMode('${escJs(slug)}','howto')"><span class="ghc-emoji" aria-hidden="true">📘</span><span>${esc(howto.label)}</span></button><div class="gad-feat-note">Krok po kroku: fazy pracy, kolejność wprowadzania narzędzi i najczęstsze pułapki kliniczne.</div></div>`
+    : "";
+  // UWAGA: wrapper getOriginalModuleDocument usuwa dokładnie style="display:none"
+  // (regex), by pokazać moduł. Dlatego placeholder guide-view musi mieć styl,
+  // który NIE pasuje do tego regex (inaczej guide-view stałby się "widoczny" i
+  // switchModuleMode ustawiłby _howtoFromMode='guide' → wstecz wracałby do
+  // pustego guide-view zamiast do biblioteki). Prefiks zmiennej CSS to załatwia.
+  const howtoViews = howto
+    ? `<div class="guide-view" id="guide-view-${slug}" style="--gv:0;display:none"></div>
+<div class="howto-view" id="howto-view-${slug}" style="--accent-mod:${def.color};display:none"><iframe class="howto-frame" src="${esc(howto.file)}" title="${esc(howto.label)}" loading="lazy"></iframe></div>`
     : "";
   // Klasa "active" dodana wprost: wrapper getOriginalModuleDocument aktywuje
   // moduł zamianą class="tab-content" → "tab-content active", ale nasza klasa
@@ -138,6 +152,7 @@ function buildModuleHtml(def: TopicDef, cardsHtml: string, count: number): strin
   return `<div class="tab-content active td-split" id="tab-${slug}">
 <span class="tab-subtitle" style="display:none">${esc(def.desc)}</span>
 <div class="mod-header mod-header--gad-feat" style="--accent-mod:${def.color}"><div class="mod-header-icon">${TD_ICON_24}</div><div class="mod-header-text"><h2>${esc(def.name)}</h2><div class="mod-header-meta">${count} ${plural(count)} · proces transdiagnostyczny</div></div>${cta}</div>
+${howtoViews}
 <div class="library-view" id="library-view-${slug}" style="--accent-mod:${def.color}"><div class="lib-layout"><div class="lib-content"><div class="main">
 <div class="pills"><span class="pill active" data-filter="all">Wszystkie (${count})</span></div>
 <div class="search-wrap"><span class="si">&#128269;</span><input type="text" placeholder="Szukaj narzędzia…"></div><div class="count">Wyświetlono: ${count} z ${count} ${plural(count)}</div><div class="cards-wrap">
@@ -251,6 +266,10 @@ export function splitTransdiagModule(cache: CacheLike): void {
   if (rescoped) {
     cache.style += "\n/* transdiag split: re-scope kart na osobne moduły */\n" + rescoped;
   }
+  // Ramka poradnika "Jak pracować z…" wypełnia obszar pod sticky paskiem Zorza
+  // (header-inner 56px + 1px border). Pasek aplikacji zostaje na górze.
+  cache.style +=
+    "\n.howto-frame{display:block;width:100%;height:calc(100dvh - 57px);min-height:480px;border:0;background:#fff}\n";
 
   // Strona główna: usuń kafelek zbiorczy, wstaw kategorię przed "Emocje i ciało".
   let home = removeTransdiagButton(cache.homeScreen);
