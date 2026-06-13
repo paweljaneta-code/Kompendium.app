@@ -5,8 +5,9 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/s/(.*)",
-  "/api/plany/document(.*)"
+  // /s/(.*) — publiczne krótkie linki do materiałów udostępnianych pacjentowi
+  // przez zalogowanego klinicystę (patrz src/app/s/[cid]/route.ts).
+  "/s/(.*)"
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
