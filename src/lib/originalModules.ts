@@ -1905,6 +1905,15 @@ function sanitizePlannerScript(script: string): string {
   );
 }
 
+// Wstrzykuje publiczny OAuth Client ID Dysku Google do dokumentu planera.
+// Client ID jest z założenia publiczny (bezpieczny w kodzie klienta). Gdy nie
+// ustawiony — planer ukrywa przyciski Dysku i korzysta z kopii do pliku.
+// Konfiguracja: NEXT_PUBLIC_GOOGLE_CLIENT_ID (instrukcja: docs/google-drive-setup.md).
+function buildGoogleDriveConfigScript(): string {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+  return `window.ZORZA_GDRIVE_CLIENT_ID = ${JSON.stringify(clientId)};`;
+}
+
 function buildPlannerBridgeScript(options: PlannerDocumentOptions): string {
   const view = options.view ?? "list";
   const clientIndex =
@@ -2279,6 +2288,9 @@ ${buildDeadButtonHiderScript(printHandoutResolver, handoutFileIndex, sosFileInde
     </script>
     <script>
 ${escapeEmbeddedScript(data.moduleUiScript)}
+    </script>
+    <script>
+${buildGoogleDriveConfigScript()}
     </script>
     <script>
 ${escapeEmbeddedScript(sanitizePlannerScript(data.plannerScript))}
