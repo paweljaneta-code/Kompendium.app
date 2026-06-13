@@ -76,12 +76,39 @@ RAZEM problemów: 0
 Kolizje kluczy localStorage: brak
 ```
 
-## Pozostałe obserwacje (poza zakresem auto-naprawy)
+## Naprawy uzupełniające (druga tura)
 
-- `sad/self-disclosure.html` używa innego (starszego) wariantu auto-zapisu
-  (`STORAGE_KEY` + obiekt JSON, „v3.2") niż uniwersalny blok. Klucz został
-  znormalizowany; pełne ujednolicenie mechanizmu wymagałoby ostrożnego przepisania
-  (inny kształt danych) — do rozważenia osobno.
-- Część placeholderów zawiera niestandardowe proste cudzysłowy `"` zamiast `&quot;`
-  / „ ", co psuje formalne parsowanie HTML (przeglądarki tolerują). Kandydat na
-  osobne porządki czystości HTML.
+### 1. Ujednolicenie auto-zapisu `sad/self-disclosure.html`
+
+Plik używał starszego wariantu auto-zapisu (`STORAGE_KEY` + obiekt JSON, „v3.2").
+Jest to bogatszy materiał (odtwarza pozycję kroku `curStep`, wybór relacji
+`pickedRel` oraz dynamicznie renderowane chipy, z bramką nawigacji na kroku 2),
+więc naiwna podmiana na uniwersalny blok zepsułaby logikę (przyciski relacji nie
+mają `id`). Ujednolicono bez regresji:
+
+- `STORAGE_KEY` → `KEY` (spójne nazewnictwo, zgodne z resztą),
+- standardowy nagłówek komentarza auto-zapisu,
+- dodano uniwersalny wskaźnik „✓ zapisano" (`showSaved()`) — wcześniej był to
+  jedyny materiał bez potwierdzenia zapisu,
+- wyeksponowano `window.save`.
+
+Funkcjonalność (wznawianie kroku, wybór relacji, render) zachowana.
+
+### 2. Poprawne cudzysłowy w atrybutach (`scripts/fix-sos-quotes.mjs`)
+
+Autorzy używali prostego `"` jako cudzysłowu typograficznego wewnątrz atrybutów
+`placeholder="…"` / `onclick="…"`, co przedwcześnie zamykało atrybut i łamało
+formalne parsowanie HTML (przeglądarki to tolerują, ale to niespójność i ryzyko).
+
+- Wykryto: **5437** osadzonych cudzysłowów w **919 plikach**.
+- Naprawa: wewnętrzne `"` → `&quot;`, a `'` w atrybutach w pojedynczych
+  cudzysłowach → `&#39;` (renderowanie bez zmian, HTML staje się poprawny).
+- Prawdziwą granicę wartości atrybutu wyznacza tokenizer sprawdzający, po którym
+  cudzysłowie reszta taga parsuje się czysto (`findTrueClose` + `remainderClean`).
+- Weryfikacja: 0 tagów nierozwiązanych (`bail`), detektor po naprawie = 0,
+  operacja idempotentna.
+
+```bash
+node scripts/fix-sos-quotes.mjs          # dry-run (raport)
+node scripts/fix-sos-quotes.mjs --write   # zapis
+```
