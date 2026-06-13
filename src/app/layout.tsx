@@ -18,9 +18,9 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Kompendium Terapeutyczne — Wszystkie zaburzenia i podejścia",
+  title: "Zorza — Narzędzia terapeutyczne dla klinicystów",
   description:
-    "Kompendium interwencji CBT, DBT, ACT i nie tylko — handouty, instrukcje i farmakoterapia."
+    "Narzędzia terapeutyczne dla klinicystów — interwencje CBT, DBT, ACT i nie tylko: handouty, wersje elektroniczne, instrukcje i farmakoterapia."
 };
 
 type RootLayoutProps = Readonly<{

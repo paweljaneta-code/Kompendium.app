@@ -14,7 +14,7 @@ export function AppHeader() {
           href="/"
           className="shrink-0 font-[family-name:var(--font-dm-serif)] text-xl tracking-tight text-[#2c2825]"
         >
-          Kompendium<span className="text-[#2a7a5a]">.</span>
+          Zorza<span className="text-[#2a7a5a]">.</span>
         </Link>
         <nav className="flex items-center gap-3 text-sm">
           <Link href="/pricing" className="text-gray-600 hover:text-gray-900">
