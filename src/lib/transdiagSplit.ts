@@ -131,7 +131,11 @@ function buildModuleHtml(def: TopicDef, cardsHtml: string, count: number): strin
   const cta = howto
     ? `<div class="gad-feat-cta"><button class="gad-howto-cta" onclick="openHowtoFullscreen('${escJs(howto.file)}','${escJs(howto.label)}')"><span class="ghc-emoji" aria-hidden="true">📘</span><span>${esc(howto.label)}</span></button><div class="gad-feat-note">Krok po kroku: fazy pracy, kolejność wprowadzania narzędzi i najczęstsze pułapki kliniczne.</div></div>`
     : "";
-  return `<div class="tab-content td-split" id="tab-${slug}">
+  // Klasa "active" dodana wprost: wrapper getOriginalModuleDocument aktywuje
+  // moduł zamianą class="tab-content" → "tab-content active", ale nasza klasa
+  // ma sufiks " td-split", więc dokładne dopasowanie by nie trafiło i moduł
+  // zostałby display:none. "td-split" jest ancestrem kart dla re-scope'owanego CSS.
+  return `<div class="tab-content active td-split" id="tab-${slug}">
 <span class="tab-subtitle" style="display:none">${esc(def.desc)}</span>
 <div class="mod-header mod-header--gad-feat" style="--accent-mod:${def.color}"><div class="mod-header-icon">${TD_ICON_24}</div><div class="mod-header-text"><h2>${esc(def.name)}</h2><div class="mod-header-meta">${count} ${plural(count)} · proces transdiagnostyczny</div></div>${cta}</div>
 <div class="library-view" id="library-view-${slug}" style="--accent-mod:${def.color}"><div class="lib-layout"><div class="lib-content"><div class="main">
