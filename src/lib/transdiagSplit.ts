@@ -149,8 +149,11 @@ function buildModuleHtml(def: TopicDef, cardsHtml: string, count: number): strin
   // moduł zamianą class="tab-content" → "tab-content active", ale nasza klasa
   // ma sufiks " td-split", więc dokładne dopasowanie by nie trafiło i moduł
   // zostałby display:none. "td-split" jest ancestrem kart dla re-scope'owanego CSS.
+  // Bez <span class="tab-subtitle"> — wrapper getOriginalModuleDocument usuwa
+  // dokładnie style="display:none", więc subtitle by się odsłaniał u góry
+  // (bleed + dodatkowa wysokość → zewnętrzny scroll obok scrolla iframe howto).
+  // Podtytuł modułu jest i tak ustawiany wprost w obiekcie modułu (subtitle).
   return `<div class="tab-content active td-split" id="tab-${slug}">
-<span class="tab-subtitle" style="display:none">${esc(def.desc)}</span>
 <div class="mod-header mod-header--gad-feat" style="--accent-mod:${def.color}"><div class="mod-header-icon">${TD_ICON_24}</div><div class="mod-header-text"><h2>${esc(def.name)}</h2><div class="mod-header-meta">${count} ${plural(count)} · proces transdiagnostyczny</div></div>${cta}</div>
 ${howtoViews}
 <div class="library-view" id="library-view-${slug}" style="--accent-mod:${def.color}"><div class="lib-layout"><div class="lib-content"><div class="main">
