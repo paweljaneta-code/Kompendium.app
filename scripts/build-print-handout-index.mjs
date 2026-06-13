@@ -164,7 +164,6 @@ const SKIP_PRINT_IDS = new Set([
   "video-feedback",
   "wartosci-dep",
   "wartosci-sad",
-  "wywiad-genogramowy",
   "zaabsorb-samoreg"
 ]);
 
@@ -208,7 +207,6 @@ const MANUAL_OVERRIDES = {
   "model-beck": { mod: "dep", file: "dep-model-beck" },
   "body-neutrality": { mod: "bn", file: "bn-body-neutrality" },
   "mezczyzni-ed": { mod: "bn", file: "bn-mezczyzni" },
-  "wywiad-genogramowy": { mod: "bn", file: "bn-wywiad" },
   "mentalization-ha": { mod: "ppu", file: "ppu-mentalization" },
   "cykl-paniki": { mod: "panika", file: "pan-fizjologia" },
   "dating-sad": { mod: "ppu", file: "ppu-dating" },
