@@ -271,8 +271,13 @@ export function splitTransdiagModule(cache: CacheLike): void {
   }
   // Ramka poradnika "Jak pracować z…" wypełnia obszar pod sticky paskiem Zorza
   // (header-inner 56px + 1px border). Pasek aplikacji zostaje na górze.
+  // Ramka poradnika wypełnia obszar pod sticky paskiem Zorza. W trybie
+  // poradnika blokujemy przewijanie dokumentu (klasa zorza-howto-open dodawana
+  // przez KOMPENDIUM_HOWTO_LOCK_SCRIPT) — jedynym scrollem jest wnętrze iframe,
+  // bez drugiego, zewnętrznego paska (odporne na drobne różnice wysokości paska).
   cache.style +=
-    "\n.howto-frame{display:block;width:100%;height:calc(100dvh - 57px);min-height:480px;border:0;background:#fff}\n";
+    "\n.howto-frame{display:block;width:100%;height:calc(100dvh - 57px);min-height:0;border:0;background:#fff}" +
+    "\nhtml.zorza-howto-open,html.zorza-howto-open body{overflow:hidden}\n";
 
   // Strona główna: usuń kafelek zbiorczy, wstaw kategorię przed "Emocje i ciało".
   let home = removeTransdiagButton(cache.homeScreen);
@@ -326,3 +331,19 @@ ${buttons}
 export function buildCardModuleIndexScript(map: Record<string, string>): string {
   return `window.TD_CARD_MODULE = Object.assign(window.TD_CARD_MODULE || {}, ${JSON.stringify(map)});`;
 }
+
+// Opakowuje switchModuleMode tak, by w trybie poradnika („howto") zablokować
+// przewijanie dokumentu (klasa zorza-howto-open na <html>) — jedyny scroll to
+// wnętrze iframe poradnika, bez drugiego, zewnętrznego paska. W trybie
+// biblioteki/planu klasa jest zdejmowana (scroll przywrócony).
+export const KOMPENDIUM_HOWTO_LOCK_SCRIPT = `(function () {
+  var orig = window.switchModuleMode;
+  if (typeof orig !== "function") return;
+  window.switchModuleMode = function (tab, mode) {
+    var r = orig.apply(this, arguments);
+    try {
+      document.documentElement.classList.toggle("zorza-howto-open", mode === "howto");
+    } catch (e) {}
+    return r;
+  };
+})();`;

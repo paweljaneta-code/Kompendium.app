@@ -8,7 +8,11 @@ import {
   KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT,
   KOMPENDIUM_RECOUNT_SCRIPT
 } from "./extraContent";
-import { splitTransdiagModule, buildCardModuleIndexScript } from "./transdiagSplit";
+import {
+  splitTransdiagModule,
+  buildCardModuleIndexScript,
+  KOMPENDIUM_HOWTO_LOCK_SCRIPT
+} from "./transdiagSplit";
 import {
   FILE_HANDOUT_OVERRIDE_SCRIPT,
   FILE_SOS_OVERRIDE_SCRIPT,
@@ -2356,6 +2360,9 @@ ${buildDeadButtonHiderScript(printHandoutResolver, handoutFileIndex, sosFileInde
     </script>
     <script>
 ${escapeEmbeddedScript(data.moduleUiScript)}
+    </script>
+    <script>
+${KOMPENDIUM_HOWTO_LOCK_SCRIPT}
     </script>
     <script>
 ${KOMPENDIUM_MODULE_NAV_SCRIPT}
