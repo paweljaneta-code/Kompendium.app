@@ -10,6 +10,7 @@
 //               przycisk 📘 nad listą po wybraniu filtra tematu).
 // Schematy JSON: content/extra/README.md.
 import extraContentJson from "./extra-content.json";
+import { KOMPENDIUM_PENDING_CARD_KEY } from "./kompendiumScroll";
 
 type ExtraToolMaterial =
   | "print"
@@ -411,11 +412,34 @@ export const KOMPENDIUM_RECOUNT_SCRIPT = `(function () {
 // strona modułu zamyka nakładkę i otwiera wskazaną kartę (zdejmując filtr,
 // jeśli karta jest ukryta — przełącza na pigułkę tematu karty).
 export const KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT = `(function () {
+  var PENDING_CARD_KEY = ${JSON.stringify(KOMPENDIUM_PENDING_CARD_KEY)};
   window.addEventListener("message", function (ev) {
     var data = ev.data;
     if (!data || data.type !== "kompendium-open-card" || !data.id) return;
-    var el = document.getElementById(String(data.id));
-    if (!el) return;
+    var id = String(data.id);
+    var el = document.getElementById(id);
+    if (!el) {
+      // Karta jest w innym module (linki w poradnikach bywają międzymodułowe) —
+      // nawiguj do właściwej strony modułu i otwórz kartę po załadowaniu.
+      var slug = window.TD_CARD_MODULE && window.TD_CARD_MODULE[id];
+      if (slug) {
+        try {
+          window.top.sessionStorage.setItem(
+            PENDING_CARD_KEY,
+            JSON.stringify({ cardId: id })
+          );
+        } catch (e) {}
+        var url = "/modules/" + encodeURIComponent(slug);
+        try {
+          window.top.location.href = url;
+        } catch (e2) {
+          try {
+            window.location.href = url;
+          } catch (e3) {}
+        }
+      }
+      return;
+    }
     if (typeof window.closeHandout === "function") window.closeHandout();
     if (typeof window.closeSOS === "function") {
       var sos = document.getElementById("sos-modal-bg");

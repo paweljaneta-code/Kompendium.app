@@ -8,6 +8,7 @@ import {
   KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT,
   KOMPENDIUM_RECOUNT_SCRIPT
 } from "./extraContent";
+import { splitTransdiagModule, buildCardModuleIndexScript } from "./transdiagSplit";
 import {
   FILE_HANDOUT_OVERRIDE_SCRIPT,
   FILE_SOS_OVERRIDE_SCRIPT,
@@ -46,6 +47,7 @@ type OriginalData = {
   plannerGlobalElements: string;
   plannerScript: string;
   modules: OriginalModule[];
+  transdiagCardModule?: Record<string, string>;
 };
 
 function extractBalancedDiv(source: string, start: number): string {
@@ -1717,6 +1719,10 @@ async function loadOriginalData(): Promise<OriginalData> {
   // poradniki per subsekcja) — wstrzykiwana przed budową katalogów i stron,
   // więc trafia też do wyszukiwarki i przeglądarki narzędzi.
   applyExtraContent(cache);
+  // Podział "Procesy transdiagnostyczne" na osobne moduły per proces — PO
+  // wstrzyknięciu extra-tools (żeby nowe karty trafiły do właściwych modułów
+  // wg data-topic).
+  splitTransdiagModule(cache);
   return cache;
 }
 
@@ -2365,6 +2371,9 @@ ${KOMPENDIUM_RECOUNT_SCRIPT}
     </script>
     <script>
 ${buildTopicHowtoScript()}
+    </script>
+    <script>
+${buildCardModuleIndexScript(data.transdiagCardModule ?? {})}
     </script>
     <script>
 ${KOMPENDIUM_CARD_OPEN_BRIDGE_SCRIPT}
