@@ -154,6 +154,12 @@ const SKIP_PRINT_IDS = new Set([
   "se-fsc-gilbert",
   "se-scs-neff",
   "self-disclosure",
+  // labwork: karty ogólne/referencyjne (psychoedukacja, tabela zbiorcza,
+  // interpretacja) NIE mają handoutu „lista badań" — bez wpisu fuzzy-resolver
+  // przypisałby im błędnie arkusz innej karty (np. lab-dlaczego -> lab-poznawcze).
+  "lab-dlaczego",
+  "lab-tabela",
+  "lab-interpretacja",
   "skala-narzedzi",
   "st-case",
   "st-ostry-vs-przewlekly",
