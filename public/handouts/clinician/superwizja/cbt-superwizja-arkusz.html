@@ -96,11 +96,13 @@ body.mode-doc .doc{display:block}
 .chk.span-full{flex-basis:100%}
 
 /* ---------- znacznik pojęcia „i” + dymek ---------- */
-.info{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-left:5px;
-  font-family:"Source Serif 4",Georgia,serif;font-style:italic;font-weight:700;font-size:10.5px;line-height:1;
+.info{position:relative;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-left:6px;
+  font-family:"Source Serif 4",Georgia,serif;font-style:italic;font-weight:700;font-size:11.5px;line-height:1;
   color:#fff;background:var(--accent);border-radius:50%;cursor:help;vertical-align:middle;
-  user-select:none;flex:none;text-transform:none;letter-spacing:0;transition:background .15s}
-.info:hover,.info:focus-visible,.info:focus{background:var(--accent-d);outline:none}
+  user-select:none;flex:none;text-transform:none;letter-spacing:0;transition:background .15s,box-shadow .15s}
+/* niewidzialna otoczka — powiększa obszar najechania bez zmiany wyglądu */
+.info::after{content:"";position:absolute;inset:-7px;border-radius:50%}
+.info:hover,.info:focus-visible,.info:focus{background:var(--accent-d);outline:none;box-shadow:0 0 0 3px rgba(21,97,109,.18)}
 .tip{position:fixed;z-index:60;display:none;max-width:300px;width:max-content;
   background:#0f3a42;color:#eaf3f4;font-size:12px;line-height:1.5;
   border:1px solid var(--accent-d);border-radius:9px;padding:10px 12px;
@@ -630,9 +632,11 @@ body.mode-doc .doc{display:block}
     tip.id = "concept-tip";
     tip.setAttribute("role", "tooltip");
     document.body.appendChild(tip);
-    var current = null;
+    var current = null, hideT = null;
 
-    function hide(){ tip.style.display = "none"; current = null; }
+    function clearHideT(){ if (hideT){ window.clearTimeout(hideT); hideT = null; } }
+    function hide(){ clearHideT(); tip.style.display = "none"; current = null; }
+    function hideSoon(){ clearHideT(); hideT = window.setTimeout(function(){ tip.style.display = "none"; current = null; hideT = null; }, 160); }
     function place(badge){
       var r = badge.getBoundingClientRect();
       var vw = document.documentElement.clientWidth;
@@ -650,6 +654,7 @@ body.mode-doc .doc{display:block}
     function show(badge){
       var g = GLOSSARY[badge.getAttribute("data-info")];
       if (!g) return;
+      clearHideT();
       tip.innerHTML = '<b>'+esc(g.title)+'</b><span>'+esc(g.text)+'</span>';
       tip.style.display = "block";
       current = badge;
@@ -661,7 +666,7 @@ body.mode-doc .doc{display:block}
     }
 
     document.addEventListener("pointerover", function(e){ var b = badgeFrom(e); if (b) show(b); });
-    document.addEventListener("pointerout", function(e){ var b = badgeFrom(e); if (b && b === current) hide(); });
+    document.addEventListener("pointerout", function(e){ var b = badgeFrom(e); if (b && b === current) hideSoon(); });
     document.addEventListener("focusin", function(e){ var b = badgeFrom(e); if (b) show(b); });
     document.addEventListener("focusout", function(e){ var b = badgeFrom(e); if (b) hide(); });
     document.addEventListener("click", function(e){
