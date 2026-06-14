@@ -301,10 +301,9 @@ ${buttons}
       home = home.slice(0, apprStart) + categoryBlock + home.slice(apprStart);
     }
   }
-  // Aktualizacja głównego licznika "86 modułów" (total w nagłówku/statystykach).
-  // Netto +16 (-1 transdiag zbiorczy, +17 nowych). Celujemy w konkretny token
-  // totalu, NIE w podtytuły kategorii typu "6 modułów zaburzeń osobowości".
-  home = home.replace(/86 modułów/g, "102 modułów");
+  // Licznik "N modułów" (kafel „Przewodniki" + stopka hero) jest wstrzykiwany
+  // z WYLICZONEJ wartości w getKompendiumHomeDocument (jedno źródło prawdy),
+  // więc nie podmieniamy tu już sztywno "86 → 102".
   cache.homeScreen = home;
 
   // Dane wyszukiwarki: usuń transdiag, dodaj nowe moduły.

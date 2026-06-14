@@ -219,6 +219,29 @@ console.log(`# Handouty do druku — symulacja serwowania`);
 check("druk: karty SKIP dają placeholder (scramble nie serwowany)", skipLeak);
 check("druk: override manual wygrywa z plikiem exact-id", manualBroken);
 
+// ---- spójność liczników: zero sztywnych literałów statystyk w src/ ----
+// Liczby narzędzi/handoutów/modułów MUSZĄ pochodzić z jednego wyliczanego
+// źródła (getKompendiumHomeDocument liczy je z danych i wstrzykuje do strony
+// głównej). Sztywne literały rozjeżdżały się (1580/1609/1898/86/102…), więc
+// ten strażnik blokuje ich ponowne wprowadzenie.
+function walkSrc(dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...walkSrc(p));
+    else if (/\.tsx?$/.test(e.name)) out.push(p);
+  }
+  return out;
+}
+const STAT_LITERAL =
+  /[0-9][0-9.,]*\s?(narzędzi|narzędzia|handoutów|modułów|arkuszy|wersji elektronicznych|interaktywnych narzędzi)/;
+const statLiteralFiles = walkSrc(path.join(root, "src")).filter((p) =>
+  STAT_LITERAL.test(fs.readFileSync(p, "utf8"))
+);
+console.log(`# Spójność liczników`);
+check("liczniki: brak sztywnych literałów statystyk w src/ (licz z danych)", statLiteralFiles);
+
 console.log("");
 if (fails.length) {
   console.error(`✖ Integralność: ${fails.length} testów FAIL`);

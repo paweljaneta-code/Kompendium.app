@@ -29,7 +29,7 @@ export function HomeViewer({ document }: HomeViewerProps) {
   return (
     <iframe
       ref={iframeRef}
-      title="Kompendium — strona główna"
+      title="Zorza — strona główna"
       srcDoc={document}
       className="block h-[100dvh] w-full border-0"
       onLoad={handleLoad}
