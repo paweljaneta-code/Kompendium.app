@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="UTF-8"><title>Model deficytu hamowania (Barkley)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,0,600;9..144,1,400;9..144,1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* === ZMIENNE — paleta lineart v2 dostosowana do modułu GAD === */
+:root{
+  --ink:#1c2620;          /* główny kolor tekstu */
+  --soft:#4a554d;          /* tekst pomocniczy */
+  --mute:#8a9089;          /* etykiety */
+  --line:#c9c2b0;          /* linie */
+  --line2:#e3ddc8;         /* linie pomocnicze */
+  --sage:#3d6b30;          /* akcent GAD — sage-zielony */
+  --sage-soft:#eaf0e0;     /* tło akcentu */
+  --warm:#b8693f;          /* akcent komplementarny */
+  --paper:#fdfbf3;         /* kremowy odcień (alternatywa) */
+}
+
+/* === RESET === */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#fff}
+body{
+  font-family:'DM Sans', system-ui, -apple-system, sans-serif;
+  color:var(--ink);
+  font-size:10pt;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* === STRONA A4 — 210x297mm === */
+.page{
+  width:210mm;
+  height:297mm;
+  margin:0 auto;
+  padding:14mm 13mm 13mm 13mm;
+  background:#fff;
+  position:relative;
+  page-break-after:always;
+  overflow:hidden;
+}
+.page:last-child{page-break-after:auto}
+
+/* === NAGŁÓWEK === */
+.eyebrow{
+  font-family:'DM Sans', sans-serif;
+  font-size:8pt;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  color:var(--sage);
+  font-weight:600;
+  margin-bottom:6px;
+}
+h1.hdr-title{
+  font-family:'Fraunces', serif;
+  font-size:24pt;
+  font-weight:500;
+  letter-spacing:-0.025em;
+  line-height:1.05;
+  color:var(--ink);
+  margin-bottom:4px;
+}
+h1.hdr-title em{font-style:italic;color:var(--sage);font-weight:500}
+.hdr-sub{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:10.5pt;
+  color:var(--soft);
+  margin-bottom:9px;
+  line-height:1.3;
+}
+.hdr-meta{
+  display:flex;
+  gap:13px;
+  flex-wrap:wrap;
+  font-size:8pt;
+  color:var(--mute);
+  letter-spacing:0.06em;
+  padding-top:7px;
+  padding-bottom:7px;
+  border-top:1.2px solid var(--ink);
+  border-bottom:0.5px solid var(--line);
+  margin-bottom:13px;
+}
+.hdr-meta strong{color:var(--ink);font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-right:3px}
+
+/* === SEKCJE === */
+.sec{margin-bottom:9px}
+.sec-h{
+  font-family:'Fraunces', serif;
+  font-size:12.5pt;
+  font-weight:600;
+  letter-spacing:-0.015em;
+  color:var(--ink);
+  margin-bottom:5px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.sec-h .num{
+  font-family:'DM Sans', sans-serif;
+  font-size:8.5pt;
+  font-weight:600;
+  color:var(--ink);
+  letter-spacing:0.06em;
+  border:1px solid var(--ink);
+  padding:1px 6px;
+  border-radius:2px;
+  min-width:22px;
+  text-align:center;
+}
+.sec-h .ico-svg{width:16px;height:16px;flex:0 0 16px}
+
+/* === IKONY SVG === */
+.ico-svg{display:inline-block;vertical-align:middle}
+.ico-sage{stroke:var(--sage);fill:none}
+.ico-warm{stroke:var(--warm);fill:none}
+.ico-ink{stroke:var(--ink);fill:none}
+
+/* === BLOKI TEKSTU === */
+.prose{font-size:10pt;color:var(--soft);line-height:1.5;margin-bottom:8px;text-align:justify;hyphens:auto;-webkit-hyphens:auto}
+.prose strong{color:var(--ink);font-weight:600}
+.prose em{color:var(--ink);font-style:italic}
+
+.callout{
+  background:#fff;
+  border:0.6px solid var(--line);
+  border-left:2.5px solid var(--sage);
+  padding:9px 12px;
+  margin:10px 0;
+  font-size:9.5pt;
+  color:var(--soft);
+  border-radius:0 3px 3px 0;
+  text-align:justify;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+.callout strong{color:var(--ink);font-weight:600}
+
+/* === INSTRUKCJA U GÓRY (krótka instrukcja + uzasadnienie po nagłówku) === */
+.intro-box-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 9px 0;
+}
+.intro-box{
+  border:0.8px solid var(--line);
+  padding:8px 12px;
+  font-size:9pt;
+  color:var(--soft);
+  line-height:1.45;
+  background:#fff;
+  text-align:justify;
+  hyphens:auto;
+  -webkit-hyphens:auto;
+}
+.intro-box .intro-lbl{
+  font-family:'DM Sans', sans-serif;
+  font-size:7pt;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  margin-bottom:3px;
+  display:block;
+}
+.intro-box p{margin:0}
+.intro-box strong{color:var(--ink);font-weight:600}
+.intro-box em{color:var(--ink);font-style:italic}
+
+/* === LINIE DO PISANIA === */
+.write-lines{margin:8px 0}
+.fill-field .write-lines{margin-top:auto}
+.nln{
+  height:9mm;
+  border-bottom:0.6px solid var(--line);
+  margin-bottom:0;
+}
+.write-label{
+  font-size:8.5pt;
+  color:var(--mute);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+  font-weight:600;
+}
+
+/* === POLA WYPEŁNIANE === */
+.fill-field{margin-bottom:10px;display:flex;flex-direction:column;height:100%}
+.fill-field .lbl{
+  font-family:'DM Sans', sans-serif;
+  font-size:8.5pt;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  margin-bottom:3px;
+}
+.fill-field .lbl-sub{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:9.5pt;
+  color:var(--mute);
+  letter-spacing:0;
+  text-transform:none;
+  font-weight:400;
+  display:block;
+  margin-top:1px;
+}
+
+/* === STOPKA === */
+.foot{
+  position:absolute;
+  bottom:8mm;
+  left:16mm;
+  right:16mm;
+  font-size:7.5pt;
+  color:var(--mute);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  border-top:0.5px solid var(--line);
+  padding-top:6px;
+}
+.foot strong{color:var(--soft);font-weight:600}
+.foot .pg-num{font-family:'Fraunces', serif;font-style:italic;text-transform:none;letter-spacing:0;color:var(--soft)}
+
+/* === SKALA MOOD === */
+.mood-scale{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:3px 0 8px 0;
+}
+.mood-scale .ms-lbl{
+  font-size:8.5pt;
+  color:var(--mute);
+  font-weight:600;
+  letter-spacing:0.04em;
+  flex:0 0 70px;
+}
+.mood-scale .ms-end{
+  font-size:8pt;
+  color:var(--mute);
+  font-style:italic;
+}
+.mood-scale .ms-row{
+  display:flex;
+  gap:4px;
+  flex:1;justify-content:space-between;}
+.mood-scale .ms-num{
+  width:19px;height:19px;
+  border:1px solid var(--line);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8.5pt;
+  color:var(--soft);
+  font-weight:500;
+}
+
+/* === TABELE === */
+table.work-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:6px 0;
+  font-size:9pt;
+}
+table.work-table th{
+  font-family:'DM Sans', sans-serif;
+  font-size:8pt;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink);
+  font-weight:600;
+  text-align:left;
+  padding:7px 8px;
+  border-bottom:1.4px solid var(--ink);
+  background:#fff;
+}
+table.work-table td{
+  padding:0;
+  height:14mm;
+  border-bottom:0.6px solid var(--line);
+  vertical-align:top;
+}
+table.work-table td.col-divider{
+  border-left:0.4px solid var(--line2);
+}
+table.work-table .cell-hint{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:8.5pt;
+  color:var(--mute);
+  padding:5px 8px 0 8px;
+  line-height:1.2;
+}
+
+/* === BIBLIOTEKA IKON (SVG defs) — wspólna dla wszystkich handoutów === */
+
+/* === DRUK === */
+@media print{
+  body{background:#fff}
+  .page{margin:0;padding:18mm 16mm 18mm 16mm;box-shadow:none;break-after:page}
+  .page:last-child{break-after:auto}
+  .no-print{display:none}
+  @page{size:A4;margin:0}
+}
+
+/* === RESPONSYWNOŚĆ (podgląd na ekranie) === */
+@media screen{
+  body{padding:24px 16px;background:#e8e3d4}
+  .page{box-shadow:0 4px 24px rgba(0,0,0,0.08);margin-bottom:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- Biblioteka ikon SVG (line-art, stroke 1.8, viewBox 24x24) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <!-- target/cel -->
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke-width="1.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <!-- drzewo (dla worry tree) -->
+  <symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21V11M12 11l-4-4M12 11l4-4M8 7l-3-3M16 7l3-3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="4" r="1.6"/><circle cx="19" cy="4" r="1.6"/><circle cx="8" cy="7" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="7" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <!-- pytajnik -->
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M9 9c0-1.7 1.3-3 3-3s3 1.3 3 3c0 1.3-0.7 2-2 2.5-0.7 0.3-1 0.8-1 1.5" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none"/></symbol>
+  <!-- ptaszek -->
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- X -->
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke-width="2" stroke-linecap="round"/></symbol>
+  <!-- strzałka w prawo -->
+  <symbol id="i-arr" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- strzałka w dół -->
+  <symbol id="i-arr-d" viewBox="0 0 24 24"><path d="M12 5v14M7 14l5 5 5-5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- zegar -->
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M12 7v5l3 3" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- stoper -->
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" stroke-width="1.6"/><path d="M10 3h4M12 3v3M19 7l2-2M5 7L3 5" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M12 11v3l2 1.5" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- iskra / sparkle -->
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <!-- ołówek/pencil -->
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M16 4l4 4-11 11H5v-4L16 4z" stroke-width="1.6" stroke-linejoin="round" fill="none"/><path d="M14 6l4 4" stroke-width="1.6"/></symbol>
+  <!-- clipboard -->
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="1.5" stroke-width="1.6" fill="none"/><rect x="9" y="2.5" width="6" height="3" rx="0.6" stroke-width="1.6" fill="none"/><path d="M8 11h8M8 14h8M8 17h5" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <!-- żarówka / lightbulb -->
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 17h6M10 20h4M12 3a6 6 0 014 10.5c-0.7 0.7-1 1.5-1 2.5h-6c0-1-0.3-1.8-1-2.5A6 6 0 0112 3z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- ciało / body PMR -->
+  <symbol id="i-body" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2" stroke-width="1.6" fill="none"/><path d="M12 7.5v8M9 10l-3 3M15 10l3 3M9.5 15.5L7 22M14.5 15.5L17 22" stroke-width="1.6" stroke-linecap="round" fill="none"/></symbol>
+  <!-- liść (akceptacja, mindfulness) -->
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14zM5 19l7-7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <!-- kalendarz -->
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5" stroke-width="1.6" fill="none"/><path d="M4 10h16M8 3v4M16 3v4" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <!-- mózg/myśl -->
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 4c-2 0-3.5 1.5-3.5 3.5 0 0.5 0.1 1 0.3 1.4C4.5 9.5 4 10.7 4 12c0 1.3 0.5 2.4 1.4 3.2-0.1 0.3-0.2 0.7-0.2 1 0 2 1.6 3.7 3.5 3.7M15 4c2 0 3.5 1.5 3.5 3.5 0 0.5-0.1 1-0.3 1.4 1.3 0.6 1.8 1.8 1.8 3.1 0 1.3-0.5 2.4-1.4 3.2 0.1 0.3 0.2 0.7 0.2 1 0 2-1.6 3.7-3.5 3.7M12 4v16" stroke-width="1.5" stroke-linecap="round" fill="none"/></symbol>
+  <!-- waga / wybór -->
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v17M5 21h14M6 11l3-7 3 7M12 11h3l3-7M3 11h6l-3 5-3-5zM15 11h6l-3 5-3-5z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+</defs>
+</svg>
+
+<div class="page"><header>
+<div class="eyebrow">AuDHD &middot; Psychoedukacja &middot; Maskowanie</div>
+<h1 class="hdr-title">Podw&oacute;jne <em>maskowanie</em></h1>
+<div class="hdr-sub">W AuDHD ukrywasz naraz dwa profile. To podw&oacute;jny koszt udawania „neurotypowego" &mdash; i masz prawo go nazwa&#x107;.</div>
+<div class="hdr-meta"><span><strong>Czas:</strong> 15&ndash;20 min</span><span>Praca samodzielna lub z terapeut&#x105;/-&#x105;</span><span><strong>&#x179;r&oacute;d&#x142;o:</strong> paradygmat neuror&oacute;&#x17c;norodno&#x15b;ci; model camouflagingu (Hull i wsp., CAT-Q)</span></div>
+</header>
+<div class="intro-box-row">
+<div class="intro-box">
+<span class="intro-lbl">Jak u&#x17c;ywa&#x107;</span>
+<p>Najpierw poznaj trzy warstwy maskowania i to, czemu w AuDHD <strong>podwajaj&#x105; si&#x119;</strong>. Potem w sekcji 3 zr&oacute;b sw&oacute;j „bilans maski" &mdash; gdzie, jak i jakim kosztem maskujesz. To nie wezwanie, &#x17c;eby od jutra przesta&#x107; &mdash; to mapa, dzi&#x119;ki kt&oacute;rej <em>Ty</em> decydujesz, kiedy i z kim mo&#x17c;esz by&#x107; sob&#x105;.</p>
+</div>
+<div class="intro-box">
+<span class="intro-lbl">Dlaczego to wa&#x17c;ne</span>
+<p>Maskowanie bywa <strong>strategi&#x105; bezpiecze&#x144;stwa</strong> &mdash; nie wad&#x105;. Ale gdy trwa latami, kosztuje: zm&#x119;czeniem, poczuciem nieautentyczno&#x15b;ci, ryzykiem l&#x119;ku, depresji i wypalenia. Nazwanie kosztu to pierwszy krok, by &#x15b;wiadomie wybiera&#x107;, gdzie maska jest potrzebna, a gdzie mo&#x17c;na j&#x105; od&#x142;o&#x17c;y&#x107;.</p>
+</div>
+</div>
+<div class="sec">
+<h2 class="sec-h"><span class="num">01</span><svg class="ico-svg ico-sage"><use href="#i-brain"/></svg> Dlaczego „podw&oacute;jne"</h2>
+<svg viewBox="0 0 600 175" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin:4px auto 0;max-width:540px" font-family="'DM Sans', sans-serif">
+<style>
+  .bx-a{fill:#fff;stroke:#3d6b30;stroke-width:1.7}
+  .bx-b{fill:#fff;stroke:#b8693f;stroke-width:1.7}
+  .bx-core{fill:#eaf0e0;stroke:#3d6b30;stroke-width:1.8}
+  .lbl{font-size:9px;fill:#1c2620;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+  .lbl-a{font-size:9px;fill:#3d6b30;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+  .lbl-b{font-size:9px;fill:#b8693f;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+  .lbl-sm{font-size:8px;fill:#4a554d}
+  .arr{stroke:#1c2620;stroke-width:1.2;fill:none}
+</style>
+<rect x="30" y="20" width="230" height="56" rx="3" class="bx-a"/>
+<text x="145" y="40" text-anchor="middle" class="lbl-a">Maska autystyczna</text>
+<text x="145" y="56" text-anchor="middle" class="lbl-sm">wymuszony kontakt wzrokowy,</text>
+<text x="145" y="68" text-anchor="middle" class="lbl-sm">t&#x142;umienie stim&oacute;w, skrypty rozm&oacute;w</text>
+
+<rect x="340" y="20" width="230" height="56" rx="3" class="bx-b"/>
+<text x="455" y="40" text-anchor="middle" class="lbl-b">Maska ADHD</text>
+<text x="455" y="56" text-anchor="middle" class="lbl-sm">hamowanie impulsywno&#x15b;ci,</text>
+<text x="455" y="68" text-anchor="middle" class="lbl-sm">udawanie skupienia i „ogarni&#x119;cia"</text>
+
+<rect x="170" y="118" width="260" height="48" rx="3" class="bx-core"/>
+<text x="300" y="138" text-anchor="middle" class="lbl">Podw&oacute;jny koszt</text>
+<text x="300" y="154" text-anchor="middle" class="lbl-sm">obie maski dzia&#x142;aj&#x105; naraz &mdash; zm&#x119;czenie si&#x119; sumuje</text>
+
+<path d="M145 76 L240 118" class="arr"/><polygon points="240,118 232,116 235,109" fill="#1c2620"/>
+<path d="M455 76 L360 118" class="arr"/><polygon points="360,118 368,116 365,109" fill="#1c2620"/>
+</svg>
+<div class="callout" style="margin-top:8px">
+Maskowanie wymaga sta&#x142;ej <strong>autokontroli</strong>: m&oacute;zg t&#x142;umi odruchy i zarazem odpala wyuczone zachowania. W AuDHD robisz to <em>w dw&oacute;ch warstwach jednocze&#x15b;nie</em> &mdash; dlatego wypalenie bywa szybsze, g&#x142;&#x119;bsze i trudniejsze do od&#x17c;a&#x142;owania.
+</div>
+</div>
+<div class="sec" style="margin-top:9px">
+<h2 class="sec-h"><span class="num">02</span><svg class="ico-svg ico-sage"><use href="#i-board"/></svg> Trzy warstwy maskowania</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:2px">
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px;font-size:8.3pt;color:#4a554d;line-height:1.4"><strong style="color:#1c2620">Kompensacja</strong><br/>aktywne „nadrabianie": uczenie si&#x119; cudzych gest&oacute;w, min, skrypt&oacute;w spo&#x142;ecznych z film&oacute;w i ksi&#x105;&#x17c;ek.</div>
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px;font-size:8.3pt;color:#4a554d;line-height:1.4"><strong style="color:#1c2620">Maskowanie</strong><br/>ukrywanie cech: wymuszony kontakt wzrokowy, „wyluzowana" poza, t&#x142;umienie stim&oacute;w i reakcji sensorycznych.</div>
+<div style="border:0.8px solid #c9c2b0;border-top:2.5px solid #3d6b30;padding:7px 10px;border-radius:3px;font-size:8.3pt;color:#4a554d;line-height:1.4"><strong style="color:#1c2620">Asymilacja</strong><br/>„granie roli", by si&#x119; wtopi&#x107;: udawanie, &#x17c;e wszystko OK, zmuszanie si&#x119; do interakcji albo ich unikanie.</div>
+</div>
+</div>
+<div class="sec" style="margin-top:9px">
+<h2 class="sec-h"><span class="num">+</span><svg class="ico-svg ico-sage"><use href="#i-q"/></svg> Po czym poznasz, &#x17c;e maskujesz</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;margin-top:2px;font-size:8.6pt;color:#4a554d;line-height:1.35">
+<div>&middot; planujesz w g&#x142;owie rozmow&#x119; na wiele krok&oacute;w naprz&oacute;d</div>
+<div>&middot; po kontakcie z lud&#x17a;mi masz „spo&#x142;eczny kac" na godziny</div>
+<div>&middot; t&#x142;umisz stimy, dop&oacute;ki nie zostaniesz sam/a</div>
+<div>&middot; kopiujesz cudze miny, ton i gesty „&#x17c;eby pasowa&#x107;"</div>
+<div>&middot; udajesz „ogarni&#x119;cie", cho&#x107; w &#x15b;rodku jest chaos</div>
+<div>&middot; bywa, &#x17c;e nie wiesz ju&#x17c;, „jaki/a jestem naprawd&#x119;"</div>
+<div>&middot; powstrzymujesz si&#x119; od pyta&#x144;, by nie „wyj&#x15b;&#x107; na dziwnego/&#x105;"</div>
+<div>&middot; &#x107;wiczysz mimik&#x119; albo intonacj&#x119; przed lustrem</div>
+</div>
+</div>
+<div class="foot">
+<span><strong>Kompendium Narz&#x119;dzi Terapeutycznych &middot; AuDHD &middot; lineart v2</strong></span>
+<span class="pg-num">str. 1 / 2</span>
+</div>
+</div><div class="page"><div class="sec" style="margin-top:0">
+<h2 class="sec-h"><span class="num">03</span><svg class="ico-svg ico-sage"><use href="#i-pencil"/></svg> Tw&oacute;j bilans maski</h2>
+<p class="prose">Wypisz sytuacje, w kt&oacute;rych najcz&#x119;&#x15b;ciej maskujesz. Przy ka&#x17c;dej zaznacz, <strong>co ukrywasz</strong> i <strong>jakim kosztem</strong>. To pomaga zobaczy&#x107;, gdzie maska kosztuje najwi&#x119;cej &mdash; i gdzie mo&#x17c;na poszuka&#x107; bezpieczniejszej przestrzeni.</p>
+<table class="work-table">
+<thead><tr><th style="width:30%">Sytuacja / miejsce</th><th style="width:35%" class="col-divider">Co ukrywam?</th><th style="width:35%" class="col-divider">Koszt po (zm&#x119;czenie, emocje)</th></tr></thead>
+<tbody>
+<tr><td style="height:16mm"><div class="cell-hint">np. spotkania w pracy</div></td><td class="col-divider"></td><td class="col-divider"></td></tr>
+<tr><td style="height:16mm"><div class="cell-hint">np. rodzinne spotkania</div></td><td class="col-divider"></td><td class="col-divider"></td></tr>
+<tr><td style="height:16mm"></td><td class="col-divider"></td><td class="col-divider"></td></tr>
+<tr><td style="height:16mm"></td><td class="col-divider"></td><td class="col-divider"></td></tr>
+</tbody>
+</table>
+</div>
+<div class="sec" style="margin-top:8px">
+<h2 class="sec-h"><span class="num">04</span><svg class="ico-svg ico-sage"><use href="#i-leaf"/></svg> Gdzie mog&#x119; od&#x142;o&#x17c;y&#x107; mask&#x119;</h2>
+<p class="prose">Unmasking zaczyna si&#x119; od <strong>bezpiecze&#x144;stwa</strong>, nie od odwagi. Poszukaj ma&#x142;ych, bezpiecznych przestrzeni, gdzie mo&#x17c;esz by&#x107; bardziej sob&#x105; &mdash; bez ryzyka. Zaczynaj od najdrobniejszych krok&oacute;w.</p>
+<div class="fill-field" style="margin-top:4px">
+<div class="lbl">Osoba / miejsce, przy kt&oacute;rych czuj&#x119; si&#x119; najbezpieczniej <span class="lbl-sub">&mdash; tam maska mo&#x17c;e by&#x107; cie&#x144;sza</span></div>
+<div class="write-lines"><div class="nln"></div></div>
+</div>
+<div class="fill-field" style="margin-top:6px">
+<div class="lbl">Jeden ma&#x142;y krok ku autentyczno&#x15b;ci, kt&oacute;ry mog&#x119; bezpiecznie zrobi&#x107; w tym tygodniu <span class="lbl-sub">&mdash; np. pozwoli&#x107; sobie na stim przy bliskiej osobie</span></div>
+<div class="write-lines"><div class="nln"></div><div class="nln"></div></div>
+</div>
+<div class="fill-field" style="margin-top:6px">
+<div class="lbl">Co potrzebuj&#x119; us&#x142;ysze&#x107; od siebie, gdy maska zn&oacute;w b&#x119;dzie ci&#x119;&#x17c;ka <span class="lbl-sub">&mdash; zdanie wsparcia w&#x142;asnymi s&#x142;owami</span></div>
+<div class="write-lines"><div class="nln"></div><div class="nln"></div></div>
+</div>
+</div>
+<div class="callout" style="margin-top:8px">
+<strong>&#x141;agodnie dla siebie:</strong> maska kiedy&#x15b; Ci&#x119; chroni&#x142;a &mdash; nie musisz jej nienawidzi&#x107; ani zrywa&#x107; z dnia na dzie&#x144;. Cel to nie „przesta&#x107; maskowa&#x107;" za wszelk&#x105; cen&#x119;, lecz <strong>odzyska&#x107; wyb&oacute;r</strong>: &#x15b;wiadomie decydowa&#x107;, kiedy maska jest potrzebna, a kiedy mo&#x17c;esz odetchn&#x105;&#x107; i by&#x107; po prostu sob&#x105;.
+</div>
+<div class="foot">
+<span><strong>Kompendium Narz&#x119;dzi Terapeutycznych &middot; AuDHD &middot; lineart v2</strong></span>
+<span class="pg-num">str. 2 / 2</span>
+</div>
+</div>
+</body></html>
